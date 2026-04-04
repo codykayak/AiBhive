@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "Lead": {
+      "title": "Lead",
+      "description": "User lead data for transcription, translation, and voice cloning.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who submitted the lead."
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "The URL of the uploaded file in Firebase Storage."
+        },
+        "fileLengthWords": {
+          "type": "number",
+          "description": "The estimated number of words in the file."
+        },
+        "calculatedPrice": {
+          "type": "number",
+          "description": "The total calculated price for the selected services."
+        },
+        "options": {
+          "type": "object",
+          "properties": {
+            "transcribeTranslate": { "type": "boolean" },
+            "audioToText": { "type": "boolean" },
+            "cloneVoice": { "type": "boolean" },
+            "freeSample": { "type": "boolean" }
+          }
+        },
+        "languages": {
+          "type": "object",
+          "properties": {
+            "from": { "type": "string" },
+            "to": { "type": "string" }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "fileUrl", "calculatedPrice", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Collection of user leads."
+    }
+  }
+}

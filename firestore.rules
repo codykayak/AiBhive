@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: leads
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required) - The ID of the user who submitted the lead.
+    //   - fileUrl: string (required) - The URL of the uploaded file in Firebase Storage.
+    //   - fileLengthWords: number (optional) - The estimated number of words in the file.
+    //   - calculatedPrice: number (required) - The total calculated price for the selected services.
+    //   - options: map (optional) - Selected services.
+    //   - languages: map (optional) - Source and target languages.
+    //   - createdAt: timestamp (required) - When the lead was created.
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "codykayak@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidLead(data) {
+      return data.userId is string &&
+             data.fileUrl is string &&
+             data.calculatedPrice is number &&
+             data.createdAt is timestamp &&
+             (!('fileLengthWords' in data) || data.fileLengthWords is number) &&
+             (!('options' in data) || data.options is map) &&
+             (!('languages' in data) || data.languages is map);
+    }
+
+    match /leads/{leadId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidLead(request.resource.data);
+      allow update: if false; // Leads are immutable for now
+      allow delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId) && !('role' in request.resource.data);
+      allow delete: if false;
+    }
+  }
+}
