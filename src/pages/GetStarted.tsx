@@ -60,6 +60,12 @@ export default function GetStarted() {
     freeSample: false
   });
 
+  const [context, setContext] = useState({
+    legal: false,
+    medical: false,
+    standard: true
+  });
+
   const [languages, setLanguages] = useState({
     from: 'English',
     to: 'Spanish'
@@ -179,7 +185,7 @@ export default function GetStarted() {
           setVoiceSampleUrl(vsUrl);
 
           // 2. Save to Firestore
-          await addDoc(collection(db, 'leads'), {
+          const docRef = await addDoc(collection(db, 'leads'), {
             userId: user.uid,
             fileUrl: downloadURL,
             voiceSampleUrl: vsUrl,
@@ -188,17 +194,65 @@ export default function GetStarted() {
             calculatedPrice: calculatePrice(),
             options,
             languages,
+            context,
+            status: 'pending_payment',
             createdAt: serverTimestamp()
           });
 
-          setSuccess(true);
           setUploading(false);
+
+          // 3. Initiate Checkout
+          initiateCheckout(docRef.id);
         }
       );
     } catch (err) {
       console.error('Submission failed:', err);
       setError('Submission failed. Please try again.');
       setUploading(false);
+    }
+  };
+
+  const initiateCheckout = async (leadId: string) => {
+    try {
+      const price = calculatePrice();
+      if (price === 0) {
+        // Kick off free processing
+        const res = await fetch('/api/process-free-sample', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ leadId }),
+        });
+
+        if (res.ok) {
+           setSuccess(true);
+        } else {
+           setError('Failed to process free sample.');
+        }
+        return;
+      }
+
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId,
+          amount: price,
+        }),
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        setError('Failed to initiate checkout.');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setError('Failed to initiate checkout.');
     }
   };
 
@@ -427,6 +481,65 @@ export default function GetStarted() {
                     <p className="text-slate-400 text-sm">Free sample if under 250 words</p>
                   </div>
                 </div>
+              </div>
+            </section>
+
+            {/* Context Section */}
+            <section className="glass-card p-10 rounded-[2.5rem]">
+              <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
+                <AlertCircle className="w-6 h-6 mr-3 text-bee-amber" />
+                3. Select Context (Accuracy Check)
+              </h2>
+              <div className="space-y-4">
+                <p className="text-slate-400 text-sm mb-4">
+                  Select a context to ensure our AI uses specialized models to check for high-risk terms and mistranslations.
+                </p>
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.standard}
+                      onChange={(e) => {
+                        if (e.target.checked) setContext({ standard: true, legal: false, medical: false });
+                        else setContext({ ...context, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Standard</span>
+                  </label>
+
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.legal}
+                      onChange={(e) => {
+                        setContext({ ...context, legal: e.target.checked, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Legal</span>
+                  </label>
+
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.medical}
+                      onChange={(e) => {
+                        setContext({ ...context, medical: e.target.checked, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Medical</span>
+                  </label>
+                </div>
+                {(context.legal || context.medical) && (
+                  <div className="mt-4 p-4 bg-bee-amber/10 border border-bee-amber/30 rounded-xl">
+                    <p className="text-bee-amber text-sm flex items-start">
+                      <AlertCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                      We will perform a secondary scan using advanced LLMs to identify high-risk terms and prevent common contextual mistranslations in your output.
+                    </p>
+                  </div>
+                )}
               </div>
             </section>
 
