@@ -16,9 +16,15 @@ export default defineConfig(({mode}) => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      // Keep your HMR setting as is
       hmr: process.env.DISABLE_HMR !== 'true',
+      port: 8080,        // <--- ADD THIS
+      host: '0.0.0.0',   // <--- ADD THIS
     },
+    preview: {           // <--- ADD THIS ENTIRE BLOCK
+      port: 8080,
+      host: '0.0.0.0',
+      allowedHosts: true // Helps with the "Invalid Host Header" error in Cloud Run
+    }
   };
 });
