@@ -14,13 +14,7 @@ import {
   DollarSign,
   Clock
 } from 'lucide-react';
-import { auth, db, storage } from '../firebase';
-import { 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  User 
-} from 'firebase/auth';
+import { db, storage } from '../firebase';
 import { 
   collection, 
   addDoc, 
@@ -39,8 +33,7 @@ const LANGUAGES = [
 ];
 
 export default function GetStarted() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [file, setFile] = useState<File | null>(null);
@@ -51,6 +44,17 @@ export default function GetStarted() {
   const [audioMinutes, setAudioMinutes] = useState(0);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+
+  // Check URL parameters for successful checkout return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setSuccess(true);
+      // Clean up the URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Options
   const [options, setOptions] = useState({
@@ -60,28 +64,16 @@ export default function GetStarted() {
     freeSample: false
   });
 
+  const [context, setContext] = useState({
+    legal: false,
+    medical: false,
+    standard: true
+  });
+
   const [languages, setLanguages] = useState({
     from: 'English',
     to: 'Spanish'
   });
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Login failed. Please try again.');
-    }
-  };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>, isVoiceSample = false) => {
     const selectedFile = e.target.files?.[0];
@@ -138,8 +130,8 @@ export default function GetStarted() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !file) {
-      setError('Please sign in and upload a file.');
+    if (!file) {
+      setError('Please upload a file.');
       return;
     }
 
@@ -152,13 +144,16 @@ export default function GetStarted() {
     setError(null);
 
     try {
+      // Generate a temporary session ID since the user is not authenticated yet
+      const sessionId = `anon_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       // 1. Upload Main File
-      const mainFileRef = ref(storage, `leads/${user.uid}/${Date.now()}_${file.name}`);
+      const mainFileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${file.name}`);
       const mainUploadTask = uploadBytesResumable(mainFileRef, file);
 
       let vsUrl = null;
       if (voiceSample) {
-        const vsRef = ref(storage, `leads/${user.uid}/sample_${Date.now()}_${voiceSample.name}`);
+        const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
         const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
         vsUrl = await getDownloadURL(vsUpload.ref);
       }
@@ -179,8 +174,8 @@ export default function GetStarted() {
           setVoiceSampleUrl(vsUrl);
 
           // 2. Save to Firestore
-          await addDoc(collection(db, 'leads'), {
-            userId: user.uid,
+          const docRef = await addDoc(collection(db, 'leads'), {
+            userId: sessionId,
             fileUrl: downloadURL,
             voiceSampleUrl: vsUrl,
             fileLengthWords: wordCount,
@@ -188,17 +183,71 @@ export default function GetStarted() {
             calculatedPrice: calculatePrice(),
             options,
             languages,
+            context,
+            status: 'pending_payment',
             createdAt: serverTimestamp()
           });
 
-          setSuccess(true);
           setUploading(false);
+
+          // 3. Initiate Checkout
+          initiateCheckout(docRef.id);
         }
       );
     } catch (err) {
       console.error('Submission failed:', err);
       setError('Submission failed. Please try again.');
       setUploading(false);
+    }
+  };
+
+  const initiateCheckout = async (leadId: string) => {
+    try {
+      const price = calculatePrice();
+      if (price === 0) {
+        if (!email || !email.includes('@')) {
+           setError('Please provide a valid email address for free samples so we can send you the results.');
+           setUploading(false);
+           return;
+        }
+
+        // Kick off free processing
+        const res = await fetch('/api/process-free-sample', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ leadId, email }),
+        });
+
+        if (res.ok) {
+           setSuccess(true);
+        } else {
+           setError('Failed to process free sample.');
+        }
+        return;
+      }
+
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leadId,
+          amount: price,
+        }),
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        setError('Failed to initiate checkout.');
+      }
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setError('Failed to initiate checkout.');
     }
   };
 
@@ -230,25 +279,7 @@ export default function GetStarted() {
           </p>
         </div>
 
-        {!user ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-12 rounded-[2.5rem] text-center"
-          >
-            <LogIn className="w-16 h-16 text-bee-amber mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-6">Sign in to Continue</h2>
-            <p className="text-slate-400 mb-10 text-lg">
-              We need you to sign in to securely handle your files and save your quote.
-            </p>
-            <button 
-              onClick={handleLogin}
-              className="px-12 py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow flex items-center justify-center mx-auto text-lg"
-            >
-              Sign in with Google <ArrowRight className="ml-3 w-6 h-6" />
-            </button>
-          </motion.div>
-        ) : success ? (
+        {success ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -430,6 +461,65 @@ export default function GetStarted() {
               </div>
             </section>
 
+            {/* Context Section */}
+            <section className="glass-card p-10 rounded-[2.5rem]">
+              <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
+                <AlertCircle className="w-6 h-6 mr-3 text-bee-amber" />
+                3. Select Context (Accuracy Check)
+              </h2>
+              <div className="space-y-4">
+                <p className="text-slate-400 text-sm mb-4">
+                  Select a context to ensure our AI uses specialized models to check for high-risk terms and mistranslations.
+                </p>
+                <div className="flex items-center space-x-6">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.standard}
+                      onChange={(e) => {
+                        if (e.target.checked) setContext({ standard: true, legal: false, medical: false });
+                        else setContext({ ...context, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Standard</span>
+                  </label>
+
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.legal}
+                      onChange={(e) => {
+                        setContext({ ...context, legal: e.target.checked, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Legal</span>
+                  </label>
+
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={context.medical}
+                      onChange={(e) => {
+                        setContext({ ...context, medical: e.target.checked, standard: false });
+                      }}
+                      className="w-5 h-5 accent-bee-amber"
+                    />
+                    <span className="text-white font-medium">Medical</span>
+                  </label>
+                </div>
+                {(context.legal || context.medical) && (
+                  <div className="mt-4 p-4 bg-bee-amber/10 border border-bee-amber/30 rounded-xl">
+                    <p className="text-bee-amber text-sm flex items-start">
+                      <AlertCircle className="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+                      We will perform a secondary scan using advanced LLMs to identify high-risk terms and prevent common contextual mistranslations in your output.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+
             {/* Total Cost */}
             <section className="glass-card p-10 rounded-[2.5rem] border-bee-amber/30 bg-bee-amber/5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
@@ -444,6 +534,20 @@ export default function GetStarted() {
                 </div>
               </div>
             </section>
+
+            {calculatePrice() === 0 && (
+              <section className="glass-card p-8 rounded-[2rem]">
+                <h3 className="text-xl font-bold text-white mb-4">Where should we send your free sample?</h3>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:border-bee-amber outline-none placeholder:text-slate-500"
+                  required
+                />
+              </section>
+            )}
 
             {error && (
               <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center text-red-400">

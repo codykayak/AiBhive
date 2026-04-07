@@ -18,8 +18,18 @@ export default defineConfig(({mode}) => {
     server: {
       // Keep your HMR setting as is
       hmr: process.env.DISABLE_HMR !== 'true',
+<<<<<<< feature/ai-processing-pipeline-3966672740465914027
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          secure: false,
+        }
+      }
+=======
       port: 8080,        // <--- ADD THIS
       host: '0.0.0.0',   // <--- ADD THIS
+>>>>>>> main
     },
     preview: {           // <--- ADD THIS ENTIRE BLOCK
       port: 8080,
