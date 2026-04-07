@@ -44,6 +44,17 @@ export default function GetStarted() {
   const [audioMinutes, setAudioMinutes] = useState(0);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+
+  // Check URL parameters for successful checkout return
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      setSuccess(true);
+      // Clean up the URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   // Options
   const [options, setOptions] = useState({
@@ -194,13 +205,19 @@ export default function GetStarted() {
     try {
       const price = calculatePrice();
       if (price === 0) {
+        if (!email || !email.includes('@')) {
+           setError('Please provide a valid email address for free samples so we can send you the results.');
+           setUploading(false);
+           return;
+        }
+
         // Kick off free processing
         const res = await fetch('/api/process-free-sample', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ leadId }),
+          body: JSON.stringify({ leadId, email }),
         });
 
         if (res.ok) {
@@ -517,6 +534,20 @@ export default function GetStarted() {
                 </div>
               </div>
             </section>
+
+            {calculatePrice() === 0 && (
+              <section className="glass-card p-8 rounded-[2rem]">
+                <h3 className="text-xl font-bold text-white mb-4">Where should we send your free sample?</h3>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email address"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white focus:border-bee-amber outline-none placeholder:text-slate-500"
+                  required
+                />
+              </section>
+            )}
 
             {error && (
               <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center text-red-400">

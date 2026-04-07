@@ -132,10 +132,13 @@ app.use(express.json());
 // Endpoint to process free samples
 app.post('/api/process-free-sample', async (req, res) => {
   try {
-    const { leadId } = req.body;
+    const { leadId, email } = req.body;
 
     const leadRef = db.collection('leads').doc(leadId);
-    await leadRef.update({ status: 'processing_free' });
+    await leadRef.update({
+      status: 'processing_free',
+      email: email || null
+    });
 
     const leadSnap = await leadRef.get();
     if (!leadSnap.exists) {
@@ -143,6 +146,11 @@ app.post('/api/process-free-sample', async (req, res) => {
     }
 
     const leadData = { id: leadSnap.id, ...leadSnap.data() };
+
+    // Security Check: Ensure the job is actually free
+    if (leadData.calculatedPrice !== 0) {
+      return res.status(403).json({ error: 'This job requires payment.' });
+    }
 
     // Process asynchronously
     processLeadJob(leadData).then(async (result) => {
@@ -155,9 +163,16 @@ app.post('/api/process-free-sample', async (req, res) => {
           flags: result.flags || []
         });
 
-        // In a real scenario we could send an email here too, but for a free sample
-        // they might just check the dashboard. We'll send an email if they provided one.
-        // The user auth email isn't directly on the lead usually, so we'll skip for now.
+        // Send email with results if provided
+        if (email) {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Your Free AiBhive Sample is Ready!',
+            text: `Your free sample processing is complete. You can view your results in your dashboard.`,
+            html: `<h3>Your free sample is ready!</h3><p>Your processing for request ID: ${leadId} is complete. Log into your dashboard to view the results.</p>`
+          });
+        }
       } else {
         await leadRef.update({ status: 'failed', error: result.error });
       }
@@ -175,7 +190,20 @@ app.post('/api/process-free-sample', async (req, res) => {
 // Endpoint to create a checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
-    const { leadId, amount } = req.body;
+    const { leadId } = req.body;
+
+    // Fetch the lead from the database to securely get the price
+    const leadSnap = await db.collection('leads').doc(leadId).get();
+    if (!leadSnap.exists) {
+      return res.status(404).json({ error: 'Lead not found' });
+    }
+
+    const leadData = leadSnap.data();
+    const verifiedAmount = leadData.calculatedPrice;
+
+    if (verifiedAmount === undefined || verifiedAmount <= 0) {
+      return res.status(400).json({ error: 'Invalid price for checkout' });
+    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -187,7 +215,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
               name: 'AiBhive Translation and Voice Services',
               description: `Processing fee for request ID: ${leadId}`,
             },
-            unit_amount: Math.round(amount * 100), // Stripe expects amounts in cents
+            unit_amount: Math.round(verifiedAmount * 100), // Stripe expects amounts in cents
           },
           quantity: 1,
         },

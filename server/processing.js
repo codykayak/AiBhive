@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 // Lazy initialization of AI clients to avoid dotenv load-order issues
 let openaiClient;
@@ -26,7 +27,17 @@ function getGemini() {
  * Downloads a file from a given URL to a local temporary path.
  */
 async function downloadFile(url, filename) {
-  const filepath = path.resolve('/tmp', filename);
+  // SSRF Mitigation: Ensure the URL strictly points to Firebase Storage
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname !== 'firebasestorage.googleapis.com') {
+      throw new Error(`Invalid hostname: ${parsedUrl.hostname}`);
+    }
+  } catch (err) {
+    throw new Error('Invalid file URL format or unauthorized domain.');
+  }
+
+  const filepath = path.join(os.tmpdir(), filename);
   const response = await axios({
     url,
     method: 'GET',
