@@ -8,8 +8,15 @@ import nodemailer from 'nodemailer';
 
 dotenv.config();
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const port = process.env.PORT || 3001;
+// For Google Cloud Run, we listen on PORT (default 8080).
+const port = process.env.PORT || 8080;
 
 // Initialize Firebase Admin (Uses service account from GOOGLE_APPLICATION_CREDENTIALS or process.env)
 try {
@@ -54,9 +61,12 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   try {
     if (webhookSecret) {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      // In development, if no webhook secret is set, just parse the body
+    } else if (process.env.NODE_ENV !== 'production') {
+      // In local development ONLY, if no webhook secret is set, just parse the body
       event = JSON.parse(req.body.toString());
+    } else {
+       console.error("Webhook secret is missing in production. Cannot verify signature.");
+       return res.status(400).send("Webhook Error: Signature verification required in production.");
     }
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
@@ -185,6 +195,15 @@ app.post('/api/process-free-sample', async (req, res) => {
     console.error('Error processing free sample:', error);
     res.status(500).json({ error: 'Failed to process free sample' });
   }
+});
+
+// --- Serve Frontend Static Files for Production ---
+// In production (Cloud Run), the Express server acts as the host for the built Vite React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Catch-all route to serve the React index.html for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // Endpoint to create a checkout session

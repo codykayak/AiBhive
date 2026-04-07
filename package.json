@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev:frontend": "vite --port=3000 --host=0.0.0.0",
-    "dev:backend": "node server/index.js",
+    "dev:backend": "BACKEND_PORT=3001 node server/index.js",
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --port 8080 --host 0.0.0.0",
+    "start": "node server/index.js",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
   },
