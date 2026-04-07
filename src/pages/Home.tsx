@@ -4,6 +4,9 @@ import { Mic, Volume2, Globe, ArrowRight, Hexagon, Zap, Activity, TrendingUp } f
 import logo from '../logo.png';
 import backgroundLogo from '../aibhive_background.png';
 import transcriptionServiceImg from '../transcription_service_legal_medical.png';
+import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
+import voiceCloneImg from '../1775556316513.png';
+import translationHubImg from '../1775559497156.png';
 
 const FeatureCard = ({ icon: Icon, title, description, link, buttonText, bgImage }: any) => (
   <motion.div 
@@ -156,7 +159,7 @@ export default function Home() {
               <div className="relative z-10 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl bg-bee-black/40 backdrop-blur-3xl aspect-square flex items-center justify-center group">
                 <div className="absolute inset-0">
                   <img 
-                    src="https://picsum.photos/seed/global-translation/1000/1000" 
+                    src={aiTranslationImg}
                     alt="AI Translation Visualization" 
                     className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-700"
                     referrerPolicy="no-referrer"
@@ -216,7 +219,7 @@ export default function Home() {
               description="Translate your cloned voice into top languages. Turn text into your voice and unlock global markets."
               link="/voice-clone"
               buttonText="Enter Lab"
-              bgImage="https://picsum.photos/seed/voice-hive/800/1200"
+              bgImage={voiceCloneImg}
             />
             <FeatureCard 
               icon={Globe}
@@ -224,7 +227,7 @@ export default function Home() {
               description="Multi-agent passes ensure accuracy for legal/medical jargon. Better-than-human translations for global reach."
               link="/grow"
               buttonText="View Growth"
-              bgImage="https://picsum.photos/seed/global-hive-2/800/1200"
+              bgImage={translationHubImg}
             />
           </div>
         </div>
