@@ -14,13 +14,7 @@ import {
   DollarSign,
   Clock
 } from 'lucide-react';
-import { auth, db, storage } from '../firebase';
-import { 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  onAuthStateChanged, 
-  User 
-} from 'firebase/auth';
+import { db, storage } from '../firebase';
 import { 
   collection, 
   addDoc, 
@@ -39,8 +33,7 @@ const LANGUAGES = [
 ];
 
 export default function GetStarted() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [file, setFile] = useState<File | null>(null);
@@ -70,24 +63,6 @@ export default function GetStarted() {
     from: 'English',
     to: 'Spanish'
   });
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      console.error('Login failed:', err);
-      setError('Login failed. Please try again.');
-    }
-  };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>, isVoiceSample = false) => {
     const selectedFile = e.target.files?.[0];
@@ -144,8 +119,8 @@ export default function GetStarted() {
   };
 
   const handleSubmit = async () => {
-    if (!user || !file) {
-      setError('Please sign in and upload a file.');
+    if (!file) {
+      setError('Please upload a file.');
       return;
     }
 
@@ -158,13 +133,16 @@ export default function GetStarted() {
     setError(null);
 
     try {
+      // Generate a temporary session ID since the user is not authenticated yet
+      const sessionId = `anon_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
       // 1. Upload Main File
-      const mainFileRef = ref(storage, `leads/${user.uid}/${Date.now()}_${file.name}`);
+      const mainFileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${file.name}`);
       const mainUploadTask = uploadBytesResumable(mainFileRef, file);
 
       let vsUrl = null;
       if (voiceSample) {
-        const vsRef = ref(storage, `leads/${user.uid}/sample_${Date.now()}_${voiceSample.name}`);
+        const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
         const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
         vsUrl = await getDownloadURL(vsUpload.ref);
       }
@@ -186,7 +164,7 @@ export default function GetStarted() {
 
           // 2. Save to Firestore
           const docRef = await addDoc(collection(db, 'leads'), {
-            userId: user.uid,
+            userId: sessionId,
             fileUrl: downloadURL,
             voiceSampleUrl: vsUrl,
             fileLengthWords: wordCount,
@@ -284,25 +262,7 @@ export default function GetStarted() {
           </p>
         </div>
 
-        {!user ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-12 rounded-[2.5rem] text-center"
-          >
-            <LogIn className="w-16 h-16 text-bee-amber mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-6">Sign in to Continue</h2>
-            <p className="text-slate-400 mb-10 text-lg">
-              We need you to sign in to securely handle your files and save your quote.
-            </p>
-            <button 
-              onClick={handleLogin}
-              className="px-12 py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow flex items-center justify-center mx-auto text-lg"
-            >
-              Sign in with Google <ArrowRight className="ml-3 w-6 h-6" />
-            </button>
-          </motion.div>
-        ) : success ? (
+        {success ? (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}

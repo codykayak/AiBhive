@@ -71,9 +71,14 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     console.log(`Payment successful for lead: ${leadId}`);
 
     try {
-      // 1. Update status to paid
+      const userEmail = session.customer_details?.email;
+
+      // 1. Update status to paid and save the customer email since they checked out anonymously
       const leadRef = db.collection('leads').doc(leadId);
-      await leadRef.update({ status: 'paid' });
+      await leadRef.update({
+        status: 'paid',
+        email: userEmail || null
+      });
 
       // 2. Fetch full lead data
       const leadSnap = await leadRef.get();
@@ -95,9 +100,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             // Note: In a real app, we'd also upload result.finalOutputText to Firebase Storage
             // and save that URL instead of the raw text if it's large.
 
-            // Send email to user (assuming you have the user's email saved,
-            // or you get it from the stripe session `session.customer_details.email`)
-            const userEmail = session.customer_details?.email;
+            // Send email to user using the email provided during Stripe checkout
             if (userEmail) {
               await transporter.sendMail({
                 from: process.env.EMAIL_USER,

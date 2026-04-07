@@ -24,7 +24,9 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+      // If unauthenticated, allow the anonymous session ID to match (for new leads)
+      // Note: For a true production app, you might use Anonymous Auth instead.
+      return (isAuthenticated() && request.auth.uid == userId) || (!isAuthenticated() && userId != null);
     }
 
     function isAdmin() {
@@ -45,7 +47,8 @@ service cloud.firestore {
 
     match /leads/{leadId} {
       allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId) && isValidLead(request.resource.data);
+      // Allow unauthenticated creation as long as it's a valid lead
+      allow create: if isValidLead(request.resource.data);
       allow update: if false; // Leads are immutable for now
       allow delete: if isAdmin();
     }
