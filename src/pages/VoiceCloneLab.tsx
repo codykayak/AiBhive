@@ -12,7 +12,7 @@ export default function VoiceCloneLab() {
   return (
     <main className="py-24">
       <SEO 
-        title="AI Voice Cloning Lab - Instant Multilingual Voice Synthesis | AiBhive"
+        title="Ai Voice Clone Lab | 60 Mins Audio Done in 10 mins"
         description="AiBhive's Voice Clone Lab allows you to replicate your unique vocal identity in over 10 languages. Maintain your tone, emotion, and personality across the globe with our advanced AI."
         keywords="AI voice cloning, voice synthesis, multilingual AI voice, neural voice cloning, AiBhive, voice translation"
       />
@@ -30,12 +30,22 @@ export default function VoiceCloneLab() {
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-7xl font-bold text-white mb-8"
           >
-            Voice Clone <span className="text-gradient">Lab</span>
+            Ai Voice Clone <span className="text-gradient">Lab</span>
           </motion.h1>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
             Clone your voice and speak to the world. Translate your unique vocal identity into the globe's top ten languages instantly.
           </p>
         </header>
+
+        {/* Hero Image Section */}
+        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative group">
+            <img
+              src="/ai_voice_translation_clone_lab.png"
+              alt="Ai Voice Clone Lab"
+              className="w-full object-cover max-h-[500px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-80" />
+        </section>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-24">
           {stats.map((stat) => (
@@ -82,7 +92,7 @@ export default function VoiceCloneLab() {
                 onClick={() => window.location.href = '/get-started'}
                 className="w-full py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow flex items-center justify-center text-lg"
               >
-                Generate Global Clones <ArrowRight className="ml-3 w-6 h-6" />
+                Clone Your Voice <ArrowRight className="ml-3 w-6 h-6" />
               </button>
             </div>
           </section>
@@ -106,9 +116,9 @@ export default function VoiceCloneLab() {
             </section>
 
             <section className="glass-card rounded-[2.5rem] p-12">
-              <h3 className="text-2xl font-bold text-white mb-6">Free Sample Clone</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">60 Mins Audio Done in 10 mins</h3>
               <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                Upload a short clip and we'll send you a 2-minute cloned audio in your chosen language within 24 hours.
+                We swap process your audio using multiple agents and high powered GPU's...
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <input 

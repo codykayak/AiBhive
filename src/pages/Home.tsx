@@ -7,6 +7,7 @@ import transcriptionServiceImg from '../transcription_service_legal_medical.png'
 import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import voiceCloneImg from '../1775556316513.png';
 import translationHubImg from '../1775559497156.png';
+import { SEO } from '../components/SEO';
 
 const FeatureCard = ({ icon: Icon, title, description, link, buttonText, bgImage }: any) => (
   <motion.div 
@@ -53,6 +54,7 @@ const FeatureCard = ({ icon: Icon, title, description, link, buttonText, bgImage
 export default function Home() {
   return (
     <main className="relative">
+      <SEO />
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center pt-20 pb-32 overflow-hidden">
         {/* Parallax-ish Background Effect */}
@@ -79,7 +81,7 @@ export default function Home() {
                 THE FUTURE OF CONTENT IS GLOBAL
               </div>
               <h1 className="text-6xl md:text-8xl font-extrabold text-white leading-[1.1] mb-8 tracking-tight">
-                The <span className="text-gradient">Hive</span> — Multi-Agent <br className="hidden md:block" /> AI Intelligence
+                The ultimate Ai <span className="text-gradient">translation</span>, Transcription, and Content Creation suite
               </h1>
               <p className="text-xl md:text-2xl text-slate-300 max-w-2xl mb-12 leading-relaxed font-medium">
                 Better-Than-Human Transcription, Translation & Voice Cloning. Powered by a collaborative hive of specialized AI agents.
@@ -89,7 +91,7 @@ export default function Home() {
                   to="/get-started" 
                   className="px-10 py-5 bg-bee-amber text-bee-black font-extrabold rounded-full hover:bg-bee-yellow transition-all neon-glow w-full sm:w-auto text-center text-lg"
                 >
-                  Start Your Project
+                  Try For Free
                 </Link>
                 <Link 
                   to="/grow" 
@@ -168,7 +170,7 @@ export default function Home() {
                 </div>
 
                 <div className="absolute bottom-10 left-10 right-10 z-20">
-                  <div className="glass-card p-6 rounded-2xl flex items-center justify-between border-white/20">
+                  <Link to="/grow" className="glass-card p-6 rounded-2xl flex items-center justify-between border-white/20 hover:border-bee-amber/50 transition-all cursor-pointer block w-full">
                     <div>
                       <div className="text-bee-amber font-bold text-2xl">80M+</div>
                       <div className="text-slate-400 text-sm">Extra Views from Localization</div>
@@ -176,7 +178,7 @@ export default function Home() {
                     <div className="bg-bee-amber text-bee-black p-3 rounded-full shadow-[0_0_20px_rgba(251,191,36,0.4)]">
                       <TrendingUp className="w-6 h-6" />
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
               {/* Decorative circles */}
@@ -223,9 +225,9 @@ export default function Home() {
             />
             <FeatureCard 
               icon={Globe}
-              title="Translation Hub"
+              title="Translation"
               description="Multi-agent passes ensure accuracy for legal/medical jargon. Better-than-human translations for global reach."
-              link="/grow"
+              link="/transcription"
               buttonText="View Growth"
               bgImage={translationHubImg}
             />
