@@ -63,9 +63,14 @@ export default function Home() {
             initial={{ scale: 1.1, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.15 }}
             transition={{ duration: 2 }}
-            className="w-full h-full bg-center bg-no-repeat bg-contain"
-            style={{ backgroundImage: `url(${backgroundLogo})` }}
-          />
+            className="w-full h-full"
+          >
+            <img
+              src={backgroundLogo}
+              alt="AiBhive Hero Background"
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
