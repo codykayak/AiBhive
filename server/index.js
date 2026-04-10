@@ -197,15 +197,6 @@ app.post('/api/process-free-sample', async (req, res) => {
   }
 });
 
-// --- Serve Frontend Static Files for Production ---
-// In production (Cloud Run), the Express server acts as the host for the built Vite React app
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Catch-all route to serve the React index.html for client-side routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
 // Endpoint to create a checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
@@ -251,6 +242,15 @@ app.post('/api/create-checkout-session', async (req, res) => {
     console.error('Error creating checkout session:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
+});
+
+// --- Serve Frontend Static Files for Production ---
+// In production (Cloud Run), the Express server acts as the host for the built Vite React app
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Catch-all route to serve the React index.html for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(port, () => {

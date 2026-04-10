@@ -4,6 +4,10 @@ import { TrendingUp, Users, Globe, ArrowRight, Zap, BarChart3, PieChart as PieIc
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
 
+import translationVoiceDubbingImg from '../Translation_voice_dubing_for_content_growth.png';
+import growContentCreatorsImg from '../grow_content_creators_podcator_veiwership_translations.png';
+import mrBeastMultiplierImg from '../mr_beast_translation_content_multiplyer.jpg';
+
 const languageData = [
   { name: 'Hindi', users: 462, views: 73, color: '#fbbf24' },
   { name: 'Spanish', users: 559, views: 55, color: '#f59e0b' },
@@ -47,6 +51,16 @@ export default function GrowGlobally() {
             Multiply Views 2-5x — Translate & Clone Your Voice. The numbers don't lie: localization is the ultimate growth rocket.
           </p>
         </header>
+
+        {/* Top Image Section */}
+        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative">
+            <img
+              src={translationVoiceDubbingImg}
+              alt="Translation Voice Dubbing For Content Growth"
+              className="w-full object-cover max-h-[500px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-60" />
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24">
           <section className="glass-card rounded-[2.5rem] p-10">
@@ -136,6 +150,16 @@ export default function GrowGlobally() {
           </div>
         </section>
 
+        {/* Middle Image Section */}
+        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative">
+            <img
+              src={growContentCreatorsImg}
+              alt="Grow Content Creators Podcast Viewership Translation"
+              className="w-full object-cover max-h-[500px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-60" />
+        </section>
+
         {/* Detailed Content Section */}
         <article className="prose prose-invert max-w-none mb-32">
           <h2 className="text-4xl font-bold text-white mb-12 text-center">The Economic Reality of Global Content</h2>
@@ -151,6 +175,13 @@ export default function GrowGlobally() {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-white mb-6">The "MrBeast" Effect</h3>
+              <div className="mb-6 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
+                <img
+                  src={mrBeastMultiplierImg}
+                  alt="Mr Beast Translation Content Multiplier"
+                  className="w-full h-auto"
+                />
+              </div>
               <p className="mb-6">
                 Jimmy Donaldson (MrBeast) proved that localization is the ultimate growth hack. By creating dedicated channels for different languages and using high-quality dubbing, he was able to replicate his success in entirely different cultural contexts.
               </p>
@@ -185,7 +216,7 @@ export default function GrowGlobally() {
             to="/get-started" 
             className="inline-flex items-center px-12 py-6 bg-bee-amber text-bee-black font-extrabold rounded-full hover:bg-bee-yellow transition-all neon-glow text-xl"
           >
-            Start Cloning Now <ArrowRight className="ml-3 w-7 h-7" />
+            Translate Your Videos <ArrowRight className="ml-3 w-7 h-7" />
           </Link>
         </section>
       </div>
