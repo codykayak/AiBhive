@@ -3,6 +3,7 @@ import { Upload, FileText, Shield, Stethoscope, Scale, ArrowRight, CheckCircle2,
 import { useState } from 'react';
 import { SEO } from '../components/SEO';
 import translationGrowImg from '../ai_translation_grow_podcast_youtube_audince.png';
+import transcriptionLegalMedicalImg from '../transcription_service_legal_medical.png';
 
 const modes = [
   { id: 'general', name: 'General', icon: FileText, description: 'Everyday conversations, podcasts, and meetings.' },
@@ -36,6 +37,7 @@ export default function TranscriptionStudio() {
           >
             Transcription <span className="text-gradient">Studio</span>
           </motion.h1>
+          <h2 className="text-2xl md:text-3xl text-white font-medium mb-6">Highly accurate AI Transcriptions for Medical, Legal, Content Creators, and general use.</h2>
           <p className="text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
             Experience the power of the Hive. Our multi-agent AI passes ensure accuracy that exceeds human standards, especially for technical jargon.
           </p>
@@ -45,18 +47,9 @@ export default function TranscriptionStudio() {
           {/* Upload Section */}
           <section className="lg:col-span-2">
             <div className="glass-card rounded-[2.5rem] p-10">
-              <h2 className="text-2xl font-bold text-white mb-8 flex items-center">
-                <Upload className="w-6 h-6 mr-3 text-bee-amber" />
-                Upload Your Content
-              </h2>
-              
-              <div className="border-2 border-dashed border-white/10 rounded-3xl p-16 text-center hover:border-bee-amber/40 transition-all duration-500 cursor-pointer group bg-white/5">
-                <div className="bg-bee-amber/10 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-bee-amber group-hover:text-bee-black transition-all duration-500">
-                  <Upload className="w-10 h-10 text-bee-amber group-hover:text-inherit" />
-                </div>
-                <p className="text-xl text-white font-bold mb-3">Drag and drop audio or video files</p>
-                <p className="text-slate-500">MP3, WAV, MP4, MOV (Max 500MB)</p>
-              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-8">
+                The Enterprise way to batch process audio to text translations.
+              </h1>
 
               <div className="mt-12">
                 <h3 className="text-xl font-bold text-white mb-6">Select Transcription Mode</h3>
@@ -83,7 +76,7 @@ export default function TranscriptionStudio() {
                 onClick={() => window.location.href = '/get-started'}
                 className="w-full mt-12 py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow text-lg"
               >
-                Start Hive Processing
+                Transcribe For Free
               </button>
             </div>
 
@@ -93,8 +86,8 @@ export default function TranscriptionStudio() {
               <div className="text-slate-400 leading-relaxed text-lg">
                 <div className="float-left mr-12 mb-8 w-full lg:w-1/2 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
                   <img 
-                    src={translationGrowImg}
-                    alt="Multi-Agent AI Visualization"
+                    src={transcriptionLegalMedicalImg}
+                    alt="Transcription Service Legal Medical Visualization"
                     className="w-full h-auto"
                   />
                 </div>
@@ -160,16 +153,12 @@ export default function TranscriptionStudio() {
               <p className="text-slate-400 mb-8 leading-relaxed">
                 Send us a 2-minute clip and see the multi-agent accuracy for yourself. Free of charge.
               </p>
-              <form className="space-y-5">
-                <input
-                  type="email"
-                  placeholder="Your Email"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-bee-amber transition-colors"
-                />
-                <button className="w-full py-4 bg-bee-amber/10 border border-bee-amber/30 text-bee-amber font-bold rounded-xl hover:bg-bee-amber hover:text-bee-black transition-all">
-                  Get Free Sample
-                </button>
-              </form>
+              <button
+                onClick={() => window.location.href = '/get-started'}
+                className="w-full py-4 bg-bee-amber/10 border border-bee-amber/30 text-bee-amber font-bold rounded-xl hover:bg-bee-amber hover:text-bee-black transition-all"
+              >
+                Get Free Sample
+              </button>
             </section>
 
             <section className="glass-card rounded-[2rem] p-10">

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 
 interface SEOProps {
@@ -9,65 +9,53 @@ interface SEOProps {
 }
 
 export const SEO = ({ 
-  title = "AiBhive - Multi-Agent AI Hive for Transcription & Voice Cloning",
-  description = "AiBhive provides high-accuracy AI transcription, voice cloning, and translation services powered by a collaborative hive of specialized AI agents.",
-  keywords = "AI transcription, voice cloning, AI translation, multi-agent AI, global content reach, AiBhive",
+  title = "AIBhive - 99% Accurate Translation | Transcription and Voice Cloning - Bulk Enterpize",
+  description = "Instant AI voice cloning, legal and medical transcription, and translation services. AIBhive provides bulk enterprise tools to multiply your content.",
+  keywords = "AI translation, AI transcription, voice cloning, content creation suite, translation service, AIBhive, bulk enterprise",
   type = "SoftwareApplication"
 }: SEOProps) => {
   const location = useLocation();
+  const currentUrl = `https://aibeehive.com${location.pathname === '/' ? '' : location.pathname}`;
 
-  useEffect(() => {
-    document.title = title;
-
-    // Update Meta Tags
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', description);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = "description";
-      meta.content = description;
-      document.head.appendChild(meta);
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": type,
+    "name": "AIBhive",
+    "url": "https://aibeehive.com",
+    "description": description,
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
     }
+  };
 
-    const metaKeywords = document.querySelector('meta[name="keywords"]');
-    if (metaKeywords) {
-      metaKeywords.setAttribute('content', keywords);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = "keywords";
-      meta.content = keywords;
-      document.head.appendChild(meta);
-    }
+  return (
+    <Helmet>
+      <title>{title}</title>
+      <meta name="description" content={description} />
+      <meta name="keywords" content={keywords} />
 
-    // JSON-LD Schema
-    const existingScript = document.getElementById('json-ld-schema');
-    if (existingScript) {
-      existingScript.remove();
-    }
+      {/* Canonical Tag */}
+      <link rel="canonical" href={currentUrl} />
 
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": type,
-      "name": "AiBhive",
-      "url": window.location.origin,
-      "description": description,
-      "applicationCategory": "MultimediaApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0.00",
-        "priceCurrency": "USD"
-      }
-    };
+      {/* Open Graph Tags */}
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:type" content="website" />
+      <meta property="og:url" content={currentUrl} />
 
-    const script = document.createElement('script');
-    script.id = 'json-ld-schema';
-    script.type = 'application/ld+json';
-    script.innerHTML = JSON.stringify(schema);
-    document.head.appendChild(script);
+      {/* Twitter Card Tags */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={title} />
+      <meta name="twitter:description" content={description} />
 
-  }, [title, description, keywords, type, location]);
-
-  return null;
+      {/* JSON-LD Schema */}
+      <script type="application/ld+json">
+        {JSON.stringify(schema)}
+      </script>
+    </Helmet>
+  );
 };
