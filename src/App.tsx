@@ -8,6 +8,7 @@ import GrowGlobally from './pages/GrowGlobally';
 import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import { SEO } from './components/SEO';
+import FAQChatbot from './components/FAQChatbot';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <header className="fixed top-0 left-0 right-0 z-50">
           <Navbar />
         </header>
+        <FAQChatbot />
         <main className="flex-grow pt-20">
           <Routes>
             <Route path="/" element={<Home />} />

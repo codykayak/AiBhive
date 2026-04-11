@@ -225,10 +225,11 @@ export async function processLeadJob(leadData) {
     finalOutputText = translatedText;
 
     // 2. Legal/Medical Accuracy Check
-    if (leadData.context?.legal || leadData.context?.medical) {
+    if (leadData.services?.legalMedical) {
+      const contextFlags = { legal: true, medical: true };
       const checkResult = await performContextAccuracyCheck(
         translatedText,
-        leadData.context,
+        contextFlags,
         leadData.languages?.to || 'English'
       );
 
@@ -238,8 +239,9 @@ export async function processLeadJob(leadData) {
     }
 
     // 3. Voice Cloning
-    if (leadData.options?.cloneVoice && leadData.voiceSampleUrl) {
-      finalAudioUrl = await cloneVoiceWithFishApi(finalOutputText, leadData.voiceSampleUrl);
+    if (leadData.services?.voiceCloning && leadData.voiceSampleUrl) {
+      const textToClone = leadData.cloningText || finalOutputText;
+      finalAudioUrl = await cloneVoiceWithFishApi(textToClone, leadData.voiceSampleUrl);
     }
 
     return {
