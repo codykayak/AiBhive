@@ -476,10 +476,11 @@ export default function GetStarted() {
                     <input
                       type="checkbox"
                       checked={context.standard}
-                      onChange={(e) => {
-                        if (e.target.checked) setContext({ standard: true, legal: false, medical: false });
-                        else setContext({ ...context, standard: false });
-                      }}
+                      onChange={(e) => setContext(prev => ({
+                        ...prev,
+                        standard: e.target.checked,
+                        ...(e.target.checked && { legal: false, medical: false })
+                      }))}
                       className="w-5 h-5 accent-bee-amber"
                     />
                     <span className="text-white font-medium">Standard</span>
@@ -489,9 +490,11 @@ export default function GetStarted() {
                     <input
                       type="checkbox"
                       checked={context.legal}
-                      onChange={(e) => {
-                        setContext({ ...context, legal: e.target.checked, standard: false });
-                      }}
+                      onChange={(e) => setContext(prev => ({
+                        ...prev,
+                        legal: e.target.checked,
+                        standard: false
+                      }))}
                       className="w-5 h-5 accent-bee-amber"
                     />
                     <span className="text-white font-medium">Legal</span>
@@ -501,9 +504,11 @@ export default function GetStarted() {
                     <input
                       type="checkbox"
                       checked={context.medical}
-                      onChange={(e) => {
-                        setContext({ ...context, medical: e.target.checked, standard: false });
-                      }}
+                      onChange={(e) => setContext(prev => ({
+                        ...prev,
+                        medical: e.target.checked,
+                        standard: false
+                      }))}
                       className="w-5 h-5 accent-bee-amber"
                     />
                     <span className="text-white font-medium">Medical</span>
