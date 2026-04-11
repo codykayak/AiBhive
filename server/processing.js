@@ -4,6 +4,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import FormData from 'form-data';
 
 // Lazy initialization of AI clients to avoid dotenv load-order issues
 let openaiClient;
@@ -173,34 +174,68 @@ export function generateFooter(flags) {
 /**
  * 4. Voice Cloning using Fish Audio API
  */
-export async function cloneVoiceWithFishApi(textToSpeak, voiceSampleUrl) {
+export async function cloneVoiceWithFishApi(textToSpeak, voiceSampleUrl, leadId) {
   console.log("Starting Voice Cloning with Fish Audio API...");
-  // You mentioned the endpoint: https://docs.fish.audio/api-reference/endpoint/model/create-model
-  // NOTE: Implementing exact Fish API requires their specific payload structure.
-  // This is a representative implementation based on standard TTS API flows.
+
+  const FISH_API_KEY = process.env.FISH_API_KEY;
+  let tempAudioPath = null;
+  let modelId = null;
 
   try {
-    const FISH_API_KEY = process.env.FISH_API_KEY;
+    // 1. Download the voice sample
+    console.log("Downloading voice sample for cloning...");
+    const urlParts = new URL(voiceSampleUrl);
+    const filename = path.basename(urlParts.pathname);
+    tempAudioPath = await downloadFile(voiceSampleUrl, filename);
 
-    // Step 1: Potentially create/register the voice model with Fish API using the voiceSampleUrl
-    // ...
+    // 2. Create the voice model
+    console.log("Creating voice model with Fish API...");
+    const form = new FormData();
+    form.append('type', 'tts');
+    form.append('title', `Customer Voice ${leadId}`);
+    form.append('train_mode', 'fast');
+    form.append('voices.0.items', fs.createReadStream(tempAudioPath));
 
-    // Step 2: Generate TTS
-    /*
-    const response = await axios.post('https://api.fish.audio/v1/tts', {
-      text: textToSpeak,
-      // voice_id: createdVoiceModelId
-    }, {
-      headers: { 'Authorization': `Bearer ${FISH_API_KEY}` }
+    const modelResponse = await axios.post('https://api.fish.audio/model', form, {
+      headers: {
+        'Authorization': `Bearer ${FISH_API_KEY}`,
+        ...form.getHeaders()
+      }
     });
-    return response.data.audio_url; // Assuming they return a URL
-    */
 
-    // Placeholder returning dummy URL
-    return "https://dummy-cloned-audio-url.com/audio.mp3";
+    modelId = modelResponse.data._id;
+    console.log(`Model created successfully with ID: ${modelId}`);
+
+    // 3. Generate Speech
+    console.log("Generating cloned speech...");
+    const ttsResponse = await axios.post('https://api.fish.audio/tts', {
+      model_id: modelId,
+      text: textToSpeak
+    }, {
+      headers: {
+        'Authorization': `Bearer ${FISH_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'arraybuffer' // We need to receive the audio binary
+    });
+
+    console.log("Speech generation successful.");
+
+    // Clean up downloaded voice sample
+    if (fs.existsSync(tempAudioPath)) {
+      fs.unlinkSync(tempAudioPath);
+    }
+
+    return {
+      audioBuffer: Buffer.from(ttsResponse.data),
+      modelId: modelId
+    };
 
   } catch (error) {
-    console.error("Fish API Error:", error);
+    console.error("Fish API Error:", error.response?.data || error.message);
+    if (tempAudioPath && fs.existsSync(tempAudioPath)) {
+      fs.unlinkSync(tempAudioPath);
+    }
     throw error;
   }
 }
@@ -239,16 +274,21 @@ export async function processLeadJob(leadData) {
     }
 
     // 3. Voice Cloning
+    let clonedAudioBuffer = null;
+    let voiceModelId = null;
     if (leadData.services?.voiceCloning && leadData.voiceSampleUrl) {
       const textToClone = leadData.cloningText || finalOutputText;
-      finalAudioUrl = await cloneVoiceWithFishApi(textToClone, leadData.voiceSampleUrl);
+      const cloneResult = await cloneVoiceWithFishApi(textToClone, leadData.voiceSampleUrl, leadData.id);
+      clonedAudioBuffer = cloneResult.audioBuffer;
+      voiceModelId = cloneResult.modelId;
     }
 
     return {
       success: true,
       originalText,
       finalOutputText,
-      finalAudioUrl,
+      clonedAudioBuffer,
+      voiceModelId,
       flags
     };
 

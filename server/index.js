@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import admin from 'firebase-admin';
 import { processLeadJob } from './processing.js';
 import nodemailer from 'nodemailer';
+import { Storage } from '@google-cloud/storage';
 
 dotenv.config();
 
@@ -34,6 +35,10 @@ try {
 }
 
 const db = admin.firestore();
+
+// Setup Google Cloud Storage
+const storage = new Storage();
+const bucketName = 'AiBhive-media';
 
 // Setup Nodemailer
 const transporter = nodemailer.createTransport({
@@ -99,17 +104,42 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
         // 3. Process the job (running asynchronously so we don't block the webhook response)
         processLeadJob(leadData).then(async (result) => {
           if (result.success) {
+
+            let gcsTextUrl = null;
+            let gcsAudioUrl = null;
+
+            try {
+              // Upload final text to AiBhive-media bucket
+              const textFilename = `output_${leadId}.txt`;
+              const textFile = storage.bucket(bucketName).file(textFilename);
+              await textFile.save(result.finalOutputText, {
+                contentType: 'text/plain',
+              });
+              gcsTextUrl = `https://storage.googleapis.com/${bucketName}/${textFilename}`;
+
+              // Upload cloned audio to AiBhive-media bucket if it exists
+              if (result.clonedAudioBuffer) {
+                const audioFilename = `cloned_audio_${leadId}.mp3`; // Or determine correct extension
+                const audioFile = storage.bucket(bucketName).file(audioFilename);
+                await audioFile.save(result.clonedAudioBuffer, {
+                  contentType: 'audio/mpeg', // Adjust if Fish API returns different format
+                });
+                gcsAudioUrl = `https://storage.googleapis.com/${bucketName}/${audioFilename}`;
+              }
+            } catch (storageError) {
+              console.error("Error saving files to Google Cloud Storage:", storageError);
+              // Handle storage error if necessary
+            }
+
             // Save results back to Firestore
             await leadRef.update({
               status: 'completed',
               rawTranscript: result.originalText || null,
-              finalOutputText: result.finalOutputText,
-              finalAudioUrl: result.finalAudioUrl || null,
+              finalOutputTextUrl: gcsTextUrl, // Save GCS URL instead of raw text
+              finalAudioUrl: gcsAudioUrl || null,
+              voiceModelId: result.voiceModelId || null,
               flags: result.flags || []
             });
-
-            // Note: In a real app, we'd also upload result.finalOutputText to Firebase Storage
-            // and save that URL instead of the raw text if it's large.
 
             // Send email to user using the email provided during Stripe checkout
             if (userEmail) {
@@ -117,8 +147,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
                 from: process.env.EMAIL_USER,
                 to: userEmail,
                 subject: 'Your AiBhive Files are Ready!',
-                text: `Your processing is complete. You can view your results in your dashboard.`,
-                html: `<h3>Your files are ready!</h3><p>Your processing for request ID: ${leadId} is complete. Log into your dashboard to view the results.</p>`
+                text: `Your Media files from AiBhive are complete.\n\nDownload them here:\n${gcsTextUrl ? `Text: ${gcsTextUrl}\n` : ''}${gcsAudioUrl ? `Audio: ${gcsAudioUrl}\n` : ''}\n\nSimply click the links above to view or download your files.`,
+                html: `<h3>Your Media files from AiBhive are complete.</h3><p>Download them here:</p><ul>${gcsTextUrl ? `<li><a href="${gcsTextUrl}">Download Text File</a></li>` : ''}${gcsAudioUrl ? `<li><a href="${gcsAudioUrl}">Download Audio File</a></li>` : ''}</ul><p>Simply click the links above to view or download your files.</p>`
               });
             }
           } else {
@@ -184,11 +214,32 @@ app.post('/api/process-free-sample', async (req, res) => {
     // Process asynchronously
     processLeadJob(leadData).then(async (result) => {
       if (result.success) {
+
+        let gcsTextUrl = null;
+        let gcsAudioUrl = null;
+
+        try {
+          const textFilename = `free_sample_output_${leadId}.txt`;
+          const textFile = storage.bucket(bucketName).file(textFilename);
+          await textFile.save(result.finalOutputText, { contentType: 'text/plain' });
+          gcsTextUrl = `https://storage.googleapis.com/${bucketName}/${textFilename}`;
+
+          if (result.clonedAudioBuffer) {
+            const audioFilename = `free_sample_cloned_audio_${leadId}.mp3`;
+            const audioFile = storage.bucket(bucketName).file(audioFilename);
+            await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
+            gcsAudioUrl = `https://storage.googleapis.com/${bucketName}/${audioFilename}`;
+          }
+        } catch (storageError) {
+          console.error("Error saving free sample files to GCS:", storageError);
+        }
+
         await leadRef.update({
           status: 'completed',
           rawTranscript: result.originalText || null,
-          finalOutputText: result.finalOutputText,
-          finalAudioUrl: result.finalAudioUrl || null,
+          finalOutputTextUrl: gcsTextUrl,
+          finalAudioUrl: gcsAudioUrl || null,
+          voiceModelId: result.voiceModelId || null,
           flags: result.flags || []
         });
 
@@ -198,8 +249,8 @@ app.post('/api/process-free-sample', async (req, res) => {
             from: process.env.EMAIL_USER,
             to: email,
             subject: 'Your Free AiBhive Sample is Ready!',
-            text: `Your free sample processing is complete. You can view your results in your dashboard.`,
-            html: `<h3>Your free sample is ready!</h3><p>Your processing for request ID: ${leadId} is complete. Log into your dashboard to view the results.</p>`
+            text: `Your Media files from AiBhive are complete.\n\nDownload them here:\n${gcsTextUrl ? `Text: ${gcsTextUrl}\n` : ''}${gcsAudioUrl ? `Audio: ${gcsAudioUrl}\n` : ''}\n\nSimply click the links above to view or download your files.`,
+            html: `<h3>Your Media files from AiBhive are complete.</h3><p>Download them here:</p><ul>${gcsTextUrl ? `<li><a href="${gcsTextUrl}">Download Text File</a></li>` : ''}${gcsAudioUrl ? `<li><a href="${gcsAudioUrl}">Download Audio File</a></li>` : ''}</ul><p>Simply click the links above to view or download your files.</p>`
           });
         }
       } else {
