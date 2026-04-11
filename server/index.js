@@ -39,6 +39,11 @@ const db = admin.firestore();
 // Setup Google Cloud Storage
 const storage = new Storage();
 const bucketName = 'AiBhive-media';
+// Note: To automatically delete files after 72 hours,
+// Object Lifecycle Management should be configured on the 'AiBhive-media' bucket
+// via the Google Cloud Console or gsutil:
+// gsutil lifecycle set lifecycle.json gs://AiBhive-media
+// (where lifecycle.json specifies a Delete action with Age: 3 days).
 
 // Setup Nodemailer
 const transporter = nodemailer.createTransport({
@@ -105,50 +110,84 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
         processLeadJob(leadData).then(async (result) => {
           if (result.success) {
 
-            let gcsTextUrl = null;
+            let gcsCleanTextUrl = null;
+            let gcsAnnotatedTextUrl = null;
             let gcsAudioUrl = null;
 
+            // Generate signed URLs valid for 72 hours
+            const urlOptions = {
+              version: 'v4',
+              action: 'read',
+              expires: Date.now() + 72 * 60 * 60 * 1000, // 72 hours
+            };
+
             try {
-              // Upload final text to AiBhive-media bucket
-              const textFilename = `output_${leadId}.txt`;
-              const textFile = storage.bucket(bucketName).file(textFilename);
-              await textFile.save(result.finalOutputText, {
-                contentType: 'text/plain',
-              });
-              gcsTextUrl = `https://storage.googleapis.com/${bucketName}/${textFilename}`;
+              // Upload clean text to AiBhive-media bucket
+              const cleanTextFilename = `clean_output_${leadId}.txt`;
+              const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
+              await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
+              const [cleanUrl] = await cleanTextFile.getSignedUrl(urlOptions);
+              gcsCleanTextUrl = cleanUrl;
+
+              // Upload annotated text to AiBhive-media bucket
+              const annotatedTextFilename = `annotated_output_${leadId}.txt`;
+              const annotatedTextFile = storage.bucket(bucketName).file(annotatedTextFilename);
+              await annotatedTextFile.save(result.annotatedText, { contentType: 'text/plain' });
+              const [annotatedUrl] = await annotatedTextFile.getSignedUrl(urlOptions);
+              gcsAnnotatedTextUrl = annotatedUrl;
 
               // Upload cloned audio to AiBhive-media bucket if it exists
               if (result.clonedAudioBuffer) {
-                const audioFilename = `cloned_audio_${leadId}.mp3`; // Or determine correct extension
+                const audioFilename = `cloned_audio_${leadId}.mp3`;
                 const audioFile = storage.bucket(bucketName).file(audioFilename);
-                await audioFile.save(result.clonedAudioBuffer, {
-                  contentType: 'audio/mpeg', // Adjust if Fish API returns different format
-                });
-                gcsAudioUrl = `https://storage.googleapis.com/${bucketName}/${audioFilename}`;
+                await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
+                const [audioUrl] = await audioFile.getSignedUrl(urlOptions);
+                gcsAudioUrl = audioUrl;
               }
             } catch (storageError) {
               console.error("Error saving files to Google Cloud Storage:", storageError);
-              // Handle storage error if necessary
             }
 
             // Save results back to Firestore
             await leadRef.update({
               status: 'completed',
               rawTranscript: result.originalText || null,
-              finalOutputTextUrl: gcsTextUrl, // Save GCS URL instead of raw text
+              finalOutputTextUrl: gcsAnnotatedTextUrl, // Keep backward compatibility for frontend
+              cleanTranslatedTextUrl: gcsCleanTextUrl,
+              annotatedTextUrl: gcsAnnotatedTextUrl,
               finalAudioUrl: gcsAudioUrl || null,
               voiceModelId: result.voiceModelId || null,
+              translatedTitle: result.translatedTitle || null,
+              translatedSummary: result.translatedSummary || null,
               flags: result.flags || []
             });
 
             // Send email to user using the email provided during Stripe checkout
             if (userEmail) {
+              let emailText = `Your Media files from AiBhive are complete.\n\n`;
+              if (result.translatedTitle) emailText += `Title: ${result.translatedTitle}\n`;
+              if (result.translatedSummary) emailText += `Summary: ${result.translatedSummary}\n\n`;
+              emailText += `Download your files here (links expire in 72 hours):\n`;
+              if (gcsCleanTextUrl) emailText += `Clean Text: ${gcsCleanTextUrl}\n`;
+              if (gcsAnnotatedTextUrl) emailText += `Annotated Text: ${gcsAnnotatedTextUrl}\n`;
+              if (gcsAudioUrl) emailText += `Cloned Audio: ${gcsAudioUrl}\n`;
+              emailText += `\nSimply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.`;
+
+              let emailHtml = `<h3>Your Media files from AiBhive are complete.</h3>`;
+              if (result.translatedTitle) emailHtml += `<h4>${result.translatedTitle}</h4>`;
+              if (result.translatedSummary) emailHtml += `<p><em>${result.translatedSummary}</em></p>`;
+              emailHtml += `<p>Download your files here (links expire in 72 hours):</p><ul>`;
+              if (gcsCleanTextUrl) emailHtml += `<li><a href="${gcsCleanTextUrl}">Download Clean Text File</a></li>`;
+              if (gcsAnnotatedTextUrl) emailHtml += `<li><a href="${gcsAnnotatedTextUrl}">Download Annotated Text File</a></li>`;
+              if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
+              emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
+
               await transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to: userEmail,
                 subject: 'Your AiBhive Files are Ready!',
-                text: `Your Media files from AiBhive are complete.\n\nDownload them here:\n${gcsTextUrl ? `Text: ${gcsTextUrl}\n` : ''}${gcsAudioUrl ? `Audio: ${gcsAudioUrl}\n` : ''}\n\nSimply click the links above to view or download your files.`,
-                html: `<h3>Your Media files from AiBhive are complete.</h3><p>Download them here:</p><ul>${gcsTextUrl ? `<li><a href="${gcsTextUrl}">Download Text File</a></li>` : ''}${gcsAudioUrl ? `<li><a href="${gcsAudioUrl}">Download Audio File</a></li>` : ''}</ul><p>Simply click the links above to view or download your files.</p>`
+                text: emailText,
+                html: emailHtml
               });
             }
           } else {
