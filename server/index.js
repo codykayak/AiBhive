@@ -158,8 +158,26 @@ app.post('/api/process-free-sample', async (req, res) => {
 
     const leadData = { id: leadSnap.id, ...leadSnap.data() };
 
-    // Security Check: Ensure the job is actually free
-    if (leadData.calculatedPrice !== 0) {
+    // Security Check: Redo the math based on stored values to ensure the job is actually free
+    let total = 0;
+    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
+    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
+
+    if (fileType === 'text') {
+      const words = Math.max(1, fileLengthWords || 1);
+      if (transcribeTranslate) total += words * 0.025;
+      if (legalMedical) total += words * 0.035;
+      if (voiceCloning) total += words * 0.035;
+    } else if (fileType === 'audio' || fileType === 'video') {
+      const minutes = Math.max(1, audioMinutes || 1);
+      if (transcribeTranslate) total += minutes * 2.49;
+      if (legalMedical) total += minutes * 3.29;
+      if (voiceCloning) total += minutes * 1.99;
+    }
+
+    const verifiedAmount = Number(total.toFixed(2));
+
+    if (verifiedAmount !== 0) {
       return res.status(403).json({ error: 'This job requires payment.' });
     }
 
@@ -201,22 +219,40 @@ app.post('/api/process-free-sample', async (req, res) => {
 // Endpoint to create a checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
-    const { leadId } = req.body;
+    const { leadId, email } = req.body;
 
-    // Fetch the lead from the database to securely get the price
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
     const leadData = leadSnap.data();
-    const verifiedAmount = leadData.calculatedPrice;
+
+    // Secure verification: Redo the math based on stored values
+    let total = 0;
+    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
+    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
+
+    if (fileType === 'text') {
+      const words = Math.max(1, fileLengthWords || 1);
+      if (transcribeTranslate) total += words * 0.025;
+      if (legalMedical) total += words * 0.035;
+      if (voiceCloning) total += words * 0.035;
+    } else if (fileType === 'audio' || fileType === 'video') {
+      const minutes = Math.max(1, audioMinutes || 1);
+      if (transcribeTranslate) total += minutes * 2.49;
+      if (legalMedical) total += minutes * 3.29;
+      if (voiceCloning) total += minutes * 1.99;
+    }
+
+    const verifiedAmount = Number(total.toFixed(2));
 
     if (verifiedAmount === undefined || verifiedAmount <= 0) {
       return res.status(400).json({ error: 'Invalid price for checkout' });
     }
 
     const session = await stripe.checkout.sessions.create({
+      customer_email: email, // Pre-fill email in Stripe
       payment_method_types: ['card'],
       line_items: [
         {

@@ -7,6 +7,7 @@ const navLinks = [
   { name: 'Transcription', path: '/transcription' },
   { name: 'Voice Lab', path: '/voice-clone' },
   { name: 'Grow', path: '/grow' },
+  { name: 'Pricing', path: '/get-started#pricing' },
   { name: 'About', path: '/about' },
 ];
 
