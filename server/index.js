@@ -19,6 +19,7 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // Initialize Firebase Admin (Uses service account from GOOGLE_APPLICATION_CREDENTIALS or process.env)
+// Trigger deployment to check Cloud Run stability
 try {
   // Usually this reads from GOOGLE_APPLICATION_CREDENTIALS environment variable
   admin.initializeApp();
