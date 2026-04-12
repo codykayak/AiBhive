@@ -16,6 +16,7 @@
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
     "@google/genai": "^1.49.0",
+    "@headlessui/react": "^2.2.10",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "axios": "^1.14.0",
