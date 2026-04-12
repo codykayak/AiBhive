@@ -273,20 +273,48 @@ export async function processLeadJob(leadData) {
 
     const targetLanguage = leadData.languages?.to || 'English';
 
-    // 1. Transcribe & Translate (Pass 1)
+    // 1. Transcribe & Translate (Pass 1 - Initial translation via Whisper / GPT-4o)
     const { originalText, translatedText } = await transcribeAndTranslate(
       leadData.fileUrl,
       targetLanguage
     );
 
     cleanTranslatedText = translatedText;
+
+    // 2. Context Accuracy Check (Pass 2 - Gemini 2.5 Pro checks translation for technical terms and context correctness for ALL jobs)
+    console.log("Pass 2: General Context Accuracy Check with Gemini 2.5 Pro...");
+    const generalPrompt = `
+      You are an expert ${targetLanguage} translator and verifier.
+      Review the following text which has been translated into ${targetLanguage}.
+      Scan the text to ensure all technical terms are translated correctly and used in the correct context.
+      Fix any obvious grammatical or contextual mistranslations to make it sound natural and accurate.
+
+      Return ONLY the corrected text. Do not include any markdown formatting, explanations, or JSON. Just the plain corrected text.
+
+      Text to review:
+      ${cleanTranslatedText}
+    `;
+
+    const ai = getGemini();
+    try {
+      const generalResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: generalPrompt
+      });
+      cleanTranslatedText = generalResponse.text.trim();
+    } catch (err) {
+      console.error("Pass 2 General Check Error:", err);
+      // Fallback to original translation if this fails
+    }
+
     finalOutputText = cleanTranslatedText;
 
-    // 2. Legal/Medical Accuracy Check (Pass 2)
+    // 3. Legal/Medical Accuracy Check (Pass 3 - Triple check for specific high-risk contexts)
     if (leadData.services?.legalMedical) {
+      console.log("Pass 3: High Accuracy Legal/Medical Check...");
       const contextFlags = { legal: true, medical: true };
       const checkResult = await performContextAccuracyCheck(
-        translatedText,
+        cleanTranslatedText,
         contextFlags,
         targetLanguage
       );
@@ -300,7 +328,7 @@ export async function processLeadJob(leadData) {
       annotatedText = cleanTranslatedText;
     }
 
-    // 2b. Generate Title and Summary
+    // 4. Generate Title and Summary
     try {
       const ai = getGemini();
       const summaryPrompt = `
