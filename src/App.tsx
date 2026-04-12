@@ -7,6 +7,7 @@ import VoiceCloneLab from './pages/VoiceCloneLab';
 import GrowGlobally from './pages/GrowGlobally';
 import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
+import FAQ from './pages/FAQ';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/voice-clone" element={<VoiceCloneLab />} />
             <Route path="/grow" element={<GrowGlobally />} />
             <Route path="/about" element={<AboutContact />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/get-started" element={<GetStarted />} />
           </Routes>
         </main>

@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils';
-import { Hexagon } from 'lucide-react';
+import { Hexagon, ChevronDown } from 'lucide-react';
+import { Menu, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 const navLinks = [
   { name: 'Home', path: '/' },
   { name: 'Transcription', path: '/transcription' },
   { name: 'Voice Lab', path: '/voice-clone' },
   { name: 'Grow', path: '/grow' },
-  { name: 'Pricing', path: '/get-started#pricing' },
-  { name: 'About', path: '/about' },
+  { name: 'Pricing', path: '/get-started#pricing' }
 ];
 
 export default function Navbar() {
@@ -50,6 +51,61 @@ export default function Navbar() {
                   )} />
                 </Link>
               ))}
+
+              <Menu as="div" className="relative inline-block text-left">
+                <div>
+                  <Menu.Button className={cn(
+                    "flex items-center text-sm font-semibold transition-all duration-300 hover:text-bee-amber outline-none",
+                    (location.pathname === '/about' || location.pathname === '/faq')
+                      ? "text-bee-amber"
+                      : "text-slate-300"
+                  )}>
+                    About
+                    <ChevronDown className="ml-1 h-4 w-4" aria-hidden="true" />
+                  </Menu.Button>
+                </div>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <Menu.Items className="absolute right-0 mt-4 w-40 origin-top-right rounded-xl bg-bee-black border border-white/10 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none overflow-hidden">
+                    <div className="py-1">
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/about"
+                            className={cn(
+                              active ? 'bg-white/5 text-bee-amber' : 'text-slate-300',
+                              'block px-4 py-2.5 text-sm transition-colors'
+                            )}
+                          >
+                            About Us
+                          </Link>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/faq"
+                            className={cn(
+                              active ? 'bg-white/5 text-bee-amber' : 'text-slate-300',
+                              'block px-4 py-2.5 text-sm transition-colors'
+                            )}
+                          >
+                            FAQ
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    </div>
+                  </Menu.Items>
+                </Transition>
+              </Menu>
+
               <Link 
                 to="/get-started" 
                 className="px-6 py-2.5 bg-bee-amber text-bee-black font-bold rounded-full hover:bg-bee-yellow transition-all neon-glow text-sm"

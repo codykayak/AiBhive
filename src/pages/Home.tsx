@@ -7,6 +7,7 @@ import transcriptionServiceImg from '../transcription_service_legal_medical.png'
 import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import voiceCloneImg from '../1775556316513.png';
 import translationHubImg from '../1775559497156.png';
+import fastTranslationImg from '../mr_beast_translation_content_multiplyer.jpg';
 import { SEO } from '../components/SEO';
 
 const FeatureCard = ({ icon: Icon, title, description, link, buttonText, bgImage }: any) => (
@@ -114,6 +115,55 @@ export default function Home() {
         </div>
         <div className="absolute bottom-1/4 left-10 opacity-10 animate-pulse duration-[3000ms] hidden lg:block">
           <Hexagon className="w-48 h-48 text-bee-amber" />
+        </div>
+      </section>
+
+      {/* Lightning Fast Turnaround Feature */}
+      <section className="py-20 bg-bee-amber/5 border-y border-white/5 relative">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="inline-flex items-center justify-center p-3 bg-bee-amber/10 rounded-2xl mb-6">
+                <Zap className="w-10 h-10 text-bee-amber" />
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6 font-display">
+                Lightning-Fast <span className="text-bee-amber">Turnaround</span>
+              </h2>
+              <p className="text-xl text-slate-300 leading-relaxed mb-6 font-medium">
+                Upload 60 minutes of audio and get it back in under 15 minutes.
+              </p>
+              <p className="text-lg text-slate-400 mb-6 leading-relaxed">
+                Most jobs are completed in 30 minutes — not hours, not days.
+              </p>
+              <p className="text-lg text-slate-400 mb-6 leading-relaxed">
+                Our SWARM processes your file across multiple GPUs in parallel, so even large files move insanely fast.
+              </p>
+              <p className="text-lg text-slate-400 font-semibold italic border-l-4 border-bee-amber pl-4">
+                No more waiting around. Get your translation and voice clone back while you're still on your coffee break.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
+            >
+              <div className="absolute inset-0 bg-gradient-to-tr from-bee-black via-transparent to-bee-black z-10" />
+              <img
+                src={fastTranslationImg}
+                alt="Fast AI Translation Processing"
+                className="w-full h-auto object-cover scale-105 hover:scale-100 transition-transform duration-700"
+              />
+            </motion.div>
+          </div>
         </div>
       </section>
 
