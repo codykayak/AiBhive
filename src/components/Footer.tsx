@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Mail, Twitter, Github, Linkedin, Hexagon } from 'lucide-react';
+import { Mail, Hexagon } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -36,9 +36,6 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Connect</h3>
             <div className="flex space-x-4">
-              <a href="#" className="text-slate-400 hover:text-bee-amber transition-colors"><Twitter className="w-5 h-5" /></a>
-              <a href="#" className="text-slate-400 hover:text-bee-amber transition-colors"><Linkedin className="w-5 h-5" /></a>
-              <a href="#" className="text-slate-400 hover:text-bee-amber transition-colors"><Github className="w-5 h-5" /></a>
               <a href="#" className="text-slate-400 hover:text-bee-amber transition-colors"><Mail className="w-5 h-5" /></a>
             </div>
           </div>

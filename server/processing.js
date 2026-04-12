@@ -74,23 +74,40 @@ export async function transcribeAndTranslate(fileUrl, targetLanguage) {
       originalText = fs.readFileSync(tempFilePath, 'utf8');
     } else {
       // If it's audio, send to Whisper API
+      // Added response_format and timestamp_granularities to preserve timestamps as requested
       const transcription = await openai.audio.transcriptions.create({
         file: fs.createReadStream(tempFilePath),
         model: 'whisper-1',
+        response_format: 'verbose_json',
+        timestamp_granularities: ['segment']
       });
-      originalText = transcription.text;
+
+      // Preserve timestamps in the original text representation
+      if (transcription.segments && transcription.segments.length > 0) {
+        originalText = transcription.segments.map(seg => `[${seg.start.toFixed(2)}s - ${seg.end.toFixed(2)}s] ${seg.text}`).join('\n');
+      } else {
+        originalText = transcription.text;
+      }
     }
 
-    // Translate text to target language using standard LLM if not English
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: `You are a professional translator. Translate the following text to ${targetLanguage}.` },
-        { role: "user", content: originalText }
-      ]
+    // Translate text to target language using Gemini 2.5 Pro (per requirements)
+    const ai = getGemini();
+    const prompt = `
+    You are a professional translator.
+    Translate the following text to ${targetLanguage}.
+    If there are timestamps (e.g. [0.00s - 5.00s]), preserve them exactly in the translated output.
+
+    Text:
+    ${originalText}
+    `;
+
+    // Update to Gemini 2.5 Pro per explicit instructions.
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: prompt
     });
 
-    const translatedText = completion.choices[0].message.content;
+    const translatedText = response.text;
 
     // Clean up temp file
     fs.unlinkSync(tempFilePath);
@@ -120,16 +137,16 @@ export async function performContextAccuracyCheck(text, contextFlags, targetLang
 
   const prompt = `
   You are an expert ${contextTypes.join(' and ')} translator and verifier.
-  Review the following text which has been translated into ${targetLanguage}.
-  Scan the text for high-risk terms (e.g., 'negligence', 'malpractice', 'diagnosis', 'prescription', 'liability', 'consent', 'battery', 'arrest').
-  Research common mistranslations for these terms in ${targetLanguage}.
-  Flag any terms that could flip meaning or cause legal/medical issues if mistranslated.
+  This is a High Accuracy mode check. Review the following text which has been translated into ${targetLanguage}.
+  Scan the text for high-risk terms and verify they are translated correctly and used in the correct context.
+  Flag any terms that could flip meaning or cause legal/medical/technical issues if mistranslated.
 
   Return the output strictly in this JSON format:
   {
     "flags": [
       {"term": "Original Term", "warning": "Explanation of potential mistranslation in ${targetLanguage}"}
-    ]
+    ],
+    "correctedText": "If applicable, provide a corrected version of the text that fixes any critical mistranslations."
   }
 
   Text to review:
@@ -139,7 +156,7 @@ export async function performContextAccuracyCheck(text, contextFlags, targetLang
   try {
     const ai = getGemini();
     const response = await ai.models.generateContent({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.5-pro',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -147,7 +164,7 @@ export async function performContextAccuracyCheck(text, contextFlags, targetLang
     });
 
     const result = JSON.parse(response.text);
-    return { checkedText: text, flags: result.flags || [] };
+    return { checkedText: result.correctedText || text, flags: result.flags || [] };
   } catch (error) {
     console.error("Gemini Scan Error:", error);
     throw error;
@@ -248,36 +265,106 @@ export async function processLeadJob(leadData) {
     console.log(`Processing Job for Lead ID: ${leadData.id}`);
 
     let finalOutputText = "";
-    let finalAudioUrl = null;
+    let cleanTranslatedText = "";
+    let annotatedText = "";
+    let translatedTitle = "";
+    let translatedSummary = "";
     let flags = [];
 
-    // 1. Transcribe & Translate
+    const targetLanguage = leadData.languages?.to || 'English';
+
+    // 1. Transcribe & Translate (Pass 1 - Initial translation via Whisper / GPT-4o)
     const { originalText, translatedText } = await transcribeAndTranslate(
       leadData.fileUrl,
-      leadData.languages?.to || 'English'
+      targetLanguage
     );
 
-    finalOutputText = translatedText;
+    cleanTranslatedText = translatedText;
 
-    // 2. Legal/Medical Accuracy Check
+    // 2. Context Accuracy Check (Pass 2 - Gemini 2.5 Pro checks translation for technical terms and context correctness for ALL jobs)
+    console.log("Pass 2: General Context Accuracy Check with Gemini 2.5 Pro...");
+    const generalPrompt = `
+      You are an expert ${targetLanguage} translator and verifier.
+      Review the following text which has been translated into ${targetLanguage}.
+      Scan the text to ensure all technical terms are translated correctly and used in the correct context.
+      Fix any obvious grammatical or contextual mistranslations to make it sound natural and accurate.
+
+      Return ONLY the corrected text. Do not include any markdown formatting, explanations, or JSON. Just the plain corrected text.
+
+      Text to review:
+      ${cleanTranslatedText}
+    `;
+
+    const ai = getGemini();
+    try {
+      const generalResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: generalPrompt
+      });
+      cleanTranslatedText = generalResponse.text.trim();
+    } catch (err) {
+      console.error("Pass 2 General Check Error:", err);
+      // Fallback to original translation if this fails
+    }
+
+    finalOutputText = cleanTranslatedText;
+
+    // 3. Legal/Medical Accuracy Check (Pass 3 - Triple check for specific high-risk contexts)
     if (leadData.services?.legalMedical) {
+      console.log("Pass 3: High Accuracy Legal/Medical Check...");
       const contextFlags = { legal: true, medical: true };
       const checkResult = await performContextAccuracyCheck(
-        translatedText,
+        cleanTranslatedText,
         contextFlags,
-        leadData.languages?.to || 'English'
+        targetLanguage
       );
 
       flags = checkResult.flags;
+      cleanTranslatedText = checkResult.checkedText;
       const footer = generateFooter(flags);
-      finalOutputText += footer;
+      annotatedText = cleanTranslatedText + footer;
+      finalOutputText = annotatedText; // Default final output to annotated if requested
+    } else {
+      annotatedText = cleanTranslatedText;
+    }
+
+    // 4. Generate Title and Summary
+    try {
+      const ai = getGemini();
+      const summaryPrompt = `
+      Based on the following translated text in ${targetLanguage}, generate:
+      1. A translated YouTube/Podcast title.
+      2. A translated summary (maximum 3 sentences).
+
+      Return strictly as JSON:
+      {
+        "title": "...",
+        "summary": "..."
+      }
+
+      Text:
+      ${cleanTranslatedText}
+      `;
+      const summaryResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: summaryPrompt,
+          config: {
+              responseMimeType: "application/json",
+          }
+      });
+      const summaryData = JSON.parse(summaryResponse.text);
+      translatedTitle = summaryData.title;
+      translatedSummary = summaryData.summary;
+    } catch (err) {
+      console.error("Failed to generate title/summary:", err);
     }
 
     // 3. Voice Cloning
     let clonedAudioBuffer = null;
     let voiceModelId = null;
     if (leadData.services?.voiceCloning && leadData.voiceSampleUrl) {
-      const textToClone = leadData.cloningText || finalOutputText;
+      // Use clean text for cloning, unless custom cloning text is provided
+      const textToClone = leadData.cloningText || cleanTranslatedText;
       const cloneResult = await cloneVoiceWithFishApi(textToClone, leadData.voiceSampleUrl, leadData.id);
       clonedAudioBuffer = cloneResult.audioBuffer;
       voiceModelId = cloneResult.modelId;
@@ -286,7 +373,11 @@ export async function processLeadJob(leadData) {
     return {
       success: true,
       originalText,
-      finalOutputText,
+      cleanTranslatedText,
+      annotatedText,
+      translatedTitle,
+      translatedSummary,
+      finalOutputText, // Keep for backward compatibility or as the main text blob
       clonedAudioBuffer,
       voiceModelId,
       flags
