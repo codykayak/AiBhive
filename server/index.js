@@ -38,11 +38,11 @@ const db = admin.firestore();
 
 // Setup Google Cloud Storage
 const storage = new Storage();
-const bucketName = 'AiBhive-media';
+const bucketName = 'aibhive-media'; // Must be lowercase for GCS
 // Note: To automatically delete files after 72 hours,
-// Object Lifecycle Management should be configured on the 'AiBhive-media' bucket
+// Object Lifecycle Management should be configured on the 'aibhive-media' bucket
 // via the Google Cloud Console or gsutil:
-// gsutil lifecycle set lifecycle.json gs://AiBhive-media
+// gsutil lifecycle set lifecycle.json gs://aibhive-media
 // (where lifecycle.json specifies a Delete action with Age: 3 days).
 
 // Setup Nodemailer
