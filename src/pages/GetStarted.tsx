@@ -192,31 +192,37 @@ export default function GetStarted() {
           setUploading(false);
         }, 
         async () => {
-          const downloadURL = await getDownloadURL(mainUploadTask.snapshot.ref);
-          setFileUrl(downloadURL);
-          setVoiceSampleUrl(vsUrl);
+          try {
+            const downloadURL = await getDownloadURL(mainUploadTask.snapshot.ref);
+            setFileUrl(downloadURL);
+            setVoiceSampleUrl(vsUrl);
 
-          // 2. Save to Firestore
-          const docRef = await addDoc(collection(db, 'leads'), {
-            userId: sessionId,
-            email,
-            fileUrl: downloadURL,
-            voiceSampleUrl: vsUrl,
-            cloningText,
-            fileType,
-            fileLengthWords: wordCount,
-            audioMinutes: audioMinutes,
-            calculatedPrice: calculatePrice(),
-            services: selectedServices,
-            languages,
-            status: 'pending_payment',
-            createdAt: serverTimestamp()
-          });
+            // 2. Save to Firestore
+            const docRef = await addDoc(collection(db, 'leads'), {
+              userId: sessionId,
+              email,
+              fileUrl: downloadURL,
+              voiceSampleUrl: vsUrl,
+              cloningText,
+              fileType,
+              fileLengthWords: wordCount,
+              audioMinutes: audioMinutes,
+              calculatedPrice: calculatePrice(),
+              services: selectedServices,
+              languages,
+              status: 'pending_payment',
+              createdAt: serverTimestamp()
+            });
 
-          setUploading(false);
+            setUploading(false);
 
-          // 3. Initiate Checkout
-          initiateCheckout(docRef.id, calculatePrice());
+            // 3. Initiate Checkout
+            initiateCheckout(docRef.id, calculatePrice());
+          } catch (innerErr) {
+            console.error('Firestore or Checkout Init failed:', innerErr);
+            setError('Submission failed during database step. Please try again.');
+            setUploading(false);
+          }
         }
       );
     } catch (err) {
