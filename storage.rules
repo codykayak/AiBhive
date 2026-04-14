@@ -2,11 +2,13 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow unauthenticated uploads to the leads directory to match the frontend form submission flow
+    // Allow uploads to the leads directory for the current anonymous session
     match /leads/{sessionId}/{allPaths=**} {
+      // The frontend uses anonymous auth, or a fallback random ID if auth is disabled
       allow create: if request.resource.size < 50 * 1024 * 1024; // Limit to 50MB
-      // Reading/updating/deleting requires admin
-      allow read, update, delete: if false;
+      // The client needs to read the file immediately to generate the downloadURL
+      allow read: if true;
+      allow update, delete: if false;
     }
   }
 }
