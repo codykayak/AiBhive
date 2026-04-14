@@ -161,11 +161,16 @@ export default function GetStarted() {
 
     try {
       let uid;
-      if (!auth.currentUser) {
-        const userCredential = await signInAnonymously(auth);
-        uid = userCredential.user.uid;
-      } else {
-        uid = auth.currentUser.uid;
+      try {
+        if (!auth.currentUser) {
+          const userCredential = await signInAnonymously(auth);
+          uid = userCredential.user.uid;
+        } else {
+          uid = auth.currentUser.uid;
+        }
+      } catch (authErr) {
+        console.warn("Anonymous auth failed (is it enabled in Firebase?). Falling back to random ID.", authErr);
+        uid = `anon_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       }
 
       const sessionId = uid;
@@ -407,16 +412,19 @@ export default function GetStarted() {
 
                 {/* Voice Cloning */}
                 <div className={`p-8 bg-white/5 border rounded-2xl transition-all ${selectedServices.voiceCloning ? 'border-bee-amber/60 bg-bee-amber/5' : 'border-white/10 hover:border-bee-amber/30'}`}>
-                  <label className="flex items-start cursor-pointer w-full">
+                  <div className="flex items-start w-full">
                     <input 
                       type="checkbox" 
+                      id="voice-cloning-checkbox"
                       checked={selectedServices.voiceCloning}
                       onChange={(e) => setSelectedServices({...selectedServices, voiceCloning: e.target.checked})}
                       className="w-8 h-8 accent-bee-amber mr-6 shrink-0 mt-1 cursor-pointer"
                     />
                     <div className="flex-1">
-                      <h3 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Voice Cloning - Highest Quality</h3>
-                      <p className="text-slate-400 text-base mb-6">Turn text into speech using a cloned voice</p>
+                      <label htmlFor="voice-cloning-checkbox" className="cursor-pointer block">
+                        <h3 className="text-2xl font-extrabold text-white mb-2 tracking-tight">Voice Cloning - Highest Quality</h3>
+                        <p className="text-slate-400 text-base mb-6">Turn text into speech using a cloned voice</p>
+                      </label>
 
                       {selectedServices.voiceCloning && (
                         <motion.div
@@ -425,10 +433,11 @@ export default function GetStarted() {
                           className="mt-6 pt-6 border-t border-white/10 space-y-6"
                         >
                           <div>
-                            <label className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Upload Voice Sample (Max 5MB)</label>
+                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Upload Voice Sample (Max 5MB)</span>
                             <div
-                              className="border border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-bee-amber/50 transition-all cursor-pointer bg-bee-black/40"
+                              className="border border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-bee-amber/50 transition-all cursor-pointer bg-bee-black/40 relative z-10"
                               onClick={(e) => {
+                                e.stopPropagation();
                                 e.preventDefault();
                                 document.getElementById('voiceSampleInput')?.click();
                               }}
@@ -438,15 +447,18 @@ export default function GetStarted() {
                                 type="file"
                                 accept="audio/*"
                                 className="hidden"
-                                onChange={(e) => handleFileChange(e, true)}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  handleFileChange(e, true);
+                                }}
                               />
                               {voiceSample ? (
-                                <div className="text-bee-amber font-bold flex items-center justify-center">
+                                <div className="text-bee-amber font-bold flex items-center justify-center pointer-events-none">
                                   <CheckCircle2 className="w-5 h-5 mr-2" />
                                   {voiceSample.name}
                                 </div>
                               ) : (
-                                <div className="text-slate-400 font-medium flex items-center justify-center">
+                                <div className="text-slate-400 font-medium flex items-center justify-center pointer-events-none">
                                   <Mic2 className="w-6 h-6 mr-3 text-bee-amber" />
                                   Click to upload 30s-2min clean audio
                                 </div>
@@ -454,18 +466,19 @@ export default function GetStarted() {
                             </div>
                           </div>
                           <div>
-                            <label className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice</label>
+                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice</span>
                             <textarea
                               value={cloningText}
                               onChange={(e) => setCloningText(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
                               placeholder="Paste the script here..."
-                              className="w-full bg-bee-black/50 border border-white/20 rounded-xl px-5 py-4 text-white focus:border-bee-amber focus:ring-1 focus:ring-bee-amber outline-none transition-all shadow-inner h-32 resize-none"
+                              className="w-full bg-bee-black/50 border border-white/20 rounded-xl px-5 py-4 text-white focus:border-bee-amber focus:ring-1 focus:ring-bee-amber outline-none transition-all shadow-inner h-32 resize-none relative z-10"
                             />
                           </div>
                         </motion.div>
                       )}
                     </div>
-                  </label>
+                  </div>
                 </div>
 
                 {/* Legal & Medical */}
