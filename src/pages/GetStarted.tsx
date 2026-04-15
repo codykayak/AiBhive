@@ -219,8 +219,6 @@ export default function GetStarted() {
               createdAt: serverTimestamp()
             });
 
-            setUploading(false);
-
             // 3. Initiate Checkout
             initiateCheckout(docRef.id, calculatePrice());
           } catch (innerErr) {
@@ -241,9 +239,11 @@ export default function GetStarted() {
     try {
       if (finalPrice <= 0) {
         setError('Please select a service or upload a valid file to proceed.');
+        setUploading(false);
         return;
       }
 
+      console.log('Initiating checkout for lead:', leadId, 'price:', finalPrice);
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -255,15 +255,21 @@ export default function GetStarted() {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Checkout session API returned status: ${response.status}`);
+      }
+
       const { url } = await response.json();
       if (url) {
         window.location.href = url;
       } else {
         setError('Failed to initiate checkout.');
+        setUploading(false);
       }
     } catch (err) {
       console.error('Checkout error:', err);
       setError('Failed to initiate checkout.');
+      setUploading(false);
     }
   };
 
