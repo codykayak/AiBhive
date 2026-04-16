@@ -43,6 +43,7 @@ export default function GetStarted() {
   const [file, setFile] = useState<File | null>(null);
   const [fileType, setFileType] = useState<'audio' | 'text' | null>(null);
 
+  const [files, setFiles] = useState<File[]>([]);
   const [voiceSample, setVoiceSample] = useState<File | null>(null);
   const [cloningText, setCloningText] = useState('');
 
@@ -77,40 +78,59 @@ export default function GetStarted() {
   });
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>, isVoiceSample = false) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+    if (!e.target.files?.length) return;
 
-    if (isVoiceSample) {
-      setVoiceSample(selectedFile);
+    if (isVoiceSample === true) {
+      setVoiceSample(e.target.files[0]);
       return;
     }
 
-    setFile(selectedFile);
+    const newFiles = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...newFiles]);
+    // Keep 'file' as the primary for backwards compatibility, or use the first one
+    if (!file) {
+      setFile(newFiles[0]);
+    }
     setError(null);
 
-    // Determine type and count
-    if (selectedFile.type.includes('text') || selectedFile.name.endsWith('.txt') || selectedFile.name.endsWith('.pdf') || selectedFile.name.endsWith('.docx')) {
-      setFileType('text');
-      setAudioMinutes(0);
-      try {
-        const text = await selectedFile.text();
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
-        setWordCount(words || 250); // Fallback to average 1-page word count if reading fails
-      } catch (err) {
-        setWordCount(250);
+    // Determine type and count for all files
+    let totalWords = wordCount;
+    let totalMinutes = audioMinutes;
+    let currentFileType = fileType;
+
+    for (const selectedFile of newFiles) {
+      const typedFile = selectedFile as File;
+      if (typedFile.type.includes('text') || typedFile.name.endsWith('.txt') || typedFile.name.endsWith('.pdf') || typedFile.name.endsWith('.docx')) {
+        currentFileType = 'text';
+        try {
+          const text = await typedFile.text();
+          const words = text.trim().split(/\s+/).filter(w => w.length > 0).length;
+          totalWords += (words || 250);
+        } catch (err) {
+          totalWords += 250;
+        }
+      } else if (typedFile.type.includes('audio') || typedFile.type.includes('video')) {
+        currentFileType = 'audio';
+        await new Promise<void>((resolve) => {
+          const audio = new Audio(URL.createObjectURL(typedFile));
+          audio.onloadedmetadata = () => {
+            totalMinutes += Math.max(1, Math.ceil(audio.duration / 60));
+            resolve();
+          };
+          audio.onerror = () => {
+             totalMinutes += 1;
+             resolve();
+          }
+        });
+      } else {
+        currentFileType = 'text';
+        totalWords += 250;
       }
-    } else if (selectedFile.type.includes('audio') || selectedFile.type.includes('video')) {
-      setFileType('audio');
-      setWordCount(0);
-      const audio = new Audio(URL.createObjectURL(selectedFile));
-      audio.onloadedmetadata = () => {
-        setAudioMinutes(Math.max(1, Math.ceil(audio.duration / 60)));
-      };
-    } else {
-      // Fallback
-      setFileType('text');
-      setWordCount(250);
     }
+
+    setFileType(currentFileType);
+    setWordCount(totalWords);
+    setAudioMinutes(totalMinutes);
   };
 
   const calculatePrice = () => {
@@ -136,7 +156,7 @@ export default function GetStarted() {
   };
 
   const handleSubmit = async () => {
-    if (!file) {
+    if (files.length === 0) {
       setError('Please upload a file.');
       return;
     }
@@ -175,62 +195,92 @@ export default function GetStarted() {
 
       const sessionId = uid;
 
-      // 1. Upload Main File
-      const mainFileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${file.name}`);
-      const mainUploadTask = uploadBytesResumable(mainFileRef, file);
-
       let vsUrl = null;
       if (voiceSample) {
-        const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
-        const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
-        vsUrl = await getDownloadURL(vsUpload.ref);
+        try {
+          const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
+          const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
+          vsUrl = await getDownloadURL(vsUpload.ref);
+        } catch (vsErr) {
+          console.error('Voice sample upload failed:', vsErr);
+          setError('Voice sample upload failed. Please try again.');
+          setUploading(false);
+          return;
+        }
       }
 
-      mainUploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        }, 
-        (err) => {
-          console.error('Upload failed:', err);
-          setError('File upload failed.');
-          setUploading(false);
-        }, 
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(mainUploadTask.snapshot.ref);
-            setFileUrl(downloadURL);
-            setVoiceSampleUrl(vsUrl);
+      // 1. Upload All Main Files
+      const fileUrls: string[] = [];
+      let totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+      let bytesTransferredArray = new Array(files.length).fill(0);
 
-            // 2. Save to Firestore
-            const docRef = await addDoc(collection(db, 'leads'), {
-              userId: sessionId,
-              email,
-              fileUrl: downloadURL,
-              voiceSampleUrl: vsUrl,
-              cloningText,
-              fileType,
-              fileLengthWords: wordCount,
-              audioMinutes: audioMinutes,
-              calculatedPrice: calculatePrice(),
-              services: selectedServices,
-              languages,
-              status: 'pending_payment',
-              createdAt: serverTimestamp()
+      try {
+          await Promise.all(files.map((fileObj, index) => {
+            return new Promise<void>((resolve, reject) => {
+              const fileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${fileObj.name}`);
+              const uploadTask = uploadBytesResumable(fileRef, fileObj);
+
+              uploadTask.on('state_changed',
+                (snapshot) => {
+                  bytesTransferredArray[index] = snapshot.bytesTransferred;
+                  const currentTotalTransferred = bytesTransferredArray.reduce((acc, bytes) => acc + bytes, 0);
+                  const progress = (currentTotalTransferred / totalBytes) * 100;
+                  setUploadProgress(progress);
+                },
+                (err) => {
+                  console.error(`Upload failed for ${fileObj.name}:`, err);
+                  reject(err);
+                },
+                async () => {
+                  try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    fileUrls.push(downloadURL);
+                    resolve();
+                  } catch (err) {
+                    reject(err);
+                  }
+                }
+              );
             });
+          }));
 
-            // 3. Initiate Checkout
-            initiateCheckout(docRef.id, calculatePrice());
-          } catch (innerErr) {
-            console.error('Firestore or Checkout Init failed:', innerErr);
-            setError('Submission failed during database step. Please try again.');
-            setUploading(false);
+          // Set primary fileUrl for backward compatibility (using first file)
+          if (fileUrls.length > 0) {
+            setFileUrl(fileUrls[0]);
           }
-        }
-      );
-    } catch (err) {
+          setVoiceSampleUrl(vsUrl);
+
+          // 2. Save to Firestore
+          const docRef = await addDoc(collection(db, 'leads'), {
+            userId: sessionId,
+            email,
+            fileUrl: fileUrls[0] || null, // Keep primary for backend single-file processing
+            fileUrls: fileUrls, // Add array for multi-file support later
+            voiceSampleUrl: vsUrl,
+            cloningText,
+            fileType,
+            fileLengthWords: wordCount,
+            audioMinutes: audioMinutes,
+            calculatedPrice: calculatePrice(),
+            services: selectedServices,
+            languages,
+            status: 'pending_payment',
+            createdAt: serverTimestamp()
+          });
+
+          // 3. Initiate Checkout
+          await initiateCheckout(docRef.id, calculatePrice());
+      } catch (uploadErr: any) {
+         console.error('File upload or database step failed:', uploadErr);
+         setError('Submission failed during processing: ' + (uploadErr.message || 'Unknown error.'));
+         setUploading(false);
+         return;
+      }
+
+    } catch (err: any) {
       console.error('Submission failed:', err);
-      setError('Submission failed. Please try again.');
+      // Only set generic error if we didn't already set a more specific one
+      setError((prev) => prev || ('Submission failed. ' + (err.message || 'Please try again.')));
       setUploading(false);
     }
   };
@@ -334,14 +384,19 @@ export default function GetStarted() {
                 <input 
                   id="fileInput"
                   type="file" 
+                  multiple={true}
                   className="hidden" 
-                  onChange={handleFileChange}
+                  onChange={(e) => handleFileChange(e, false)}
                 />
-                {file ? (
+                {files.length > 0 ? (
                   <div className="flex flex-col items-center">
                     <FileText className="w-16 h-16 text-bee-amber mb-4" />
-                    <p className="text-white font-bold text-xl">{file.name}</p>
-                    <p className="text-slate-500 mt-2">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-white font-bold text-xl">
+                      {files.length === 1 ? files[0].name : `${files.length} files selected`}
+                    </p>
+                    <p className="text-slate-500 mt-2">
+                      {(files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB
+                    </p>
                     <div className="mt-6 flex gap-8">
                       <div className="flex items-center text-slate-400">
                         <FileText className="w-4 h-4 mr-2" />
@@ -356,8 +411,8 @@ export default function GetStarted() {
                 ) : (
                   <>
                     <Upload className="w-16 h-16 text-bee-amber mx-auto mb-6 group-hover:scale-110 transition-transform" />
-                    <p className="text-white font-bold text-xl">Click or drag file to upload</p>
-                    <p className="text-slate-500 mt-2">Audio, Video, or Text files (Max 50MB)</p>
+                    <p className="text-white font-bold text-xl">Click or drag files to upload</p>
+                    <p className="text-slate-500 mt-2">Audio, Video, or Text files (Max 50MB per file)</p>
                   </>
                 )}
               </div>
@@ -544,7 +599,7 @@ export default function GetStarted() {
 
             <button 
               onClick={handleSubmit}
-              disabled={uploading || !file}
+              disabled={uploading || files.length === 0}
               className="w-full py-6 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow flex items-center justify-center text-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {uploading ? (
