@@ -169,8 +169,9 @@ export default function GetStarted() {
       return;
     }
 
-    if (selectedServices.voiceCloning && !cloningText) {
-      setError('Please provide text for voice cloning.');
+    // Text for voice cloning is now optional if a file was uploaded
+    if (selectedServices.voiceCloning && !cloningText && files.length === 0) {
+      setError('Please provide text for voice cloning or upload a file.');
       return;
     }
 
@@ -537,12 +538,12 @@ export default function GetStarted() {
                             </label>
                           </div>
                           <div>
-                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice</span>
+                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice (Optional if file uploaded)</span>
                             <textarea
                               value={cloningText}
                               onChange={(e) => setCloningText(e.target.value)}
                               onClick={(e) => e.stopPropagation()}
-                              placeholder="Paste the script here..."
+                              placeholder={files.length > 0 ? "Optional: Leave blank to use your uploaded file(s) for the script." : "Paste the script here..."}
                               className="w-full bg-bee-black/50 border border-white/20 rounded-xl px-5 py-4 text-white focus:border-bee-amber focus:ring-1 focus:ring-bee-amber outline-none transition-all shadow-inner h-32 resize-none relative z-10"
                             />
                           </div>
