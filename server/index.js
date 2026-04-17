@@ -218,7 +218,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
     if (!leadSnap.exists) {
       return res.status(404).json({ error: 'Lead not found' });
     }
-
     const leadData = leadSnap.data();
 
     // Secure verification: Redo the math based on stored values
@@ -244,26 +243,25 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'Invalid price for checkout' });
     }
 
+    const frontendUrl = req.headers.origin || 'http://localhost:3000';
     const session = await stripe.checkout.sessions.create({
-      customer_email: email, // Pre-fill email in Stripe
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'AiBhive Translation and Voice Services',
-              description: `Processing fee for request ID: ${leadId}`,
-            },
-            unit_amount: Math.round(verifiedAmount * 100), // Stripe expects amounts in cents
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'AI Project Checkout',
+            description: `Processing fee for request ID: ${leadId}`,
           },
-          quantity: 1,
+          unit_amount: Math.round(verifiedAmount * 100),   // <-- dynamic price in cents
         },
-      ],
+        quantity: 1,
+      }],
       mode: 'payment',
-      // We'll update these URLs to match the frontend later
-      success_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?success=true`,
-      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?canceled=true`,
+      success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/get-started?canceled=true`,
+      customer_email: email,
+      metadata: { leadId },
       client_reference_id: leadId,
     });
 
