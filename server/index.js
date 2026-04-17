@@ -214,52 +214,27 @@ app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { leadId, email } = req.body;
 
-    let leadData;
-    let fallbackToFrontendMath = false;
-
-    try {
-      const leadSnap = await db.collection('leads').doc(leadId).get();
-      if (!leadSnap.exists) {
-        return res.status(404).json({ error: 'Lead not found' });
-      }
-      leadData = leadSnap.data();
-    } catch (dbErr) {
-       console.warn("Firestore lookup failed, likely local dev missing credentials:", dbErr.message);
-       if (process.env.NODE_ENV !== 'production') {
-         fallbackToFrontendMath = true;
-       } else {
-         throw dbErr; // Let the global catch handle it in prod
-       }
+    const leadSnap = await db.collection('leads').doc(leadId).get();
+    if (!leadSnap.exists) {
+      return res.status(404).json({ error: 'Lead not found' });
     }
+    const leadData = leadSnap.data();
 
     // Secure verification: Redo the math based on stored values
     let total = 0;
+    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
+    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
 
-    // In dev mode with missing DB keys, use a dummy price to let them proceed.
-    // In production, or dev with a DB connection, use real math.
-    if (fallbackToFrontendMath) {
-        console.warn("Using dummy 10.00 price for local checkout bypass");
-        total = 10.00;
-    } else {
-      const fileType = leadData.fileType;
-      const fileLengthWords = leadData.fileLengthWords;
-      const audioMinutes = leadData.audioMinutes;
-      const services = leadData.services;
-      const transcribeTranslate = services?.transcribeTranslate;
-      const voiceCloning = services?.voiceCloning;
-      const legalMedical = services?.legalMedical;
-
-      if (fileType === 'text') {
-        const words = Math.max(1, fileLengthWords || 1);
-        if (transcribeTranslate) total += words * 0.025;
-        if (legalMedical) total += words * 0.035;
-        if (voiceCloning) total += words * 0.035;
-      } else if (fileType === 'audio' || fileType === 'video') {
-        const minutes = Math.max(1, audioMinutes || 1);
-        if (transcribeTranslate) total += minutes * 2.49;
-        if (legalMedical) total += minutes * 3.29;
-        if (voiceCloning) total += minutes * 1.99;
-      }
+    if (fileType === 'text') {
+      const words = Math.max(1, fileLengthWords || 1);
+      if (transcribeTranslate) total += words * 0.025;
+      if (legalMedical) total += words * 0.035;
+      if (voiceCloning) total += words * 0.035;
+    } else if (fileType === 'audio' || fileType === 'video') {
+      const minutes = Math.max(1, audioMinutes || 1);
+      if (transcribeTranslate) total += minutes * 2.49;
+      if (legalMedical) total += minutes * 3.29;
+      if (voiceCloning) total += minutes * 1.99;
     }
 
     const verifiedAmount = Number(total.toFixed(2));
@@ -268,42 +243,29 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'Invalid price for checkout' });
     }
 
-    let sessionUrl = '';
-    try {
-      const session = await stripe.checkout.sessions.create({
-        customer_email: email, // Pre-fill email in Stripe
+    const frontendUrl = req.headers.origin || 'http://localhost:3000';
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'AiBhive Translation and Voice Services',
-              description: `Processing fee for request ID: ${leadId}`,
-            },
-            unit_amount: Math.round(verifiedAmount * 100), // Stripe expects amounts in cents
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'AI Project Checkout',
+            description: `Processing fee for request ID: ${leadId}`,
           },
-          quantity: 1,
+          unit_amount: Math.round(verifiedAmount * 100),   // <-- dynamic price in cents
         },
-      ],
+        quantity: 1,
+      }],
       mode: 'payment',
-      // We'll update these URLs to match the frontend later
-      success_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?success=true`,
-      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?canceled=true`,
+      success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/get-started?canceled=true`,
+      customer_email: email,
+      metadata: { leadId },
       client_reference_id: leadId,
     });
-      sessionUrl = session.url;
-    } catch (stripeErr) {
-      console.error("Stripe session creation failed:", stripeErr.message);
-      if (process.env.NODE_ENV !== 'production' && (stripeErr.message.includes("Invalid API Key") || stripeErr.message.includes("You did not provide an API key"))) {
-         console.warn("Bypassing Stripe for local dev with dummy key.");
-         sessionUrl = `${req.headers.origin || 'http://localhost:3000'}/get-started?success=true`;
-      } else {
-        throw stripeErr;
-      }
-    }
 
-    res.json({ url: sessionUrl });
+    res.json({ url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
