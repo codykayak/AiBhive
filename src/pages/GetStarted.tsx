@@ -134,17 +134,20 @@ export default function GetStarted() {
   };
 
   const calculatePrice = () => {
-    if (!fileType) return 0;
+    // If files uploaded but type isn't fully determined or fallback occurred,
+    // we default to text pricing base to prevent breaking checkout.
+    const effectiveFileType = fileType || 'text';
 
     let total = 0;
     const { transcribeTranslate, voiceCloning, legalMedical } = selectedServices;
 
-    if (fileType === 'text') {
+    // Minimum charge or basic parsing
+    if (effectiveFileType === 'text') {
       const words = Math.max(1, wordCount);
       if (transcribeTranslate) total += words * 0.025;
       if (legalMedical) total += words * 0.035;
       if (voiceCloning) total += words * 0.035;
-    } else if (fileType === 'audio') {
+    } else if (effectiveFileType === 'audio' || effectiveFileType === 'video') {
       const minutes = Math.max(1, audioMinutes);
       if (transcribeTranslate) total += minutes * 2.49;
       if (legalMedical) total += minutes * 3.29;
@@ -215,17 +218,18 @@ export default function GetStarted() {
       let bytesTransferredArray = new Array(files.length).fill(0);
 
       try {
-          await Promise.all(files.map((fileObj, index) => {
-            return new Promise<void>((resolve, reject) => {
-              const fileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${fileObj.name}`);
-              const uploadTask = uploadBytesResumable(fileRef, fileObj);
+          await Promise.all(files.map(async (fileObj, index) => {
+            const fileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${fileObj.name}`);
+            const uploadTask = uploadBytesResumable(fileRef, fileObj);
 
+            return new Promise<void>((resolve, reject) => {
               uploadTask.on('state_changed',
                 (snapshot) => {
                   bytesTransferredArray[index] = snapshot.bytesTransferred;
                   const currentTotalTransferred = bytesTransferredArray.reduce((acc, bytes) => acc + bytes, 0);
                   const progress = (currentTotalTransferred / totalBytes) * 100;
-                  setUploadProgress(progress);
+                  // Handle rare edge cases where progress calculation goes slightly above 100
+                  setUploadProgress(Math.min(100, Math.max(0, progress)));
                 },
                 (err) => {
                   console.error(`Upload failed for ${fileObj.name}:`, err);
@@ -274,6 +278,8 @@ export default function GetStarted() {
          console.error('File upload or database step failed:', uploadErr);
          setError('Submission failed during processing: ' + (uploadErr.message || 'Unknown error.'));
          setUploading(false);
+         // Reset progress on failure so next attempt restarts
+         setUploadProgress(0);
          return;
       }
 
@@ -282,6 +288,7 @@ export default function GetStarted() {
       // Only set generic error if we didn't already set a more specific one
       setError((prev) => prev || ('Submission failed. ' + (err.message || 'Please try again.')));
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -290,10 +297,14 @@ export default function GetStarted() {
       if (finalPrice <= 0) {
         setError('Please select a service or upload a valid file to proceed.');
         setUploading(false);
+        setUploadProgress(0);
         return;
       }
 
       console.log('Initiating checkout for lead:', leadId, 'price:', finalPrice);
+      // Set to 100% since files are completely uploaded at this point and we're just waiting for checkout API
+      setUploadProgress(100);
+
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -306,7 +317,8 @@ export default function GetStarted() {
       });
 
       if (!response.ok) {
-        throw new Error(`Checkout session API returned status: ${response.status}`);
+        const errText = await response.text();
+        throw new Error(`Checkout session API returned status: ${response.status}. ${errText}`);
       }
 
       const { url } = await response.json();
@@ -315,11 +327,13 @@ export default function GetStarted() {
       } else {
         setError('Failed to initiate checkout.');
         setUploading(false);
+        setUploadProgress(0);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Checkout error:', err);
-      setError('Failed to initiate checkout.');
+      setError('Failed to initiate checkout. ' + (err.message || 'Please try again.'));
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -495,13 +509,10 @@ export default function GetStarted() {
                         >
                           <div>
                             <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Upload Voice Sample (Max 5MB)</span>
-                            <div
-                              className="border border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-bee-amber/50 transition-all cursor-pointer bg-bee-black/40 relative z-10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                document.getElementById('voiceSampleInput')?.click();
-                              }}
+                            <label
+                              htmlFor="voiceSampleInput"
+                              className="border border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-bee-amber/50 transition-all cursor-pointer bg-bee-black/40 relative z-10 block"
+                              onClick={(e) => e.stopPropagation()}
                             >
                               <input
                                 id="voiceSampleInput"
@@ -509,7 +520,6 @@ export default function GetStarted() {
                                 accept="audio/*"
                                 className="hidden"
                                 onChange={(e) => {
-                                  e.stopPropagation();
                                   handleFileChange(e, true);
                                 }}
                               />
@@ -524,7 +534,7 @@ export default function GetStarted() {
                                   Click to upload 30s-2min clean audio
                                 </div>
                               )}
-                            </div>
+                            </label>
                           </div>
                           <div>
                             <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice</span>
