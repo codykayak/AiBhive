@@ -214,10 +214,15 @@ app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { leadId, email } = req.body;
 
+    if (!leadId) {
+      return res.status(400).json({ error: 'Missing required leadId parameter.' });
+    }
+
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
     }
+
     const leadData = leadSnap.data();
 
     // Secure verification: Redo the math based on stored values
@@ -238,37 +243,53 @@ app.post('/api/create-checkout-session', async (req, res) => {
     }
 
     const verifiedAmount = Number(total.toFixed(2));
+    const amountInCents = Math.round(verifiedAmount * 100);
 
-    if (verifiedAmount === undefined || verifiedAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid price for checkout' });
+    // Stripe enforces a minimum charge amount (usually $0.50 USD).
+    // If the calculation results in less than 50 cents, it will fail.
+    if (amountInCents < 50) {
+      return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50.` });
     }
 
     const frontendUrl = req.headers.origin || 'http://localhost:3000';
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'AI Project Checkout',
-            description: `Processing fee for request ID: ${leadId}`,
-          },
-          unit_amount: Math.round(verifiedAmount * 100),   // <-- dynamic price in cents
-        },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${frontendUrl}/get-started?canceled=true`,
-      customer_email: email,
-      metadata: { leadId },
-      client_reference_id: leadId,
-    });
 
-    res.json({ url: session.url });
+    // Create checkout session with explicit try-catch to surface Stripe-specific errors
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'AI Project Checkout',
+              description: `Processing fee for request ID: ${leadId}`,
+            },
+            unit_amount: amountInCents,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/get-started?canceled=true`,
+        customer_email: email || undefined,
+        metadata: { leadId },
+        client_reference_id: leadId,
+      });
+
+      if (!session.url) {
+        throw new Error("Stripe did not return a valid checkout URL.");
+      }
+
+      res.json({ url: session.url });
+    } catch (stripeErr) {
+      console.error('Stripe API error:', stripeErr);
+      // Pass the specific Stripe error message back to the frontend so the user knows what failed
+      return res.status(502).json({ error: `Payment provider error: ${stripeErr.message}` });
+    }
+
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    console.error('Internal server error during checkout creation:', error);
+    res.status(500).json({ error: 'Internal server error while preparing checkout.' });
   }
 });
 

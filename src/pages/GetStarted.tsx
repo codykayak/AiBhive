@@ -303,7 +303,6 @@ export default function GetStarted() {
       }
 
       console.log('Initiating checkout for lead:', leadId, 'price:', finalPrice);
-      // Set to 100% since files are completely uploaded at this point and we're just waiting for checkout API
       setUploadProgress(100);
 
       const response = await fetch('/api/create-checkout-session', {
@@ -317,22 +316,24 @@ export default function GetStarted() {
         }),
       });
 
+      const responseData = await response.json().catch(() => ({ error: 'Invalid response from server' }));
+
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Checkout session API returned status: ${response.status}. ${errText}`);
+        // We expect the new backend to send back specific { error: "message" } JSON.
+        const errorMessage = responseData.error || `Server error (${response.status})`;
+        throw new Error(errorMessage);
       }
 
-      const { url } = await response.json();
-      if (url) {
-        window.location.href = url;
+      if (responseData.url) {
+        window.location.href = responseData.url;
       } else {
-        setError('Failed to initiate checkout.');
-        setUploading(false);
-        setUploadProgress(0);
+        throw new Error('Server did not return a valid checkout URL.');
       }
     } catch (err: any) {
       console.error('Checkout error:', err);
-      setError('Failed to initiate checkout. ' + (err.message || 'Please try again.'));
+      // Display the specific error message to the user, stripping out technical prefix if present
+      const cleanMessage = err.message.replace(/^Error:\s*/i, '');
+      setError(`Checkout Failed: ${cleanMessage}`);
       setUploading(false);
       setUploadProgress(0);
     }
