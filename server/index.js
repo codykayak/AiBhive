@@ -246,56 +246,38 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const amountInCents = Math.round(verifiedAmount * 100);
 
     // Stripe enforces a minimum charge amount (usually $0.50 USD).
-    // If the calculation results in less than 50 cents, it will fail.
     if (amountInCents < 50) {
       return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50. Ensure you have selected a service and uploaded a valid file.` });
     }
 
     const frontendUrl = req.headers.origin || 'http://localhost:3000';
 
-    // Create checkout session with explicit try-catch to surface Stripe-specific errors
     try {
-      let sessionUrl = '';
-      try {
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
-          line_items: [{
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'AI Project Checkout',
-                description: `Processing fee for request ID: ${leadId}`,
-              },
-              unit_amount: amountInCents,
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'AI Project Checkout',
+              description: `Processing fee for request ID: ${leadId}`,
             },
-            quantity: 1,
-          }],
-          mode: 'payment',
-          success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${frontendUrl}/get-started?canceled=true`,
-          customer_email: email || undefined,
-          metadata: { leadId },
-          client_reference_id: leadId,
-        });
-        sessionUrl = session.url;
-      } catch (stripeErr) {
-        console.error('Stripe API error:', stripeErr);
-        if (process.env.NODE_ENV !== 'production' && (stripeErr.message.includes("Invalid API Key") || stripeErr.message.includes("You did not provide an API key"))) {
-           console.warn("Bypassing Stripe for local dev with dummy key.");
-           sessionUrl = `${frontendUrl}/get-started?success=true`;
-        } else {
-           throw stripeErr;
-        }
-      }
+            unit_amount: amountInCents,
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/get-started?canceled=true`,
+        customer_email: email || undefined,
+        metadata: { leadId },
+        client_reference_id: leadId,
+      });
 
-      if (!sessionUrl) {
-        throw new Error("Stripe did not return a valid checkout URL.");
-      }
-
-      res.json({ url: sessionUrl });
+      if (!session.url) throw new Error("Stripe did not return a valid checkout URL.");
+      res.json({ url: session.url });
     } catch (stripeErr) {
       console.error('Stripe API error block caught:', stripeErr);
-      // Ensure we send back a JSON object with 'error' property
       return res.status(400).json({ error: `Payment provider error: ${stripeErr.message || 'Unknown Stripe error'}` });
     }
 
