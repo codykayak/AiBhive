@@ -218,52 +218,28 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'Missing required leadId parameter.' });
     }
 
-    let leadData;
-    let fallbackToFrontendMath = false;
-
-    try {
-      const leadSnap = await db.collection('leads').doc(leadId).get();
-      if (!leadSnap.exists) {
-        return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
-      }
-      leadData = leadSnap.data();
-    } catch (dbErr) {
-       console.warn("Firestore lookup failed, likely local dev missing credentials:", dbErr.message);
-       if (process.env.NODE_ENV !== 'production') {
-         fallbackToFrontendMath = true;
-         // mock lead data for dev
-         leadData = { fileType: 'text', fileLengthWords: 500, audioMinutes: 0, services: { transcribeTranslate: true } };
-       } else {
-         throw dbErr; // Let the global catch handle it in prod
-       }
+    const leadSnap = await db.collection('leads').doc(leadId).get();
+    if (!leadSnap.exists) {
+      return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
     }
+
+    const leadData = leadSnap.data();
 
     // Secure verification: Redo the math based on stored values
     let total = 0;
+    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
+    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
 
-    if (fallbackToFrontendMath) {
-        console.warn("Using dummy 10.00 price for local checkout bypass");
-        total = 10.00;
-    } else {
-      const fileType = leadData?.fileType || 'text';
-      const fileLengthWords = leadData?.fileLengthWords || 0;
-      const audioMinutes = leadData?.audioMinutes || 0;
-      const services = leadData?.services || {};
-      const transcribeTranslate = services?.transcribeTranslate || false;
-      const voiceCloning = services?.voiceCloning || false;
-      const legalMedical = services?.legalMedical || false;
-
-      if (fileType === 'text') {
-        const words = Math.max(1, fileLengthWords || 1);
-        if (transcribeTranslate) total += words * 0.025;
-        if (legalMedical) total += words * 0.035;
-        if (voiceCloning) total += words * 0.035;
-      } else if (fileType === 'audio' || fileType === 'video') {
-        const minutes = Math.max(1, audioMinutes || 1);
-        if (transcribeTranslate) total += minutes * 2.49;
-        if (legalMedical) total += minutes * 3.29;
-        if (voiceCloning) total += minutes * 1.99;
-      }
+    if (fileType === 'text') {
+      const words = Math.max(1, fileLengthWords || 1);
+      if (transcribeTranslate) total += words * 0.025;
+      if (legalMedical) total += words * 0.035;
+      if (voiceCloning) total += words * 0.035;
+    } else if (fileType === 'audio' || fileType === 'video') {
+      const minutes = Math.max(1, audioMinutes || 1);
+      if (transcribeTranslate) total += minutes * 2.49;
+      if (legalMedical) total += minutes * 3.29;
+      if (voiceCloning) total += minutes * 1.99;
     }
 
     const verifiedAmount = Number(total.toFixed(2));
@@ -272,7 +248,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Stripe enforces a minimum charge amount (usually $0.50 USD).
     // If the calculation results in less than 50 cents, it will fail.
     if (amountInCents < 50) {
-      return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50.` });
+      return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50. Ensure you have selected a service and uploaded a valid file.` });
     }
 
     const frontendUrl = req.headers.origin || 'http://localhost:3000';
@@ -332,6 +308,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Explicitly serve the standalone Cody page if the route matches exactly
+app.get('/cody', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
+});
 
 // Catch-all route to serve the React index.html for client-side routing
 app.get('*', (req, res) => {
