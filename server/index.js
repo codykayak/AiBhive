@@ -333,6 +333,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
 app.use(express.static(path.join(__dirname, '../dist')));
 
+// Explicitly serve the standalone Cody page if the route matches exactly
+app.get('/cody', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
+});
+
 // Catch-all route to serve the React index.html for client-side routing
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
