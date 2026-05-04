@@ -138,23 +138,37 @@ export default function GetStarted() {
   };
 
   const handleSubmit = async () => {
+    console.log('[Checkout] handleSubmit started', {
+      filesCount: files.length,
+      fileType,
+      wordCount,
+      audioMinutes,
+      selectedServices,
+      email,
+      calculatedPrice: calculatePrice(),
+    });
+
     if (files.length === 0) {
+      console.warn('[Checkout] Validation failed: no file selected');
       setError('Please upload a file.');
       return;
     }
 
     if (selectedServices.voiceCloning && !voiceSample) {
+      console.warn('[Checkout] Validation failed: voice cloning selected but no voice sample');
       setError('Please upload a voice sample for cloning.');
       return;
     }
 
     // Text for voice cloning is optional if a file was uploaded
     if (selectedServices.voiceCloning && !cloningText && !file) {
+      console.warn('[Checkout] Validation failed: voice cloning selected but no cloning text or file');
       setError('Please provide text for voice cloning or upload a file.');
       return;
     }
 
     if (!email || !email.includes('@')) {
+      console.warn('[Checkout] Validation failed: invalid email', { email });
       setError('Please provide a valid email address to start your project.');
       return;
     }
@@ -166,47 +180,64 @@ export default function GetStarted() {
       let uid;
       try {
         if (!auth.currentUser) {
+          console.log('[Checkout] No current user — signing in anonymously');
           const userCredential = await signInAnonymously(auth);
           uid = userCredential.user.uid;
+          console.log('[Checkout] Anonymous sign-in succeeded, uid:', uid);
         } else {
           uid = auth.currentUser.uid;
+          console.log('[Checkout] Reusing existing auth uid:', uid);
         }
       } catch (authErr) {
-        console.warn("Anonymous auth failed (is it enabled in Firebase?). Falling back to random ID.", authErr);
+        console.warn('[Checkout] Anonymous auth failed — falling back to random ID:', authErr);
         uid = `anon_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        console.log('[Checkout] Generated fallback uid:', uid);
       }
 
       const sessionId = uid;
 
       // 1. Upload Main File
-      const mainFileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${file.name}`);
-      const mainUploadTask = uploadBytesResumable(mainFileRef, file);
+      console.log('[Checkout] Starting main file upload:', file!.name, 'size:', file!.size);
+      const mainFileRef = ref(storage, `leads/${sessionId}/${Date.now()}_${file!.name}`);
+      const mainUploadTask = uploadBytesResumable(mainFileRef, file!);
 
       let vsUrl = null;
       if (voiceSample) {
-        const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
-        const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
-        vsUrl = await getDownloadURL(vsUpload.ref);
+        console.log('[Checkout] Uploading voice sample:', voiceSample.name);
+        try {
+          const vsRef = ref(storage, `leads/${sessionId}/sample_${Date.now()}_${voiceSample.name}`);
+          const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
+          vsUrl = await getDownloadURL(vsUpload.ref);
+          console.log('[Checkout] Voice sample uploaded, URL:', vsUrl);
+        } catch (vsErr) {
+          console.error('[Checkout] Voice sample upload failed:', vsErr);
+          setError('Voice sample upload failed. Please try again.');
+          setUploading(false);
+          return;
+        }
       }
 
       mainUploadTask.on('state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`[Checkout] Main file upload progress: ${progress.toFixed(1)}%`);
           setUploadProgress(progress);
         },
         (err) => {
-          console.error('Upload failed:', err);
+          console.error('[Checkout] Main file upload failed:', err);
           setError('File upload failed.');
           setUploading(false);
         },
         async () => {
+          console.log('[Checkout] Main file upload complete');
           try {
             const downloadURL = await getDownloadURL(mainUploadTask.snapshot.ref);
+            console.log('[Checkout] Main file download URL obtained:', downloadURL);
             setFileUrl(downloadURL);
             setVoiceSampleUrl(vsUrl);
 
             // 2. Save to Firestore
-            const docRef = await addDoc(collection(db, 'leads'), {
+            const firestorePayload = {
               userId: sessionId,
               email,
               fileUrl: downloadURL,
@@ -219,67 +250,97 @@ export default function GetStarted() {
               services: selectedServices,
               languages,
               status: 'pending_payment',
-              createdAt: serverTimestamp()
-            });
+              createdAt: serverTimestamp(),
+            };
+            console.log('[Checkout] Writing lead to Firestore:', firestorePayload);
+            const docRef = await addDoc(collection(db, 'leads'), firestorePayload);
+            console.log('[Checkout] Firestore lead created with ID:', docRef.id);
 
-            // 3. Initiate Checkout — keep uploading=true so the spinner stays active
-            // until we either redirect to Stripe or hit an error inside initiateCheckout
-            initiateCheckout(docRef.id, calculatePrice());
+            // 3. Initiate Checkout — await so any unhandled rejection is caught below
+            await initiateCheckout(docRef.id, calculatePrice());
           } catch (innerErr) {
-            console.error('Firestore or Checkout Init failed:', innerErr);
+            console.error('[Checkout] Error in Firestore write or checkout initiation:', innerErr);
             setError('Submission failed during database step. Please try again.');
             setUploading(false);
           }
         }
       );
     } catch (err) {
-      console.error('Submission failed:', err);
+      console.error('[Checkout] Unexpected error in handleSubmit:', err);
       setError('Submission failed. Please try again.');
       setUploading(false);
     }
   };
 
   const initiateCheckout = async (leadId: string, finalPrice: number) => {
+    console.log('[Checkout] initiateCheckout started', { leadId, finalPrice });
+
     try {
       if (finalPrice <= 0) {
+        console.warn('[Checkout] Price is zero or negative — aborting checkout', { finalPrice });
         setError('Please select a service or upload a valid file to proceed.');
         setUploading(false);
         setUploadProgress(0);
         return;
       }
 
-      console.log('Initiating checkout for lead:', leadId, 'price:', finalPrice);
       setUploadProgress(100);
 
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          leadId,
-          email,
-        }),
-      });
+      const requestBody = { leadId, email };
+      console.log('[Checkout] Sending POST /api/create-checkout-session', requestBody);
 
-      const responseData = await response.json().catch(() => ({ error: 'Invalid response from server' }));
+      // 30-second timeout so the spinner never hangs forever if the server stalls
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error('[Checkout] Request timed out after 30 seconds — aborting fetch');
+        controller.abort();
+      }, 30_000);
+
+      let response: Response;
+      try {
+        response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      console.log('[Checkout] Response received — status:', response.status, response.statusText);
+
+      let responseData: any;
+      try {
+        responseData = await response.json();
+        console.log('[Checkout] Response body:', responseData);
+      } catch (parseErr) {
+        console.error('[Checkout] Failed to parse response JSON:', parseErr);
+        responseData = { error: 'Invalid (non-JSON) response from server' };
+      }
 
       if (!response.ok) {
-        // We expect the new backend to send back specific { error: "message" } JSON.
-        const errorMessage = responseData.error || `Server error (${response.status})`;
+        const errorMessage = responseData?.error || `Server error (${response.status})`;
+        console.error('[Checkout] Server returned error response:', { status: response.status, errorMessage, responseData });
         throw new Error(errorMessage);
       }
 
-      if (responseData.url) {
+      if (responseData?.url) {
+        console.log('[Checkout] Redirecting to Stripe checkout URL:', responseData.url);
         window.location.href = responseData.url;
       } else {
+        console.error('[Checkout] Server response OK but no URL in body:', responseData);
         throw new Error('Server did not return a valid checkout URL.');
       }
     } catch (err: any) {
-      console.error('Checkout error:', err);
-      // Display the specific error message to the user, stripping out technical prefix if present
-      const cleanMessage = err.message.replace(/^Error:\s*/i, '');
-      setError(`Checkout Failed: ${cleanMessage}`);
+      if (err?.name === 'AbortError') {
+        console.error('[Checkout] Fetch aborted (timeout or manual abort):', err);
+        setError('Checkout Failed: The request timed out. Please check your connection and try again.');
+      } else {
+        console.error('[Checkout] Checkout error:', err);
+        const cleanMessage = err.message.replace(/^Error:\s*/i, '');
+        setError(`Checkout Failed: ${cleanMessage}`);
+      }
       setUploading(false);
       setUploadProgress(0);
     }
