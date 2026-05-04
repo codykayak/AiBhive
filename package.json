@@ -8,7 +8,7 @@
     "dev:frontend": "vite --port=3000 --host=0.0.0.0",
     "dev:backend": "PORT=3001 node server/index.js",
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
-    "build": "vite build && cp -r cody dist/cody",
+    "build": "vite build && npm run build --prefix cody",
     "preview": "vite preview --port 8080 --host 0.0.0.0",
     "start": "node server/index.js",
     "clean": "rm -rf dist",
