@@ -211,19 +211,37 @@ app.use(express.json());
 
 // Endpoint to create a checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  console.log(`[${requestId}] POST /api/create-checkout-session received`, {
+    body: req.body,
+    origin: req.headers.origin,
+    contentType: req.headers['content-type'],
+  });
+
   try {
     const { leadId, email } = req.body;
 
     if (!leadId) {
+      console.error(`[${requestId}] Missing leadId in request body`);
       return res.status(400).json({ error: 'Missing required leadId parameter.' });
     }
 
+    console.log(`[${requestId}] Fetching lead from Firestore, leadId:`, leadId);
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
+      console.error(`[${requestId}] Lead not found in Firestore, leadId:`, leadId);
       return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
     }
 
     const leadData = leadSnap.data();
+    console.log(`[${requestId}] Lead data retrieved:`, {
+      leadId,
+      fileType: leadData.fileType,
+      fileLengthWords: leadData.fileLengthWords,
+      audioMinutes: leadData.audioMinutes,
+      services: leadData.services,
+      status: leadData.status,
+    });
 
     // Secure verification: Redo the math based on stored values
     let total = 0;
@@ -244,13 +262,21 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
     const verifiedAmount = Number(total.toFixed(2));
     const amountInCents = Math.round(verifiedAmount * 100);
+    console.log(`[${requestId}] Calculated price:`, { verifiedAmount, amountInCents, fileType, transcribeTranslate, voiceCloning, legalMedical });
 
     // Stripe enforces a minimum charge amount (usually $0.50 USD).
     if (amountInCents < 50) {
+      console.error(`[${requestId}] Calculated price below minimum:`, { verifiedAmount, amountInCents });
       return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50. Ensure you have selected a service and uploaded a valid file.` });
     }
 
     const frontendUrl = req.headers.origin || 'http://localhost:3000';
+    console.log(`[${requestId}] Creating Stripe checkout session`, {
+      amountInCents,
+      frontendUrl,
+      email: email || '(none)',
+      leadId,
+    });
 
     try {
       const session = await stripe.checkout.sessions.create({
@@ -274,15 +300,29 @@ app.post('/api/create-checkout-session', async (req, res) => {
         client_reference_id: leadId,
       });
 
-      if (!session.url) throw new Error("Stripe did not return a valid checkout URL.");
+      if (!session.url) {
+        console.error(`[${requestId}] Stripe session created but URL is missing`, { sessionId: session.id });
+        throw new Error("Stripe did not return a valid checkout URL.");
+      }
+
+      console.log(`[${requestId}] Stripe session created successfully`, { sessionId: session.id, url: session.url });
       res.json({ url: session.url });
     } catch (stripeErr) {
-      console.error('Stripe API error block caught:', stripeErr);
+      console.error(`[${requestId}] Stripe API error:`, {
+        message: stripeErr.message,
+        type: stripeErr.type,
+        code: stripeErr.code,
+        statusCode: stripeErr.statusCode,
+        raw: stripeErr.raw,
+      });
       return res.status(400).json({ error: `Payment provider error: ${stripeErr.message || 'Unknown Stripe error'}` });
     }
 
   } catch (error) {
-    console.error('Internal server error during checkout creation:', error);
+    console.error(`[${requestId}] Unhandled internal error in /api/create-checkout-session:`, {
+      message: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({ error: 'Internal server error while preparing checkout.' });
   }
 });
