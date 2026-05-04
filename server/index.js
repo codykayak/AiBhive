@@ -209,121 +209,81 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 // Regular JSON middleware for other endpoints
 app.use(express.json());
 
-// Endpoint to create a checkout session
+// Pricing tables (kept in sync with frontend)
+const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
+const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };
+
+function calculatePrice(lead) {
+  const { fileType, fileLengthWords, audioMinutes, services } = lead || {};
+  if (!services) return 0;
+
+  const isAudio = fileType === 'audio' || fileType === 'video';
+  const rates = isAudio ? AUDIO_RATES : TEXT_RATES;
+  const unit = isAudio ? Math.max(1, audioMinutes || 1) : Math.max(1, fileLengthWords || 1);
+
+  let total = 0;
+  for (const key of Object.keys(rates)) {
+    if (services[key]) total += unit * rates[key];
+  }
+  return Number(total.toFixed(2));
+}
+
 app.post('/api/create-checkout-session', async (req, res) => {
-  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-  console.log(`[${requestId}] POST /api/create-checkout-session received`, {
-    body: req.body,
-    origin: req.headers.origin,
-    contentType: req.headers['content-type'],
-  });
+  const { leadId, email } = req.body || {};
+  console.log('[checkout] request received', { leadId, email });
 
   try {
-    const { leadId, email } = req.body;
-
     if (!leadId) {
-      console.error(`[${requestId}] Missing leadId in request body`);
-      return res.status(400).json({ error: 'Missing required leadId parameter.' });
+      return res.status(400).json({ error: 'Missing leadId.' });
     }
 
-    console.log(`[${requestId}] Fetching lead from Firestore, leadId:`, leadId);
+    console.log('[checkout] loading lead from Firestore');
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
-      console.error(`[${requestId}] Lead not found in Firestore, leadId:`, leadId);
-      return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
+      return res.status(404).json({ error: 'Lead not found.' });
+    }
+    const lead = leadSnap.data();
+
+    console.log('[checkout] verifying price');
+    const amount = calculatePrice(lead);
+    const amountCents = Math.round(amount * 100);
+    if (amountCents < 50) {
+      return res.status(400).json({ error: `Price ($${amount}) is below the $0.50 minimum.` });
     }
 
-    const leadData = leadSnap.data();
-    console.log(`[${requestId}] Lead data retrieved:`, {
-      leadId,
-      fileType: leadData.fileType,
-      fileLengthWords: leadData.fileLengthWords,
-      audioMinutes: leadData.audioMinutes,
-      services: leadData.services,
-      status: leadData.status,
-    });
+    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+    console.log('[checkout] creating Stripe session', { amountCents, origin });
 
-    // Secure verification: Redo the math based on stored values
-    let total = 0;
-    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
-    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
-
-    if (fileType === 'text') {
-      const words = Math.max(1, fileLengthWords || 1);
-      if (transcribeTranslate) total += words * 0.025;
-      if (legalMedical) total += words * 0.035;
-      if (voiceCloning) total += words * 0.035;
-    } else if (fileType === 'audio' || fileType === 'video') {
-      const minutes = Math.max(1, audioMinutes || 1);
-      if (transcribeTranslate) total += minutes * 2.49;
-      if (legalMedical) total += minutes * 3.29;
-      if (voiceCloning) total += minutes * 1.99;
-    }
-
-    const verifiedAmount = Number(total.toFixed(2));
-    const amountInCents = Math.round(verifiedAmount * 100);
-    console.log(`[${requestId}] Calculated price:`, { verifiedAmount, amountInCents, fileType, transcribeTranslate, voiceCloning, legalMedical });
-
-    // Stripe enforces a minimum charge amount (usually $0.50 USD).
-    if (amountInCents < 50) {
-      console.error(`[${requestId}] Calculated price below minimum:`, { verifiedAmount, amountInCents });
-      return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50. Ensure you have selected a service and uploaded a valid file.` });
-    }
-
-    const frontendUrl = req.headers.origin || 'http://localhost:3000';
-    console.log(`[${requestId}] Creating Stripe checkout session`, {
-      amountInCents,
-      frontendUrl,
-      email: email || '(none)',
-      leadId,
-    });
-
-    try {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'AI Project Checkout',
-              description: `Processing fee for request ID: ${leadId}`,
-            },
-            unit_amount: amountInCents,
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'usd',
+          unit_amount: amountCents,
+          product_data: {
+            name: 'AiBhive Project',
+            description: `Order ${leadId}`,
           },
-          quantity: 1,
-        }],
-        mode: 'payment',
-        success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${frontendUrl}/get-started?canceled=true`,
-        customer_email: email || undefined,
-        metadata: { leadId },
-        client_reference_id: leadId,
-      });
+        },
+      }],
+      customer_email: email || lead.email || undefined,
+      client_reference_id: leadId,
+      metadata: { leadId },
+      success_url: `${origin}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/get-started?canceled=true`,
+    });
 
-      if (!session.url) {
-        console.error(`[${requestId}] Stripe session created but URL is missing`, { sessionId: session.id });
-        throw new Error("Stripe did not return a valid checkout URL.");
-      }
-
-      console.log(`[${requestId}] Stripe session created successfully`, { sessionId: session.id, url: session.url });
-      res.json({ url: session.url });
-    } catch (stripeErr) {
-      console.error(`[${requestId}] Stripe API error:`, {
-        message: stripeErr.message,
-        type: stripeErr.type,
-        code: stripeErr.code,
-        statusCode: stripeErr.statusCode,
-        raw: stripeErr.raw,
-      });
-      return res.status(400).json({ error: `Payment provider error: ${stripeErr.message || 'Unknown Stripe error'}` });
+    if (!session.url) {
+      throw new Error('Stripe did not return a checkout URL.');
     }
 
-  } catch (error) {
-    console.error(`[${requestId}] Unhandled internal error in /api/create-checkout-session:`, {
-      message: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({ error: 'Internal server error while preparing checkout.' });
+    console.log('[checkout] session created', { id: session.id });
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[checkout] failed:', err);
+    return res.status(500).json({ error: err.message || 'Checkout failed.' });
   }
 });
 
