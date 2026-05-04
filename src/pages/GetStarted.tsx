@@ -165,8 +165,21 @@ export default function GetStarted() {
     setSubmitting(true);
     try {
       console.log('[Checkout] Step 1/3 — signing in anonymously');
-      const cred = auth.currentUser ?? (await signInAnonymously(auth)).user;
-      const uid = cred.uid ?? `anon_${Date.now()}`;
+      let uid: string;
+      try {
+        const cred = auth.currentUser ?? (await signInAnonymously(auth)).user;
+        uid = cred.uid;
+      } catch (authErr: any) {
+        // Anonymous Auth may be disabled in the Firebase project
+        // (auth/admin-restricted-operation). Fall back to a random session ID
+        // so the lead can still be uploaded — Storage and Firestore rules
+        // already permit unauthenticated creation under /leads/{sessionId}/.
+        console.warn(
+          '[Checkout] Anonymous sign-in unavailable, falling back to anon session id:',
+          authErr?.code || authErr?.message,
+        );
+        uid = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+      }
 
       console.log('[Checkout] Step 2/3 — uploading file to Storage');
       const fileRef = ref(storage, `leads/${uid}/${Date.now()}_${file.name}`);
@@ -206,7 +219,17 @@ export default function GetStarted() {
       window.location.href = data.url;
     } catch (err: any) {
       console.error('[Checkout] Failed:', err);
-      setError(err?.message || 'Something went wrong. Please try again.');
+      const code: string | undefined = err?.code;
+      let msg = err?.message || 'Something went wrong. Please try again.';
+      if (code === 'auth/admin-restricted-operation') {
+        msg =
+          'Authentication is temporarily unavailable. Please refresh the page and try again.';
+      } else if (code?.startsWith('storage/')) {
+        msg = `Upload failed (${code}). Please try a different file or try again shortly.`;
+      } else if (code?.startsWith('permission-denied') || code === 'permission-denied') {
+        msg = 'We could not save your request due to a permissions issue. Please try again.';
+      }
+      setError(msg);
       setSubmitting(false);
     }
   };
