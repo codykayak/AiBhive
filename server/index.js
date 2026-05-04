@@ -289,12 +289,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
-app.use(express.static(path.join(__dirname, '../dist')));
 
-// Explicitly serve the standalone Cody page if the route matches exactly
-app.get('/cody', (req, res) => {
+// Serve the standalone Cody website at /cody (static assets + fallback to cody/index.html)
+app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
+app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
 });
+
+app.use(express.static(path.join(__dirname, '../dist')));
 
 // Catch-all route to serve the React index.html for client-side routing
 app.get('*', (req, res) => {
