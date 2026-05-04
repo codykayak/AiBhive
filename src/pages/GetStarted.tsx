@@ -87,6 +87,7 @@ export default function GetStarted() {
     }
 
     setFile(selectedFile);
+    setFiles([selectedFile]);
     setError(null);
 
     // Determine type and count
@@ -147,8 +148,8 @@ export default function GetStarted() {
       return;
     }
 
-    // Text for voice cloning is now optional if a file was uploaded
-    if (selectedServices.voiceCloning && !cloningText && files.length === 0) {
+    // Text for voice cloning is optional if a file was uploaded
+    if (selectedServices.voiceCloning && !cloningText && !file) {
       setError('Please provide text for voice cloning or upload a file.');
       return;
     }
@@ -221,9 +222,8 @@ export default function GetStarted() {
               createdAt: serverTimestamp()
             });
 
-            setUploading(false);
-
-            // 3. Initiate Checkout
+            // 3. Initiate Checkout — keep uploading=true so the spinner stays active
+            // until we either redirect to Stripe or hit an error inside initiateCheckout
             initiateCheckout(docRef.id, calculatePrice());
           } catch (innerErr) {
             console.error('Firestore or Checkout Init failed:', innerErr);
@@ -563,7 +563,7 @@ export default function GetStarted() {
               {uploading ? (
                 <>
                   <Loader2 className="w-6 h-6 mr-3 animate-spin" />
-                  Processing {Math.round(uploadProgress)}%
+                  {uploadProgress >= 100 ? 'Preparing checkout…' : `Uploading ${Math.round(uploadProgress)}%`}
                 </>
               ) : (
                 <>
