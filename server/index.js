@@ -19,17 +19,12 @@ const app = express();
 // For Google Cloud Run, we listen on PORT (default 8080).
 const port = process.env.PORT || 8080;
 
-// Initialize Firebase Admin (Uses service account from GOOGLE_APPLICATION_CREDENTIALS or process.env)
-// Trigger deployment to check Cloud Run stability
-try {
-  // Usually this reads from GOOGLE_APPLICATION_CREDENTIALS environment variable
-  admin.initializeApp();
-} catch (e) {
-  // If not running in Google Cloud or missing env var, try initializing with a fake/mock for dev
-  console.warn("Could not initialize Firebase Admin automatically. Falling back to default app config if available.", e.message);
-  if (process.env.FIREBASE_PROJECT_ID) {
-    admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID
+// Initialize Firebase Admin with explicit project ID
+admin.initializeApp({
+  projectId: "gen-lang-client-0787280773"
+});
+
+const db = admin.firestore();
     });
   }
 }
