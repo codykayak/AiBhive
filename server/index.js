@@ -214,9 +214,13 @@ app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { leadId, email } = req.body;
 
+    if (!leadId) {
+      return res.status(400).json({ error: 'Missing required leadId parameter.' });
+    }
+
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ error: 'Lead data could not be found in the database. Please try uploading your files again.' });
     }
 
     const leadData = leadSnap.data();
@@ -239,44 +243,58 @@ app.post('/api/create-checkout-session', async (req, res) => {
     }
 
     const verifiedAmount = Number(total.toFixed(2));
+    const amountInCents = Math.round(verifiedAmount * 100);
 
-    if (verifiedAmount === undefined || verifiedAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid price for checkout' });
+    // Stripe enforces a minimum charge amount (usually $0.50 USD).
+    if (amountInCents < 50) {
+      return res.status(400).json({ error: `Calculated price (${verifiedAmount}) is below the minimum processing amount of $0.50. Ensure you have selected a service and uploaded a valid file.` });
     }
 
-    const session = await stripe.checkout.sessions.create({
-      customer_email: email, // Pre-fill email in Stripe
-      payment_method_types: ['card'],
-      line_items: [
-        {
+    const frontendUrl = req.headers.origin || 'http://localhost:3000';
+
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'AiBhive Translation and Voice Services',
+              name: 'AI Project Checkout',
               description: `Processing fee for request ID: ${leadId}`,
             },
-            unit_amount: Math.round(verifiedAmount * 100), // Stripe expects amounts in cents
+            unit_amount: amountInCents,
           },
           quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      // We'll update these URLs to match the frontend later
-      success_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?success=true`,
-      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?canceled=true`,
-      client_reference_id: leadId,
-    });
+        }],
+        mode: 'payment',
+        success_url: `${frontendUrl}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendUrl}/get-started?canceled=true`,
+        customer_email: email || undefined,
+        metadata: { leadId },
+        client_reference_id: leadId,
+      });
 
-    res.json({ url: session.url });
+      if (!session.url) throw new Error("Stripe did not return a valid checkout URL.");
+      res.json({ url: session.url });
+    } catch (stripeErr) {
+      console.error('Stripe API error block caught:', stripeErr);
+      return res.status(400).json({ error: `Payment provider error: ${stripeErr.message || 'Unknown Stripe error'}` });
+    }
+
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    console.error('Internal server error during checkout creation:', error);
+    res.status(500).json({ error: 'Internal server error while preparing checkout.' });
   }
 });
 
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Explicitly serve the standalone Cody page if the route matches exactly
+app.get('/cody', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
+});
 
 // Explicitly serve the standalone Cody page if the route matches exactly
 app.get('/cody', (req, res) => {
