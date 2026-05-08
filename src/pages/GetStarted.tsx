@@ -9,13 +9,14 @@ import {
   Loader2,
   Clock,
   CreditCard,
+  Mic2,
 } from 'lucide-react';
 import {
   collection,
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { signInAnonymously } from 'firebase/auth';
 import { db, storage, auth } from '../firebase';
 import { SEO } from '../components/SEO';
@@ -80,10 +81,13 @@ async function measureFile(file: File, kind: FileKind): Promise<{ words: number;
 }
 
 export default function GetStarted() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [fileKind, setFileKind] = useState<FileKind | null>(null);
   const [words, setWords] = useState(0);
   const [minutes, setMinutes] = useState(0);
+  const [voiceSample, setVoiceSample] = useState<File | null>(null);
+  const [cloningText, setCloningText] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [services, setServices] = useState<Record<ServiceKey, boolean>>({
     transcribeTranslate: false,
@@ -106,23 +110,37 @@ export default function GetStarted() {
     }
   }, []);
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>, isVoiceSample = false) => {
+    if (!e.target.files?.length) return;
 
+    if (isVoiceSample) {
+      setVoiceSample(e.target.files[0]);
+      return;
+    }
+
+    const newFiles = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...newFiles]);
     setError(null);
-    const kind = detectFileKind(selected);
-    setFile(selected);
-    setFileKind(kind);
 
-    const { words: w, minutes: m } = await measureFile(selected, kind);
-    setWords(w);
-    setMinutes(m);
-    console.log('[Checkout] File selected:', { name: selected.name, size: selected.size, kind, words: w, minutes: m });
+    let totalWords = words;
+    let totalMinutes = minutes;
+    let currentKind = fileKind;
+
+    for (const file of newFiles as File[]) {
+        const kind = detectFileKind(file);
+        currentKind = kind;
+        const { words: w, minutes: m } = await measureFile(file, kind);
+        totalWords += w;
+        totalMinutes += m;
+    }
+
+    setFileKind(currentKind);
+    setWords(totalWords);
+    setMinutes(totalMinutes);
   };
 
   const lineItems: { label: string; amount: number }[] = [];
-  if (file && fileKind) {
+  if (files.length > 0 && fileKind) {
     const rates = fileKind === 'text' ? TEXT_RATES : AUDIO_RATES;
     const unit = fileKind === 'text' ? words : minutes;
     (Object.keys(rates) as ServiceKey[]).forEach((key) => {
@@ -134,23 +152,28 @@ export default function GetStarted() {
   const total = Number(lineItems.reduce((sum, l) => sum + l.amount, 0).toFixed(2));
 
   const canSubmit =
-    !!file &&
+    files.length > 0 &&
     !!fileKind &&
     Object.values(services).some(Boolean) &&
     email.includes('@') &&
     total > 0 &&
-    !submitting;
+    !submitting &&
+    (!services.voiceCloning || voiceSample !== null);
 
   const handleSubmit = async () => {
     console.log('[Checkout] Submit clicked', { fileKind, words, minutes, services, total, email });
     setError(null);
 
-    if (!file || !fileKind) {
+    if (files.length === 0 || !fileKind) {
       setError('Please upload a file.');
       return;
     }
     if (!Object.values(services).some(Boolean)) {
       setError('Please select at least one service.');
+      return;
+    }
+    if (services.voiceCloning && !voiceSample) {
+      setError('Please upload a voice sample for cloning.');
       return;
     }
     if (!email.includes('@')) {
@@ -163,6 +186,7 @@ export default function GetStarted() {
     }
 
     setSubmitting(true);
+    setUploadProgress(0);
     try {
       console.log('[Checkout] Step 1/3 — signing in anonymously');
       let uid: string;
@@ -170,10 +194,6 @@ export default function GetStarted() {
         const cred = auth.currentUser ?? (await signInAnonymously(auth)).user;
         uid = cred.uid;
       } catch (authErr: any) {
-        // Anonymous Auth may be disabled in the Firebase project
-        // (auth/admin-restricted-operation). Fall back to a random session ID
-        // so the lead can still be uploaded — Storage and Firestore rules
-        // already permit unauthenticated creation under /leads/{sessionId}/.
         console.warn(
           '[Checkout] Anonymous sign-in unavailable, falling back to anon session id:',
           authErr?.code || authErr?.message,
@@ -182,21 +202,72 @@ export default function GetStarted() {
       }
 
       console.log('[Checkout] Step 2/3 — uploading file to Storage');
-      const fileRef = ref(storage, `leads/${uid}/${Date.now()}_${file.name}`);
-      const snap = await uploadBytes(fileRef, file);
-      const fileUrl = await getDownloadURL(snap.ref);
-      console.log('[Checkout] Upload complete:', fileUrl);
+      
+      let vsUrl = null;
+      if (voiceSample) {
+        try {
+          const vsRef = ref(storage, `leads/${uid}/sample_${Date.now()}_${voiceSample.name}`);
+          const vsUpload = await uploadBytesResumable(vsRef, voiceSample);
+          vsUrl = await getDownloadURL(vsUpload.ref);
+        } catch (vsErr) {
+          console.error('Voice sample upload failed:', vsErr);
+          setError('Voice sample upload failed. Please try again.');
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const fileUrls: string[] = [];
+      let totalBytes = files.reduce((acc, f) => acc + f.size, 0);
+      let bytesTransferredArray = new Array(files.length).fill(0);
+
+      try {
+          await Promise.all(files.map(async (fileObj, index) => {
+            const fileRef = ref(storage, `leads/${uid}/${Date.now()}_${fileObj.name}`);
+            const uploadTask = uploadBytesResumable(fileRef, fileObj);
+
+            return new Promise<void>((resolve, reject) => {
+              uploadTask.on('state_changed', 
+                (snapshot) => {
+                  bytesTransferredArray[index] = snapshot.bytesTransferred;
+                  const currentTotalTransferred = bytesTransferredArray.reduce((acc, bytes) => acc + bytes, 0);
+                  const progress = (currentTotalTransferred / totalBytes) * 100;
+                  setUploadProgress(Math.min(100, Math.max(0, progress)));
+                }, 
+                (err) => reject(err), 
+                async () => {
+                  try {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    fileUrls.push(downloadURL);
+                    resolve();
+                  } catch (err) {
+                    reject(err);
+                  }
+                }
+              );
+            });
+          }));
+      } catch (uploadErr) {
+         console.error('File upload failed:', uploadErr);
+         setError('Submission failed during processing. Please try again.');
+         setSubmitting(false);
+         setUploadProgress(0);
+         return;
+      }
 
       console.log('[Checkout] Step 3/3 — saving lead to Firestore');
       const docRef = await addDoc(collection(db, 'leads'), {
         userId: uid,
         email,
-        fileUrl,
-        fileName: file.name,
+        fileUrl: fileUrls[0] || null, // Keep for backward compatibility
+        fileUrls: fileUrls,
+        fileName: files[0].name,
         fileType: fileKind,
         fileLengthWords: words,
         audioMinutes: minutes,
         services,
+        voiceSampleUrl: vsUrl,
+        cloningText,
         languages: { from: fromLang, to: toLang },
         calculatedPrice: total,
         status: 'pending_payment',
@@ -296,17 +367,20 @@ export default function GetStarted() {
               <input
                 id="fileInput"
                 type="file"
+                multiple={true}
                 className="hidden"
-                onChange={handleFileChange}
+                onChange={(e) => handleFileChange(e, false)}
               />
-              {file ? (
+              {files.length > 0 ? (
                 <div className="flex flex-col items-center">
                   {fileKind === 'audio'
                     ? <Music className="w-12 h-12 text-bee-amber mb-3" />
                     : <FileText className="w-12 h-12 text-bee-amber mb-3" />}
-                  <p className="text-white font-bold text-lg">{file.name}</p>
+                  <p className="text-white font-bold text-lg">
+                      {files.length === 1 ? files[0].name : `${files.length} files selected`}
+                  </p>
                   <p className="text-slate-500 mt-1 text-sm">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                    {(files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(2)} MB
                   </p>
                   <div className="mt-4 flex gap-6 text-sm text-slate-400">
                     {fileKind === 'text' ? (
@@ -335,22 +409,71 @@ export default function GetStarted() {
 
             <div className="space-y-3">
               {(Object.keys(SERVICE_LABELS) as ServiceKey[]).map((key) => (
-                <label
-                  key={key}
-                  className={`flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
-                    services[key]
-                      ? 'border-bee-amber/60 bg-bee-amber/5'
-                      : 'border-white/10 bg-white/5 hover:border-bee-amber/30'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={services[key]}
-                    onChange={(e) => setServices({ ...services, [key]: e.target.checked })}
-                    className="w-5 h-5 accent-bee-amber mr-4"
-                  />
-                  <span className="text-white font-semibold">{SERVICE_LABELS[key]}</span>
-                </label>
+                <div key={key}>
+                  <label
+                    className={`flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
+                      services[key]
+                        ? 'border-bee-amber/60 bg-bee-amber/5'
+                        : 'border-white/10 bg-white/5 hover:border-bee-amber/30'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={services[key]}
+                      onChange={(e) => setServices({ ...services, [key]: e.target.checked })}
+                      className="w-5 h-5 accent-bee-amber mr-4"
+                    />
+                    <span className="text-white font-semibold">{SERVICE_LABELS[key]}</span>
+                  </label>
+                  
+                  {key === 'voiceCloning' && services.voiceCloning && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="mt-6 pt-6 border-t border-white/10 space-y-6"
+                        >
+                          <div>
+                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Upload Voice Sample (Max 5MB)</span>
+                            <label
+                              htmlFor="voiceSampleInput"
+                              className="border border-dashed border-white/20 rounded-2xl p-8 text-center hover:border-bee-amber/50 transition-all cursor-pointer bg-bee-black/40 relative z-10 block"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                id="voiceSampleInput"
+                                type="file"
+                                accept="audio/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  handleFileChange(e, true);
+                                }}
+                              />
+                              {voiceSample ? (
+                                <div className="text-bee-amber font-bold flex items-center justify-center pointer-events-none">
+                                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                                  {voiceSample.name}
+                                </div>
+                              ) : (
+                                <div className="text-slate-400 font-medium flex items-center justify-center pointer-events-none">
+                                  <Mic2 className="w-6 h-6 mr-3 text-bee-amber" />
+                                  Click to upload 30s-2min clean audio
+                                </div>
+                              )}
+                            </label>
+                          </div>
+                          <div>
+                            <span className="block text-slate-300 font-bold mb-3 uppercase tracking-wider text-sm">Text to speak in cloned voice (Optional if file uploaded)</span>
+                            <textarea
+                              value={cloningText}
+                              onChange={(e) => setCloningText(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              placeholder={files.length > 0 ? "Optional: Leave blank to use your uploaded file(s) for the script." : "Paste the script here..."}
+                              className="w-full bg-bee-black/50 border border-white/20 rounded-xl px-5 py-4 text-white focus:border-bee-amber focus:ring-1 focus:ring-bee-amber outline-none transition-all shadow-inner h-32 resize-none relative z-10"
+                            />
+                          </div>
+                        </motion.div>
+                   )}
+                </div>
               ))}
             </div>
 

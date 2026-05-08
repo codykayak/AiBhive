@@ -25,11 +25,6 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
-    });
-  }
-}
-
-const db = admin.firestore();
 
 // Setup Google Cloud Storage
 const storage = new Storage();
