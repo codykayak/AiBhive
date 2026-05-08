@@ -19,20 +19,10 @@ const app = express();
 // For Google Cloud Run, we listen on PORT (default 8080).
 const port = process.env.PORT || 8080;
 
-// Initialize Firebase Admin (Uses service account from GOOGLE_APPLICATION_CREDENTIALS or process.env)
-// Trigger deployment to check Cloud Run stability
-try {
-  // Usually this reads from GOOGLE_APPLICATION_CREDENTIALS environment variable
-  admin.initializeApp();
-} catch (e) {
-  // If not running in Google Cloud or missing env var, try initializing with a fake/mock for dev
-  console.warn("Could not initialize Firebase Admin automatically. Falling back to default app config if available.", e.message);
-  if (process.env.FIREBASE_PROJECT_ID) {
-    admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
-  }
-}
+// Initialize Firebase Admin with explicit project ID
+admin.initializeApp({
+  projectId: "gen-lang-client-0787280773"
+});
 
 const db = admin.firestore();
 
@@ -209,73 +199,93 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 // Regular JSON middleware for other endpoints
 app.use(express.json());
 
-// Endpoint to create a checkout session
-app.post('/api/create-checkout-session', async (req, res) => {
-  try {
-    const { leadId, email } = req.body;
+// Pricing tables (kept in sync with frontend)
+const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
+const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };
 
+function calculatePrice(lead) {
+  const { fileType, fileLengthWords, audioMinutes, services } = lead || {};
+  if (!services) return 0;
+
+  const isAudio = fileType === 'audio' || fileType === 'video';
+  const rates = isAudio ? AUDIO_RATES : TEXT_RATES;
+  const unit = isAudio ? Math.max(1, audioMinutes || 1) : Math.max(1, fileLengthWords || 1);
+
+  let total = 0;
+  for (const key of Object.keys(rates)) {
+    if (services[key]) total += unit * rates[key];
+  }
+  return Number(total.toFixed(2));
+}
+
+app.post('/api/create-checkout-session', async (req, res) => {
+  const { leadId, email } = req.body || {};
+  console.log('[checkout] request received', { leadId, email });
+
+  try {
+    if (!leadId) {
+      return res.status(400).json({ error: 'Missing leadId.' });
+    }
+
+    console.log('[checkout] loading lead from Firestore');
     const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found' });
+      return res.status(404).json({ error: 'Lead not found.' });
+    }
+    const lead = leadSnap.data();
+
+    console.log('[checkout] verifying price');
+    const amount = calculatePrice(lead);
+    const amountCents = Math.round(amount * 100);
+    if (amountCents < 50) {
+      return res.status(400).json({ error: `Price ($${amount}) is below the $0.50 minimum.` });
     }
 
-    const leadData = leadSnap.data();
-
-    // Secure verification: Redo the math based on stored values
-    let total = 0;
-    const { fileType, fileLengthWords, audioMinutes, services } = leadData;
-    const { transcribeTranslate, voiceCloning, legalMedical } = services || {};
-
-    if (fileType === 'text') {
-      const words = Math.max(1, fileLengthWords || 1);
-      if (transcribeTranslate) total += words * 0.025;
-      if (legalMedical) total += words * 0.035;
-      if (voiceCloning) total += words * 0.035;
-    } else if (fileType === 'audio' || fileType === 'video') {
-      const minutes = Math.max(1, audioMinutes || 1);
-      if (transcribeTranslate) total += minutes * 2.49;
-      if (legalMedical) total += minutes * 3.29;
-      if (voiceCloning) total += minutes * 1.99;
-    }
-
-    const verifiedAmount = Number(total.toFixed(2));
-
-    if (verifiedAmount === undefined || verifiedAmount <= 0) {
-      return res.status(400).json({ error: 'Invalid price for checkout' });
-    }
+    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+    console.log('[checkout] creating Stripe session', { amountCents, origin });
 
     const session = await stripe.checkout.sessions.create({
-      customer_email: email, // Pre-fill email in Stripe
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'AiBhive Translation and Voice Services',
-              description: `Processing fee for request ID: ${leadId}`,
-            },
-            unit_amount: Math.round(verifiedAmount * 100), // Stripe expects amounts in cents
-          },
-          quantity: 1,
-        },
-      ],
       mode: 'payment',
-      // We'll update these URLs to match the frontend later
-      success_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?success=true`,
-      cancel_url: `${req.headers.origin || 'http://localhost:3000'}/get-started?canceled=true`,
+      payment_method_types: ['card'],
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'usd',
+          unit_amount: amountCents,
+          product_data: {
+            name: 'AiBhive Project',
+            description: `Order ${leadId}`,
+          },
+        },
+      }],
+      customer_email: email || lead.email || undefined,
       client_reference_id: leadId,
+      metadata: { leadId },
+      success_url: `${origin}/get-started?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/get-started?canceled=true`,
     });
 
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    if (!session.url) {
+      throw new Error('Stripe did not return a checkout URL.');
+    }
+
+    console.log('[checkout] session created', { id: session.id });
+    return res.json({ url: session.url });
+  } catch (err) {
+    console.error('[checkout] failed:', err);
+    return res.status(500).json({ error: err.message || 'Checkout failed.' });
   }
 });
 
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
+
+// Serve the standalone Cody website at /cody (static assets + fallback to cody/index.html)
+app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
+app.get(['/cody', '/cody/*'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
+});
+
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Catch-all route to serve the React index.html for client-side routing
