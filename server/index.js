@@ -215,6 +215,9 @@ function calculatePrice(lead) {
   for (const key of Object.keys(rates)) {
     if (services[key]) total += unit * rates[key];
   }
+  if (total > 0 && total < 0.50) {
+    total = 0.50;
+  }
   return Number(total.toFixed(2));
 }
 
@@ -237,7 +240,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     console.log('[checkout] verifying price');
     const amount = calculatePrice(lead);
     const amountCents = Math.round(amount * 100);
-    if (amountCents < 50) {
+    if (amountCents < 50 && amountCents > 0) {
       return res.status(400).json({ error: `Price ($${amount}) is below the $0.50 minimum.` });
     }
 

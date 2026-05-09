@@ -149,7 +149,12 @@ export default function GetStarted() {
       }
     });
   }
-  const total = Number(lineItems.reduce((sum, l) => sum + l.amount, 0).toFixed(2));
+  let calculatedTotal = lineItems.reduce((sum, l) => sum + l.amount, 0);
+  if (calculatedTotal > 0 && calculatedTotal < 0.50) {
+    lineItems.push({ label: 'Minimum Order Fee', amount: 0.50 - calculatedTotal });
+    calculatedTotal = 0.50;
+  }
+  const total = Number(calculatedTotal.toFixed(2));
 
   const canSubmit =
     files.length > 0 &&
@@ -259,7 +264,7 @@ export default function GetStarted() {
       const docRef = await addDoc(collection(db, 'leads'), {
         userId: uid,
         email,
-        fileUrl: fileUrls[0] || null, // Keep for backward compatibility
+        fileUrl: fileUrls[0] || '', // Must be string for Firestore rules
         fileUrls: fileUrls,
         fileName: files[0].name,
         fileType: fileKind,
