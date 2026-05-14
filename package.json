@@ -12,7 +12,8 @@
     "preview": "vite preview --port 8080 --host 0.0.0.0",
     "start": "node server/index.js",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "realestate:extract-csv": "node realestate/scripts/extract-screenshots-to-csv.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
