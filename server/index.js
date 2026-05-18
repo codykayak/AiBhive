@@ -3,14 +3,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
-
-dotenv.config();
-
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,12 +20,26 @@ const app = express();
 // For Google Cloud Run, we listen on PORT (default 8080).
 const port = process.env.PORT || 8080;
 
-// Initialize Firebase Admin with explicit project ID
-admin.initializeApp({
-  projectId: "gen-lang-client-0787280773"
+// Load the shared Firebase config so the frontend and backend always point
+// at the SAME project AND the SAME named Firestore database.
+//
+// Why this matters: the frontend writes leads to a NAMED Firestore database
+// (firebaseConfig.firestoreDatabaseId), but `admin.firestore()` with no
+// arguments always returns the `(default)` database. With that mismatch
+// every checkout returned `5 NOT_FOUND` because the lead simply did not
+// exist in the database the server was reading from.
+const firebaseConfig = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../firebase-applet-config.json'), 'utf8')
+);
+const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || '(default)';
+
+admin.initializeApp({ projectId: firebaseConfig.projectId });
+console.log('[startup] Firebase Admin initialized', {
+  projectId: firebaseConfig.projectId,
+  databaseId: FIRESTORE_DATABASE_ID,
 });
 
-const db = admin.firestore();
+const db = getFirestore(admin.app(), FIRESTORE_DATABASE_ID);
 
 // Setup Google Cloud Storage
 const storage = new Storage();
@@ -223,17 +238,32 @@ function calculatePrice(lead) {
 
 app.post('/api/create-checkout-session', async (req, res) => {
   const { leadId, email } = req.body || {};
-  console.log('[checkout] request received', { leadId, email });
+  console.log('[checkout] request received', { leadId, email, databaseId: FIRESTORE_DATABASE_ID });
 
   try {
     if (!leadId) {
       return res.status(400).json({ error: 'Missing leadId.' });
     }
 
-    console.log('[checkout] loading lead from Firestore');
-    const leadSnap = await db.collection('leads').doc(leadId).get();
+    console.log('[checkout] loading lead from Firestore', { leadId });
+    let leadSnap;
+    try {
+      leadSnap = await db.collection('leads').doc(leadId).get();
+    } catch (firestoreErr) {
+      console.error('[checkout] Firestore lookup failed:', {
+        code: firestoreErr.code,
+        message: firestoreErr.message,
+        projectId: firebaseConfig.projectId,
+        databaseId: FIRESTORE_DATABASE_ID,
+      });
+      return res.status(500).json({
+        error: `Firestore lookup failed (${firestoreErr.code || 'unknown'}). Make sure the server is configured to use the same Firestore database the frontend writes to.`,
+      });
+    }
+
     if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found.' });
+      console.warn('[checkout] lead not found', { leadId });
+      return res.status(404).json({ error: 'Lead not found. Please re-upload your file and try again.' });
     }
     const lead = leadSnap.data();
 
