@@ -3,14 +3,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
-
-dotenv.config();
-
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,22 +20,26 @@ const app = express();
 // For Google Cloud Run, we listen on PORT (default 8080).
 const port = process.env.PORT || 8080;
 
-// Initialize Firebase Admin (Uses service account from GOOGLE_APPLICATION_CREDENTIALS or process.env)
-// Trigger deployment to check Cloud Run stability
+// Load the shared Firebase config so frontend and backend always point at the
+// SAME project and the SAME named Firestore database. This is what fixes the
+// `5 NOT_FOUND` error: the frontend was writing to a named DB while the
+// backend was reading from `(default)`.
+const firebaseConfig = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../firebase-applet-config.json'), 'utf8')
+);
+const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || '(default)';
+
 try {
-  // Usually this reads from GOOGLE_APPLICATION_CREDENTIALS environment variable
-  admin.initializeApp();
-} catch (e) {
-  // If not running in Google Cloud or missing env var, try initializing with a fake/mock for dev
-  console.warn("Could not initialize Firebase Admin automatically. Falling back to default app config if available.", e.message);
-  if (process.env.FIREBASE_PROJECT_ID) {
-    admin.initializeApp({
-      projectId: process.env.FIREBASE_PROJECT_ID
-    });
-  }
+  admin.initializeApp({ projectId: firebaseConfig.projectId });
+  console.log('[startup] Firebase Admin initialized', {
+    projectId: firebaseConfig.projectId,
+    databaseId: FIRESTORE_DATABASE_ID,
+  });
+} catch (err) {
+  console.error('[startup] Firebase Admin init failed:', err.message);
 }
 
-const db = admin.firestore();
+const db = getFirestore(admin.app(), FIRESTORE_DATABASE_ID);
 
 // Setup Google Cloud Storage
 const storage = new Storage();
@@ -230,23 +235,38 @@ function calculatePrice(lead) {
 
 app.post('/api/create-checkout-session', async (req, res) => {
   const { leadId, email } = req.body || {};
-  console.log('[checkout] request received', { leadId, email });
+  console.log('[checkout] request received', { leadId, email, databaseId: FIRESTORE_DATABASE_ID });
 
   try {
     if (!leadId) {
       return res.status(400).json({ error: 'Missing leadId.' });
     }
 
-    console.log('[checkout] loading lead from Firestore');
-    const leadSnap = await db.collection('leads').doc(leadId).get();
+    console.log('[checkout] loading lead from Firestore', { leadId });
+    let leadSnap;
+    try {
+      leadSnap = await db.collection('leads').doc(leadId).get();
+    } catch (firestoreErr) {
+      console.error('[checkout] Firestore lookup failed:', {
+        code: firestoreErr.code,
+        message: firestoreErr.message,
+        databaseId: FIRESTORE_DATABASE_ID,
+        projectId: firebaseConfig.projectId,
+      });
+      return res.status(500).json({
+        error: `Firestore lookup failed (${firestoreErr.code || 'unknown'}). Check that the server is using the same Firestore database as the frontend.`,
+      });
+    }
+
     if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found.' });
+      console.warn('[checkout] lead not found', { leadId });
+      return res.status(404).json({ error: 'Lead not found. Please re-upload your file and try again.' });
     }
     const lead = leadSnap.data();
 
-    console.log('[checkout] verifying price');
     const amount = calculatePrice(lead);
     const amountCents = Math.round(amount * 100);
+    console.log('[checkout] price verified', { amount, amountCents });
     if (amountCents < 50) {
       return res.status(400).json({ error: `Price ($${amount}) is below the $0.50 minimum.` });
     }
