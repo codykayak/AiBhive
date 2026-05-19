@@ -37,9 +37,48 @@ admin.initializeApp({ projectId: firebaseConfig.projectId });
 console.log('[startup] Firebase Admin initialized', {
   projectId: firebaseConfig.projectId,
   databaseId: FIRESTORE_DATABASE_ID,
+  // GOOGLE_APPLICATION_CREDENTIALS only set when running outside GCP; on Cloud
+  // Run the service uses the runtime service account automatically.
+  serviceAccountFile: process.env.GOOGLE_APPLICATION_CREDENTIALS || '(metadata-server)',
 });
 
 const db = getFirestore(admin.app(), FIRESTORE_DATABASE_ID);
+
+// Maps a gRPC error code from Firestore Admin SDK into an actionable hint.
+// Codes are the gRPC canonical codes (https://grpc.io/docs/guides/status-codes/).
+function describeFirestoreError(code) {
+  switch (code) {
+    case 5: // NOT_FOUND
+      return 'NOT_FOUND — the named Firestore database does not exist in this project, or the document was never written. Check firestoreDatabaseId in firebase-applet-config.json.';
+    case 7: // PERMISSION_DENIED
+      return 'PERMISSION_DENIED — the Cloud Run service account is missing IAM permission to read this Firestore database. Grant it `roles/datastore.user` on project `' + firebaseConfig.projectId + '` (or restrict via a condition to database `' + FIRESTORE_DATABASE_ID + '`).';
+    case 16: // UNAUTHENTICATED
+      return 'UNAUTHENTICATED — Firebase Admin could not get application-default credentials. On Cloud Run this means the service is missing a runtime service account, or GOOGLE_APPLICATION_CREDENTIALS points to an invalid file.';
+    case 8: // RESOURCE_EXHAUSTED
+      return 'RESOURCE_EXHAUSTED — Firestore quota exceeded. Check Firestore quota usage in the Google Cloud Console.';
+    case 14: // UNAVAILABLE
+      return 'UNAVAILABLE — Firestore was temporarily unreachable. This is usually transient; retry the request.';
+    default:
+      return `gRPC status ${code} — see https://grpc.io/docs/guides/status-codes/`;
+  }
+}
+
+// Startup probe: do one cheap Firestore read so an IAM/config problem shows up
+// in the boot logs instead of waiting for the first checkout to fail.
+(async () => {
+  try {
+    await db.collection('leads').limit(1).get();
+    console.log('[startup] Firestore probe OK — server can read leads collection.');
+  } catch (err) {
+    console.error('[startup] Firestore probe FAILED:', {
+      code: err.code,
+      message: err.message,
+      hint: describeFirestoreError(err.code),
+      projectId: firebaseConfig.projectId,
+      databaseId: FIRESTORE_DATABASE_ID,
+    });
+  }
+})();
 
 // Setup Google Cloud Storage
 const storage = new Storage();
@@ -250,15 +289,19 @@ app.post('/api/create-checkout-session', async (req, res) => {
     try {
       leadSnap = await db.collection('leads').doc(leadId).get();
     } catch (firestoreErr) {
+      const hint = describeFirestoreError(firestoreErr.code);
       console.error('[checkout] Firestore lookup failed:', {
         code: firestoreErr.code,
         message: firestoreErr.message,
+        hint,
         projectId: firebaseConfig.projectId,
         databaseId: FIRESTORE_DATABASE_ID,
       });
-      return res.status(500).json({
-        error: `Firestore lookup failed (${firestoreErr.code || 'unknown'}). Make sure the server is configured to use the same Firestore database the frontend writes to.`,
-      });
+      const userFacing =
+        firestoreErr.code === 7
+          ? 'Server is missing permission to read your order from Firestore. The site administrator needs to grant the Cloud Run service account the `Cloud Datastore User` (`roles/datastore.user`) role.'
+          : `We could not load your order from Firestore (${hint}). Please try again in a moment.`;
+      return res.status(500).json({ error: userFacing });
     }
 
     if (!leadSnap.exists) {
