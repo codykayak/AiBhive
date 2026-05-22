@@ -166,7 +166,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             };
 
             try {
-              const bucketName = 'aibhive-media';
+              // Upload clean text to AiBhive-media bucket
               const cleanTextFilename = `clean_output_${leadId}.txt`;
               const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
               await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
