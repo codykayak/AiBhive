@@ -239,6 +239,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
               }
             }
           } else {
+             console.error("Job processing failed with error:", result.error);
              await leadRef.update({ status: 'failed', error: result.error });
           }
         }).catch(err => {
@@ -396,6 +397,7 @@ app.post('/api/test-checkout-session', async (req, res) => {
           }
         }
       } else {
+         console.error("Job processing failed with error (Test Route):", result.error);
          await leadRef.update({ status: 'failed', error: result.error });
       }
     }).catch(err => {

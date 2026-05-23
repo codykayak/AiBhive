@@ -1,0 +1,18 @@
+--- server/index.js
++++ server/index.js
+@@ -237,6 +237,7 @@
+               }
+             }
+           } else {
++             console.error("Job processing failed with error:", result.error);
+              await leadRef.update({ status: 'failed', error: result.error });
+           }
+         }).catch(err => {
+@@ -394,6 +395,7 @@
+           }
+         }
+       } else {
++         console.error("Job processing failed with error (Test Route):", result.error);
+          await leadRef.update({ status: 'failed', error: result.error });
+       }
+     }).catch(err => {

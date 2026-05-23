@@ -166,7 +166,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             };
 
             try {
-              // Upload clean text to AiBhive-media bucket
+              const bucketName = 'aibhive-media';
               const cleanTextFilename = `clean_output_${leadId}.txt`;
               const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
               await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
@@ -226,13 +226,17 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
               if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
               emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
 
-              await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: userEmail,
-                subject: 'Your AiBhive Files are Ready!',
-                text: emailText,
-                html: emailHtml
-              });
+              try {
+                await transporter.sendMail({
+                  from: process.env.EMAIL_USER,
+                  to: userEmail,
+                  subject: 'Your AiBhive Files are Ready!',
+                  text: emailText,
+                  html: emailHtml
+                });
+              } catch (emailErr) {
+                console.error("Failed to send completion email via nodemailer:", emailErr);
+              }
             }
           } else {
              await leadRef.update({ status: 'failed', error: result.error });
@@ -379,13 +383,17 @@ app.post('/api/test-checkout-session', async (req, res) => {
           if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
           emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
 
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: userEmail,
-            subject: 'Your AiBhive Files are Ready!',
-            text: emailText,
-            html: emailHtml
-          });
+          try {
+            await transporter.sendMail({
+              from: process.env.EMAIL_USER,
+              to: userEmail,
+              subject: 'Your AiBhive Files are Ready!',
+              text: emailText,
+              html: emailHtml
+            });
+          } catch (emailErr) {
+            console.error("Failed to send completion email via nodemailer (Test Route):", emailErr);
+          }
         }
       } else {
          await leadRef.update({ status: 'failed', error: result.error });
