@@ -1,0 +1,54 @@
+# Deploy NW Investor → github.com/codykayak/realestate → realestate.aibhive.com
+#
+# Required secret: REALESTATE_GITHUB_TOKEN (PAT with repo write on codykayak/realestate)
+# Optional: GCP_SA_KEY + GCP_PROJECT_ID for direct Cloud Run deploy
+
+name: Deploy NW Investor Site
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: codykayak/realestate
+          token: ${{ secrets.REALESTATE_GITHUB_TOKEN }}
+          path: realestate-repo
+
+      - name: Apply SEO pages patch and push
+        run: |
+          cd realestate-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git am /home/runner/work/AiBhive/AiBhive/deploy-realestate-patches/*.patch || {
+            echo "Patch may already be applied; syncing from deploy payload if present"
+            exit 1
+          }
+          git push origin main
+
+      - name: Cloud Run deploy (optional)
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          if [ -z "$GCP_SA_KEY" ]; then
+            echo "GCP_SA_KEY not set — skipping Cloud Run (use existing trigger on realestate repo if configured)"
+            exit 0
+          fi
+          echo "$GCP_SA_KEY" > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          PROJECT="${PROJECT_ID:-realestate-map-23692}"
+          cd "${GITHUB_WORKSPACE}/realestate-repo"
+          gcloud builds submit --project "$PROJECT" --tag "gcr.io/${PROJECT}/seller-map"
+          gcloud run deploy seller-map \
+            --project "$PROJECT" \
+            --image "gcr.io/${PROJECT}/seller-map" \
+            --platform managed \
+            --region us-west1 \
+            --allow-unauthenticated \
+            --port 8080
