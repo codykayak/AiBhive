@@ -39,14 +39,20 @@ export default function VoiceCloneLab() {
         </header>
 
         {/* Hero Image Section */}
-        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative group">
-            <img
-              src={aiVoiceCloneImg}
-              alt="Ai Voice Clone Lab"
-              className="w-full object-cover max-h-[500px]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-80" />
-        </section>
+        <motion.section
+          initial={{ opacity: 0, scale: 0.96 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-24 img-frame-sharp relative group"
+        >
+          <img
+            src={aiVoiceCloneImg}
+            alt="Ai Voice Clone Lab"
+            className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-bee-black/80 via-transparent to-transparent" />
+        </motion.section>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-24">
           {stats.map((stat) => (
