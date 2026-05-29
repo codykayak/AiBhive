@@ -84,13 +84,19 @@ export default function TranscriptionStudio() {
             <article className="mt-20 prose prose-invert max-w-none">
               <h2 className="text-4xl font-bold text-white mb-8">The Science of Multi-Agent AI Transcription</h2>
               <div className="text-slate-400 leading-relaxed text-lg">
-                <div className="float-left mr-12 mb-8 w-full lg:w-1/2 rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl">
-                  <img 
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                  className="float-left mr-12 mb-8 w-full lg:w-1/2 img-frame-sharp"
+                >
+                  <img
                     src={transcriptionLegalMedicalImg}
                     alt="Transcription Service Legal Medical Visualization"
                     className="w-full h-auto"
                   />
-                </div>
+                </motion.div>
                 <p className="mb-6">
                   Traditional AI transcription relies on a single neural network model to interpret audio. While this works for casual conversations, it often fails in high-stakes environments like courtrooms or hospitals where specialized terminology is the norm.
                 </p>
