@@ -258,6 +258,83 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 // Regular JSON middleware for other endpoints
 app.use(express.json());
 
+// --- ADMIN API ENDPOINTS ---
+
+// Admin emails allowed to access the dashboard
+const ADMIN_EMAILS = ['test@test.com', 'admin@aibhive.com']; // In production, move to process.env.ADMIN_EMAILS
+
+// Middleware to verify Firebase Auth token and check Admin status
+async function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const isEnvAdmin = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.includes(decodedToken.email) : false;
+
+    if (!ADMIN_EMAILS.includes(decodedToken.email) && !isEnvAdmin) {
+      console.warn(`Unauthorized admin access attempt by ${decodedToken.email}`);
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Error verifying auth token:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
+  try {
+    const leadsRef = db.collection('leads');
+    // Fetch last 50 leads, ordered by creation date
+    const snapshot = await leadsRef.orderBy('createdAt', 'desc').limit(50).get();
+
+    const leads = [];
+    snapshot.forEach(doc => {
+      leads.push({ id: doc.id, ...doc.data() });
+    });
+
+    return res.json({ leads });
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const settingsDoc = await db.collection('system').doc('settings').get();
+    if (!settingsDoc.exists) {
+      return res.json({ settings: { preferredModel: 'gemini' } }); // Default
+    }
+    return res.json({ settings: settingsDoc.data() });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const { preferredModel } = req.body;
+    if (!['gemini', 'claude', 'grok'].includes(preferredModel)) {
+       return res.status(400).json({ error: 'Invalid model preference' });
+    }
+
+    await db.collection('system').doc('settings').set({ preferredModel }, { merge: true });
+    return res.json({ success: true, settings: { preferredModel } });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+// ---------------------------
+
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
 const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };

@@ -9,6 +9,7 @@ import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import FAQ from './pages/FAQ';
 import TestGetStarted from './pages/TestGetStarted';
+import AdminDashboard from './pages/AdminDashboard';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/test" element={<TestGetStarted />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
         <footer className="relative z-10">

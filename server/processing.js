@@ -166,15 +166,12 @@ export async function performContextAccuracyCheck(text, targetLanguage, modelPre
     let resultJson = "";
 
     if (modelPreference === 'claude') {
-      // Stub for Anthropic Claude API
       console.log("Routing to Anthropic Claude (Stub)...");
       throw new Error("Claude API not yet implemented. Please use Gemini.");
     } else if (modelPreference === 'grok') {
-      // Stub for xAI Grok API
       console.log("Routing to xAI Grok (Stub)...");
       throw new Error("Grok API not yet implemented. Please use Gemini.");
     } else {
-      // Default to Gemini 2.5 Pro
       const ai = getGemini();
       const response = await ai.models.generateContent({
           model: 'gemini-2.5-pro',
@@ -307,8 +304,24 @@ export async function processLeadJob(leadData) {
     // 2. High-Risk Context Accuracy Check (Pass 2 - Multi-Model selection checks for mistranslated terms)
     console.log("Pass 2: High-Risk Context Accuracy Check...");
 
-    // Default to Gemini for now as requested, but this can be dynamically pulled from leadData later
-    const preferredModel = leadData.preferredModel || 'gemini';
+    // Fetch Global Settings from Firestore (fallback to gemini)
+    let preferredModel = 'gemini';
+    try {
+       const admin = await import('firebase-admin');
+       // Using the named database instance for environments where it's required
+       let db;
+       if (process.env.FIRESTORE_DATABASE_ID) {
+           db = admin.default.firestore(admin.default.app(), process.env.FIRESTORE_DATABASE_ID);
+       } else {
+           db = admin.default.firestore();
+       }
+       const settingsSnap = await db.collection('system').doc('settings').get();
+       if (settingsSnap.exists) {
+           preferredModel = settingsSnap.data().preferredModel || 'gemini';
+       }
+    } catch(err) {
+       console.warn("Could not fetch global settings, defaulting to gemini:", err.message);
+    }
 
     const checkResult = await performContextAccuracyCheck(
       cleanTranslatedText,
