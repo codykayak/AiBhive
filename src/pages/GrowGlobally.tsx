@@ -53,20 +53,14 @@ export default function GrowGlobally() {
         </header>
 
         {/* Top Image Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-24 img-frame-sharp relative group"
-        >
-          <img
-            src={translationVoiceDubbingImg}
-            alt="Translation Voice Dubbing For Content Growth"
-            className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-bee-black/70 via-transparent to-transparent" />
-        </motion.section>
+        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative">
+            <img
+              src={translationVoiceDubbingImg}
+              alt="Translation Voice Dubbing For Content Growth"
+              className="w-full object-cover max-h-[500px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-60" />
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24">
           <section className="glass-card rounded-[2.5rem] p-10">
@@ -157,20 +151,14 @@ export default function GrowGlobally() {
         </section>
 
         {/* Middle Image Section */}
-        <motion.section
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-24 img-frame-sharp relative group"
-        >
-          <img
-            src={growContentCreatorsImg}
-            alt="Grow Content Creators Podcast Viewership Translation"
-            className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-bee-black/70 via-transparent to-transparent" />
-        </motion.section>
+        <section className="mb-24 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl relative">
+            <img
+              src={growContentCreatorsImg}
+              alt="Grow Content Creators Podcast Viewership Translation"
+              className="w-full object-cover max-h-[500px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-transparent to-transparent opacity-60" />
+        </section>
 
         {/* Detailed Content Section */}
         <article className="prose prose-invert max-w-none mb-32">
@@ -187,19 +175,13 @@ export default function GrowGlobally() {
             </div>
             <div>
               <h3 className="text-2xl font-bold text-white mb-6">The "MrBeast" Effect</h3>
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-6 img-frame-sharp"
-              >
+              <div className="mb-6 rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
                 <img
                   src={mrBeastMultiplierImg}
                   alt="Mr Beast Translation Content Multiplier"
                   className="w-full h-auto"
                 />
-              </motion.div>
+              </div>
               <p className="mb-6">
                 Jimmy Donaldson (MrBeast) proved that localization is the ultimate growth hack. By creating dedicated channels for different languages and using high-quality dubbing, he was able to replicate his success in entirely different cultural contexts.
               </p>

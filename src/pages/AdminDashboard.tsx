@@ -50,9 +50,13 @@ export default function AdminDashboard() {
     try {
       setError(null);
       await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login failed:', err);
-      setError(err.message || 'Login failed');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Login failed');
+      }
     }
   };
 
@@ -68,7 +72,7 @@ export default function AdminDashboard() {
       const token = await currentUser.getIdToken();
 
       // Fetch Leads
-      const leadsRes = await fetch('/api/admin/leads', {
+      const leadsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/leads` : '/api/admin/leads', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!leadsRes.ok) throw new Error(await leadsRes.text());
@@ -76,14 +80,14 @@ export default function AdminDashboard() {
       setLeads(leadsData.leads);
 
       // Fetch Settings
-      const settingsRes = await fetch('/api/admin/settings', {
+      const settingsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!settingsRes.ok) throw new Error(await settingsRes.text());
       const settingsData = await settingsRes.json();
       setPreferredModel(settingsData.settings?.preferredModel || 'gemini');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching admin data:', err);
       setError('Unauthorized or Failed to load admin data. Ensure your email is whitelisted.');
       signOut(auth); // Force signout if they aren't authorized by backend
@@ -97,7 +101,7 @@ export default function AdminDashboard() {
     setSavingSettings(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch('/api/admin/settings', {
+      const res = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,8 +111,12 @@ export default function AdminDashboard() {
       });
       if (!res.ok) throw new Error('Failed to save settings');
       alert('Settings saved successfully!');
-    } catch (err: any) {
-      alert('Error: ' + err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert('Error: ' + err.message);
+      } else {
+        alert('An error occurred');
+      }
     } finally {
       setSavingSettings(false);
     }
