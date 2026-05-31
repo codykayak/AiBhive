@@ -5,7 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import FormData from 'form-data';
-import { retrieveContext } from './rag.js';
 
 // Lazy initialization of AI clients to avoid dotenv load-order issues
 let openaiClient;
@@ -124,72 +123,54 @@ export async function transcribeAndTranslate(fileUrl, targetLanguage) {
   }
 }
 
-
 /**
- * 2. Scan for High-Risk Terms using Multi-Model Selection and RAG
+ * 2. Scan for Legal/Medical High-Risk Terms using Gemini 1.5 Pro
  */
-export async function performContextAccuracyCheck(text, targetLanguage, modelPreference = 'gemini') {
-  console.log(`Starting Context Accuracy Check with ${modelPreference}...`);
+export async function performContextAccuracyCheck(text, contextFlags, targetLanguage) {
+  console.log("Starting Context Accuracy Check with Gemini...");
 
-  // --- RAG INTEGRATION ---
-  // In a full implementation, an initial LLM pass would extract high-risk terms here.
-  // We mock this term extraction for the scaffolding.
-  const extractedTerms = ['mock_legal_term', 'mock_medical_term'];
-  const ragContext = await retrieveContext(extractedTerms, 'both');
+  const contextTypes = [];
+  if (contextFlags.legal) contextTypes.push("Legal");
+  if (contextFlags.medical) contextTypes.push("Medical");
 
-  let promptContext = '';
-  if (ragContext) {
-      promptContext = `\n\nCRITICAL CONTEXT FROM RAG SYSTEM:\nAdhere to the following legal and medical definitions when verifying the translation:\n${ragContext}`;
-  }
-  // -----------------------
+  if (contextTypes.length === 0) return { checkedText: text, flags: [] };
 
   const prompt = `
-  You are an expert ${targetLanguage} translator and verifier.
+  You are an expert ${contextTypes.join(' and ')} translator and verifier.
   This is a High Accuracy mode check. Review the following text which has been translated into ${targetLanguage}.
-  Scan the text specifically for high-risk terms (legal, medical, technical, or critical business terms) and verify they are translated correctly and used in the correct context.
-  Ignore common, everyday words. Focus ONLY on terms that could flip meaning or cause legal/medical/technical issues if mistranslated.
+  Scan the text for high-risk terms and verify they are translated correctly and used in the correct context.
+  Flag any terms that could flip meaning or cause legal/medical/technical issues if mistranslated.
 
   Return the output strictly in this JSON format:
   {
     "flags": [
       {"term": "Original Term", "warning": "Explanation of potential mistranslation in ${targetLanguage}"}
     ],
-    "correctedText": "Provide a fully corrected version of the ENTIRE text that fixes any critical mistranslations."
+    "correctedText": "If applicable, provide a corrected version of the text that fixes any critical mistranslations."
   }
 
   Text to review:
   ${text}
-  ${promptContext}
   `;
 
   try {
-    let resultJson = "";
+    const ai = getGemini();
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-pro',
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+        }
+    });
 
-    if (modelPreference === 'claude') {
-      console.log("Routing to Anthropic Claude (Stub)...");
-      throw new Error("Claude API not yet implemented. Please use Gemini.");
-    } else if (modelPreference === 'grok') {
-      console.log("Routing to xAI Grok (Stub)...");
-      throw new Error("Grok API not yet implemented. Please use Gemini.");
-    } else {
-      const ai = getGemini();
-      const response = await ai.models.generateContent({
-          model: 'gemini-2.5-pro',
-          contents: prompt,
-          config: {
-              responseMimeType: "application/json",
-          }
-      });
-      resultJson = response.text;
-    }
-
-    const result = JSON.parse(resultJson);
+    const result = JSON.parse(response.text);
     return { checkedText: result.correctedText || text, flags: result.flags || [] };
   } catch (error) {
-    console.error(`${modelPreference} Scan Error:`, error);
+    console.error("Gemini Scan Error:", error);
     throw error;
   }
 }
+
 /**
  * 3. Generate Footer for Legal/Medical contexts
  */
@@ -292,7 +273,6 @@ export async function processLeadJob(leadData) {
 
     const targetLanguage = leadData.languages?.to || 'English';
 
-
     // 1. Transcribe & Translate (Pass 1 - Initial translation via Whisper / GPT-4o)
     const { originalText, translatedText } = await transcribeAndTranslate(
       leadData.fileUrl,
@@ -301,49 +281,54 @@ export async function processLeadJob(leadData) {
 
     cleanTranslatedText = translatedText;
 
-    // 2. High-Risk Context Accuracy Check (Pass 2 - Multi-Model selection checks for mistranslated terms)
-    console.log("Pass 2: High-Risk Context Accuracy Check...");
+    // 2. Context Accuracy Check (Pass 2 - Gemini 2.5 Pro checks translation for technical terms and context correctness for ALL jobs)
+    console.log("Pass 2: General Context Accuracy Check with Gemini 2.5 Pro...");
+    const generalPrompt = `
+      You are an expert ${targetLanguage} translator and verifier.
+      Review the following text which has been translated into ${targetLanguage}.
+      Scan the text to ensure all technical terms are translated correctly and used in the correct context.
+      Fix any obvious grammatical or contextual mistranslations to make it sound natural and accurate.
 
-    // Fetch Global Settings from Firestore (fallback to gemini)
-    let preferredModel = 'gemini';
+      Return ONLY the corrected text. Do not include any markdown formatting, explanations, or JSON. Just the plain corrected text.
+
+      Text to review:
+      ${cleanTranslatedText}
+    `;
+
+    const ai = getGemini();
     try {
-       const admin = await import('firebase-admin');
-       // Using the named database instance for environments where it's required
-       let db;
-       if (process.env.FIRESTORE_DATABASE_ID) {
-           db = admin.default.firestore(admin.default.app(), process.env.FIRESTORE_DATABASE_ID);
-       } else {
-           db = admin.default.firestore();
-       }
-       const settingsSnap = await db.collection('system').doc('settings').get();
-       if (settingsSnap.exists) {
-           preferredModel = settingsSnap.data().preferredModel || 'gemini';
-       }
-    } catch(err) {
-       console.warn("Could not fetch global settings, defaulting to gemini:", err.message);
+      const generalResponse = await ai.models.generateContent({
+          model: 'gemini-2.5-pro',
+          contents: generalPrompt
+      });
+      cleanTranslatedText = generalResponse.text.trim();
+    } catch (err) {
+      console.error("Pass 2 General Check Error:", err);
+      // Fallback to original translation if this fails
     }
 
-    const checkResult = await performContextAccuracyCheck(
-      cleanTranslatedText,
-      targetLanguage,
-      preferredModel
-    );
+    finalOutputText = cleanTranslatedText;
 
-    flags = checkResult.flags;
-    cleanTranslatedText = checkResult.checkedText; // The corrected text is now the clean text
+    // 3. Legal/Medical Accuracy Check (Pass 3 - Triple check for specific high-risk contexts)
+    if (leadData.services?.legalMedical) {
+      console.log("Pass 3: High Accuracy Legal/Medical Check...");
+      const contextFlags = { legal: true, medical: true };
+      const checkResult = await performContextAccuracyCheck(
+        cleanTranslatedText,
+        contextFlags,
+        targetLanguage
+      );
 
-    // If there are flags, generate the footer and annotated version
-    if (flags && flags.length > 0) {
+      flags = checkResult.flags;
+      cleanTranslatedText = checkResult.checkedText;
       const footer = generateFooter(flags);
       annotatedText = cleanTranslatedText + footer;
-      finalOutputText = annotatedText;
+      finalOutputText = annotatedText; // Default final output to annotated if requested
     } else {
       annotatedText = cleanTranslatedText;
-      finalOutputText = cleanTranslatedText;
     }
 
-    // 3. Generate Title and Summary
-// 4. Generate Title and Summary
+    // 4. Generate Title and Summary
     try {
       const ai = getGemini();
       const summaryPrompt = `

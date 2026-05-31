@@ -48,7 +48,6 @@ export default function Footer() {
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/privacy" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</Link>
             <Link to="/terms" className="text-slate-500 hover:text-slate-300 text-sm">Terms of Service</Link>
-            <Link to="/admin" className="text-slate-500 hover:text-slate-300 text-sm">Admin</Link>
           </div>
         </div>
       </div>
