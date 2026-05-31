@@ -166,7 +166,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             };
 
             try {
-              // Upload clean text to AiBhive-media bucket
+              const bucketName = 'aibhive-media';
               const cleanTextFilename = `clean_output_${leadId}.txt`;
               const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
               await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
@@ -226,15 +226,20 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
               if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
               emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
 
-              await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: userEmail,
-                subject: 'Your AiBhive Files are Ready!',
-                text: emailText,
-                html: emailHtml
-              });
+              try {
+                await transporter.sendMail({
+                  from: process.env.EMAIL_USER,
+                  to: userEmail,
+                  subject: 'Your AiBhive Files are Ready!',
+                  text: emailText,
+                  html: emailHtml
+                });
+              } catch (emailErr) {
+                console.error("Failed to send completion email via nodemailer:", emailErr);
+              }
             }
           } else {
+             console.error("Job processing failed with error:", result.error);
              await leadRef.update({ status: 'failed', error: result.error });
           }
         }).catch(err => {
@@ -252,6 +257,83 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 // Regular JSON middleware for other endpoints
 app.use(express.json());
+
+// --- ADMIN API ENDPOINTS ---
+
+// Admin emails allowed to access the dashboard
+const ADMIN_EMAILS = ['test@test.com', 'admin@aibhive.com']; // In production, move to process.env.ADMIN_EMAILS
+
+// Middleware to verify Firebase Auth token and check Admin status
+async function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const isEnvAdmin = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.includes(decodedToken.email) : false;
+
+    if (!ADMIN_EMAILS.includes(decodedToken.email) && !isEnvAdmin) {
+      console.warn(`Unauthorized admin access attempt by ${decodedToken.email}`);
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Error verifying auth token:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
+  try {
+    const leadsRef = db.collection('leads');
+    // Fetch last 50 leads, ordered by creation date
+    const snapshot = await leadsRef.orderBy('createdAt', 'desc').limit(50).get();
+
+    const leads = [];
+    snapshot.forEach(doc => {
+      leads.push({ id: doc.id, ...doc.data() });
+    });
+
+    return res.json({ leads });
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const settingsDoc = await db.collection('system').doc('settings').get();
+    if (!settingsDoc.exists) {
+      return res.json({ settings: { preferredModel: 'gemini' } }); // Default
+    }
+    return res.json({ settings: settingsDoc.data() });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const { preferredModel } = req.body;
+    if (!['gemini', 'claude', 'grok'].includes(preferredModel)) {
+       return res.status(400).json({ error: 'Invalid model preference' });
+    }
+
+    await db.collection('system').doc('settings').set({ preferredModel }, { merge: true });
+    return res.json({ success: true, settings: { preferredModel } });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+// ---------------------------
 
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
@@ -274,6 +356,139 @@ function calculatePrice(lead) {
   }
   return Number(total.toFixed(2));
 }
+
+
+// TEST ENDPOINT - BYPASS STRIPE
+app.post('/api/test-checkout-session', async (req, res) => {
+  const { leadId, email } = req.body || {};
+  console.log('[test-checkout] request received', { leadId, email });
+
+  try {
+    if (!leadId) {
+      return res.status(400).json({ error: 'Missing leadId.' });
+    }
+
+    const leadRef = db.collection('leads').doc(leadId);
+    let leadSnap;
+    try {
+      leadSnap = await leadRef.get();
+    } catch (err) {
+      console.error('[test-checkout] Firestore lookup failed:', err);
+      return res.status(500).json({ error: 'Could not load order.' });
+    }
+
+    if (!leadSnap.exists) {
+      return res.status(404).json({ error: 'Lead not found.' });
+    }
+
+    // 1. Mark as paid
+    await leadRef.update({
+      status: 'paid',
+      email: email || leadSnap.data().email || null
+    });
+
+    const leadData = { id: leadSnap.id, ...leadSnap.data(), email: email || leadSnap.data().email || null };
+    const userEmail = leadData.email;
+
+    // 2. Process job directly
+    processLeadJob(leadData).then(async (result) => {
+      if (result.success) {
+
+        let gcsCleanTextUrl = null;
+        let gcsAnnotatedTextUrl = null;
+        let gcsAudioUrl = null;
+
+        const urlOptions = {
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + 72 * 60 * 60 * 1000,
+        };
+
+        try {
+          const bucketName = 'aibhive-media'; // Assumed from context
+          const cleanTextFilename = `clean_output_${leadId}.txt`;
+          const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
+          await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
+          const [cleanUrl] = await cleanTextFile.getSignedUrl(urlOptions);
+          gcsCleanTextUrl = cleanUrl;
+
+          const annotatedTextFilename = `annotated_output_${leadId}.txt`;
+          const annotatedTextFile = storage.bucket(bucketName).file(annotatedTextFilename);
+          await annotatedTextFile.save(result.annotatedText, { contentType: 'text/plain' });
+          const [annotatedUrl] = await annotatedTextFile.getSignedUrl(urlOptions);
+          gcsAnnotatedTextUrl = annotatedUrl;
+
+          if (result.clonedAudioBuffer) {
+            const audioFilename = `cloned_audio_${leadId}.mp3`;
+            const audioFile = storage.bucket(bucketName).file(audioFilename);
+            await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
+            const [audioUrl] = await audioFile.getSignedUrl(urlOptions);
+            gcsAudioUrl = audioUrl;
+          }
+        } catch (storageError) {
+          console.error("Error saving files to Google Cloud Storage:", storageError);
+        }
+
+        await leadRef.update({
+          status: 'completed',
+          rawTranscript: result.originalText || null,
+          finalOutputTextUrl: gcsAnnotatedTextUrl,
+          cleanTranslatedTextUrl: gcsCleanTextUrl,
+          annotatedTextUrl: gcsAnnotatedTextUrl,
+          finalAudioUrl: gcsAudioUrl || null,
+          voiceModelId: result.voiceModelId || null,
+          translatedTitle: result.translatedTitle || null,
+          translatedSummary: result.translatedSummary || null,
+          flags: result.flags || []
+        });
+
+        if (userEmail) {
+          let emailText = `Your Media files from AiBhive are complete.\n\n`;
+          if (result.translatedTitle) emailText += `Title: ${result.translatedTitle}\n`;
+          if (result.translatedSummary) emailText += `Summary: ${result.translatedSummary}\n\n`;
+          emailText += `Download your files here (links expire in 72 hours):\n`;
+          if (gcsCleanTextUrl) emailText += `Clean Text: ${gcsCleanTextUrl}\n`;
+          if (gcsAnnotatedTextUrl) emailText += `Annotated Text: ${gcsAnnotatedTextUrl}\n`;
+          if (gcsAudioUrl) emailText += `Cloned Audio: ${gcsAudioUrl}\n`;
+          emailText += `\nSimply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.`;
+
+          let emailHtml = `<h3>Your Media files from AiBhive are complete.</h3>`;
+          if (result.translatedTitle) emailHtml += `<h4>${result.translatedTitle}</h4>`;
+          if (result.translatedSummary) emailHtml += `<p><em>${result.translatedSummary}</em></p>`;
+          emailHtml += `<p>Download your files here (links expire in 72 hours):</p><ul>`;
+          if (gcsCleanTextUrl) emailHtml += `<li><a href="${gcsCleanTextUrl}">Download Clean Text File</a></li>`;
+          if (gcsAnnotatedTextUrl) emailHtml += `<li><a href="${gcsAnnotatedTextUrl}">Download Annotated Text File</a></li>`;
+          if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
+          emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
+
+          try {
+            await transporter.sendMail({
+              from: process.env.EMAIL_USER,
+              to: userEmail,
+              subject: 'Your AiBhive Files are Ready!',
+              text: emailText,
+              html: emailHtml
+            });
+          } catch (emailErr) {
+            console.error("Failed to send completion email via nodemailer (Test Route):", emailErr);
+          }
+        }
+      } else {
+         console.error("Job processing failed with error (Test Route):", result.error);
+         await leadRef.update({ status: 'failed', error: result.error });
+      }
+    }).catch(err => {
+      console.error("Job processing error:", err);
+    });
+
+    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
+    return res.json({ url: `${origin}/test?success=true` });
+
+  } catch (err) {
+    console.error('[test-checkout] failed:', err);
+    return res.status(500).json({ error: err.message || 'Test checkout failed.' });
+  }
+});
 
 app.post('/api/create-checkout-session', async (req, res) => {
   const { leadId, email } = req.body || {};
