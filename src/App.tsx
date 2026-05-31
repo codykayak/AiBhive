@@ -9,6 +9,10 @@ import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import FAQ from './pages/FAQ';
 import AdminDashboard from './pages/AdminDashboard';
+import Podcasters from './pages/use-cases/Podcasters';
+import YouTubers from './pages/use-cases/YouTubers';
+import LegalTranscription from './pages/use-cases/LegalTranscription';
+import MedicalTranscription from './pages/use-cases/MedicalTranscription';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -31,6 +35,10 @@ export default function App() {
             <Route path="/faq" element={<FAQ />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/use-cases/podcasters" element={<Podcasters />} />
+            <Route path="/use-cases/youtubers" element={<YouTubers />} />
+            <Route path="/use-cases/legal-transcription" element={<LegalTranscription />} />
+            <Route path="/use-cases/medical-transcription" element={<MedicalTranscription />} />
           </Routes>
         </main>
         <footer className="relative z-10">
