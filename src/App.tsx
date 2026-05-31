@@ -1,5 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -9,47 +8,9 @@ import GrowGlobally from './pages/GrowGlobally';
 import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import FAQ from './pages/FAQ';
-import TestGetStarted from './pages/TestGetStarted';
 import AdminDashboard from './pages/AdminDashboard';
-import Podcasters from './pages/use-cases/Podcasters';
-import YouTubers from './pages/use-cases/YouTubers';
-import LegalTranscription from './pages/use-cases/LegalTranscription';
-import MedicalTranscription from './pages/use-cases/MedicalTranscription';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
-
-function AnimatedRoutes() {
-  const location = useLocation();
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }}
-        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, y: -16, filter: 'blur(6px)' }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <Routes location={location}>
-          <Route path="/" element={<Home />} />
-          <Route path="/transcription" element={<TranscriptionStudio />} />
-          <Route path="/voice-clone" element={<VoiceCloneLab />} />
-          <Route path="/grow" element={<GrowGlobally />} />
-          <Route path="/about" element={<AboutContact />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/get-started" element={<GetStarted />} />
-          <Route path="/test" element={<TestGetStarted />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-
-          <Route path="/use-cases/podcasters" element={<Podcasters />} />
-          <Route path="/use-cases/youtubers" element={<YouTubers />} />
-          <Route path="/use-cases/legal-transcription" element={<LegalTranscription />} />
-          <Route path="/use-cases/medical-transcription" element={<MedicalTranscription />} />
-
-                                                </Routes>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
 
 export default function App() {
   return (
@@ -61,7 +22,16 @@ export default function App() {
         </header>
         <FAQChatbot />
         <main className="flex-grow pt-20">
-          <AnimatedRoutes />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/transcription" element={<TranscriptionStudio />} />
+            <Route path="/voice-clone" element={<VoiceCloneLab />} />
+            <Route path="/grow" element={<GrowGlobally />} />
+            <Route path="/about" element={<AboutContact />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/get-started" element={<GetStarted />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Routes>
         </main>
         <footer className="relative z-10">
           <Footer />

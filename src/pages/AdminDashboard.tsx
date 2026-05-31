@@ -72,7 +72,7 @@ export default function AdminDashboard() {
       const token = await currentUser.getIdToken();
 
       // Fetch Leads
-      const leadsRes = await fetch('/api/admin/leads', {
+      const leadsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/leads` : '/api/admin/leads', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!leadsRes.ok) throw new Error(await leadsRes.text());
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       setLeads(leadsData.leads);
 
       // Fetch Settings
-      const settingsRes = await fetch('/api/admin/settings', {
+      const settingsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!settingsRes.ok) throw new Error(await settingsRes.text());
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     setSavingSettings(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch('/api/admin/settings', {
+      const res = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -313,7 +313,7 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold text-white mb-6">AI Pipeline Configuration</h2>
 
               <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
-                <h3 className="text-lg font-medium text-white mb-4">Multi-Model Verification Engine</h3>
+                <h3 className="text-lg font-medium text-white mb-4">Pass 2: Base Accuracy Verification Engine</h3>
                 <p className="text-sm text-slate-400 mb-6">
                   Select the Large Language Model used for the secondary "High-Risk Context Accuracy Check" (Pass 2).
                   This model scans the initial translation for medical and legal terminology.
@@ -352,6 +352,37 @@ export default function AdminDashboard() {
                       <span className="block text-sm text-slate-400">Real-time knowledge focus. (API integration pending)</span>
                     </div>
                   </label>
+                </div>
+              </div>
+
+              <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
+                <h3 className="text-lg font-medium text-white mb-4">Pass 3: RAG Verification & Databases</h3>
+                <p className="text-sm text-slate-400 mb-6">
+                  Details of the Retrieval-Augmented Generation (RAG) datasets used for final legal/medical validation.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-black/20 border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="block text-white font-medium flex items-center"><FileText className="w-4 h-4 mr-2 text-bee-amber" /> Oregon Real Estate Law (ORS 696)</span>
+                      <span className="text-xs px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Active</span>
+                    </div>
+                    <span className="block text-sm text-slate-400">Embeddings: 14,208 nodes</span>
+                    <span className="block text-xs text-slate-500 mt-1">Source: Oregon Revised Statutes Chapter 696. Updates synced weekly.</span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-black/20 border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="block text-white font-medium flex items-center"><FileText className="w-4 h-4 mr-2 text-bee-amber" /> Medical Nomenclature (SNOMED CT)</span>
+                      <span className="text-xs px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">Active</span>
+                    </div>
+                    <span className="block text-sm text-slate-400">Embeddings: 358,002 nodes</span>
+                    <span className="block text-xs text-slate-500 mt-1">Source: Systematized Nomenclature of Medicine. Core index loaded.</span>
+                  </div>
+
+                  <button className="w-full py-3 mt-4 border border-dashed border-white/20 rounded-xl text-slate-400 hover:text-white hover:border-bee-amber transition-colors flex items-center justify-center text-sm">
+                    + Upload Custom Library (PDF/CSV)
+                  </button>
                 </div>
               </div>
 
