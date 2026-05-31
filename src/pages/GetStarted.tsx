@@ -149,12 +149,7 @@ export default function GetStarted() {
       }
     });
   }
-  let calculatedTotal = lineItems.reduce((sum, l) => sum + l.amount, 0);
-  if (calculatedTotal > 0 && calculatedTotal < 0.50) {
-    lineItems.push({ label: 'Minimum Order Fee', amount: 0.50 - calculatedTotal });
-    calculatedTotal = 0.50;
-  }
-  const total = Number(calculatedTotal.toFixed(2));
+  const total = Number(lineItems.reduce((sum, l) => sum + l.amount, 0).toFixed(2));
 
   const canSubmit =
     files.length > 0 &&
@@ -207,7 +202,7 @@ export default function GetStarted() {
       }
 
       console.log('[Checkout] Step 2/3 — uploading file to Storage');
-      
+
       let vsUrl = null;
       if (voiceSample) {
         try {
@@ -232,14 +227,14 @@ export default function GetStarted() {
             const uploadTask = uploadBytesResumable(fileRef, fileObj);
 
             return new Promise<void>((resolve, reject) => {
-              uploadTask.on('state_changed', 
+              uploadTask.on('state_changed',
                 (snapshot) => {
                   bytesTransferredArray[index] = snapshot.bytesTransferred;
                   const currentTotalTransferred = bytesTransferredArray.reduce((acc, bytes) => acc + bytes, 0);
                   const progress = (currentTotalTransferred / totalBytes) * 100;
                   setUploadProgress(Math.min(100, Math.max(0, progress)));
-                }, 
-                (err) => reject(err), 
+                },
+                (err) => reject(err),
                 async () => {
                   try {
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
@@ -264,7 +259,7 @@ export default function GetStarted() {
       const docRef = await addDoc(collection(db, 'leads'), {
         userId: uid,
         email,
-        fileUrl: fileUrls[0] || '', // Must be string for Firestore rules
+        fileUrl: fileUrls[0] || null, // Keep for backward compatibility
         fileUrls: fileUrls,
         fileName: files[0].name,
         fileType: fileKind,
@@ -430,7 +425,7 @@ export default function GetStarted() {
                     />
                     <span className="text-white font-semibold">{SERVICE_LABELS[key]}</span>
                   </label>
-                  
+
                   {key === 'voiceCloning' && services.voiceCloning && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}

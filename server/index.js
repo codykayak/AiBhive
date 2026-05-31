@@ -3,15 +3,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,65 +19,12 @@ const app = express();
 // For Google Cloud Run, we listen on PORT (default 8080).
 const port = process.env.PORT || 8080;
 
-// Load the shared Firebase config so the frontend and backend always point
-// at the SAME project AND the SAME named Firestore database.
-//
-// Why this matters: the frontend writes leads to a NAMED Firestore database
-// (firebaseConfig.firestoreDatabaseId), but `admin.firestore()` with no
-// arguments always returns the `(default)` database. With that mismatch
-// every checkout returned `5 NOT_FOUND` because the lead simply did not
-// exist in the database the server was reading from.
-const firebaseConfig = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../firebase-applet-config.json'), 'utf8')
-);
-const FIRESTORE_DATABASE_ID = firebaseConfig.firestoreDatabaseId || '(default)';
-
-admin.initializeApp({ projectId: firebaseConfig.projectId });
-console.log('[startup] Firebase Admin initialized', {
-  projectId: firebaseConfig.projectId,
-  databaseId: FIRESTORE_DATABASE_ID,
-  // GOOGLE_APPLICATION_CREDENTIALS only set when running outside GCP; on Cloud
-  // Run the service uses the runtime service account automatically.
-  serviceAccountFile: process.env.GOOGLE_APPLICATION_CREDENTIALS || '(metadata-server)',
+// Initialize Firebase Admin with explicit project ID
+admin.initializeApp({
+  projectId: "gen-lang-client-0787280773"
 });
 
-const db = getFirestore(admin.app(), FIRESTORE_DATABASE_ID);
-
-// Maps a gRPC error code from Firestore Admin SDK into an actionable hint.
-// Codes are the gRPC canonical codes (https://grpc.io/docs/guides/status-codes/).
-function describeFirestoreError(code) {
-  switch (code) {
-    case 5: // NOT_FOUND
-      return 'NOT_FOUND — the named Firestore database does not exist in this project, or the document was never written. Check firestoreDatabaseId in firebase-applet-config.json.';
-    case 7: // PERMISSION_DENIED
-      return 'PERMISSION_DENIED — the Cloud Run service account is missing IAM permission to read this Firestore database. Grant it `roles/datastore.user` on project `' + firebaseConfig.projectId + '` (or restrict via a condition to database `' + FIRESTORE_DATABASE_ID + '`).';
-    case 16: // UNAUTHENTICATED
-      return 'UNAUTHENTICATED — Firebase Admin could not get application-default credentials. On Cloud Run this means the service is missing a runtime service account, or GOOGLE_APPLICATION_CREDENTIALS points to an invalid file.';
-    case 8: // RESOURCE_EXHAUSTED
-      return 'RESOURCE_EXHAUSTED — Firestore quota exceeded. Check Firestore quota usage in the Google Cloud Console.';
-    case 14: // UNAVAILABLE
-      return 'UNAVAILABLE — Firestore was temporarily unreachable. This is usually transient; retry the request.';
-    default:
-      return `gRPC status ${code} — see https://grpc.io/docs/guides/status-codes/`;
-  }
-}
-
-// Startup probe: do one cheap Firestore read so an IAM/config problem shows up
-// in the boot logs instead of waiting for the first checkout to fail.
-(async () => {
-  try {
-    await db.collection('leads').limit(1).get();
-    console.log('[startup] Firestore probe OK — server can read leads collection.');
-  } catch (err) {
-    console.error('[startup] Firestore probe FAILED:', {
-      code: err.code,
-      message: err.message,
-      hint: describeFirestoreError(err.code),
-      projectId: firebaseConfig.projectId,
-      databaseId: FIRESTORE_DATABASE_ID,
-    });
-  }
-})();
+const db = admin.firestore();
 
 // Setup Google Cloud Storage
 const storage = new Storage();
@@ -166,7 +112,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
             };
 
             try {
-              const bucketName = 'aibhive-media';
+              // Upload clean text to AiBhive-media bucket
               const cleanTextFilename = `clean_output_${leadId}.txt`;
               const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
               await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
@@ -253,6 +199,83 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 // Regular JSON middleware for other endpoints
 app.use(express.json());
 
+// --- ADMIN API ENDPOINTS ---
+
+// Admin emails allowed to access the dashboard
+const ADMIN_EMAILS = ['codykayak@gmail.com', 'test@test.com', 'admin@aibhive.com']; // In production, move to process.env.ADMIN_EMAILS
+
+// Middleware to verify Firebase Auth token and check Admin status
+async function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+
+    const isEnvAdmin = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.includes(decodedToken.email) : false;
+
+    if (!ADMIN_EMAILS.includes(decodedToken.email) && !isEnvAdmin) {
+      console.warn(`Unauthorized admin access attempt by ${decodedToken.email}`);
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('Error verifying auth token:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
+  try {
+    const leadsRef = db.collection('leads');
+    // Fetch last 50 leads, ordered by creation date
+    const snapshot = await leadsRef.orderBy('createdAt', 'desc').limit(50).get();
+
+    const leads = [];
+    snapshot.forEach(doc => {
+      leads.push({ id: doc.id, ...doc.data() });
+    });
+
+    return res.json({ leads });
+  } catch (error) {
+    console.error('Error fetching leads:', error);
+    return res.status(500).json({ error: 'Failed to fetch leads' });
+  }
+});
+
+app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const settingsDoc = await db.collection('system').doc('settings').get();
+    if (!settingsDoc.exists) {
+      return res.json({ settings: { preferredModel: 'gemini' } }); // Default
+    }
+    return res.json({ settings: settingsDoc.data() });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    return res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const { preferredModel } = req.body;
+    if (!['gemini', 'claude', 'grok'].includes(preferredModel)) {
+       return res.status(400).json({ error: 'Invalid model preference' });
+    }
+
+    await db.collection('system').doc('settings').set({ preferredModel }, { merge: true });
+    return res.json({ success: true, settings: { preferredModel } });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+// ---------------------------
+
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
 const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };
@@ -269,179 +292,29 @@ function calculatePrice(lead) {
   for (const key of Object.keys(rates)) {
     if (services[key]) total += unit * rates[key];
   }
-  if (total > 0 && total < 0.50) {
-    total = 0.50;
-  }
   return Number(total.toFixed(2));
 }
 
-
-// TEST ENDPOINT - BYPASS STRIPE
-app.post('/api/test-checkout-session', async (req, res) => {
-  const { leadId, email } = req.body || {};
-  console.log('[test-checkout] request received', { leadId, email });
-
-  try {
-    if (!leadId) {
-      return res.status(400).json({ error: 'Missing leadId.' });
-    }
-
-    const leadRef = db.collection('leads').doc(leadId);
-    let leadSnap;
-    try {
-      leadSnap = await leadRef.get();
-    } catch (err) {
-      console.error('[test-checkout] Firestore lookup failed:', err);
-      return res.status(500).json({ error: 'Could not load order.' });
-    }
-
-    if (!leadSnap.exists) {
-      return res.status(404).json({ error: 'Lead not found.' });
-    }
-
-    // 1. Mark as paid
-    await leadRef.update({
-      status: 'paid',
-      email: email || leadSnap.data().email || null
-    });
-
-    const leadData = { id: leadSnap.id, ...leadSnap.data(), email: email || leadSnap.data().email || null };
-    const userEmail = leadData.email;
-
-    // 2. Process job directly
-    processLeadJob(leadData).then(async (result) => {
-      if (result.success) {
-
-        let gcsCleanTextUrl = null;
-        let gcsAnnotatedTextUrl = null;
-        let gcsAudioUrl = null;
-
-        const urlOptions = {
-          version: 'v4',
-          action: 'read',
-          expires: Date.now() + 72 * 60 * 60 * 1000,
-        };
-
-        try {
-          const bucketName = 'aibhive-media'; // Assumed from context
-          const cleanTextFilename = `clean_output_${leadId}.txt`;
-          const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
-          await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
-          const [cleanUrl] = await cleanTextFile.getSignedUrl(urlOptions);
-          gcsCleanTextUrl = cleanUrl;
-
-          const annotatedTextFilename = `annotated_output_${leadId}.txt`;
-          const annotatedTextFile = storage.bucket(bucketName).file(annotatedTextFilename);
-          await annotatedTextFile.save(result.annotatedText, { contentType: 'text/plain' });
-          const [annotatedUrl] = await annotatedTextFile.getSignedUrl(urlOptions);
-          gcsAnnotatedTextUrl = annotatedUrl;
-
-          if (result.clonedAudioBuffer) {
-            const audioFilename = `cloned_audio_${leadId}.mp3`;
-            const audioFile = storage.bucket(bucketName).file(audioFilename);
-            await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
-            const [audioUrl] = await audioFile.getSignedUrl(urlOptions);
-            gcsAudioUrl = audioUrl;
-          }
-        } catch (storageError) {
-          console.error("Error saving files to Google Cloud Storage:", storageError);
-        }
-
-        await leadRef.update({
-          status: 'completed',
-          rawTranscript: result.originalText || null,
-          finalOutputTextUrl: gcsAnnotatedTextUrl,
-          cleanTranslatedTextUrl: gcsCleanTextUrl,
-          annotatedTextUrl: gcsAnnotatedTextUrl,
-          finalAudioUrl: gcsAudioUrl || null,
-          voiceModelId: result.voiceModelId || null,
-          translatedTitle: result.translatedTitle || null,
-          translatedSummary: result.translatedSummary || null,
-          flags: result.flags || []
-        });
-
-        if (userEmail) {
-          let emailText = `Your Media files from AiBhive are complete.\n\n`;
-          if (result.translatedTitle) emailText += `Title: ${result.translatedTitle}\n`;
-          if (result.translatedSummary) emailText += `Summary: ${result.translatedSummary}\n\n`;
-          emailText += `Download your files here (links expire in 72 hours):\n`;
-          if (gcsCleanTextUrl) emailText += `Clean Text: ${gcsCleanTextUrl}\n`;
-          if (gcsAnnotatedTextUrl) emailText += `Annotated Text: ${gcsAnnotatedTextUrl}\n`;
-          if (gcsAudioUrl) emailText += `Cloned Audio: ${gcsAudioUrl}\n`;
-          emailText += `\nSimply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.`;
-
-          let emailHtml = `<h3>Your Media files from AiBhive are complete.</h3>`;
-          if (result.translatedTitle) emailHtml += `<h4>${result.translatedTitle}</h4>`;
-          if (result.translatedSummary) emailHtml += `<p><em>${result.translatedSummary}</em></p>`;
-          emailHtml += `<p>Download your files here (links expire in 72 hours):</p><ul>`;
-          if (gcsCleanTextUrl) emailHtml += `<li><a href="${gcsCleanTextUrl}">Download Clean Text File</a></li>`;
-          if (gcsAnnotatedTextUrl) emailHtml += `<li><a href="${gcsAnnotatedTextUrl}">Download Annotated Text File</a></li>`;
-          if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
-          emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
-
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: userEmail,
-            subject: 'Your AiBhive Files are Ready!',
-            text: emailText,
-            html: emailHtml
-          });
-        }
-      } else {
-         await leadRef.update({ status: 'failed', error: result.error });
-      }
-    }).catch(err => {
-      console.error("Job processing error:", err);
-    });
-
-    const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
-    return res.json({ url: `${origin}/test?success=true` });
-
-  } catch (err) {
-    console.error('[test-checkout] failed:', err);
-    return res.status(500).json({ error: err.message || 'Test checkout failed.' });
-  }
-});
-
 app.post('/api/create-checkout-session', async (req, res) => {
   const { leadId, email } = req.body || {};
-  console.log('[checkout] request received', { leadId, email, databaseId: FIRESTORE_DATABASE_ID });
+  console.log('[checkout] request received', { leadId, email });
 
   try {
     if (!leadId) {
       return res.status(400).json({ error: 'Missing leadId.' });
     }
 
-    console.log('[checkout] loading lead from Firestore', { leadId });
-    let leadSnap;
-    try {
-      leadSnap = await db.collection('leads').doc(leadId).get();
-    } catch (firestoreErr) {
-      const hint = describeFirestoreError(firestoreErr.code);
-      console.error('[checkout] Firestore lookup failed:', {
-        code: firestoreErr.code,
-        message: firestoreErr.message,
-        hint,
-        projectId: firebaseConfig.projectId,
-        databaseId: FIRESTORE_DATABASE_ID,
-      });
-      const userFacing =
-        firestoreErr.code === 7
-          ? 'Server is missing permission to read your order from Firestore. The site administrator needs to grant the Cloud Run service account the `Cloud Datastore User` (`roles/datastore.user`) role.'
-          : `We could not load your order from Firestore (${hint}). Please try again in a moment.`;
-      return res.status(500).json({ error: userFacing });
-    }
-
+    console.log('[checkout] loading lead from Firestore');
+    const leadSnap = await db.collection('leads').doc(leadId).get();
     if (!leadSnap.exists) {
-      console.warn('[checkout] lead not found', { leadId });
-      return res.status(404).json({ error: 'Lead not found. Please re-upload your file and try again.' });
+      return res.status(404).json({ error: 'Lead not found.' });
     }
     const lead = leadSnap.data();
 
     console.log('[checkout] verifying price');
     const amount = calculatePrice(lead);
     const amountCents = Math.round(amount * 100);
-    if (amountCents < 50 && amountCents > 0) {
+    if (amountCents < 50) {
       return res.status(400).json({ error: `Price ($${amount}) is below the $0.50 minimum.` });
     }
 
