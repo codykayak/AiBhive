@@ -10,7 +10,6 @@ import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import FAQ from './pages/FAQ';
 import TestGetStarted from './pages/TestGetStarted';
-import AdminDashboard from './pages/AdminDashboard';
 import Podcasters from './pages/use-cases/Podcasters';
 import YouTubers from './pages/use-cases/YouTubers';
 import LegalTranscription from './pages/use-cases/LegalTranscription';
@@ -38,14 +37,11 @@ function AnimatedRoutes() {
           <Route path="/faq" element={<FAQ />} />
           <Route path="/get-started" element={<GetStarted />} />
           <Route path="/test" element={<TestGetStarted />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-
           <Route path="/use-cases/podcasters" element={<Podcasters />} />
           <Route path="/use-cases/youtubers" element={<YouTubers />} />
           <Route path="/use-cases/legal-transcription" element={<LegalTranscription />} />
           <Route path="/use-cases/medical-transcription" element={<MedicalTranscription />} />
-
-                                                </Routes>
+        </Routes>
       </motion.div>
     </AnimatePresence>
   );
