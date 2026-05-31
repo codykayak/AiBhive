@@ -72,7 +72,7 @@ export default function AdminDashboard() {
       const token = await currentUser.getIdToken();
 
       // Fetch Leads
-      const leadsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/leads` : '/api/admin/leads', {
+      const leadsRes = await fetch('/api/admin/leads', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!leadsRes.ok) throw new Error(await leadsRes.text());
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
       setLeads(leadsData.leads);
 
       // Fetch Settings
-      const settingsRes = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
+      const settingsRes = await fetch('/api/admin/settings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!settingsRes.ok) throw new Error(await settingsRes.text());
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
     setSavingSettings(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/admin/settings` : '/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -261,7 +261,7 @@ app.use(express.json());
 // --- ADMIN API ENDPOINTS ---
 
 // Admin emails allowed to access the dashboard
-const ADMIN_EMAILS = ['test@test.com', 'admin@aibhive.com']; // In production, move to process.env.ADMIN_EMAILS
+const ADMIN_EMAILS = ['codykayak@gmail.com', 'test@test.com', 'admin@aibhive.com']; // In production, move to process.env.ADMIN_EMAILS
 
 // Middleware to verify Firebase Auth token and check Admin status
 async function verifyAdmin(req, res, next) {

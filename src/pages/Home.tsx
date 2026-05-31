@@ -7,7 +7,7 @@ import transcriptionServiceImg from '../transcription_service_legal_medical.png'
 import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import voiceCloneImg from '../1775556316513.png';
 import translationHubImg from '../1775559497156.png';
-import fastTranslationImg from '../transcription_service_legal_medical.png';
+import fastTranslationImg from '../mr_beast_translation_content_multiplyer.jpg';
 import { SEO } from '../components/SEO';
 
 const FeatureCard = ({ icon: Icon, title, description, link, buttonText, bgImage }: any) => (
