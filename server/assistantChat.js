@@ -5,6 +5,12 @@ const MAX_USER_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_TURNS = 8;
 const MODEL = 'gemini-2.5-pro';
 
+const TRANSCRIPTION_PRICING_REPLY =
+  'When you visit our checkout cart you can drop your file in and get an exact price for your project instantly. Go to /get-started to upload and see your quote.';
+
+const AGENTIC_PRICING_REPLY =
+  'The scope and multitude of variables that go into a project of any size are complex and require a human in the loop. Call or text us, or click Book a call at /book-consultation. We usually get back to you within the hour. You can also reach us at hello@aibhive.com.';
+
 let aiClient;
 
 function getGemini() {
@@ -15,6 +21,57 @@ function getGemini() {
     aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
   return aiClient;
+}
+
+function isTranscriptionPricingQuestion(lower) {
+  const pricing = ['price', 'pricing', 'cost', 'how much', 'quote', 'rate'];
+  const transcription = [
+    'transcri',
+    'translat',
+    'voice clone',
+    'voice cloning',
+    'dub',
+    'per minute',
+    'per word',
+    'upload',
+    'mp3',
+    'audio',
+    'video file',
+    'checkout',
+    'get-started',
+    'get started',
+    'podcast',
+    'youtube',
+    'subtitle',
+    'srt',
+  ];
+  return pricing.some((p) => lower.includes(p)) && transcription.some((t) => lower.includes(t));
+}
+
+function isAgenticPricingQuestion(lower) {
+  const pricing = ['price', 'pricing', 'cost', 'how much', 'quote', 'budget'];
+  const agentic = [
+    'agent',
+    'automat',
+    'real estate',
+    'phone',
+    'sms',
+    'missed call',
+    'lead gen',
+    'erp',
+    'workflow',
+    'enterprise',
+    'custom',
+    'solution',
+    'b2b',
+    'rag',
+    'crm',
+    'integration',
+    'consult',
+    'wholesal',
+    'broker',
+  ];
+  return pricing.some((p) => lower.includes(p)) && agentic.some((a) => lower.includes(a));
 }
 
 /**
@@ -52,7 +109,7 @@ export async function getAssistantReply(history, message) {
       contents,
       config: {
         systemInstruction: AIBHIVE_ASSISTANT_SYSTEM_INSTRUCTION,
-        temperature: 0.45,
+        temperature: 0.4,
         maxOutputTokens: 900,
       },
     });
@@ -72,70 +129,75 @@ export async function getAssistantReply(history, message) {
 function getFallbackReply(input) {
   const lower = input.toLowerCase();
 
+  if (isTranscriptionPricingQuestion(lower)) {
+    return TRANSCRIPTION_PRICING_REPLY;
+  }
+  if (isAgenticPricingQuestion(lower)) {
+    return AGENTIC_PRICING_REPLY;
+  }
+
   const rules = [
     {
       keys: ['real estate', 'wholesal', 'investor', 'realtor', 'broker', 'seller', 'fub', 'gohighlevel', 'ghl'],
       reply:
-        'AiBHive Real Estate AI covers distress monitoring, CRM sync (Follow Up Boss, GoHighLevel), missed-call text-back with RAG-trained SMS, and automatic appointment booking. Details: /solutions/real-estate-ai-automation — book a call at /book-consultation.',
+        'AiBHive Real Estate AI covers distress monitoring, CRM sync (Follow Up Boss, GoHighLevel), missed-call text-back with RAG-trained SMS, and automatic appointment booking. See /solutions/real-estate-ai-automation or book at /book-consultation.',
     },
     {
       keys: ['phone', 'sms', 'text back', 'missed call', 'twilio', 'ringcentral', 'openphone', 'voicemail'],
       reply:
-        'Our Phone Systems integration connects to Twilio, RingCentral, OpenPhone, and more. Missed calls trigger a webhook; within ~60 seconds a RAG-trained agent texts using your scripts and FAQs, qualifies the lead, and books appointments. See /solutions/phone-systems-ai-integration or /book-consultation.',
+        'Phone Systems integration: missed call → webhook → RAG-trained SMS → booked appointment. Twilio, RingCentral, OpenPhone supported. /solutions/phone-systems-ai-integration',
     },
     {
-      keys: ['lead gen', 'lead generation', 'nurturing', 'pipeline', 'outreach'],
-      reply:
-        'Lead Generation agents monitor intent signals, qualify leads, and book calls 24/7. Learn more: /solutions/ai-lead-generation-automation',
+      keys: ['lead gen', 'lead generation', 'nurturing', 'pipeline'],
+      reply: 'Lead Generation agents qualify and book calls 24/7. /solutions/ai-lead-generation-automation',
     },
     {
-      keys: ['customer ops', 'support', 'ticket', 'refund', 'ecommerce'],
-      reply:
-        'Customer Operations agents go beyond FAQ bots—they access orders and CRM data to resolve issues across SMS and chat. /solutions/ai-customer-operations-automation',
+      keys: ['customer ops', 'ticket', 'refund', 'ecommerce'],
+      reply: 'Customer Operations agents resolve tickets with CRM and order data. /solutions/ai-customer-operations-automation',
     },
     {
-      keys: ['erp', 'invoice', 'document', 'pdf', 'quickbooks', 'netsuite'],
-      reply:
-        'Document & ERP Sync extracts data from PDFs and invoices into your accounting stack. /solutions/intelligent-document-processing-erp',
+      keys: ['erp', 'invoice', 'document', 'quickbooks', 'netsuite'],
+      reply: 'Document & ERP Sync automates PDF and invoice data entry. /solutions/intelligent-document-processing-erp',
     },
     {
-      keys: ['workflow', 'orchestrat', 'onboarding', 'agency'],
-      reply:
-        'Workflow Orchestration connects legacy SaaS and automates full client lifecycles. /solutions/enterprise-workflow-orchestration',
+      keys: ['workflow', 'orchestrat', 'onboarding'],
+      reply: 'Workflow Orchestration connects legacy SaaS across the client lifecycle. /solutions/enterprise-workflow-orchestration',
     },
     {
-      keys: ['medical', 'legal', 'compliance', 'hipaa', 'court', 'transcrib'],
+      keys: ['agentic', 'automation', 'autonomous', 'ai agent', 'digital employee'],
       reply:
-        'Medical & Legal uses a multi-agent hive with cross-checking and audit trails—or use self-serve transcription at /transcription. B2B: /solutions/medical-legal-multi-agent-compliance',
+        'AiBHive builds custom agentic AI for lead gen, customer ops, documents, workflows, real estate, and phone/SMS. Explore Solutions in the menu or /book-consultation.',
     },
     {
-      keys: ['book', 'consult', 'demo', 'audit', 'call', 'meeting', 'enterprise', 'custom agent'],
+      keys: ['medical', 'legal', 'compliance', 'hipaa', 'court'],
       reply:
-        'Schedule an automation audit on our detailed intake form: /book-consultation. We will follow up by email to book a live strategy call.',
+        'Medical & Legal multi-agent hive: /solutions/medical-legal-multi-agent-compliance. Self-serve transcription: /transcription',
     },
     {
-      keys: ['price', 'cost', 'pricing', 'how much'],
-      reply:
-        'Self-serve pricing: Audio/Video — Transcribe+Translate $2.49/min, Legal/Medical $3.29/min, Voice Clone $1.99/min. Text — $0.025–$0.035/word depending on service. Calculator: /get-started#pricing. Custom B2B agents are quoted via /book-consultation.',
+      keys: ['book', 'consult', 'demo', 'audit', 'strategy'],
+      reply: 'Book a live call at /book-consultation. We usually respond within the hour.',
     },
     {
       keys: ['clone', 'voice'],
       reply:
-        'Voice Clone Lab needs a 30s–2min sample and preserves your tone across languages. /voice-clone — pricing on /get-started.',
+        'Voice Clone Lab: /voice-clone. For exact pricing, visit /get-started and drop your file in the checkout cart.',
     },
     {
-      keys: ['translat', 'language', 'dub'],
+      keys: ['translat', 'language', 'dub', 'transcri'],
       reply:
-        'We support 90+ languages with multi-agent accuracy. Start at /transcription or /grow. Upload and price at /get-started.',
+        'Transcription and translation: /transcription and /grow. Exact pricing at /get-started — drop your file in for an instant quote.',
     },
     {
-      keys: ['contact', 'email', 'support', 'hello'],
-      reply: 'Email hello@aibhive.com or visit /about. For B2B projects use /book-consultation.',
+      keys: ['price', 'cost', 'pricing', 'how much'],
+      reply: `${AGENTIC_PRICING_REPLY}\n\nFor transcription/translation files only: ${TRANSCRIPTION_PRICING_REPLY}`,
+    },
+    {
+      keys: ['contact', 'email', 'support', 'hello', 'text us', 'call us'],
+      reply: 'hello@aibhive.com or /book-consultation. We usually get back within the hour.',
     },
     {
       keys: ['hi', 'hello', 'hey'],
-      reply:
-        "Hello! I'm the AiBHive assistant. Ask about agentic automation (real estate, phone/SMS, lead gen), transcription pricing, or booking a consultation.",
+      reply: "Hi, I'm Cody, your AI assistant. How can I help?",
     },
   ];
 
@@ -146,6 +208,6 @@ function getFallbackReply(input) {
   }
 
   return (
-    "I'm not sure about that specific detail. Browse our solution pages under Solutions in the menu, or book a strategy call at /book-consultation. You can also email hello@aibhive.com."
+    'AiBHive offers agentic B2B automation (see Solutions in the menu) and self-serve transcription at /get-started. Book a call: /book-consultation or hello@aibhive.com.'
   );
 }
