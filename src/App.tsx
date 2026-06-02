@@ -9,6 +9,7 @@ import GrowGlobally from './pages/GrowGlobally';
 import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
 import FAQ from './pages/FAQ';
+import AdminDashboard from './pages/AdminDashboard';
 import TestGetStarted from './pages/TestGetStarted';
 import Podcasters from './pages/use-cases/Podcasters';
 import YouTubers from './pages/use-cases/YouTubers';
@@ -36,6 +37,7 @@ function AnimatedRoutes() {
           <Route path="/about" element={<AboutContact />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/get-started" element={<GetStarted />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/test" element={<TestGetStarted />} />
           <Route path="/use-cases/podcasters" element={<Podcasters />} />
           <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -47,22 +49,39 @@ function AnimatedRoutes() {
   );
 }
 
-export default function App() {
+function AppShell() {
+  const { pathname } = useLocation();
+  const isAdminRoute = pathname.startsWith('/admin');
+
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        <SEO />
-        <header className="fixed top-0 left-0 right-0 z-50">
-          <Navbar />
-        </header>
-        <FAQChatbot />
-        <main className="flex-grow pt-20">
+    <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
+      <SEO />
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <Navbar />
+      </header>
+      {!isAdminRoute && <FAQChatbot />}
+      <main className="flex-grow pt-20">
+        {isAdminRoute ? (
+          <Routes>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Routes>
+        ) : (
           <AnimatedRoutes />
-        </main>
+        )}
+      </main>
+      {!isAdminRoute && (
         <footer className="relative z-10">
           <Footer />
         </footer>
-      </div>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppShell />
     </Router>
   );
 }

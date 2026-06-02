@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
-import { getFirestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -252,6 +252,105 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 // Regular JSON middleware for other endpoints
 app.use(express.json());
+
+// --- Admin API (uses named Firestore DB — same as checkout) ---
+const DEFAULT_ADMIN_EMAILS = [
+  'codykayak@gmail.com',
+  'test@test.com',
+  'admin@aibhive.com',
+];
+
+function getAdminEmails() {
+  const fromEnv = process.env.ADMIN_EMAILS;
+  const parsed = fromEnv
+    ? fromEnv.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+    : [];
+  return [...new Set([...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase()), ...parsed])];
+}
+
+const ADMIN_EMAILS = getAdminEmails();
+
+function isAdminEmail(email) {
+  return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase()));
+}
+
+async function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!isAdminEmail(decodedToken.email)) {
+      console.warn(`[admin] Unauthorized access attempt by ${decodedToken.email}`);
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('[admin] Token verification failed:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
+app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+    let snapshot;
+    try {
+      snapshot = await db.collection('leads').orderBy('createdAt', 'desc').limit(limit).get();
+    } catch (orderErr) {
+      console.warn('[admin/leads] orderBy failed, using unordered fetch:', orderErr.message);
+      snapshot = await db.collection('leads').limit(limit).get();
+    }
+
+    const leads = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    leads.sort(
+      (a, b) => (b.createdAt?.seconds ?? b.createdAt?._seconds ?? 0) - (a.createdAt?.seconds ?? a.createdAt?._seconds ?? 0)
+    );
+
+    return res.json({ leads });
+  } catch (error) {
+    console.error('[admin/leads] Error:', error);
+    return res.status(500).json({
+      error: 'Failed to fetch leads',
+      hint: describeFirestoreError(error.code),
+    });
+  }
+});
+
+app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const settingsDoc = await db.collection('system').doc('settings').get();
+    if (!settingsDoc.exists) {
+      return res.json({ settings: { preferredModel: 'gemini' } });
+    }
+    return res.json({ settings: settingsDoc.data() });
+  } catch (error) {
+    console.error('[admin/settings] GET error:', error);
+    return res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
+  try {
+    const { preferredModel } = req.body;
+    if (!['gemini', 'claude', 'grok'].includes(preferredModel)) {
+      return res.status(400).json({ error: 'Invalid model preference' });
+    }
+
+    await db.collection('system').doc('settings').set(
+      { preferredModel, updatedAt: FieldValue.serverTimestamp(), updatedBy: req.user.email },
+      { merge: true }
+    );
+    return res.json({ success: true, settings: { preferredModel } });
+  } catch (error) {
+    console.error('[admin/settings] POST error:', error);
+    return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
 
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
