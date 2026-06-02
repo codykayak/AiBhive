@@ -6,8 +6,7 @@ import codyChatIcon from '../../cody/src/cody_m_sims.png';
 
 type ChatMessage = { text: string; isUser: boolean };
 
-const WELCOME =
-  "Hi there! I'm Cody, your AiBHive assistant powered by Gemini. Ask about agentic automation (real estate, phone/SMS, lead gen), transcription pricing, or booking a consultation.";
+const WELCOME = "Hi, I'm Cody, your AI assistant. How can I help?";
 
 export default function FAQChatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +53,7 @@ export default function FAQChatbot() {
       setMessages((prev) => [
         ...prev,
         {
-          text: "I'm having trouble connecting right now. Please try again in a moment, visit /book-consultation for B2B automation, or email hello@aibhive.com.",
+          text: "I'm having trouble connecting right now. Please try again, visit /book-consultation, or email hello@aibhive.com.",
           isUser: false,
         },
       ]);
@@ -89,10 +88,7 @@ export default function FAQChatbot() {
                   alt=""
                   className="w-10 h-10 rounded-full object-cover border-2 border-bee-amber/60 shrink-0"
                 />
-                <div className="min-w-0">
-                  <span className="text-white font-bold block truncate">AiBHive Assistant</span>
-                  <span className="text-xs text-slate-400">Powered by Gemini</span>
-                </div>
+                <span className="text-white font-bold truncate">Cody</span>
               </div>
               <button
                 type="button"
@@ -140,7 +136,7 @@ export default function FAQChatbot() {
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Ask about solutions, pricing…"
+                  placeholder="Type your question…"
                   disabled={isLoading}
                   className="flex-1 bg-transparent px-3 py-2 text-sm text-white focus:outline-none disabled:opacity-50"
                 />
@@ -160,28 +156,22 @@ export default function FAQChatbot() {
 
       <motion.button
         type="button"
-        key="launcher"
         initial={false}
         animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
         onClick={() => setIsOpen((open) => !open)}
-        className="relative group rounded-full p-0.5 bg-gradient-to-br from-bee-amber to-bee-yellow shadow-[0_0_24px_rgba(245,158,11,0.45)] ring-2 ring-bee-amber/80 ring-offset-2 ring-offset-bee-black"
-        aria-label={isOpen ? 'Close AiBHive assistant' : 'Open AiBHive assistant'}
+        className="rounded-full p-0.5 bg-gradient-to-br from-bee-amber to-bee-yellow shadow-[0_0_24px_rgba(245,158,11,0.45)] ring-2 ring-bee-amber/80 ring-offset-2 ring-offset-bee-black"
+        aria-label={isOpen ? 'Close chat with Cody' : 'Chat with Cody'}
         aria-expanded={isOpen}
       >
         <img
           src={codyChatIcon}
-          alt="Chat with AiBHive assistant"
+          alt="Chat with Cody"
           className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover block"
           width={64}
           height={64}
         />
-        {!isOpen && (
-          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-bee-black text-white text-sm py-1.5 px-3 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
-            Need help?
-          </span>
-        )}
       </motion.button>
     </div>,
     document.body
