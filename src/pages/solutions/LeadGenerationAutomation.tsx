@@ -3,10 +3,10 @@ import heroImg from '../../grow_content_creators_podcator_veiwership_translation
 import sectionImg from '../../ai_translation_grow_podcast_youtube_audince.png';
 
 const RELATED = [
+  { label: 'Real Estate AI', href: '/solutions/real-estate-ai-automation' },
+  { label: 'Phone Systems & SMS', href: '/solutions/phone-systems-ai-integration' },
   { label: 'Customer Operations', href: '/solutions/ai-customer-operations-automation' },
-  { label: 'Document & ERP Sync', href: '/solutions/intelligent-document-processing-erp' },
   { label: 'Workflow Orchestration', href: '/solutions/enterprise-workflow-orchestration' },
-  { label: 'Medical & Legal AI', href: '/solutions/medical-legal-multi-agent-compliance' },
 ];
 
 export default function LeadGenerationAutomation() {

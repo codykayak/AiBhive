@@ -21,6 +21,14 @@ export const SOLUTION_CATEGORIES = [
     name: 'Medical & Legal AI',
     path: '/solutions/medical-legal-multi-agent-compliance',
   },
+  {
+    name: 'Real Estate',
+    path: '/solutions/real-estate-ai-automation',
+  },
+  {
+    name: 'Phone Systems',
+    path: '/solutions/phone-systems-ai-integration',
+  },
 ] as const;
 
 export const TRANSCRIPTION_SERVICES_LINKS = [

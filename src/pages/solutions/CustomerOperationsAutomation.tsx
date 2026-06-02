@@ -3,10 +3,10 @@ import heroImg from '../../ai_voice_translation_clone_lab.png';
 import sectionImg from '../../transcription_service_legal_medical.png';
 
 const RELATED = [
+  { label: 'Phone Systems & SMS', href: '/solutions/phone-systems-ai-integration' },
   { label: 'Lead Generation', href: '/solutions/ai-lead-generation-automation' },
-  { label: 'Document & ERP Sync', href: '/solutions/intelligent-document-processing-erp' },
+  { label: 'Real Estate AI', href: '/solutions/real-estate-ai-automation' },
   { label: 'Workflow Orchestration', href: '/solutions/enterprise-workflow-orchestration' },
-  { label: 'Medical & Legal AI', href: '/solutions/medical-legal-multi-agent-compliance' },
 ];
 
 export default function CustomerOperationsAutomation() {

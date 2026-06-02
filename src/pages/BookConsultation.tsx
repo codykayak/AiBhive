@@ -10,6 +10,8 @@ const INTEREST_OPTIONS = [
   { id: 'document-erp', label: 'Document processing & ERP sync' },
   { id: 'workflow', label: 'Workflow orchestration' },
   { id: 'medical-legal', label: 'Medical & legal multi-agent transcription' },
+  { id: 'real-estate', label: 'Real estate AI (leads, SMS, appointments)' },
+  { id: 'phone-systems', label: 'Phone & SMS integration (missed-call AI)' },
   { id: 'transcription', label: 'Transcription / translation / voice' },
   { id: 'custom', label: 'Custom agentic application (describe below)' },
 ] as const;

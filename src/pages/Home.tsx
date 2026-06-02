@@ -14,6 +14,8 @@ import {
   Brain,
   Workflow,
   Scale,
+  Building2,
+  Smartphone,
 } from 'lucide-react';
 import backgroundLogo from '../aibhive_background.png';
 import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
@@ -60,6 +62,20 @@ const CATEGORIES = [
     title: 'Medical & Legal AI',
     excerpt: 'Multi-agent cross-checking for accuracy, compliance, and audit trails.',
     image: medicalLegalImg,
+  },
+  {
+    icon: Building2,
+    href: '/solutions/real-estate-ai-automation',
+    title: 'Real Estate',
+    excerpt: 'Distress signals, CRM sync, missed-call SMS, and appointment booking for investors and agents.',
+    image: leadGenImg,
+  },
+  {
+    icon: Smartphone,
+    href: '/solutions/phone-systems-ai-integration',
+    title: 'Phone Systems',
+    excerpt: 'Twilio, RingCentral, and OpenPhone—RAG-trained text-back on every missed call.',
+    image: customerOpsImg,
   },
 ] as const;
 
@@ -108,6 +124,24 @@ const AGENT_JOBS = [
     target: 'Best for Healthcare, Litigation, and Regulated Documentation',
     body: 'Multiple specialized AI agents transcribe, verify medical and legal terminology, cross-check each other for accuracy, and halt for human review when compliance rules require—full audit trail included.',
     value: 'Delivers court- and clinic-grade documentation without single-model guesswork.',
+  },
+  {
+    icon: Building2,
+    href: '/solutions/real-estate-ai-automation',
+    image: leadGenImg,
+    title: 'Real Estate Speed-to-Lead Agent',
+    target: 'Best for Investors, Wholesalers, Agents, and Brokerages',
+    body: 'Monitors distress signals, syncs with Follow Up Boss and GoHighLevel, and turns missed calls into RAG-trained SMS threads that qualify sellers and book appointments on your calendar.',
+    value: 'Closes the five-minute window that wins deals—without hiring more ISA headcount.',
+  },
+  {
+    icon: Smartphone,
+    href: '/solutions/phone-systems-ai-integration',
+    image: customerOpsImg,
+    title: 'Phone & SMS Intelligence Layer',
+    target: 'Best for Any Business That Lives on Inbound Calls',
+    body: 'Integrates with your existing phone stack. Missed calls trigger an intelligent text within seconds—trained on your scripts and knowledge base—then books qualified leads automatically.',
+    value: 'Recovers revenue from callers who would have hung up on voicemail.',
   },
 ] as const;
 

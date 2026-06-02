@@ -20,6 +20,8 @@ import CustomerOperationsAutomation from './pages/solutions/CustomerOperationsAu
 import DocumentProcessingErp from './pages/solutions/DocumentProcessingErp';
 import WorkflowOrchestration from './pages/solutions/WorkflowOrchestration';
 import MedicalLegalMultiAgent from './pages/solutions/MedicalLegalMultiAgent';
+import RealEstateSolutions from './pages/solutions/RealEstateSolutions';
+import PhoneSystemsIntegration from './pages/solutions/PhoneSystemsIntegration';
 import BookConsultation from './pages/BookConsultation';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
@@ -54,6 +56,8 @@ function AnimatedRoutes() {
           <Route path="/solutions/intelligent-document-processing-erp" element={<DocumentProcessingErp />} />
           <Route path="/solutions/enterprise-workflow-orchestration" element={<WorkflowOrchestration />} />
           <Route path="/solutions/medical-legal-multi-agent-compliance" element={<MedicalLegalMultiAgent />} />
+          <Route path="/solutions/real-estate-ai-automation" element={<RealEstateSolutions />} />
+          <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
           <Route path="/book-consultation" element={<BookConsultation />} />
         </Routes>
       </motion.div>
