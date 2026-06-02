@@ -13,6 +13,7 @@ import {
   Search,
   Brain,
   Workflow,
+  Scale,
 } from 'lucide-react';
 import backgroundLogo from '../aibhive_background.png';
 import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
@@ -21,11 +22,8 @@ import erpImg from '../transcription_service_legal_medical.png';
 import orchestrationImg from '../1775559497156.png';
 import terminologyImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import { SEO } from '../components/SEO';
-
-const AUDIT_MAILTO =
-  'mailto:hello@aibhive.com?subject=Schedule%20an%20Automation%20Audit';
-const STRATEGY_MAILTO =
-  'mailto:hello@aibhive.com?subject=Book%20Your%20Strategy%20Session';
+import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
+import medicalLegalImg from '../transcription_service_legal_medical.png';
 
 const CATEGORIES = [
   {
@@ -55,6 +53,13 @@ const CATEGORIES = [
     title: 'Workflow Orchestration',
     excerpt: 'Connect legacy SaaS and automate the full client lifecycle.',
     image: orchestrationImg,
+  },
+  {
+    icon: Scale,
+    href: '/solutions/medical-legal-multi-agent-compliance',
+    title: 'Medical & Legal AI',
+    excerpt: 'Multi-agent cross-checking for accuracy, compliance, and audit trails.',
+    image: medicalLegalImg,
   },
 ] as const;
 
@@ -95,7 +100,28 @@ const AGENT_JOBS = [
     body: 'Connects fragmented, legacy business software instantly. Triggers onboarding workflows, provisions user accounts, drafts custom contracts, and alerts internal teams the second an action occurs.',
     value: 'Saves dozens of operational hours per client lifecycle.',
   },
+  {
+    icon: Scale,
+    href: '/solutions/medical-legal-multi-agent-compliance',
+    image: medicalLegalImg,
+    title: 'Medical & Legal Multi-Agent Hive',
+    target: 'Best for Healthcare, Litigation, and Regulated Documentation',
+    body: 'Multiple specialized AI agents transcribe, verify medical and legal terminology, cross-check each other for accuracy, and halt for human review when compliance rules require—full audit trail included.',
+    value: 'Delivers court- and clinic-grade documentation without single-model guesswork.',
+  },
 ] as const;
+
+function PrimaryCtaLink({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <Link
+      to={BOOK_CONSULTATION_PATH}
+      className={`inline-flex items-center justify-center gap-2 px-8 py-4 bg-bee-amber text-bee-black font-bold rounded-lg hover:bg-bee-yellow transition-colors neon-glow text-base sm:text-lg ${className}`}
+    >
+      {children}
+      <ArrowRight className="w-5 h-5" aria-hidden />
+    </Link>
+  );
+}
 
 const TERMINOLOGY = [
   {
@@ -135,26 +161,6 @@ const TERMINOLOGY = [
       'Automates complex mental grunt work so your human staff can focus entirely on creative growth and client retention.',
   },
 ] as const;
-
-function PrimaryCta({
-  href,
-  children,
-  className = '',
-}: {
-  href: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <a
-      href={href}
-      className={`inline-flex items-center justify-center gap-2 px-8 py-4 bg-bee-amber text-bee-black font-bold rounded-lg hover:bg-bee-yellow transition-colors neon-glow text-base sm:text-lg ${className}`}
-    >
-      {children}
-      <ArrowRight className="w-5 h-5" aria-hidden />
-    </a>
-  );
-}
 
 function SectionDivider() {
   return (
@@ -226,7 +232,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            <PrimaryCta href={AUDIT_MAILTO}>Schedule an Automation Audit</PrimaryCta>
+            <PrimaryCtaLink>Schedule an Automation Audit</PrimaryCtaLink>
           </motion.div>
         </div>
       </section>
@@ -404,7 +410,7 @@ export default function Home() {
             <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
               Let&apos;s engineer your first custom agentic workflow.
             </p>
-            <PrimaryCta href={STRATEGY_MAILTO}>Book Your Strategy Session</PrimaryCta>
+            <PrimaryCtaLink>Book Your Strategy Session</PrimaryCtaLink>
           </motion.div>
         </div>
       </section>

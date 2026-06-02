@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
+import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import {
   ArrowRight,
   CheckCircle2,
@@ -65,6 +66,7 @@ export interface CategorySeoPageProps {
   checklist: string[];
   faqs: CategoryFaq[];
   relatedLinks?: { label: string; href: string }[];
+  afterIntro?: ReactNode;
 }
 
 export default function CategorySeoPage({
@@ -84,6 +86,7 @@ export default function CategorySeoPage({
   checklist,
   faqs,
   relatedLinks,
+  afterIntro,
 }: CategorySeoPageProps) {
   return (
     <main className="py-16 md:py-24">
@@ -133,6 +136,8 @@ export default function CategorySeoPage({
         <section className="prose prose-invert max-w-none mb-16 text-slate-300 text-lg leading-relaxed space-y-5">
           {intro}
         </section>
+
+        {afterIntro}
 
         {/* Agentic pipeline module */}
         <section className="mb-16 glass-card rounded-2xl p-8 md:p-12 border border-bee-amber/20 glow-halo">
@@ -291,12 +296,12 @@ export default function CategorySeoPage({
           <p className="text-slate-400 mb-8 max-w-xl mx-auto">
             Book a strategy session with AiBHive to scope ROI, integrations, and a production rollout plan.
           </p>
-          <a
-            href="mailto:hello@aibhive.com?subject=Book%20Your%20Strategy%20Session"
+          <Link
+            to={BOOK_CONSULTATION_PATH}
             className="inline-flex items-center px-10 py-4 bg-bee-amber text-bee-black font-bold rounded-lg hover:bg-bee-yellow transition-colors neon-glow"
           >
-            Book Your Strategy Session <ArrowRight className="ml-2 w-5 h-5" />
-          </a>
+            Book a live strategy call <ArrowRight className="ml-2 w-5 h-5" />
+          </Link>
         </section>
       </div>
     </main>
