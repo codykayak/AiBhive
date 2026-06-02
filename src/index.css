@@ -44,6 +44,124 @@
     @apply bg-white/5 backdrop-blur-lg border border-white/10;
   }
 
+  /* High-tech tile: ambient glow behind cards + hover lift */
+  .tech-tile {
+    position: relative;
+    isolation: isolate;
+    transition:
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      transform 0.35s ease;
+  }
+  .tech-tile::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(245, 158, 11, 0.45) 0%,
+      rgba(56, 189, 248, 0.15) 40%,
+      transparent 60%,
+      rgba(245, 158, 11, 0.2) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.35s ease;
+  }
+  .tech-tile::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: -1;
+    background: radial-gradient(
+      80% 80% at 50% 100%,
+      rgba(245, 158, 11, 0.22) 0%,
+      rgba(56, 189, 248, 0.08) 35%,
+      transparent 70%
+    );
+    filter: blur(28px);
+    opacity: 0.75;
+    transform: translateY(12px) scale(0.92);
+    pointer-events: none;
+    transition:
+      opacity 0.35s ease,
+      transform 0.35s ease,
+      filter 0.35s ease;
+  }
+  .tech-tile:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(245, 158, 11, 0.12),
+      0 0 80px rgba(56, 189, 248, 0.06);
+  }
+  .tech-tile:hover::before {
+    opacity: 0.85;
+  }
+  .tech-tile:hover::after {
+    opacity: 1;
+    transform: translateY(8px) scale(1);
+    filter: blur(36px);
+  }
+
+  /* Always-on glow for featured tiles */
+  .tech-tile-glow-strong::after {
+    opacity: 1;
+    filter: blur(40px);
+  }
+
+  /* Parallax / cyber background layers */
+  .tech-mesh-parallax {
+    background-image:
+      linear-gradient(rgba(245, 158, 11, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245, 158, 11, 0.04) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.12), transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 50%, rgba(245, 158, 11, 0.1), transparent 50%);
+    background-size:
+      48px 48px,
+      48px 48px,
+      100% 100%,
+      100% 100%;
+    mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
+  }
+
+  .parallax-orb {
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    will-change: transform;
+  }
+  .parallax-orb-amber {
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.55) 0%, rgba(245, 158, 11, 0.2) 45%, transparent 70%);
+  }
+  .parallax-orb-cyan {
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, rgba(14, 165, 233, 0.15) 50%, transparent 70%);
+  }
+
+  /* Scanline accent for hero (very subtle) */
+  .tech-scanlines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.015) 2px,
+      rgba(255, 255, 255, 0.015) 4px
+    );
+    mix-blend-mode: overlay;
+  }
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-bee-amber to-bee-yellow;
   }
@@ -197,7 +315,11 @@
   .float-fast,
   .aurora-bg,
   .text-shimmer,
-  .pulse-ring::after {
+  .pulse-ring::after,
+  .parallax-orb {
     animation: none !important;
+  }
+  .tech-tile:hover {
+    transform: none;
   }
 }

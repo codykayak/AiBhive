@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SEO } from './SEO';
 import { cn } from '../lib/utils';
+import { TechAmbienceLayer } from './TechParallaxSection';
 
 export interface CategoryStat {
   value: string;
@@ -89,10 +90,11 @@ export default function CategorySeoPage({
   afterIntro,
 }: CategorySeoPageProps) {
   return (
-    <main className="py-16 md:py-24">
+    <main className="relative py-16 md:py-24 overflow-hidden">
       <SEO title={seo.title} description={seo.description} keywords={seo.keywords} />
+      <TechAmbienceLayer intensity="subtle" />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-[1]">
         <header className="text-center mb-16">
           <p className="inline-block px-5 py-2 rounded-full bg-bee-amber/10 text-bee-amber text-xs font-bold uppercase tracking-widest mb-6 border border-bee-amber/20">
             {eyebrow}
@@ -125,7 +127,7 @@ export default function CategorySeoPage({
           {stats.map((s, i) => (
             <article
               key={s.label}
-              className="glass-card rounded-xl p-5 text-center border border-white/10 hover:border-bee-amber/30 transition-colors"
+              className="glass-card tech-tile rounded-xl p-5 text-center border border-white/10 hover:border-bee-amber/40"
             >
               <div className="text-2xl md:text-3xl font-extrabold text-bee-amber mb-1">{s.value}</div>
               <div className="text-slate-400 text-xs uppercase tracking-wide">{s.label}</div>
@@ -140,14 +142,17 @@ export default function CategorySeoPage({
         {afterIntro}
 
         {/* Agentic pipeline module */}
-        <section className="mb-16 glass-card rounded-2xl p-8 md:p-12 border border-bee-amber/20 glow-halo">
+        <section className="mb-16 glass-card tech-tile tech-tile-glow-strong rounded-2xl p-8 md:p-12 border border-bee-amber/25">
           <div className="flex items-center gap-3 mb-8">
             <Network className="w-8 h-8 text-bee-amber" />
             <h2 className="text-2xl md:text-3xl font-bold text-white">Agentic execution pipeline</h2>
           </div>
           <ol className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pipeline.map((step) => (
-              <li key={step.step} className="relative rounded-xl bg-black/30 border border-white/10 p-5">
+              <li
+                key={step.step}
+                className="tech-tile relative rounded-xl bg-black/40 border border-white/10 p-5 backdrop-blur-sm"
+              >
                 <span className="text-bee-amber font-mono text-sm font-bold">{step.step}</span>
                 <h3 className="text-white font-bold mt-2 mb-2">{step.title}</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">{step.description}</p>
@@ -160,7 +165,7 @@ export default function CategorySeoPage({
           <section
             key={sec.heading}
             className={cn(
-              'mb-16 glass-card rounded-2xl p-8 md:p-12 border border-white/10',
+              'mb-16 glass-card tech-tile rounded-2xl p-8 md:p-12 border border-white/10',
               sec.image && 'overflow-hidden'
             )}
           >
@@ -191,7 +196,7 @@ export default function CategorySeoPage({
         ))}
 
         {/* Tech stack module */}
-        <section className="mb-16 rounded-2xl border border-white/10 bg-gradient-to-br from-bee-amber/5 to-transparent p-8 md:p-12">
+        <section className="mb-16 tech-tile rounded-2xl border border-white/10 bg-gradient-to-br from-bee-amber/8 via-bee-black/50 to-cyan-500/5 p-8 md:p-12 backdrop-blur-sm">
           <div className="flex items-center gap-3 mb-8">
             <Cpu className="w-8 h-8 text-bee-amber" />
             <h2 className="text-2xl md:text-3xl font-bold text-white">Enterprise technology backbone</h2>
@@ -200,7 +205,7 @@ export default function CategorySeoPage({
             {techStack.map((t) => (
               <article
                 key={t.name}
-                className="rounded-xl bg-bee-black/50 border border-white/10 p-5 hover:border-bee-amber/40 transition-colors"
+                className="tech-tile rounded-xl bg-bee-black/50 border border-white/10 p-5 hover:border-bee-amber/45 backdrop-blur-sm"
               >
                 <h3 className="text-white font-bold mb-2 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-bee-amber" />
@@ -213,7 +218,7 @@ export default function CategorySeoPage({
         </section>
 
         {/* Comparison table */}
-        <section className="mb-16 overflow-hidden rounded-2xl border border-white/10">
+        <section className="mb-16 tech-tile overflow-hidden rounded-2xl border border-white/10">
           <div className="bg-white/5 px-6 py-4 border-b border-white/10">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-bee-amber" />
@@ -242,7 +247,7 @@ export default function CategorySeoPage({
           </div>
         </section>
 
-        <section className="mb-16 glass-card rounded-2xl p-8 md:p-12 border-bee-amber/30 bg-bee-amber/5">
+        <section className="mb-16 glass-card tech-tile tech-tile-glow-strong rounded-2xl p-8 md:p-12 border-bee-amber/35 bg-bee-amber/5">
           <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-2">
             <Shield className="w-7 h-7 text-bee-amber" />
             What AiBHive delivers
@@ -261,7 +266,7 @@ export default function CategorySeoPage({
           <h2 className="text-2xl font-bold text-white mb-8 text-center">Frequently asked questions</h2>
           <div className="space-y-3 max-w-3xl mx-auto">
             {faqs.map((f) => (
-              <details key={f.q} className="glass-card rounded-xl p-5 group">
+              <details key={f.q} className="glass-card tech-tile rounded-xl p-5 group">
                 <summary className="font-semibold text-white cursor-pointer list-none flex justify-between gap-4">
                   {f.q}
                   <span className="text-bee-amber group-open:rotate-45 transition-transform">+</span>
