@@ -1,5 +1,21 @@
 export const faqs = [
   {
+    "question": "What agentic automation does AiBHive build for businesses?",
+    "answer": "We design custom multi-agent systems for lead generation, customer operations, document and ERP sync, workflow orchestration, medical and legal compliance, real estate speed-to-lead, and phone/SMS missed-call intelligence. Each category has a detailed solution page—start from the Solutions menu or book a consultation at /book-consultation."
+  },
+  {
+    "question": "How does missed-call text-back with AI work?",
+    "answer": "When your phone system (Twilio, RingCentral, OpenPhone, etc.) detects a missed call, it sends a webhook to AiBHive. Within about 60 seconds a RAG-trained agent texts the caller using your scripts, listings, hours, and FAQs—not a generic template. The agent qualifies intent in two-way SMS and books appointments on your calendar or CRM. See /solutions/phone-systems-ai-integration."
+  },
+  {
+    "question": "Do you offer real estate AI for investors and agents?",
+    "answer": "Yes. Our real estate agents monitor distress signals, sync with CRMs like Follow Up Boss and GoHighLevel, respond to missed calls with intelligent SMS, and book showings or seller appointments automatically. Learn more at /solutions/real-estate-ai-automation."
+  },
+  {
+    "question": "How do I book a strategy call for custom automation?",
+    "answer": "Use the Book a call link in the navigation or visit /book-consultation. The form captures your company, goals, tech stack, timeline, and budget so our team can schedule a live automation audit."
+  },
+  {
     "question": "How accurate is your translation compared to other AI tools?",
     "answer": "Our system uses a proprietary SWARM — a multi-agent AI process where multiple specialized models review and refine the output. This gives us significantly higher accuracy than single-pass tools, especially on legal, medical, and technical content."
   },

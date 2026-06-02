@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import admin from 'firebase-admin';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
+import { getAssistantReply } from './assistantChat.js';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
 import fs from 'fs';
@@ -349,6 +350,39 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/settings] POST error:', error);
     return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// --- Public site assistant (Gemini + site knowledge) ---
+app.post('/api/assistant-chat', async (req, res) => {
+  try {
+    const { message, history } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required.' });
+    }
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'Message is too long.' });
+    }
+
+    const safeHistory = Array.isArray(history)
+      ? history
+          .filter(
+            (m) =>
+              m &&
+              typeof m.text === 'string' &&
+              (m.role === 'user' || m.role === 'model')
+          )
+          .slice(-8)
+          .map((m) => ({ role: m.role, text: m.text.slice(0, 2000) }))
+      : [];
+
+    const { reply, source } = await getAssistantReply(safeHistory, message);
+    return res.json({ reply, source });
+  } catch (err) {
+    console.error('[assistant-chat] Error:', err);
+    return res.status(500).json({
+      error: 'Assistant is temporarily unavailable. Try /book-consultation or hello@aibhive.com.',
+    });
   }
 });
 
