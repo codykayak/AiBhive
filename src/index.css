@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -53,5 +53,151 @@
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+  }
+
+  /* ----------------------------------------------------------------------
+   * Modern image presentation: square-ish edges, amber glow halo behind
+   * --------------------------------------------------------------------*/
+
+  /* Wraps an <img>; gives it a soft amber halo behind, a thin amber edge,
+     and a small-but-not-pillow corner radius. Use class="img-frame". */
+  .img-frame {
+    position: relative;
+    isolation: isolate;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(245, 158, 11, 0.18);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+  .img-frame::before {
+    content: "";
+    position: absolute;
+    inset: -40px;
+    z-index: -1;
+    background:
+      radial-gradient(60% 60% at 30% 30%, rgba(251, 191, 36, 0.35), transparent 70%),
+      radial-gradient(60% 60% at 80% 70%, rgba(245, 158, 11, 0.25), transparent 70%);
+    filter: blur(50px);
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  /* Sharper variant — almost no corner radius, stronger glow. */
+  .img-frame-sharp {
+    position: relative;
+    isolation: isolate;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    box-shadow:
+      0 12px 40px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  }
+  .img-frame-sharp::before {
+    content: "";
+    position: absolute;
+    inset: -60px;
+    z-index: -1;
+    background:
+      radial-gradient(50% 50% at 50% 50%, rgba(251, 191, 36, 0.45), transparent 70%);
+    filter: blur(60px);
+    opacity: 0.95;
+    pointer-events: none;
+  }
+
+  /* Big, ambient glow halo around any element. */
+  .glow-halo {
+    position: relative;
+    isolation: isolate;
+  }
+  .glow-halo::after {
+    content: "";
+    position: absolute;
+    inset: -80px;
+    z-index: -1;
+    background: radial-gradient(50% 50% at 50% 50%, rgba(245, 158, 11, 0.30), transparent 70%);
+    filter: blur(70px);
+    pointer-events: none;
+  }
+
+  /* Animated aurora gradient backdrop. */
+  .aurora-bg {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(251, 191, 36, 0.18), transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.15), transparent 55%),
+      radial-gradient(ellipse at 50% 100%, rgba(217, 119, 6, 0.12), transparent 60%),
+      #020617;
+    background-size: 200% 200%;
+    animation: aurora-shift 24s ease infinite;
+  }
+
+  /* Gentle floating motion for hero icons or decorative images. */
+  .float-slow { animation: float-slow 7s ease-in-out infinite; }
+  .float-medium { animation: float-slow 5s ease-in-out infinite; }
+  .float-fast { animation: float-slow 3.5s ease-in-out infinite; }
+
+  /* Pulsing amber ring for emphasis. */
+  .pulse-ring {
+    position: relative;
+  }
+  .pulse-ring::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: inherit;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    animation: pulse-ring 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+
+  /* Subtle horizontal shimmer for headlines or callouts. */
+  .text-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.85) 0%,
+      rgba(251, 191, 36, 1) 30%,
+      rgba(245, 158, 11, 1) 50%,
+      rgba(251, 191, 36, 1) 70%,
+      rgba(255, 255, 255, 0.85) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 6s linear infinite;
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes aurora-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .float-slow,
+  .float-medium,
+  .float-fast,
+  .aurora-bg,
+  .text-shimmer,
+  .pulse-ring::after {
+    animation: none !important;
   }
 }
