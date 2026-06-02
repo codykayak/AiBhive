@@ -15,7 +15,7 @@ export default function Footer() {
                 />
               </div>
               <span className="text-xl font-black tracking-tighter text-white font-display">
-                Ai<span className="text-bee-amber">Bhive</span>
+                Ai<span className="text-bee-amber">B</span>Hive
               </span>
             </Link>
             <p className="text-slate-400 max-w-xs">
@@ -59,7 +59,7 @@ export default function Footer() {
 
         <div className="mt-12 pt-8 border-t border-bee-amber/5 flex flex-col md:flex-row justify-between items-center">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} AiBhive. All rights reserved.
+            © {new Date().getFullYear()} AiBHive. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link to="/privacy" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</Link>

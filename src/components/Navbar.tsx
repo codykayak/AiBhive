@@ -27,7 +27,7 @@ export default function Navbar() {
               />
             </div>
             <span className="text-xl font-black tracking-tighter text-white font-display">
-              Ai<span className="text-bee-amber">Bhive</span>
+              Ai<span className="text-bee-amber">B</span>Hive
             </span>
           </Link>
           

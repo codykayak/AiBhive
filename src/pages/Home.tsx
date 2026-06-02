@@ -1,443 +1,270 @@
-import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef } from 'react';
-import { Link } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import { motion } from 'motion/react';
 import {
-  Mic,
-  Volume2,
-  Globe,
   ArrowRight,
-  Hexagon,
+  Bot,
+  Calendar,
+  Headphones,
+  Database,
+  GitBranch,
+  Shield,
   Zap,
-  Activity,
-  TrendingUp,
-  Sparkles,
+  Search,
+  Brain,
+  Workflow,
 } from 'lucide-react';
-import backgroundLogo from '../aibhive_background.png';
-import transcriptionServiceImg from '../transcription_service_legal_medical.png';
-import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
-import voiceCloneImg from '../1775556316513.png';
-import translationHubImg from '../1775559497156.png';
 import { SEO } from '../components/SEO';
 
-const FeatureCard = ({
-  icon: Icon,
-  title,
-  description,
-  link,
-  buttonText,
-  bgImage,
-  reverse = false,
-}: any) => (
-  <motion.div
-    initial={{ opacity: 0, y: 40 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-80px' }}
-    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-    whileHover={{ y: -4 }}
-    className={`glass-card min-h-[460px] rounded-xl hover:border-bee-amber/60 transition-all duration-700 group relative overflow-hidden flex flex-col items-stretch ${
-      reverse ? 'lg:flex-row-reverse' : 'lg:flex-row'
-    }`}
-  >
-    <div className="lg:w-1/2 relative overflow-hidden min-h-[320px]">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_50%,rgba(245,158,11,0.35),transparent_70%)] blur-2xl opacity-80" />
-      <motion.img
-        initial={{ scale: 1.15 }}
-        whileHover={{ scale: 1.04 }}
-        transition={{ duration: 1.4, ease: 'easeOut' }}
-        src={bgImage}
-        alt={title}
-        className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-90 transition-opacity duration-700"
-        referrerPolicy="no-referrer"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-bee-black/30 to-transparent lg:hidden" />
-      <div
-        className={`absolute inset-0 hidden lg:block ${
-          reverse
-            ? 'bg-gradient-to-l from-bee-black/70 via-transparent to-transparent'
-            : 'bg-gradient-to-r from-bee-black/70 via-transparent to-transparent'
-        }`}
-      />
-    </div>
+const AUDIT_MAILTO =
+  'mailto:hello@aibhive.com?subject=Schedule%20an%20Automation%20Audit';
+const STRATEGY_MAILTO =
+  'mailto:hello@aibhive.com?subject=Book%20Your%20Strategy%20Session';
 
-    <div className="lg:w-1/2 p-10 md:p-16 flex flex-col justify-center relative z-10">
-      <div className="bg-bee-amber/20 w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-bee-amber group-hover:text-bee-black transition-all duration-500 backdrop-blur-xl border border-white/10">
-        <Icon className="w-8 h-8 text-bee-amber group-hover:text-inherit" />
-      </div>
-      <h3 className="text-3xl md:text-5xl font-extrabold text-white mb-6 group-hover:text-bee-amber transition-colors tracking-tight">
-        {title}
-      </h3>
-      <p className="text-slate-300 mb-10 leading-relaxed text-lg md:text-xl max-w-2xl">
-        {description}
-      </p>
-      <div>
-        <Link
-          to={link}
-          className="inline-flex items-center px-10 py-5 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-bee-amber hover:text-bee-black transition-all group/btn backdrop-blur-md text-lg"
-        >
-          <span>{buttonText}</span>
-          <ArrowRight className="ml-3 w-6 h-6 group-hover/btn:translate-x-2 transition-transform" />
-        </Link>
-      </div>
-    </div>
-  </motion.div>
-);
+const AGENT_JOBS = [
+  {
+    icon: Bot,
+    title: 'Autonomous Lead Generation & Nurturing Agent',
+    target: 'Best for Real Estate, Wholesaling, and B2B Sales Pipelines',
+    body: 'Scrapes public records and directories for specific distress signals or buying intent, qualifies leads, handles initial outreach, and books calls directly on your calendar.',
+    value: 'Feeds your sales pipeline 24/7 without adding headcount.',
+  },
+  {
+    icon: Headphones,
+    title: 'Multi-Channel Customer Operations Agent',
+    target: 'Best for E-commerce, Logistics, and Local Service Companies',
+    body: 'Moves past basic FAQ chatbots. Safely accesses internal databases, order histories, and shipping APIs to resolve complex customer issues, issue refunds, or suggest upgrades across SMS and web chat.',
+    value: 'Slashes ticket backlogs and turns customer support into a revenue generator.',
+  },
+  {
+    icon: Database,
+    title: 'Intelligent Data Processing & ERP Sync',
+    target: 'Best for Supply Chain, Construction, and Property Management',
+    body: 'Automatically extracts, structures, and validates data from messy, unstructured sources like PDFs, vendor invoices, or scanned receipts, instantly syncing them to internal CRMs and accounting platforms.',
+    value: 'Eliminates hours of manual data entry and human error while speeding up billing cycles.',
+  },
+  {
+    icon: GitBranch,
+    title: 'Automated Workflow Orchestrators',
+    target: 'Best for Digital Agencies and Enterprise Operations',
+    body: 'Connects fragmented, legacy business software instantly. Triggers onboarding workflows, provisions user accounts, drafts custom contracts, and alerts internal teams the second an action occurs.',
+    value: 'Saves dozens of operational hours per client lifecycle.',
+  },
+] as const;
+
+const TERMINOLOGY = [
+  {
+    icon: Workflow,
+    term: 'Agentic Workflows',
+    definition:
+      'Multi-step autonomous task execution, independent planning, tool usage, and real-time self-correction.',
+  },
+  {
+    icon: Zap,
+    term: 'Autonomous Execution',
+    definition:
+      'System operates smoothly without requiring constant human prompt engineering or manual intervention.',
+  },
+  {
+    icon: Shield,
+    term: 'Human-in-the-Loop (HITL) Safety',
+    definition:
+      'High-stakes actions (such as sending invoices or launching email campaigns) halt automatically for human review and approval before execution.',
+  },
+  {
+    icon: Zap,
+    term: 'Event-Driven Automation',
+    definition:
+      'Workflows instantly trigger based on real-world actions, webhook updates, or incoming customer emails.',
+  },
+  {
+    icon: Search,
+    term: 'Semantic Search & RAG',
+    definition:
+      'Uses Retrieval-Augmented Generation to allow custom agents to query and understand private internal business documents and wikis with flawless accuracy.',
+  },
+  {
+    icon: Brain,
+    term: 'Cognitive Load Reduction',
+    definition:
+      'Automates complex mental grunt work so your human staff can focus entirely on creative growth and client retention.',
+  },
+] as const;
+
+function PrimaryCta({
+  href,
+  children,
+  className = '',
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <a
+      href={href}
+      className={`inline-flex items-center justify-center gap-2 px-8 py-4 bg-bee-amber text-bee-black font-bold rounded-lg hover:bg-bee-yellow transition-colors neon-glow text-base sm:text-lg ${className}`}
+    >
+      {children}
+      <ArrowRight className="w-5 h-5" aria-hidden />
+    </a>
+  );
+}
+
+function SectionDivider() {
+  return <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />;
+}
 
 export default function Home() {
-  const heroRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ['start start', 'end start'],
-  });
-  const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
-  const heroOpacity = useTransform(scrollYProgress, [0, 1], [1, 0]);
-
   return (
     <main className="relative">
-      <SEO />
+      <SEO
+        title="AiBHive — Custom Agentic AI Workflows for Enterprise Operations"
+        description="AiBHive deploys custom, autonomous agentic workflows that integrate into your tech stack for lead generation, customer operations, and data processing—no supervision required."
+        keywords="agentic AI, B2B automation, autonomous workflows, enterprise AI agents, AiBHive, custom AI applications"
+        type="WebSite"
+      />
 
-      {/* Hero Section */}
-      <section
-        ref={heroRef}
-        className="relative min-h-[92vh] flex items-center pt-20 pb-32 overflow-hidden aurora-bg"
-      >
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-bee-black/40 via-transparent to-bee-black z-10" />
-          <motion.div
-            initial={{ scale: 1.15, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.18 }}
-            transition={{ duration: 2.2 }}
-            className="w-full h-full"
+      {/* ——— SECTION 1: HERO ——— */}
+      <section className="relative py-24 md:py-32 lg:py-40 aurora-bg overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-bee-black/30 via-transparent to-bee-black pointer-events-none" />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-bee-amber font-semibold text-sm uppercase tracking-widest mb-6"
           >
-            <img src={backgroundLogo} alt="" className="w-full h-full object-cover" />
+            AiBHive · Enterprise Agentic AI
+          </motion.p>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.05 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-[1.08] mb-8 tracking-tight"
+          >
+            Stop building apps.
+            <br />
+            <span className="text-gradient">Start hiring AI agents.</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.12 }}
+            className="text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-10 font-medium"
+          >
+            <strong className="text-white font-semibold">AiBHive</strong> deploys custom,
+            autonomous agentic workflows that integrate seamlessly into your current tech stack to
+            handle lead generation, data entry, and customer operations—no supervision required.
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <PrimaryCta href={AUDIT_MAILTO}>Schedule an Automation Audit</PrimaryCta>
           </motion.div>
-        </motion.div>
-
-        {/* Glowing decorative blobs */}
-        <div className="absolute -top-20 left-1/3 w-[40rem] h-[40rem] rounded-full bg-bee-amber/15 blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] rounded-full bg-bee-yellow/10 blur-[120px] pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
-          <div className="max-w-4xl">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <div className="inline-flex items-center px-5 py-2 rounded-full bg-white/5 border border-bee-amber/30 text-bee-amber text-sm font-bold mb-10 backdrop-blur-md">
-                <Sparkles className="w-4 h-4 mr-2 float-fast" />
-                THE FUTURE OF CONTENT IS GLOBAL
-              </div>
-              <h1 className="text-6xl md:text-8xl font-extrabold leading-[1.05] mb-8 tracking-tight">
-                <span className="text-white">AI Translation</span>
-                <br />
-                <span className="text-shimmer">&amp; Voice Cloning</span>
-              </h1>
-              <p className="text-xl md:text-2xl text-slate-300 max-w-2xl mb-12 leading-relaxed font-medium">
-                Better-Than-Human Transcription, Translation &amp; Voice Cloning. Powered by a
-                collaborative hive of specialized AI agents.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center gap-6">
-                <Link
-                  to="/get-started"
-                  className="px-10 py-5 bg-bee-amber text-bee-black font-extrabold rounded-full hover:bg-bee-yellow transition-all neon-glow w-full sm:w-auto text-center text-lg pulse-ring"
-                >
-                  Try For Free
-                </Link>
-                <Link
-                  to="/grow"
-                  className="px-10 py-5 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all backdrop-blur-md w-full sm:w-auto text-center text-lg"
-                >
-                  View Growth Stats
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Floating hexagons */}
-        <div className="absolute top-1/4 right-10 opacity-25 hidden lg:block float-slow">
-          <Hexagon className="w-36 h-36 text-bee-amber" />
-        </div>
-        <div className="absolute bottom-1/4 left-10 opacity-15 hidden lg:block float-medium">
-          <Hexagon className="w-52 h-52 text-bee-amber" />
-        </div>
-        <div className="absolute top-1/2 right-1/4 opacity-10 hidden lg:block float-fast">
-          <Hexagon className="w-24 h-24 text-bee-yellow" />
         </div>
       </section>
 
-      {/* Lightning Fast Turnaround */}
-      <section className="py-24 bg-bee-amber/5 border-y border-white/5 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-100px' }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <div className="inline-flex items-center justify-center p-3 bg-bee-amber/10 rounded-2xl mb-6 pulse-ring">
-                <Zap className="w-10 h-10 text-bee-amber" />
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6 font-display">
-                Lightning-Fast <span className="text-gradient">Turnaround</span>
-              </h2>
-              <p className="text-xl text-slate-300 leading-relaxed mb-6 font-medium">
-                Upload 60 minutes of audio and get it back in under 15 minutes.
-              </p>
-              <p className="text-lg text-slate-400 mb-6 leading-relaxed">
-                Most jobs are completed in 30 minutes — not hours, not days.
-              </p>
-              <p className="text-lg text-slate-400 mb-6 leading-relaxed">
-                Our SWARM processes your file across multiple GPUs in parallel, so even large files
-                move insanely fast.
-              </p>
-              <p className="text-lg text-slate-400 font-semibold italic border-l-4 border-bee-amber pl-4">
-                No more waiting around. Get your translation and voice clone back while you're
-                still on your coffee break.
-              </p>
-            </motion.div>
+      <SectionDivider />
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 30 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-              className="relative img-frame-sharp"
-            >
-              <img
-                src={transcriptionServiceImg}
-                alt="AI transcription for legal and medical content"
-                className="w-full h-auto object-cover scale-105 hover:scale-100 transition-transform duration-700"
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Global Reality */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: '-100px' }}
-              transition={{ duration: 0.9 }}
-            >
-              <h2 className="text-4xl md:text-6xl font-bold text-white mb-10 leading-tight">
-                Make Your Content <br />
-                <span className="text-gradient">Available to the World</span>
-              </h2>
-              <p className="text-xl text-slate-400 mb-12 leading-relaxed">
-                The <span className="text-white font-bold">"Global Reality"</span>: Over 60-70% of
-                YouTube views come from outside your home country. You're leaving valuable
-                consumership on the table without localization.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                <article className="flex items-start space-x-5">
-                  <div className="bg-bee-amber/10 p-4 rounded-2xl">
-                    <Globe className="w-6 h-6 text-bee-amber" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">Global Reach</h3>
-                    <p className="text-slate-400">Unlock markets you never thought possible.</p>
-                  </div>
-                </article>
-                <article className="flex items-start space-x-5">
-                  <div className="bg-bee-amber/10 p-4 rounded-2xl">
-                    <Activity className="w-6 h-6 text-bee-amber" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white mb-2">2-5x Growth</h3>
-                    <p className="text-slate-400">Multiply your views with localized dubs.</p>
-                  </div>
-                </article>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: '-80px' }}
-              transition={{ duration: 1 }}
-              className="relative img-frame-sharp aspect-square flex items-center justify-center group"
-            >
-              <div className="absolute inset-0">
-                <img
-                  src={aiTranslationImg}
-                  alt="AI Translation Visualization"
-                  className="w-full h-full object-cover opacity-70 group-hover:opacity-95 transition-opacity duration-700"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-bee-black via-bee-black/20 to-transparent" />
-              </div>
-
-              <div className="absolute bottom-8 left-8 right-8 z-20">
-                <Link
-                  to="/grow"
-                  className="glass-card p-6 rounded-lg flex items-center justify-between border-white/20 hover:border-bee-amber/50 transition-all cursor-pointer block w-full"
-                >
-                  <div>
-                    <div className="text-bee-amber font-bold text-2xl">80M+</div>
-                    <div className="text-slate-400 text-sm">Extra Views from Localization</div>
-                  </div>
-                  <div className="bg-bee-amber text-bee-black p-3 rounded-full shadow-[0_0_24px_rgba(251,191,36,0.5)]">
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Grid */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            src={backgroundLogo}
-            alt=""
-            className="w-full h-full object-cover opacity-10 grayscale"
-          />
-          <div className="absolute inset-0 bg-bee-black/90" />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.7 }}
-            className="text-center mb-20"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Our Hive Services</h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              Specialized AI agents working together to deliver unparalleled accuracy and speed.
-            </p>
-          </motion.div>
-          <div className="grid grid-cols-1 gap-16">
-            <FeatureCard
-              icon={Mic}
-              title="Transcription Studio"
-              description="High-accuracy transcription using multi-agent AI passes for superior accuracy in General, Legal, and Medical fields."
-              link="/transcription"
-              buttonText="Explore Studio"
-              bgImage={transcriptionServiceImg}
-            />
-            <FeatureCard
-              icon={Volume2}
-              title="Voice Clone Lab"
-              description="Translate your cloned voice into top languages. Turn text into your voice and unlock global markets."
-              link="/voice-clone"
-              buttonText="Enter Lab"
-              bgImage={voiceCloneImg}
-              reverse
-            />
-            <FeatureCard
-              icon={Globe}
-              title="Translation"
-              description="Multi-agent passes ensure accuracy for legal/medical jargon. Better-than-human translations for global reach."
-              link="/transcription"
-              buttonText="View Growth"
-              bgImage={translationHubImg}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Use-cases call-out — drives the new SEO pages */}
-      <section className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.7 }}
-            className="text-center mb-16"
-          >
-            <div className="inline-block px-6 py-2 rounded-full bg-bee-amber/10 text-bee-amber text-sm font-bold uppercase tracking-widest mb-6">
-              Built for your workflow
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              See how the Hive fits in
+      {/* ——— SECTION 2: JOBS / CAPABILITIES ——— */}
+      <section className="py-20 md:py-28 bg-bee-black">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Your next hires are <span className="text-bee-amber">digital employees</span>
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              Tailored playbooks for the people who use AiBhive every day.
+            <p className="text-lg text-slate-400 leading-relaxed">
+              We engineer autonomous agents for specific revenue and operations outcomes—not
+              generic software features.
             </p>
-          </motion.div>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: 'For Podcasters',
-                desc: 'Turn one episode into a multilingual show network.',
-                href: '/use-cases/podcasters',
-              },
-              {
-                title: 'For YouTubers',
-                desc: 'Voice-clone dubs that 2-5x your watch time.',
-                href: '/use-cases/youtubers',
-              },
-              {
-                title: 'Legal Transcription',
-                desc: 'Court-grade accuracy with citation awareness.',
-                href: '/use-cases/legal-transcription',
-              },
-              {
-                title: 'Medical Transcription',
-                desc: 'HIPAA-aware clinical notes with verified terms.',
-                href: '/use-cases/medical-transcription',
-              },
-            ].map((card, i) => (
-              <motion.div
-                key={card.href}
-                initial={{ opacity: 0, y: 30 }}
+          <ul className="flex flex-col gap-6">
+            {AGENT_JOBS.map((job, index) => (
+              <motion.li
+                key={job.title}
+                initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-80px' }}
-                transition={{ duration: 0.6, delay: i * 0.08 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.5, delay: index * 0.06 }}
+                className="glass-card rounded-xl p-6 sm:p-8 border border-white/10 hover:border-bee-amber/30 transition-colors"
               >
-                <Link
-                  to={card.href}
-                  className="block glass-card rounded-lg p-8 hover:border-bee-amber/50 hover:bg-white/10 transition-all duration-500 group h-full"
-                >
-                  <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-bee-amber transition-colors">
-                    {card.title}
-                  </h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">{card.desc}</p>
-                  <span className="inline-flex items-center text-bee-amber font-bold">
-                    Read more <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </span>
-                </Link>
+                <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-bee-amber/15 border border-bee-amber/25 flex items-center justify-center">
+                    <job.icon className="w-6 h-6 text-bee-amber" aria-hidden />
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white mb-2 leading-snug">
+                      {job.title}
+                    </h3>
+                    <p className="text-sm font-semibold text-bee-amber/90 mb-4">{job.target}</p>
+                    <p className="text-slate-300 leading-relaxed mb-5">{job.body}</p>
+                    <p className="text-white font-semibold text-base border-l-4 border-bee-amber pl-4">
+                      {job.value}
+                    </p>
+                  </div>
+                </div>
+              </motion.li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* ——— SECTION 3: TERMINOLOGY ——— */}
+      <section className="py-20 md:py-28 bg-bee-dark/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Built on an enterprise-grade agentic backbone
+            </h2>
+            <p className="text-lg text-slate-400 leading-relaxed">
+              The vocabulary your CTO and operations leaders expect—implemented in production, not
+              slideware.
+            </p>
+          </div>
+
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {TERMINOLOGY.map((item, index) => (
+              <motion.div
+                key={item.term}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-30px' }}
+                transition={{ duration: 0.4, delay: index * 0.04 }}
+                className="rounded-xl border border-white/10 bg-white/[0.03] p-6"
+              >
+                <dt className="text-base font-bold text-white mb-2 flex items-start gap-2">
+                  <item.icon className="w-4 h-4 text-bee-amber flex-shrink-0 mt-0.5" aria-hidden />
+                  {item.term}
+                </dt>
+                <dd className="text-slate-400 text-sm leading-relaxed">{item.definition}</dd>
               </motion.div>
             ))}
-          </div>
+          </dl>
         </div>
       </section>
 
-      {/* Beta */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ——— SECTION 4: CTA BAR ——— */}
+      <section className="py-16 md:py-20 border-t border-bee-amber/20 bg-gradient-to-r from-bee-amber/10 via-bee-black to-bee-amber/10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-100px' }}
-            transition={{ duration: 0.8 }}
-            className="glass-card p-16 rounded-xl text-center relative overflow-hidden glow-halo"
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-bee-amber to-transparent" />
-            <div className="inline-block px-6 py-2 rounded-full bg-bee-amber/10 text-bee-amber text-sm font-bold uppercase tracking-widest mb-8">
-              Beta Feature
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-              Braille Transcription Support
+            <Calendar className="w-10 h-10 text-bee-amber mx-auto mb-6" aria-hidden />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6 leading-snug">
+              Ready to drastically reduce your team&apos;s cognitive load?
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-              We are refining Braille support for top languages. Other languages are currently in
-              refinement stages as we expand our accessibility hive.
+            <p className="text-lg text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Let&apos;s engineer your first custom agentic workflow.
             </p>
-            <button className="px-10 py-4 border border-bee-amber/30 text-white font-bold rounded-full hover:bg-bee-amber hover:text-bee-black transition-all">
-              Join Beta Waitlist
-            </button>
+            <PrimaryCta href={STRATEGY_MAILTO}>Book Your Strategy Session</PrimaryCta>
           </motion.div>
         </div>
       </section>
