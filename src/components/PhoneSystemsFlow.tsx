@@ -31,7 +31,7 @@ const STEPS = [
 
 export default function PhoneSystemsFlow() {
   return (
-    <section className="mb-16 rounded-2xl border border-bee-amber/25 bg-gradient-to-br from-bee-amber/10 via-bee-black to-bee-black p-8 md:p-12">
+    <section className="mb-16 tech-tile tech-tile-glow-strong rounded-2xl border border-bee-amber/30 bg-gradient-to-br from-bee-amber/10 via-bee-black to-cyan-950/30 p-8 md:p-12 backdrop-blur-sm">
       <div className="text-center max-w-3xl mx-auto mb-10">
         <p className="text-bee-amber text-xs font-bold uppercase tracking-widest mb-3">
           Missed call → booked appointment
@@ -54,7 +54,7 @@ export default function PhoneSystemsFlow() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className="flex-1 w-full rounded-xl border border-white/10 bg-bee-black/60 p-5 text-center lg:text-left"
+              className="flex-1 w-full tech-tile rounded-xl border border-white/10 bg-bee-black/60 p-5 text-center lg:text-left backdrop-blur-sm"
             >
               <step.icon className="w-8 h-8 text-bee-amber mx-auto lg:mx-0 mb-3" aria-hidden />
               <h3 className="text-white font-bold text-sm mb-2">{step.title}</h3>

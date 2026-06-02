@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
+import TechParallaxSection, { TechParallaxHeroLayers } from '../components/TechParallaxSection';
 import {
   ArrowRight,
   Bot,
@@ -203,6 +204,10 @@ function SectionDivider() {
 }
 
 export default function Home() {
+  const { scrollY } = useScroll();
+  const heroParallaxY = useTransform(scrollY, [0, 700], [0, 120]);
+  const heroContentY = useTransform(scrollY, [0, 700], [0, 40]);
+
   return (
     <main className="relative">
       <SEO
@@ -214,13 +219,16 @@ export default function Home() {
 
       {/* ——— SECTION 1: HERO ——— */}
       <section className="relative py-24 md:py-32 lg:py-40 overflow-hidden min-h-[85vh] flex items-center">
+        <TechParallaxHeroLayers />
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-bee-black/70 via-bee-black/50 to-bee-black z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-bee-black/80 via-bee-black/55 to-bee-black z-10" />
+          <div className="absolute inset-0 tech-scanlines z-[2] opacity-30" />
           <motion.div
+            style={{ y: heroParallaxY }}
             initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.22 }}
+            animate={{ scale: 1, opacity: 0.28 }}
             transition={{ duration: 2 }}
-            className="w-full h-full"
+            className="w-full h-[115%] -top-[7%] absolute"
           >
             <img
               src={backgroundLogo}
@@ -230,9 +238,12 @@ export default function Home() {
             />
           </motion.div>
         </div>
-        <div className="absolute inset-0 aurora-bg opacity-40 pointer-events-none z-[1]" />
+        <div className="absolute inset-0 aurora-bg opacity-50 pointer-events-none z-[1]" />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-center w-full">
+        <motion.div
+          style={{ y: heroContentY }}
+          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-center w-full"
+        >
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -268,13 +279,13 @@ export default function Home() {
           >
             <PrimaryCtaLink>Schedule an Automation Audit</PrimaryCtaLink>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       <SectionDivider />
 
       {/* ——— MAIN CATEGORIES (SEO hubs) ——— */}
-      <section className="py-20 md:py-24 bg-bee-black">
+      <TechParallaxSection className="py-20 md:py-24 bg-bee-black/95" intensity="medium">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -297,7 +308,7 @@ export default function Home() {
               >
                 <Link
                   to={cat.href}
-                  className="group block glass-card rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/40 transition-all h-full"
+                  className="group block glass-card tech-tile rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/50 h-full"
                 >
                   <div className="img-frame-sharp m-4 mb-0">
                     <img
@@ -323,12 +334,12 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </TechParallaxSection>
 
       <SectionDivider />
 
       {/* ——— SECTION 2: JOBS / CAPABILITIES ——— */}
-      <section className="py-20 md:py-28 bg-bee-dark/30">
+      <TechParallaxSection className="py-20 md:py-28 bg-bee-dark/40" intensity="subtle">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mb-14">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
@@ -348,7 +359,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.5, delay: index * 0.06 }}
-                className="glass-card rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/30 transition-colors"
+                className="glass-card tech-tile tech-tile-glow-strong rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/40"
               >
                 <div className="flex flex-col lg:flex-row">
                   <div className="lg:w-2/5 img-frame-sharp m-4 lg:m-6 lg:mr-0 flex-shrink-0">
@@ -386,12 +397,12 @@ export default function Home() {
             ))}
           </ul>
         </div>
-      </section>
+      </TechParallaxSection>
 
       <SectionDivider />
 
       {/* ——— SECTION 3: TERMINOLOGY ——— */}
-      <section className="py-20 md:py-28 bg-bee-black">
+      <TechParallaxSection className="py-20 md:py-28 bg-bee-black" intensity="medium">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
             <div className="lg:w-1/2">
@@ -406,7 +417,7 @@ export default function Home() {
                 {TERMINOLOGY.map((item) => (
                   <div
                     key={item.term}
-                    className="rounded-xl border border-white/10 bg-white/[0.03] p-5"
+                    className="tech-tile rounded-xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm"
                   >
                     <dt className="text-base font-bold text-white mb-2 flex items-start gap-2">
                       <item.icon className="w-4 h-4 text-bee-amber flex-shrink-0 mt-0.5" aria-hidden />
@@ -426,10 +437,14 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </TechParallaxSection>
 
       {/* ——— SECTION 4: CTA BAR ——— */}
-      <section className="py-16 md:py-20 border-t border-bee-amber/20 bg-gradient-to-r from-bee-amber/10 via-bee-black to-bee-amber/10">
+      <TechParallaxSection
+        className="py-16 md:py-20 border-t border-bee-amber/20 bg-gradient-to-r from-bee-amber/10 via-bee-black to-bee-amber/10"
+        intensity="strong"
+        ambience
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -447,7 +462,7 @@ export default function Home() {
             <PrimaryCtaLink>Book Your Strategy Session</PrimaryCtaLink>
           </motion.div>
         </div>
-      </section>
+      </TechParallaxSection>
     </main>
   );
 }

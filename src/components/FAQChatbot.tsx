@@ -1,19 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, X, Send, Bot, Loader2 } from 'lucide-react';
+import { X, Send, Loader2 } from 'lucide-react';
+import codyChatIcon from '../../cody/src/cody_m_sims.png';
 
 type ChatMessage = { text: string; isUser: boolean };
 
 const WELCOME =
-  "Hi there! I'm the AiBHive assistant powered by Gemini. Ask about agentic automation (real estate, phone/SMS, lead gen), transcription pricing, or booking a consultation.";
+  "Hi there! I'm Cody, your AiBHive assistant powered by Gemini. Ask about agentic automation (real estate, phone/SMS, lead gen), transcription pricing, or booking a consultation.";
 
 export default function FAQChatbot() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { text: WELCOME, isUser: false },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -56,25 +63,41 @@ export default function FAQChatbot() {
     }
   };
 
-  return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <AnimatePresence>
+  if (!mounted) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-[9999] flex flex-col items-end"
+      aria-live="polite"
+    >
+      <AnimatePresence mode="wait">
         {isOpen ? (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            key="chat-panel"
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-bee-black border border-bee-amber/30 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.15)] w-80 sm:w-96 h-[28rem] flex flex-col overflow-hidden"
+            exit={{ opacity: 0, y: 12, scale: 0.96 }}
+            transition={{ duration: 0.22 }}
+            className="bg-bee-black border border-bee-amber/30 rounded-2xl shadow-[0_0_30px_rgba(245,158,11,0.2)] w-[min(100vw-2.5rem,24rem)] h-[28rem] flex flex-col overflow-hidden mb-3"
           >
-            <div className="bg-bee-amber/10 p-4 border-b border-bee-amber/20 flex justify-between items-center">
-              <div className="flex items-center space-x-2 text-white font-bold">
-                <Bot className="w-5 h-5 text-bee-amber" />
-                <span>AiBHive Assistant</span>
+            <div className="bg-bee-amber/10 p-4 border-b border-bee-amber/20 flex justify-between items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={codyChatIcon}
+                  alt=""
+                  className="w-10 h-10 rounded-full object-cover border-2 border-bee-amber/60 shrink-0"
+                />
+                <div className="min-w-0">
+                  <span className="text-white font-bold block truncate">AiBHive Assistant</span>
+                  <span className="text-xs text-slate-400">Powered by Gemini</span>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white transition-colors shrink-0 p-1"
                 aria-label="Close chat"
               >
                 <X className="w-5 h-5" />
@@ -132,23 +155,35 @@ export default function FAQChatbot() {
               </form>
             </div>
           </motion.div>
-        ) : (
-          <motion.button
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsOpen(true)}
-            className="bg-bee-amber text-bee-black p-4 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:bg-bee-yellow transition-colors flex items-center justify-center group"
-            aria-label="Open AiBHive assistant"
-          >
-            <MessageCircle className="w-6 h-6" />
-            <span className="absolute right-full mr-4 bg-bee-black text-white text-sm py-1 px-3 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Need Help?
-            </span>
-          </motion.button>
-        )}
+        ) : null}
       </AnimatePresence>
-    </div>
+
+      <motion.button
+        type="button"
+        key="launcher"
+        initial={false}
+        animate={{ opacity: 1, scale: 1 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => setIsOpen((open) => !open)}
+        className="relative group rounded-full p-0.5 bg-gradient-to-br from-bee-amber to-bee-yellow shadow-[0_0_24px_rgba(245,158,11,0.45)] ring-2 ring-bee-amber/80 ring-offset-2 ring-offset-bee-black"
+        aria-label={isOpen ? 'Close AiBHive assistant' : 'Open AiBHive assistant'}
+        aria-expanded={isOpen}
+      >
+        <img
+          src={codyChatIcon}
+          alt="Chat with AiBHive assistant"
+          className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover block"
+          width={64}
+          height={64}
+        />
+        {!isOpen && (
+          <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-bee-black text-white text-sm py-1.5 px-3 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
+            Need help?
+          </span>
+        )}
+      </motion.button>
+    </div>,
+    document.body
   );
 }
