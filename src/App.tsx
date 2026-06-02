@@ -19,6 +19,8 @@ import LeadGenerationAutomation from './pages/solutions/LeadGenerationAutomation
 import CustomerOperationsAutomation from './pages/solutions/CustomerOperationsAutomation';
 import DocumentProcessingErp from './pages/solutions/DocumentProcessingErp';
 import WorkflowOrchestration from './pages/solutions/WorkflowOrchestration';
+import MedicalLegalMultiAgent from './pages/solutions/MedicalLegalMultiAgent';
+import BookConsultation from './pages/BookConsultation';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -51,6 +53,8 @@ function AnimatedRoutes() {
           <Route path="/solutions/ai-customer-operations-automation" element={<CustomerOperationsAutomation />} />
           <Route path="/solutions/intelligent-document-processing-erp" element={<DocumentProcessingErp />} />
           <Route path="/solutions/enterprise-workflow-orchestration" element={<WorkflowOrchestration />} />
+          <Route path="/solutions/medical-legal-multi-agent-compliance" element={<MedicalLegalMultiAgent />} />
+          <Route path="/book-consultation" element={<BookConsultation />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

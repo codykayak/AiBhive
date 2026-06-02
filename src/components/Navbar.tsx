@@ -3,28 +3,35 @@ import { cn } from '../lib/utils';
 import { Hexagon, ChevronDown, Menu, X } from 'lucide-react';
 import { Menu as HeadlessMenu, Transition } from '@headlessui/react';
 import { Fragment, useState } from 'react';
-
-const transcriptionServicesLinks = [
-  { name: 'Transcription Studio', path: '/transcription' },
-  { name: 'Voice Clone Lab', path: '/voice-clone' },
-  { name: 'Grow Globally', path: '/grow' },
-  { name: 'Pricing', path: '/get-started#pricing' },
-];
+import {
+  SOLUTION_CATEGORIES,
+  TRANSCRIPTION_SERVICES_LINKS,
+  BOOK_CONSULTATION_PATH,
+} from '../constants/navigation';
 
 const aboutLinks = [
   { name: 'About Us', path: '/about' },
   { name: 'FAQ', path: '/faq' },
 ];
 
-function isTranscriptionPath(pathname: string) {
-  return transcriptionServicesLinks.some(
-    (l) => pathname === l.path || pathname.startsWith(l.path.split('#')[0])
+function isPathInList(pathname: string, links: readonly { path: string }[]) {
+  return links.some(
+    (l) => pathname === l.path || pathname.startsWith(l.path.split('#')[0] + '/')
   );
+}
+
+function isSolutionPath(pathname: string) {
+  return pathname.startsWith('/solutions/');
+}
+
+function isTranscriptionPath(pathname: string) {
+  return isPathInList(pathname, TRANSCRIPTION_SERVICES_LINKS);
 }
 
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const solutionsActive = isSolutionPath(location.pathname);
   const transcriptionActive = isTranscriptionPath(location.pathname);
 
   return (
@@ -43,23 +50,59 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden md:block">
-            <div className="flex items-center space-x-8">
+          <div className="hidden lg:block">
+            <div className="flex items-center space-x-6 xl:space-x-8">
               <Link
                 to="/"
                 className={cn(
-                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber relative group',
+                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
                   location.pathname === '/' ? 'text-bee-amber' : 'text-slate-300'
                 )}
               >
                 Home
-                <span
-                  className={cn(
-                    'absolute -bottom-1 left-0 w-0 h-0.5 bg-bee-amber transition-all duration-300 group-hover:w-full',
-                    location.pathname === '/' && 'w-full'
-                  )}
-                />
               </Link>
+
+              <HeadlessMenu as="div" className="relative inline-block text-left">
+                <HeadlessMenu.Button
+                  className={cn(
+                    'flex items-center text-sm font-semibold transition-all duration-300 hover:text-bee-amber outline-none',
+                    solutionsActive ? 'text-bee-amber' : 'text-slate-300'
+                  )}
+                >
+                  Solutions
+                  <ChevronDown className="ml-1 h-4 w-4" aria-hidden />
+                </HeadlessMenu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-64 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-50">
+                    <div className="py-1">
+                      {SOLUTION_CATEGORIES.map((link) => (
+                        <HeadlessMenu.Item key={link.path}>
+                          {({ active }) => (
+                            <Link
+                              to={link.path}
+                              className={cn(
+                                active ? 'bg-white/5 text-bee-amber' : 'text-slate-300',
+                                'block px-4 py-2.5 text-sm transition-colors',
+                                location.pathname === link.path && 'text-bee-amber'
+                              )}
+                            >
+                              {link.name}
+                            </Link>
+                          )}
+                        </HeadlessMenu.Item>
+                      ))}
+                    </div>
+                  </HeadlessMenu.Items>
+                </Transition>
+              </HeadlessMenu>
 
               <HeadlessMenu as="div" className="relative inline-block text-left">
                 <HeadlessMenu.Button
@@ -82,7 +125,7 @@ export default function Navbar() {
                 >
                   <HeadlessMenu.Items className="absolute left-0 mt-4 w-56 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-50">
                     <div className="py-1">
-                      {transcriptionServicesLinks.map((link) => (
+                      {TRANSCRIPTION_SERVICES_LINKS.map((link) => (
                         <HeadlessMenu.Item key={link.path}>
                           {({ active }) => (
                             <Link
@@ -146,17 +189,17 @@ export default function Navbar() {
               </HeadlessMenu>
 
               <Link
-                to="/get-started"
-                className="px-6 py-2.5 bg-bee-amber text-bee-black font-bold rounded-full hover:bg-bee-yellow transition-all neon-glow text-sm"
+                to={BOOK_CONSULTATION_PATH}
+                className="px-5 py-2.5 bg-bee-amber text-bee-black font-bold rounded-full hover:bg-bee-yellow transition-all neon-glow text-sm whitespace-nowrap"
               >
-                Get Started
+                Book a call
               </Link>
             </div>
           </div>
 
           <button
             type="button"
-            className="md:hidden p-2 text-slate-300 hover:text-white"
+            className="lg:hidden p-2 text-slate-300 hover:text-white"
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
@@ -165,7 +208,7 @@ export default function Navbar() {
         </div>
 
         {mobileOpen && (
-          <div className="md:hidden pb-6 border-t border-white/5 mt-2 pt-4 space-y-1">
+          <div className="lg:hidden pb-6 border-t border-white/5 mt-2 pt-4 space-y-1 max-h-[80vh] overflow-y-auto">
             <Link
               to="/"
               className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
@@ -174,9 +217,22 @@ export default function Navbar() {
               Home
             </Link>
             <p className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+              Solutions
+            </p>
+            {SOLUTION_CATEGORIES.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="block px-5 py-2 text-slate-400 hover:text-bee-amber text-sm"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
+            <p className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
               Transcription services
             </p>
-            {transcriptionServicesLinks.map((link) => (
+            {TRANSCRIPTION_SERVICES_LINKS.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
@@ -200,11 +256,11 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              to="/get-started"
+              to={BOOK_CONSULTATION_PATH}
               className="block mx-3 mt-4 py-3 text-center bg-bee-amber text-bee-black font-bold rounded-lg"
               onClick={() => setMobileOpen(false)}
             >
-              Get Started
+              Book a live call
             </Link>
           </div>
         )}

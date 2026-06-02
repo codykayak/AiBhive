@@ -352,6 +352,83 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   }
 });
 
+// --- Consultation / strategy call requests ---
+app.post('/api/consultation-request', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const {
+      companyName,
+      contactName,
+      email,
+      interests,
+      projectGoals,
+    } = body;
+
+    if (!companyName?.trim() || !contactName?.trim() || !email?.trim()) {
+      return res.status(400).json({ error: 'Company name, contact name, and email are required.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address.' });
+    }
+    if (!Array.isArray(interests) || interests.length === 0) {
+      return res.status(400).json({ error: 'Select at least one project interest.' });
+    }
+    if (!projectGoals?.trim() || projectGoals.trim().length < 20) {
+      return res.status(400).json({
+        error: 'Please describe your project goals in at least a few sentences.',
+      });
+    }
+
+    const doc = {
+      ...body,
+      email: email.trim().toLowerCase(),
+      status: 'new',
+      createdAt: FieldValue.serverTimestamp(),
+    };
+
+    const ref = await db.collection('consultationRequests').add(doc);
+    console.log('[consultation] New request', ref.id, email);
+
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      const summary = [
+        `New AiBHive consultation request (${ref.id})`,
+        '',
+        `Company: ${companyName}`,
+        `Contact: ${contactName} <${email}>`,
+        `Interests: ${interests.join(', ')}`,
+        `Timeline: ${body.timeline || '—'}`,
+        `Budget: ${body.budget || '—'}`,
+        '',
+        'Project goals:',
+        projectGoals,
+        '',
+        body.painPoints ? `Pain points:\n${body.painPoints}` : '',
+        body.currentStack ? `Stack:\n${body.currentStack}` : '',
+        body.preferredTimes ? `Preferred times: ${body.preferredTimes} (${body.timezone || ''})` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: process.env.CONSULTATION_NOTIFY_EMAIL || process.env.EMAIL_USER,
+          replyTo: email,
+          subject: `[AiBHive] Consultation request — ${companyName}`,
+          text: summary,
+        });
+      } catch (mailErr) {
+        console.error('[consultation] Email notify failed:', mailErr);
+      }
+    }
+
+    return res.json({ success: true, id: ref.id });
+  } catch (err) {
+    console.error('[consultation] Error:', err);
+    return res.status(500).json({ error: 'Failed to submit request. Please email hello@aibhive.com.' });
+  }
+});
+
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
 const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };

@@ -6,6 +6,7 @@ const RELATED = [
   { label: 'Lead Generation', href: '/solutions/ai-lead-generation-automation' },
   { label: 'Customer Operations', href: '/solutions/ai-customer-operations-automation' },
   { label: 'Workflow Orchestration', href: '/solutions/enterprise-workflow-orchestration' },
+  { label: 'Medical & Legal AI', href: '/solutions/medical-legal-multi-agent-compliance' },
 ];
 
 export default function DocumentProcessingErp() {
