@@ -15,6 +15,10 @@ import Podcasters from './pages/use-cases/Podcasters';
 import YouTubers from './pages/use-cases/YouTubers';
 import LegalTranscription from './pages/use-cases/LegalTranscription';
 import MedicalTranscription from './pages/use-cases/MedicalTranscription';
+import LeadGenerationAutomation from './pages/solutions/LeadGenerationAutomation';
+import CustomerOperationsAutomation from './pages/solutions/CustomerOperationsAutomation';
+import DocumentProcessingErp from './pages/solutions/DocumentProcessingErp';
+import WorkflowOrchestration from './pages/solutions/WorkflowOrchestration';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -43,6 +47,10 @@ function AnimatedRoutes() {
           <Route path="/use-cases/youtubers" element={<YouTubers />} />
           <Route path="/use-cases/legal-transcription" element={<LegalTranscription />} />
           <Route path="/use-cases/medical-transcription" element={<MedicalTranscription />} />
+          <Route path="/solutions/ai-lead-generation-automation" element={<LeadGenerationAutomation />} />
+          <Route path="/solutions/ai-customer-operations-automation" element={<CustomerOperationsAutomation />} />
+          <Route path="/solutions/intelligent-document-processing-erp" element={<DocumentProcessingErp />} />
+          <Route path="/solutions/enterprise-workflow-orchestration" element={<WorkflowOrchestration />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
