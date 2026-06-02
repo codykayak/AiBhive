@@ -1,7 +1,6 @@
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Mic, Volume2, Globe, ArrowRight, Hexagon, Zap, Activity, TrendingUp } from 'lucide-react';
-import logo from '../logo.png';
 import backgroundLogo from '../aibhive_background.png';
 import transcriptionServiceImg from '../transcription_service_legal_medical.png';
 import aiTranslationImg from '../ai_translation_grow_podcast_youtube_audince.png';
