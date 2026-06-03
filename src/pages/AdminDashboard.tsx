@@ -16,11 +16,21 @@ import {
   Search,
   Copy,
   Check,
+  Calendar,
+  ChevronRight,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { adminJson } from '../lib/adminApi';
 import RagSourcesPanel from '../components/admin/RagSourcesPanel';
+import LeadDetailPanel from '../components/admin/LeadDetailPanel';
+import ConsultationsPanel from '../components/admin/ConsultationsPanel';
+
+const VERIFICATION_MODELS = [
+  { value: 'gemini', title: 'Google Gemini 2.5 Pro', desc: 'Default. Strong reasoning for verification passes.' },
+  { value: 'claude', title: 'Anthropic Claude 3.5 Sonnet', desc: 'Uses Gemini fallback until native Claude API is configured.' },
+  { value: 'grok', title: 'xAI Grok', desc: 'Uses Gemini fallback until native Grok API is configured.' },
+] as const;
 
 interface Lead {
   id: string;
@@ -39,7 +49,7 @@ interface Lead {
   };
 }
 
-type SettingsResponse = { settings: { preferredModel?: string } };
+type SettingsResponse = { settings: { preferredModel?: string; verificationModels?: string[] } };
 type LeadsResponse = { leads: Lead[] };
 
 const STATUS_FILTERS = ['all', 'completed', 'paid', 'processing', 'failed', 'pending'] as const;
@@ -60,7 +70,8 @@ function statusLabel(status: string) {
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'leads' | 'settings'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'consultations' | 'settings'>('leads');
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -70,7 +81,7 @@ export default function AdminDashboard() {
     text: string;
   } | null>(null);
 
-  const [preferredModel, setPreferredModel] = useState<string>('gemini');
+  const [verificationModels, setVerificationModels] = useState<string[]>(['gemini']);
   const [savingSettings, setSavingSettings] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,7 +97,12 @@ export default function AdminDashboard() {
         adminJson<SettingsResponse>('/api/admin/settings', currentUser),
       ]);
       setLeads(leadsData.leads ?? []);
-      setPreferredModel(settingsData.settings?.preferredModel || 'gemini');
+      const models = settingsData.settings?.verificationModels?.length
+        ? settingsData.settings.verificationModels
+        : settingsData.settings?.preferredModel
+          ? [settingsData.settings.preferredModel]
+          : ['gemini'];
+      setVerificationModels(models);
       setLastRefreshed(new Date());
     } catch (err: unknown) {
       console.error('Error fetching admin data:', err);
@@ -135,7 +151,9 @@ export default function AdminDashboard() {
     try {
       await adminJson('/api/admin/settings', user, {
         method: 'POST',
-        body: JSON.stringify({ preferredModel }),
+        body: JSON.stringify({
+          verificationModels: verificationModels.length > 0 ? verificationModels : ['gemini'],
+        }),
       });
       setSettingsMessage({ type: 'success', text: 'Pipeline settings saved.' });
     } catch (err: unknown) {
@@ -146,6 +164,13 @@ export default function AdminDashboard() {
     } finally {
       setSavingSettings(false);
     }
+  };
+
+  const toggleVerificationModel = (model: string) => {
+    setVerificationModels((prev) => {
+      const next = prev.includes(model) ? prev.filter((m) => m !== model) : [...prev, model];
+      return next;
+    });
   };
 
   const copyLeadId = async (id: string) => {
@@ -316,6 +341,19 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('consultations')}
+          className={cn(
+            'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
+            activeTab === 'consultations'
+              ? 'bg-bee-amber text-bee-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+          )}
+        >
+          <Calendar className="w-5 h-5 mr-2" />
+          Consultations
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('settings')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
@@ -390,12 +428,13 @@ export default function AdminDashboard() {
                     {filteredLeads.map((lead) => (
                       <tr
                         key={lead.id}
-                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                        onClick={() => setSelectedLeadId(lead.id)}
                       >
                         <td className="px-6 py-4 font-mono text-xs whitespace-nowrap">
                           {formatLeadDate(lead.createdAt)}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
                             onClick={() => copyLeadId(lead.id)}
@@ -463,7 +502,10 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4 font-mono">
                           ${lead.calculatedPrice?.toFixed(2) ?? '0.00'}
                         </td>
-                        <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                        <td
+                          className="px-6 py-4 text-right space-x-2 whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {lead.fileUrls?.[0] && (
                             <a
                               href={lead.fileUrls[0]}
@@ -484,6 +526,13 @@ export default function AdminDashboard() {
                               <CheckCircle2 className="w-3 h-3 mr-1" /> Output
                             </a>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLeadId(lead.id)}
+                            className="text-slate-400 hover:text-bee-amber inline-flex items-center text-xs ml-2"
+                          >
+                            Detail <ChevronRight className="w-3 h-3" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -502,8 +551,10 @@ export default function AdminDashboard() {
             </>
           )}
 
+          {activeTab === 'consultations' && <ConsultationsPanel user={user} />}
+
           {activeTab === 'settings' && (
-            <div className="p-8 max-w-2xl">
+            <div className="p-8 max-w-3xl">
               <h2 className="text-2xl font-bold text-white mb-6">AI Pipeline Configuration</h2>
 
               {settingsMessage && (
@@ -524,46 +575,26 @@ export default function AdminDashboard() {
                   Pass 2: Base Accuracy Verification Engine
                 </h3>
                 <p className="text-sm text-slate-400 mb-6">
-                  Model used for the secondary high-risk context accuracy check (legal and medical
-                  terminology).
+                  Select one or more verification engines for Pass 2. If none are selected when you
+                  save, Gemini is used by default. Multiple models run in sequence on each job.
                 </p>
 
                 <div className="space-y-4">
-                  {(
-                    [
-                      {
-                        value: 'gemini',
-                        title: 'Google Gemini 2.5 Pro',
-                        desc: 'Default. Strong reasoning for verification passes.',
-                      },
-                      {
-                        value: 'claude',
-                        title: 'Anthropic Claude 3.5 Sonnet',
-                        desc: 'Excellent nuance (API wiring in processing pipeline).',
-                      },
-                      {
-                        value: 'grok',
-                        title: 'xAI Grok',
-                        desc: 'Real-time knowledge focus (API wiring pending).',
-                      },
-                    ] as const
-                  ).map((model) => (
+                  {VERIFICATION_MODELS.map((model) => (
                     <label
                       key={model.value}
                       className={cn(
                         'flex items-center p-4 rounded-xl cursor-pointer border transition-all',
-                        preferredModel === model.value
+                        verificationModels.includes(model.value)
                           ? 'bg-bee-amber/10 border-bee-amber/50'
                           : 'bg-black/20 border-white/10 hover:border-white/30'
                       )}
                     >
                       <input
-                        type="radio"
-                        name="model"
-                        value={model.value}
-                        checked={preferredModel === model.value}
-                        onChange={(e) => setPreferredModel(e.target.value)}
-                        className="w-5 h-5 text-bee-amber bg-black border-white/20 focus:ring-bee-amber"
+                        type="checkbox"
+                        checked={verificationModels.includes(model.value)}
+                        onChange={() => toggleVerificationModel(model.value)}
+                        className="w-5 h-5 rounded text-bee-amber bg-black border-white/20 focus:ring-bee-amber"
                       />
                       <div className="ml-4 flex-grow">
                         <span className="block text-white font-medium">{model.title}</span>
@@ -572,6 +603,11 @@ export default function AdminDashboard() {
                     </label>
                   ))}
                 </div>
+                {verificationModels.length === 0 && (
+                  <p className="text-xs text-bee-amber mt-3">
+                    No models selected — Gemini will be used when you save.
+                  </p>
+                )}
               </div>
 
               <RagSourcesPanel user={user} />
@@ -588,6 +624,15 @@ export default function AdminDashboard() {
             </div>
           )}
         </motion.div>
+      )}
+
+      {selectedLeadId && user && (
+        <LeadDetailPanel
+          user={user}
+          leadId={selectedLeadId}
+          onClose={() => setSelectedLeadId(null)}
+          onUpdated={() => fetchAdminData(user)}
+        />
       )}
     </div>
   );

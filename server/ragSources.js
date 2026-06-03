@@ -275,6 +275,10 @@ export function createRagSourcesService({ db, gcsBucket }) {
     const allowed = {};
     if (typeof patch.active === 'boolean') allowed.active = patch.active;
     if (patch.title?.trim()) allowed.title = patch.title.trim();
+    if (patch.url?.trim() && doc.data().type === 'website') {
+      if (!isValidPublicUrl(patch.url)) throw new Error('Invalid URL');
+      allowed.url = patch.url.trim();
+    }
     if (Array.isArray(patch.categories) && patch.categories.length) {
       allowed.categories = patch.categories;
     }
@@ -282,6 +286,63 @@ export function createRagSourcesService({ db, gcsBucket }) {
 
     await ref.update(allowed);
     return getSource(id);
+  }
+
+  async function resyncSource(id, patch = {}) {
+    const ref = col().doc(id);
+    const docSnap = await ref.get();
+    if (!docSnap.exists) throw new Error('Source not found.');
+    const data = { ...docSnap.data() };
+
+    if (patch.url?.trim() && data.type === 'website') {
+      if (!isValidPublicUrl(patch.url)) throw new Error('Invalid URL');
+      data.url = patch.url.trim();
+    }
+
+    if (data.type === 'website') {
+      let previewText = null;
+      try {
+        previewText = await fetchWebsitePreview(data.url);
+      } catch (err) {
+        previewText = `(Re-sync failed: ${err.message})`;
+      }
+      await ref.update({
+        url: data.url,
+        previewText: previewText?.slice(0, MAX_PREVIEW_CHARS) ?? null,
+        lastSyncedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return getSource(id);
+    }
+
+    if (data.type === 'document' && data.storagePath) {
+      const [buffer] = await gcsBucket.file(data.storagePath).download();
+      if (data.geminiFileName) {
+        const ai = getGemini();
+        if (ai) {
+          try {
+            await ai.files.delete({ name: data.geminiFileName });
+          } catch (err) {
+            console.warn('[rag] Old Gemini file delete failed:', err.message);
+          }
+        }
+      }
+      const gemini = await uploadBufferToGemini(buffer, data.mimeType || 'application/pdf', data.title);
+      let previewText = data.previewText;
+      if (data.mimeType === 'text/plain' || data.mimeType === 'text/markdown') {
+        previewText = buffer.toString('utf8').slice(0, MAX_PREVIEW_CHARS);
+      }
+      await ref.update({
+        geminiFileUri: gemini.geminiFileUri,
+        geminiFileName: gemini.geminiFileName,
+        previewText,
+        lastSyncedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return getSource(id);
+    }
+
+    throw new Error('Re-sync is only available for website and document sources.');
   }
 
   async function deleteSource(id) {
@@ -364,6 +425,7 @@ export function createRagSourcesService({ db, gcsBucket }) {
     deleteSource,
     getSourceView,
     loadActiveSourcesForPipeline,
+    resyncSource,
   };
 }
 

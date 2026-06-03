@@ -11,6 +11,8 @@ import {
   X,
   ExternalLink,
   Database,
+  RefreshCw,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { adminJson, adminFormData } from '../../lib/adminApi';
@@ -59,6 +61,16 @@ export default function RagSourcesPanel({ user }: RagSourcesPanelProps) {
   const [viewOpen, setViewOpen] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [viewData, setViewData] = useState<ViewResponse | null>(null);
+
+  const [testText, setTestText] = useState('');
+  const [testLang, setTestLang] = useState('English');
+  const [testRunning, setTestRunning] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    flags: { term: string; warning: string; sourceTitle?: string }[];
+    citations: { sourceTitle?: string; detail?: string }[];
+    correctedText?: string;
+    sourcesUsed?: { title: string; type: string }[];
+  } | null>(null);
 
   const categories = [
     ...(addLegal ? ['legal'] : []),
@@ -171,6 +183,48 @@ export default function RagSourcesPanel({ user }: RagSourcesPanelProps) {
     }
   };
 
+  const resyncSource = async (source: RagSource) => {
+    setBusyId(source.id);
+    setError(null);
+    try {
+      await adminJson(`/api/admin/rag-sources/${source.id}/resync`, user, {
+        method: 'POST',
+        body: JSON.stringify(source.type === 'website' && source.url ? { url: source.url } : {}),
+      });
+      await loadSources();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Re-sync failed');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const runPass3Test = async () => {
+    if (!testText.trim()) {
+      setError('Paste sample translated text to test Pass 3.');
+      return;
+    }
+    setTestRunning(true);
+    setError(null);
+    setTestResult(null);
+    try {
+      const data = await adminJson<{
+        flags: { term: string; warning: string; sourceTitle?: string }[];
+        citations: { sourceTitle?: string; detail?: string }[];
+        correctedText: string;
+        sourcesUsed: { title: string; type: string }[];
+      }>('/api/admin/rag-test-pass3', user, {
+        method: 'POST',
+        body: JSON.stringify({ text: testText, targetLanguage: testLang }),
+      });
+      setTestResult(data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Pass 3 test failed');
+    } finally {
+      setTestRunning(false);
+    }
+  };
+
   const removeSource = async (source: RagSource) => {
     if (
       !window.confirm(
@@ -269,6 +323,15 @@ export default function RagSourcesPanel({ user }: RagSourcesPanelProps) {
                 <div className="flex flex-wrap gap-2 sm:flex-shrink-0">
                   <button
                     type="button"
+                    disabled={busyId === source.id}
+                    onClick={() => resyncSource(source)}
+                    className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white flex items-center gap-1"
+                  >
+                    <RefreshCw className={cn('w-3.5 h-3.5', busyId === source.id && 'animate-spin')} />
+                    Re-sync
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openView(source.id)}
                     className="px-3 py-1.5 text-xs font-medium rounded-lg bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-bee-amber/30 flex items-center gap-1"
                   >
@@ -298,6 +361,71 @@ export default function RagSourcesPanel({ user }: RagSourcesPanelProps) {
           ))}
         </ul>
       )}
+
+      <div className="pt-6 border-t border-white/10 mb-8">
+        <h4 className="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+          <FlaskConical className="w-4 h-4 text-bee-amber" />
+          Test Pass 3 (sandbox)
+        </h4>
+        <p className="text-xs text-slate-500 mb-3">
+          Paste sample translated text to see flags, citations, and which active RAG sources Gemini used.
+        </p>
+        <textarea
+          value={testText}
+          onChange={(e) => setTestText(e.target.value)}
+          rows={4}
+          placeholder="Paste translated legal or medical text here…"
+          className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-bee-amber/50 mb-3"
+        />
+        <div className="flex flex-wrap gap-3 mb-3">
+          <input
+            type="text"
+            value={testLang}
+            onChange={(e) => setTestLang(e.target.value)}
+            placeholder="Target language"
+            className="px-4 py-2 bg-black/30 border border-white/10 rounded-lg text-white text-sm w-40"
+          />
+          <button
+            type="button"
+            onClick={runPass3Test}
+            disabled={testRunning}
+            className="px-5 py-2 bg-bee-amber text-bee-black font-bold rounded-lg text-sm flex items-center gap-2 disabled:opacity-50"
+          >
+            {testRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+            Run test
+          </button>
+        </div>
+        {testResult && (
+          <div className="p-4 rounded-xl bg-black/30 border border-white/10 text-sm space-y-3">
+            {testResult.sourcesUsed?.length ? (
+              <p className="text-slate-400">
+                Sources: {testResult.sourcesUsed.map((s) => s.title).join(', ')}
+              </p>
+            ) : null}
+            {testResult.flags?.length ? (
+              <ul className="space-y-2">
+                {testResult.flags.map((f) => (
+                  <li key={f.term} className="text-amber-200/90">
+                    <strong>{f.term}</strong>: {f.warning}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-green-400">No flags returned.</p>
+            )}
+            {testResult.citations?.length ? (
+              <div>
+                <p className="text-slate-500 text-xs mb-1">Citations</p>
+                {testResult.citations.map((c, i) => (
+                  <p key={i} className="text-xs text-slate-400">
+                    {c.sourceTitle}: {c.detail}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6 border-t border-white/10">
         <div className="space-y-4">
