@@ -34,49 +34,42 @@ const CATEGORIES = [
     href: '/solutions/ai-lead-generation-automation',
     title: 'Lead Generation & Nurturing',
     excerpt: 'Autonomous agents for real estate, wholesaling, and B2B pipeline growth.',
-    image: leadGenImg,
   },
   {
     icon: Headphones,
     href: '/solutions/ai-customer-operations-automation',
     title: 'Customer Operations',
     excerpt: 'Omnichannel agents that resolve tickets with live system access.',
-    image: customerOpsImg,
   },
   {
     icon: Database,
     href: '/solutions/intelligent-document-processing-erp',
     title: 'Document & ERP Sync',
     excerpt: 'Extract and validate data from PDFs into your accounting stack.',
-    image: erpImg,
   },
   {
     icon: GitBranch,
     href: '/solutions/enterprise-workflow-orchestration',
     title: 'Workflow Orchestration',
     excerpt: 'Connect legacy SaaS and automate the full client lifecycle.',
-    image: orchestrationImg,
   },
   {
     icon: Scale,
     href: '/solutions/medical-legal-multi-agent-compliance',
     title: 'Medical & Legal AI',
     excerpt: 'Multi-agent cross-checking for accuracy, compliance, and audit trails.',
-    image: medicalLegalImg,
   },
   {
     icon: Building2,
     href: '/solutions/real-estate-ai-automation',
     title: 'Real Estate',
     excerpt: 'Distress signals, CRM sync, missed-call SMS, and appointment booking for investors and agents.',
-    image: leadGenImg,
   },
   {
     icon: Smartphone,
     href: '/solutions/phone-systems-ai-integration',
     title: 'Phone Systems',
     excerpt: 'Twilio, RingCentral, and OpenPhone—RAG-trained text-back on every missed call.',
-    image: customerOpsImg,
   },
 ] as const;
 
@@ -287,52 +280,109 @@ export default function Home() {
       {/* ——— MAIN CATEGORIES (SEO hubs) ——— */}
       <TechParallaxSection className="py-20 md:py-24 bg-bee-black/95" intensity="medium">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="clearfix"
+          >
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Solution <span className="text-bee-amber">categories</span>
             </h2>
-            <p className="text-lg text-slate-400 leading-relaxed">
+
+            <figure className="mb-8 md:mb-4 md:float-right md:clear-right md:ml-10 md:max-w-[min(100%,22rem)] lg:max-w-sm">
+              <img
+                src={orchestrationImg}
+                alt="Enterprise workflow orchestration visualization"
+                className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
+              />
+            </figure>
+
+            <p className="text-lg text-slate-400 leading-relaxed mb-6">
               Deep-dive guides on each agentic capability we build. Select a category to explore
               architecture, ROI, and implementation paths—we expand these hubs continuously.
             </p>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {CATEGORIES.map((cat, index) => (
-              <motion.div
-                key={cat.href}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.06 }}
-              >
-                <Link
-                  to={cat.href}
-                  className="group block glass-card tech-tile rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/50 h-full"
+            <ul className="space-y-1 mb-2 md:mb-0">
+              {CATEGORIES.slice(0, 4).map((cat, index) => (
+                <motion.li
+                  key={cat.href}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
                 >
-                  <div className="img-frame-sharp m-4 mb-0">
-                    <img
-                      src={cat.image}
-                      alt=""
-                      className="w-full h-44 object-cover group-hover:scale-[1.02] transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-6 pt-5">
-                    <div className="flex items-center gap-3 mb-3">
-                      <cat.icon className="w-6 h-6 text-bee-amber" aria-hidden />
-                      <h3 className="text-lg font-bold text-white group-hover:text-bee-amber transition-colors">
-                        {cat.title}
-                      </h3>
-                    </div>
-                    <p className="text-slate-400 text-sm leading-relaxed mb-4">{cat.excerpt}</p>
-                    <span className="text-bee-amber text-sm font-semibold inline-flex items-center gap-1">
-                      Explore category <ArrowRight className="w-4 h-4" />
+                  <Link
+                    to={cat.href}
+                    className="group flex gap-4 py-4 border-b border-white/5 hover:border-bee-amber/20 transition-colors"
+                  >
+                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-bee-amber/10 ring-1 ring-bee-amber/20 group-hover:bg-bee-amber/15 transition-colors">
+                      <cat.icon className="h-5 w-5 text-bee-amber" aria-hidden />
                     </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <h3 className="text-base font-bold text-white group-hover:text-bee-amber transition-colors">
+                          {cat.title}
+                        </h3>
+                        <ArrowRight
+                          className="h-4 w-4 text-bee-amber/0 group-hover:text-bee-amber transition-all -translate-x-1 group-hover:translate-x-0"
+                          aria-hidden
+                        />
+                      </span>
+                      <p className="mt-1 text-sm text-slate-400 leading-relaxed">{cat.excerpt}</p>
+                    </span>
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+
+            <figure className="my-8 md:my-6 md:float-left md:clear-left md:mr-10 md:max-w-[min(100%,20rem)] lg:max-w-xs">
+              <img
+                src={leadGenImg}
+                alt="Lead generation and pipeline automation"
+                className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
+              />
+            </figure>
+
+            <ul className="space-y-1 clear-both md:clear-none">
+              {CATEGORIES.slice(4).map((cat, index) => (
+                <motion.li
+                  key={cat.href}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                >
+                  <Link
+                    to={cat.href}
+                    className="group flex gap-4 py-4 border-b border-white/5 last:border-0 hover:border-bee-amber/20 transition-colors"
+                  >
+                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-bee-amber/10 ring-1 ring-bee-amber/20 group-hover:bg-bee-amber/15 transition-colors">
+                      <cat.icon className="h-5 w-5 text-bee-amber" aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <h3 className="text-base font-bold text-white group-hover:text-bee-amber transition-colors">
+                          {cat.title}
+                        </h3>
+                        <ArrowRight
+                          className="h-4 w-4 text-bee-amber/0 group-hover:text-bee-amber transition-all -translate-x-1 group-hover:translate-x-0"
+                          aria-hidden
+                        />
+                      </span>
+                      <p className="mt-1 text-sm text-slate-400 leading-relaxed">{cat.excerpt}</p>
+                    </span>
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+
+            <p className="mt-8 text-sm text-slate-500 md:clear-both">
+              Each hub includes architecture notes, ROI framing, and implementation paths—updated as
+              we ship new agent patterns.
+            </p>
+          </motion.div>
         </div>
       </TechParallaxSection>
 
