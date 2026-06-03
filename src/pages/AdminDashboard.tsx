@@ -20,6 +20,7 @@ import {
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { adminJson } from '../lib/adminApi';
+import RagSourcesPanel from '../components/admin/RagSourcesPanel';
 
 interface Lead {
   id: string;
@@ -573,42 +574,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="mb-8 p-6 bg-white/5 border border-white/10 rounded-2xl">
-                <h3 className="text-lg font-medium text-white mb-4">
-                  Pass 3: RAG Verification &amp; Databases
-                </h3>
-                <p className="text-sm text-slate-400 mb-6">
-                  Retrieval-augmented datasets used for final legal and medical validation.
-                </p>
-
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-black/20 border border-white/10">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-medium flex items-center">
-                        <FileText className="w-4 h-4 mr-2 text-bee-amber" />
-                        Oregon Real Estate Law (ORS 696)
-                      </span>
-                      <span className="text-xs px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">
-                        Active
-                      </span>
-                    </div>
-                    <span className="block text-sm text-slate-400">Embeddings: 14,208 nodes</span>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-black/20 border border-white/10">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white font-medium flex items-center">
-                        <FileText className="w-4 h-4 mr-2 text-bee-amber" />
-                        Medical Nomenclature (SNOMED CT)
-                      </span>
-                      <span className="text-xs px-2 py-1 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">
-                        Active
-                      </span>
-                    </div>
-                    <span className="block text-sm text-slate-400">Embeddings: 358,002 nodes</span>
-                  </div>
-                </div>
-              </div>
+              <RagSourcesPanel user={user} />
 
               <button
                 type="button"

@@ -38,3 +38,31 @@ export async function adminJson<T>(
   }
   return res.json() as Promise<T>;
 }
+
+export async function adminFormData<T>(
+  path: string,
+  user: User,
+  formData: FormData,
+  method: 'POST' | 'PATCH' = 'POST'
+): Promise<T> {
+  const token = await user.getIdToken();
+  const res = await fetch(`${apiBase}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      message = json.error ?? text;
+    } catch {
+      /* plain text */
+    }
+    const err = new Error(message || `Request failed (${res.status})`);
+    (err as Error & { status: number }).status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<T>;
+}

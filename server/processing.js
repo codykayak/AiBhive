@@ -1,4 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
+import {
+  performRagContextAccuracyCheck,
+  getRagSourcesService,
+} from './ragSources.js';
 import OpenAI from 'openai';
 import axios from 'axios';
 import fs from 'fs';
@@ -311,16 +315,26 @@ export async function processLeadJob(leadData) {
 
     // 3. Legal/Medical Accuracy Check (Pass 3 - Triple check for specific high-risk contexts)
     if (leadData.services?.legalMedical) {
-      console.log("Pass 3: High Accuracy Legal/Medical Check...");
+      console.log("Pass 3: High Accuracy Legal/Medical Check (RAG)...");
       const contextFlags = { legal: true, medical: true };
-      const checkResult = await performContextAccuracyCheck(
+      const ragService = getRagSourcesService();
+      const ragSources = ragService
+        ? await ragService.loadActiveSourcesForPipeline(contextFlags)
+        : [];
+      console.log(`[Pass 3] Using ${ragSources.length} active RAG source(s)`);
+
+      const checkResult = await performRagContextAccuracyCheck(
         cleanTranslatedText,
         contextFlags,
-        targetLanguage
+        targetLanguage,
+        ragSources
       );
 
       flags = checkResult.flags;
       cleanTranslatedText = checkResult.checkedText;
+      if (checkResult.citations?.length) {
+        console.log('[Pass 3] RAG citations:', checkResult.citations.map((c) => c.sourceTitle || c.detail).join('; '));
+      }
       const footer = generateFooter(flags);
       annotatedText = cleanTranslatedText + footer;
       finalOutputText = annotatedText; // Default final output to annotated if requested

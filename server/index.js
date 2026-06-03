@@ -6,6 +6,8 @@ import admin from 'firebase-admin';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
+import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
+import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
 import fs from 'fs';
@@ -84,6 +86,14 @@ function describeFirestoreError(code) {
 // Setup Google Cloud Storage
 const storage = new Storage();
 const bucketName = 'aibhive-media'; // Must be lowercase for GCS
+const gcsBucket = storage.bucket(bucketName);
+const ragSourcesService = createRagSourcesService({ db, gcsBucket });
+initRagSourcesService(ragSourcesService);
+
+const ragUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 },
+});
 // Note: To automatically delete files after 72 hours,
 // Object Lifecycle Management should be configured on the 'aibhive-media' bucket
 // via the Google Cloud Console or gsutil:
@@ -350,6 +360,115 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/settings] POST error:', error);
     return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// --- Admin RAG sources (Pass 3 verification corpora) ---
+app.get('/api/admin/rag-sources', verifyAdmin, async (req, res) => {
+  try {
+    const sources = await ragSourcesService.listSources();
+    return res.json({ sources });
+  } catch (error) {
+    console.error('[admin/rag-sources] GET error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to list RAG sources' });
+  }
+});
+
+app.get('/api/admin/rag-sources/:id/view', verifyAdmin, async (req, res) => {
+  try {
+    const view = await ragSourcesService.getSourceView(req.params.id);
+    return res.json(view);
+  } catch (error) {
+    console.error('[admin/rag-sources/view] error:', error);
+    return res.status(error.message === 'Source not found.' ? 404 : 500).json({
+      error: error.message || 'Failed to load source',
+    });
+  }
+});
+
+app.post('/api/admin/rag-sources/website', verifyAdmin, async (req, res) => {
+  try {
+    const { title, url, categories } = req.body || {};
+    const source = await ragSourcesService.addWebsite(
+      { title, url, categories },
+      req.user.email
+    );
+    return res.json({ source });
+  } catch (error) {
+    console.error('[admin/rag-sources/website] error:', error);
+    return res.status(400).json({ error: error.message || 'Failed to add website' });
+  }
+});
+
+app.post(
+  '/api/admin/rag-sources/document',
+  verifyAdmin,
+  ragUpload.single('file'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+      }
+      const ext = path.extname(req.file.originalname || '').toLowerCase();
+      const mimeByExt = {
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.md': 'text/markdown',
+        '.csv': 'text/csv',
+        '.json': 'application/json',
+      };
+      const mimeType =
+        mimeByExt[ext] ||
+        (req.file.mimetype && req.file.mimetype !== 'application/octet-stream'
+          ? req.file.mimetype
+          : 'application/pdf');
+      const title = req.body.title || req.file.originalname;
+      let categories = ['legal', 'medical'];
+      if (req.body.categories) {
+        try {
+          categories = JSON.parse(req.body.categories);
+        } catch {
+          categories = String(req.body.categories)
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean);
+        }
+      }
+      const source = await ragSourcesService.addDocument(
+        {
+          title,
+          buffer: req.file.buffer,
+          mimeType,
+          originalFilename: req.file.originalname,
+          categories,
+        },
+        req.user.email
+      );
+      return res.json({ source });
+    } catch (error) {
+      console.error('[admin/rag-sources/document] error:', error);
+      return res.status(400).json({ error: error.message || 'Failed to upload document' });
+    }
+  }
+);
+
+app.patch('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
+  try {
+    const source = await ragSourcesService.updateSource(req.params.id, req.body || {});
+    return res.json({ source });
+  } catch (error) {
+    console.error('[admin/rag-sources/patch] error:', error);
+    return res.status(400).json({ error: error.message || 'Failed to update source' });
+  }
+});
+
+app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
+  try {
+    await ragSourcesService.deleteSource(req.params.id);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[admin/rag-sources/delete] error:', error);
+    return res.status(400).json({ error: error.message || 'Failed to delete source' });
   }
 });
 
