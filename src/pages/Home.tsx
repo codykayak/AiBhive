@@ -20,13 +20,11 @@ import {
 } from 'lucide-react';
 import backgroundLogo from '../aibhive_background.png';
 import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
-import customerOpsImg from '../ai_voice_translation_clone_lab.png';
-import erpImg from '../transcription_service_legal_medical.png';
 import orchestrationImg from '../1775559497156.png';
 import terminologyImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
-import medicalLegalImg from '../transcription_service_legal_medical.png';
+import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
 
 const CATEGORIES = [
   {
@@ -70,72 +68,6 @@ const CATEGORIES = [
     href: '/solutions/phone-systems-ai-integration',
     title: 'Phone Systems',
     excerpt: 'Twilio, RingCentral, and OpenPhone—RAG-trained text-back on every missed call.',
-  },
-] as const;
-
-const AGENT_JOBS = [
-  {
-    icon: Bot,
-    href: '/solutions/ai-lead-generation-automation',
-    image: leadGenImg,
-    title: 'Autonomous Lead Generation & Nurturing Agent',
-    target: 'Best for Real Estate, Wholesaling, and B2B Sales Pipelines',
-    body: 'Scrapes public records and directories for specific distress signals or buying intent, qualifies leads, handles initial outreach, and books calls directly on your calendar.',
-    value: 'Feeds your sales pipeline 24/7 without adding headcount.',
-  },
-  {
-    icon: Headphones,
-    href: '/solutions/ai-customer-operations-automation',
-    image: customerOpsImg,
-    title: 'Multi-Channel Customer Operations Agent',
-    target: 'Best for E-commerce, Logistics, and Local Service Companies',
-    body: 'Moves past basic FAQ chatbots. Safely accesses internal databases, order histories, and shipping APIs to resolve complex customer issues, issue refunds, or suggest upgrades across SMS and web chat.',
-    value: 'Slashes ticket backlogs and turns customer support into a revenue generator.',
-  },
-  {
-    icon: Database,
-    href: '/solutions/intelligent-document-processing-erp',
-    image: erpImg,
-    title: 'Intelligent Data Processing & ERP Sync',
-    target: 'Best for Supply Chain, Construction, and Property Management',
-    body: 'Automatically extracts, structures, and validates data from messy, unstructured sources like PDFs, vendor invoices, or scanned receipts, instantly syncing them to internal CRMs and accounting platforms.',
-    value: 'Eliminates hours of manual data entry and human error while speeding up billing cycles.',
-  },
-  {
-    icon: GitBranch,
-    href: '/solutions/enterprise-workflow-orchestration',
-    image: orchestrationImg,
-    title: 'Automated Workflow Orchestrators',
-    target: 'Best for Digital Agencies and Enterprise Operations',
-    body: 'Connects fragmented, legacy business software instantly. Triggers onboarding workflows, provisions user accounts, drafts custom contracts, and alerts internal teams the second an action occurs.',
-    value: 'Saves dozens of operational hours per client lifecycle.',
-  },
-  {
-    icon: Scale,
-    href: '/solutions/medical-legal-multi-agent-compliance',
-    image: medicalLegalImg,
-    title: 'Medical & Legal Multi-Agent Hive',
-    target: 'Best for Healthcare, Litigation, and Regulated Documentation',
-    body: 'Multiple specialized AI agents transcribe, verify medical and legal terminology, cross-check each other for accuracy, and halt for human review when compliance rules require—full audit trail included.',
-    value: 'Delivers court- and clinic-grade documentation without single-model guesswork.',
-  },
-  {
-    icon: Building2,
-    href: '/solutions/real-estate-ai-automation',
-    image: leadGenImg,
-    title: 'Real Estate Speed-to-Lead Agent',
-    target: 'Best for Investors, Wholesalers, Agents, and Brokerages',
-    body: 'Monitors distress signals, syncs with Follow Up Boss and GoHighLevel, and turns missed calls into RAG-trained SMS threads that qualify sellers and book appointments on your calendar.',
-    value: 'Closes the five-minute window that wins deals—without hiring more ISA headcount.',
-  },
-  {
-    icon: Smartphone,
-    href: '/solutions/phone-systems-ai-integration',
-    image: customerOpsImg,
-    title: 'Phone & SMS Intelligence Layer',
-    target: 'Best for Any Business That Lives on Inbound Calls',
-    body: 'Integrates with your existing phone stack. Missed calls trigger an intelligent text within seconds—trained on your scripts and knowledge base—then books qualified leads automatically.',
-    value: 'Recovers revenue from callers who would have hung up on voicemail.',
   },
 ] as const;
 
@@ -391,61 +323,18 @@ export default function Home() {
       {/* ——— SECTION 2: JOBS / CAPABILITIES ——— */}
       <TechParallaxSection className="py-20 md:py-28 bg-bee-dark/40" intensity="subtle">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-14">
+          <div className="max-w-3xl mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Your next hires are <span className="text-bee-amber">digital employees</span>
             </h2>
             <p className="text-lg text-slate-400 leading-relaxed">
               We engineer autonomous agents for specific revenue and operations outcomes—not
-              generic software features.
+              generic software features. The data below shows why speed, recovery, and automation
+              matter across the problems AiBHive solves.
             </p>
           </div>
 
-          <ul className="flex flex-col gap-8">
-            {AGENT_JOBS.map((job, index) => (
-              <motion.li
-                key={job.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.5, delay: index * 0.06 }}
-                className="glass-card tech-tile tech-tile-glow-strong rounded-xl overflow-hidden border border-white/10 hover:border-bee-amber/40"
-              >
-                <div className="flex flex-col lg:flex-row">
-                  <div className="lg:w-2/5 img-frame-sharp m-4 lg:m-6 lg:mr-0 flex-shrink-0">
-                    <img
-                      src={job.image}
-                      alt=""
-                      className="w-full h-56 lg:h-full min-h-[220px] object-cover"
-                    />
-                  </div>
-                  <div className="p-6 sm:p-8 lg:flex-grow flex flex-col">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-lg bg-bee-amber/15 border border-bee-amber/25 flex items-center justify-center flex-shrink-0">
-                        <job.icon className="w-6 h-6 text-bee-amber" aria-hidden />
-                      </div>
-                      <div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-white leading-snug">
-                          {job.title}
-                        </h3>
-                        <p className="text-sm font-semibold text-bee-amber/90 mt-2">{job.target}</p>
-                      </div>
-                    </div>
-                    <p className="text-slate-300 leading-relaxed mb-5 flex-grow">{job.body}</p>
-                    <p className="text-white font-semibold text-base border-l-4 border-bee-amber pl-4 mb-6">
-                      {job.value}
-                    </p>
-                    <Link
-                      to={job.href}
-                      className="inline-flex items-center text-bee-amber font-semibold hover:text-bee-yellow transition-colors w-fit"
-                    >
-                      Read full category guide <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
-                  </div>
-                </div>
-              </motion.li>
-            ))}
-          </ul>
+          <DigitalEmployeesInfographics />
         </div>
       </TechParallaxSection>
 
