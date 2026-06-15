@@ -4,9 +4,12 @@ import dotenv from 'dotenv';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
-import { processLeadJob } from './processing.js';
+import { processLeadJob, rerunPass3Only } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
+import { getPipelineSettings, normalizeVerificationModels } from './pipelineSettings.js';
+import { performRagContextAccuracyCheck } from './ragSources.js';
+import { persistLeadProcessingResult, fetchTextFromUrl } from './leadPersistence.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -153,7 +156,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const leadRef = db.collection('leads').doc(leadId);
       await leadRef.update({
         status: 'paid',
-        email: userEmail || null
+        email: userEmail || null,
+        stripeSessionId: session.id,
       });
 
       // 2. Fetch full lead data
@@ -161,96 +165,28 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       if (leadSnap.exists) {
         const leadData = { id: leadSnap.id, ...leadSnap.data() };
 
-        // 3. Process the job (running asynchronously so we don't block the webhook response)
-        processLeadJob(leadData).then(async (result) => {
-          if (result.success) {
+        const { verificationModels } = await getPipelineSettings(db);
 
-            let gcsCleanTextUrl = null;
-            let gcsAnnotatedTextUrl = null;
-            let gcsAudioUrl = null;
-
-            // Generate signed URLs valid for 72 hours
-            const urlOptions = {
-              version: 'v4',
-              action: 'read',
-              expires: Date.now() + 72 * 60 * 60 * 1000, // 72 hours
-            };
-
-            try {
-              const bucketName = 'aibhive-media';
-              const cleanTextFilename = `clean_output_${leadId}.txt`;
-              const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
-              await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
-              const [cleanUrl] = await cleanTextFile.getSignedUrl(urlOptions);
-              gcsCleanTextUrl = cleanUrl;
-
-              // Upload annotated text to AiBhive-media bucket
-              const annotatedTextFilename = `annotated_output_${leadId}.txt`;
-              const annotatedTextFile = storage.bucket(bucketName).file(annotatedTextFilename);
-              await annotatedTextFile.save(result.annotatedText, { contentType: 'text/plain' });
-              const [annotatedUrl] = await annotatedTextFile.getSignedUrl(urlOptions);
-              gcsAnnotatedTextUrl = annotatedUrl;
-
-              // Upload cloned audio to AiBhive-media bucket if it exists
-              if (result.clonedAudioBuffer) {
-                const audioFilename = `cloned_audio_${leadId}.mp3`;
-                const audioFile = storage.bucket(bucketName).file(audioFilename);
-                await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
-                const [audioUrl] = await audioFile.getSignedUrl(urlOptions);
-                gcsAudioUrl = audioUrl;
-              }
-            } catch (storageError) {
-              console.error("Error saving files to Google Cloud Storage:", storageError);
-            }
-
-            // Save results back to Firestore
-            await leadRef.update({
-              status: 'completed',
-              rawTranscript: result.originalText || null,
-              finalOutputTextUrl: gcsAnnotatedTextUrl, // Keep backward compatibility for frontend
-              cleanTranslatedTextUrl: gcsCleanTextUrl,
-              annotatedTextUrl: gcsAnnotatedTextUrl,
-              finalAudioUrl: gcsAudioUrl || null,
-              voiceModelId: result.voiceModelId || null,
-              translatedTitle: result.translatedTitle || null,
-              translatedSummary: result.translatedSummary || null,
-              flags: result.flags || []
+        processLeadJob(leadData, { verificationModels })
+          .then(async (result) => {
+            await persistLeadProcessingResult({
+              leadRef,
+              leadId,
+              result,
+              gcsStorage: storage,
+              userEmail,
+              transporter,
+              emailUser: process.env.EMAIL_USER,
             });
-
-            // Send email to user using the email provided during Stripe checkout
-            if (userEmail) {
-              let emailText = `Your Media files from AiBhive are complete.\n\n`;
-              if (result.translatedTitle) emailText += `Title: ${result.translatedTitle}\n`;
-              if (result.translatedSummary) emailText += `Summary: ${result.translatedSummary}\n\n`;
-              emailText += `Download your files here (links expire in 72 hours):\n`;
-              if (gcsCleanTextUrl) emailText += `Clean Text: ${gcsCleanTextUrl}\n`;
-              if (gcsAnnotatedTextUrl) emailText += `Annotated Text: ${gcsAnnotatedTextUrl}\n`;
-              if (gcsAudioUrl) emailText += `Cloned Audio: ${gcsAudioUrl}\n`;
-              emailText += `\nSimply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.`;
-
-              let emailHtml = `<h3>Your Media files from AiBhive are complete.</h3>`;
-              if (result.translatedTitle) emailHtml += `<h4>${result.translatedTitle}</h4>`;
-              if (result.translatedSummary) emailHtml += `<p><em>${result.translatedSummary}</em></p>`;
-              emailHtml += `<p>Download your files here (links expire in 72 hours):</p><ul>`;
-              if (gcsCleanTextUrl) emailHtml += `<li><a href="${gcsCleanTextUrl}">Download Clean Text File</a></li>`;
-              if (gcsAnnotatedTextUrl) emailHtml += `<li><a href="${gcsAnnotatedTextUrl}">Download Annotated Text File</a></li>`;
-              if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
-              emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
-
-              await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: userEmail,
-                subject: 'Your AiBhive Files are Ready!',
-                text: emailText,
-                html: emailHtml
-              });
-            }
-          } else {
-             await leadRef.update({ status: 'failed', error: result.error });
-          }
-        }).catch(err => {
-          console.error("Job processing error:", err);
-        });
+          })
+          .catch((err) => {
+            console.error('Job processing error:', err);
+            leadRef.update({
+              status: 'failed',
+              error: err.message,
+              errorStack: err.stack,
+            });
+          });
       }
     } catch (err) {
       console.error("Error updating firestore or processing job:", err);
@@ -334,11 +270,16 @@ app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
 
 app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
+    const settings = await getPipelineSettings(db);
     const settingsDoc = await db.collection('system').doc('settings').get();
-    if (!settingsDoc.exists) {
-      return res.json({ settings: { preferredModel: 'gemini' } });
-    }
-    return res.json({ settings: settingsDoc.data() });
+    const data = settingsDoc.exists ? settingsDoc.data() : {};
+    return res.json({
+      settings: {
+        ...data,
+        verificationModels: settings.verificationModels,
+        preferredModel: settings.verificationModels[0],
+      },
+    });
   } catch (error) {
     console.error('[admin/settings] GET error:', error);
     return res.status(500).json({ error: 'Failed to fetch settings' });
@@ -347,19 +288,182 @@ app.get('/api/admin/settings', verifyAdmin, async (req, res) => {
 
 app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
-    const { preferredModel } = req.body;
-    if (!['gemini', 'claude', 'grok'].includes(preferredModel)) {
-      return res.status(400).json({ error: 'Invalid model preference' });
-    }
+    const verificationModels = normalizeVerificationModels(req.body.verificationModels);
 
     await db.collection('system').doc('settings').set(
-      { preferredModel, updatedAt: FieldValue.serverTimestamp(), updatedBy: req.user.email },
+      {
+        verificationModels,
+        preferredModel: verificationModels[0],
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: req.user.email,
+      },
       { merge: true }
     );
-    return res.json({ success: true, settings: { preferredModel } });
+    return res.json({ success: true, settings: { verificationModels, preferredModel: verificationModels[0] } });
   } catch (error) {
     console.error('[admin/settings] POST error:', error);
     return res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+app.get('/api/admin/leads/:id', verifyAdmin, async (req, res) => {
+  try {
+    const doc = await db.collection('leads').doc(req.params.id).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Lead not found.' });
+    return res.json({ lead: { id: doc.id, ...doc.data() } });
+  } catch (error) {
+    console.error('[admin/leads/:id] error:', error);
+    return res.status(500).json({ error: 'Failed to load lead' });
+  }
+});
+
+app.post('/api/admin/leads/:id/retry-pass3', verifyAdmin, async (req, res) => {
+  try {
+    const leadRef = db.collection('leads').doc(req.params.id);
+    const snap = await leadRef.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Lead not found.' });
+
+    const leadData = { id: snap.id, ...snap.data() };
+    let cleanText = req.body?.text;
+
+    if (!cleanText && leadData.cleanTranslatedTextUrl) {
+      try {
+        cleanText = await fetchTextFromUrl(leadData.cleanTranslatedTextUrl);
+      } catch (err) {
+        console.warn('[retry-pass3] Could not fetch clean text URL:', err.message);
+      }
+    }
+
+    if (!cleanText) {
+      return res.status(400).json({
+        error: 'No clean text available. Re-run full job or provide text in request body.',
+      });
+    }
+
+    await leadRef.update({ status: 'processing', pass3RetryAt: FieldValue.serverTimestamp() });
+
+    const result = await rerunPass3Only(leadData, cleanText);
+    if (!result.success) {
+      await leadRef.update({
+        status: 'failed',
+        error: result.error,
+        errorStack: result.errorStack || null,
+      });
+      return res.status(500).json({ error: result.error });
+    }
+
+    const bucket = storage.bucket('aibhive-media');
+    const urlOptions = {
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + 72 * 60 * 60 * 1000,
+    };
+
+    const annotatedFile = bucket.file(`annotated_output_${leadData.id}.txt`);
+    await annotatedFile.save(result.annotatedText, { contentType: 'text/plain' });
+    const [annotatedUrl] = await annotatedFile.getSignedUrl(urlOptions);
+
+    const cleanFile = bucket.file(`clean_output_${leadData.id}.txt`);
+    await cleanFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
+    const [cleanUrl] = await cleanFile.getSignedUrl(urlOptions);
+
+    const existingRun = leadData.pipelineRun || { passes: [] };
+    const passes = [...(existingRun.passes || [])];
+    if (result.pipelinePass) passes.push(result.pipelinePass);
+
+    await leadRef.update({
+      status: 'completed',
+      cleanTranslatedTextUrl: cleanUrl,
+      annotatedTextUrl: annotatedUrl,
+      finalOutputTextUrl: annotatedUrl,
+      flags: result.flags || [],
+      ragCitations: result.ragCitations || [],
+      pipelineRun: { ...existingRun, passes },
+      error: null,
+      errorStack: null,
+    });
+
+    return res.json({ success: true, flags: result.flags, ragCitations: result.ragCitations });
+  } catch (error) {
+    console.error('[admin/retry-pass3] error:', error);
+    return res.status(500).json({ error: error.message || 'Pass 3 retry failed' });
+  }
+});
+
+app.get('/api/admin/consultations', verifyAdmin, async (req, res) => {
+  try {
+    const interestParam = req.query.interests;
+    const filterInterests = interestParam
+      ? String(interestParam)
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    let snap;
+    try {
+      snap = await db.collection('consultationRequests').orderBy('createdAt', 'desc').limit(100).get();
+    } catch {
+      snap = await db.collection('consultationRequests').limit(100).get();
+    }
+
+    let requests = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+    if (filterInterests.length > 0) {
+      requests = requests.filter((r) =>
+        filterInterests.some((tag) => Array.isArray(r.interests) && r.interests.includes(tag))
+      );
+    }
+
+    requests.sort(
+      (a, b) =>
+        (b.createdAt?.seconds ?? b.createdAt?._seconds ?? 0) -
+        (a.createdAt?.seconds ?? a.createdAt?._seconds ?? 0)
+    );
+
+    return res.json({ requests });
+  } catch (error) {
+    console.error('[admin/consultations] error:', error);
+    return res.status(500).json({ error: 'Failed to fetch consultations' });
+  }
+});
+
+app.patch('/api/admin/consultations/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body || {};
+    const patch = { updatedAt: FieldValue.serverTimestamp() };
+    if (status) patch.status = status;
+    if (adminNotes !== undefined) patch.adminNotes = adminNotes;
+    await db.collection('consultationRequests').doc(req.params.id).update(patch);
+    const doc = await db.collection('consultationRequests').doc(req.params.id).get();
+    return res.json({ request: { id: doc.id, ...doc.data() } });
+  } catch (error) {
+    console.error('[admin/consultations/patch] error:', error);
+    return res.status(400).json({ error: error.message || 'Update failed' });
+  }
+});
+
+app.post('/api/admin/rag-test-pass3', verifyAdmin, async (req, res) => {
+  try {
+    const { text, targetLanguage } = req.body || {};
+    if (!text?.trim()) return res.status(400).json({ error: 'text is required' });
+    const ragService = ragSourcesService;
+    const ragSources = await ragService.loadActiveSourcesForPipeline({ legal: true, medical: true });
+    const result = await performRagContextAccuracyCheck(
+      text.trim(),
+      { legal: true, medical: true },
+      targetLanguage || 'English',
+      ragSources
+    );
+    return res.json({
+      flags: result.flags,
+      citations: result.citations,
+      correctedText: result.checkedText,
+      sourcesUsed: ragSources.map((s) => ({ id: s.id, title: s.title, type: s.type, url: s.url })),
+    });
+  } catch (error) {
+    console.error('[admin/rag-test-pass3] error:', error);
+    return res.status(500).json({ error: error.message || 'RAG test failed' });
   }
 });
 
@@ -459,6 +563,16 @@ app.patch('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/rag-sources/patch] error:', error);
     return res.status(400).json({ error: error.message || 'Failed to update source' });
+  }
+});
+
+app.post('/api/admin/rag-sources/:id/resync', verifyAdmin, async (req, res) => {
+  try {
+    const source = await ragSourcesService.resyncSource(req.params.id, req.body || {});
+    return res.json({ source });
+  } catch (error) {
+    console.error('[admin/rag-sources/resync] error:', error);
+    return res.status(400).json({ error: error.message || 'Re-sync failed' });
   }
 });
 
@@ -582,6 +696,51 @@ app.post('/api/consultation-request', async (req, res) => {
   }
 });
 
+app.post('/api/contact-message', async (req, res) => {
+  try {
+    const { name, email, message } = req.body || {};
+    if (!name?.trim() || !email?.trim() || !message?.trim()) {
+      return res.status(400).json({ error: 'Name, email, and message are required.' });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address.' });
+    }
+    if (message.trim().length < 10) {
+      return res.status(400).json({ error: 'Please enter a longer message.' });
+    }
+
+    const doc = {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      message: message.trim(),
+      status: 'new',
+      source: 'about-contact',
+      createdAt: FieldValue.serverTimestamp(),
+    };
+
+    const ref = await db.collection('contactMessages').add(doc);
+
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        await transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: process.env.CONSULTATION_NOTIFY_EMAIL || process.env.EMAIL_USER,
+          replyTo: email,
+          subject: `[AiBHive] Contact form — ${name}`,
+          text: `From: ${name} <${email}>\n\n${message}`,
+        });
+      } catch (mailErr) {
+        console.error('[contact] Email notify failed:', mailErr);
+      }
+    }
+
+    return res.json({ success: true, id: ref.id });
+  } catch (err) {
+    console.error('[contact] Error:', err);
+    return res.status(500).json({ error: 'Failed to send message. Email hello@aibhive.com directly.' });
+  }
+});
+
 // Pricing tables (kept in sync with frontend)
 const TEXT_RATES = { transcribeTranslate: 0.025, legalMedical: 0.035, voiceCloning: 0.035 };
 const AUDIO_RATES = { transcribeTranslate: 2.49,  legalMedical: 3.29,  voiceCloning: 1.99  };
@@ -637,91 +796,24 @@ app.post('/api/test-checkout-session', async (req, res) => {
     const leadData = { id: leadSnap.id, ...leadSnap.data(), email: email || leadSnap.data().email || null };
     const userEmail = leadData.email;
 
-    // 2. Process job directly
-    processLeadJob(leadData).then(async (result) => {
-      if (result.success) {
+    const { verificationModels } = await getPipelineSettings(db);
 
-        let gcsCleanTextUrl = null;
-        let gcsAnnotatedTextUrl = null;
-        let gcsAudioUrl = null;
-
-        const urlOptions = {
-          version: 'v4',
-          action: 'read',
-          expires: Date.now() + 72 * 60 * 60 * 1000,
-        };
-
-        try {
-          const bucketName = 'aibhive-media'; // Assumed from context
-          const cleanTextFilename = `clean_output_${leadId}.txt`;
-          const cleanTextFile = storage.bucket(bucketName).file(cleanTextFilename);
-          await cleanTextFile.save(result.cleanTranslatedText, { contentType: 'text/plain' });
-          const [cleanUrl] = await cleanTextFile.getSignedUrl(urlOptions);
-          gcsCleanTextUrl = cleanUrl;
-
-          const annotatedTextFilename = `annotated_output_${leadId}.txt`;
-          const annotatedTextFile = storage.bucket(bucketName).file(annotatedTextFilename);
-          await annotatedTextFile.save(result.annotatedText, { contentType: 'text/plain' });
-          const [annotatedUrl] = await annotatedTextFile.getSignedUrl(urlOptions);
-          gcsAnnotatedTextUrl = annotatedUrl;
-
-          if (result.clonedAudioBuffer) {
-            const audioFilename = `cloned_audio_${leadId}.mp3`;
-            const audioFile = storage.bucket(bucketName).file(audioFilename);
-            await audioFile.save(result.clonedAudioBuffer, { contentType: 'audio/mpeg' });
-            const [audioUrl] = await audioFile.getSignedUrl(urlOptions);
-            gcsAudioUrl = audioUrl;
-          }
-        } catch (storageError) {
-          console.error("Error saving files to Google Cloud Storage:", storageError);
-        }
-
-        await leadRef.update({
-          status: 'completed',
-          rawTranscript: result.originalText || null,
-          finalOutputTextUrl: gcsAnnotatedTextUrl,
-          cleanTranslatedTextUrl: gcsCleanTextUrl,
-          annotatedTextUrl: gcsAnnotatedTextUrl,
-          finalAudioUrl: gcsAudioUrl || null,
-          voiceModelId: result.voiceModelId || null,
-          translatedTitle: result.translatedTitle || null,
-          translatedSummary: result.translatedSummary || null,
-          flags: result.flags || []
+    processLeadJob(leadData, { verificationModels })
+      .then(async (result) => {
+        await persistLeadProcessingResult({
+          leadRef,
+          leadId,
+          result,
+          gcsStorage: storage,
+          userEmail,
+          transporter,
+          emailUser: process.env.EMAIL_USER,
         });
-
-        if (userEmail) {
-          let emailText = `Your Media files from AiBhive are complete.\n\n`;
-          if (result.translatedTitle) emailText += `Title: ${result.translatedTitle}\n`;
-          if (result.translatedSummary) emailText += `Summary: ${result.translatedSummary}\n\n`;
-          emailText += `Download your files here (links expire in 72 hours):\n`;
-          if (gcsCleanTextUrl) emailText += `Clean Text: ${gcsCleanTextUrl}\n`;
-          if (gcsAnnotatedTextUrl) emailText += `Annotated Text: ${gcsAnnotatedTextUrl}\n`;
-          if (gcsAudioUrl) emailText += `Cloned Audio: ${gcsAudioUrl}\n`;
-          emailText += `\nSimply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.`;
-
-          let emailHtml = `<h3>Your Media files from AiBhive are complete.</h3>`;
-          if (result.translatedTitle) emailHtml += `<h4>${result.translatedTitle}</h4>`;
-          if (result.translatedSummary) emailHtml += `<p><em>${result.translatedSummary}</em></p>`;
-          emailHtml += `<p>Download your files here (links expire in 72 hours):</p><ul>`;
-          if (gcsCleanTextUrl) emailHtml += `<li><a href="${gcsCleanTextUrl}">Download Clean Text File</a></li>`;
-          if (gcsAnnotatedTextUrl) emailHtml += `<li><a href="${gcsAnnotatedTextUrl}">Download Annotated Text File</a></li>`;
-          if (gcsAudioUrl) emailHtml += `<li><a href="${gcsAudioUrl}">Download Cloned Audio File</a></li>`;
-          emailHtml += `</ul><p>Simply click the links above to view or download your files. Please note that files are deleted from our servers after 72 hours.</p>`;
-
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER,
-            to: userEmail,
-            subject: 'Your AiBhive Files are Ready!',
-            text: emailText,
-            html: emailHtml
-          });
-        }
-      } else {
-         await leadRef.update({ status: 'failed', error: result.error });
-      }
-    }).catch(err => {
-      console.error("Job processing error:", err);
-    });
+      })
+      .catch((err) => {
+        console.error('Job processing error:', err);
+        leadRef.update({ status: 'failed', error: err.message, errorStack: err.stack });
+      });
 
     const origin = req.headers.origin || process.env.APP_URL || 'http://localhost:3000';
     return res.json({ url: `${origin}/test?success=true` });
@@ -801,6 +893,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
     if (!session.url) {
       throw new Error('Stripe did not return a checkout URL.');
     }
+
+    await leadRef.update({ stripeSessionId: session.id });
 
     console.log('[checkout] session created', { id: session.id });
     return res.json({ url: session.url });

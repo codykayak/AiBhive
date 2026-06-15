@@ -1,6 +1,23 @@
+import { useState, FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Mail, MessageSquare, HelpCircle, Hexagon, Shield, Users, Globe, Zap, Cpu, Lock } from 'lucide-react';
+import {
+  Mail,
+  MessageSquare,
+  HelpCircle,
+  Hexagon,
+  Shield,
+  Users,
+  Globe,
+  Zap,
+  Cpu,
+  Lock,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 import { SEO } from '../components/SEO';
+import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 
 const faqs = [
   { q: "What makes AiBhive different from standard AI?", a: "We use a multi-agent 'Hive' approach. Instead of one AI pass, multiple specialized agents (General, Legal, Medical) cross-verify the output to ensure human-level accuracy." },
@@ -11,6 +28,41 @@ const faqs = [
 ];
 
 export default function AboutContact() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setErrorMessage('');
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_API_URL
+          ? `${import.meta.env.VITE_API_URL}/api/contact-message`
+          : '/api/contact-message',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Could not send message.');
+      }
+      setStatus('success');
+      setName('');
+      setEmail('');
+      setMessage('');
+    } catch (err) {
+      setStatus('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Something went wrong.');
+    }
+  };
+
   return (
     <main className="py-24">
       <SEO 
@@ -67,24 +119,72 @@ export default function AboutContact() {
               <MessageSquare className="w-8 h-8 mr-4 text-bee-amber" />
               Get in Touch
             </h2>
-            <form className="space-y-8 relative z-10">
+            <form className="space-y-8 relative z-10" onSubmit={handleSubmit}>
+              {status === 'success' && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 flex items-start gap-3 text-sm">
+                  <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                  <p>Message sent. We will get back to you soon.</p>
+                </div>
+              )}
+              {status === 'error' && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-3 text-sm">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <p>{errorMessage}</p>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 <div>
                   <label htmlFor="name" className="block text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">Name</label>
-                  <input id="name" type="text" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all" placeholder="John Doe" />
+                  <input
+                    id="name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all"
+                    placeholder="John Doe"
+                  />
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">Email</label>
-                  <input id="email" type="email" className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all" placeholder="john@example.com" />
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all"
+                    placeholder="john@example.com"
+                  />
                 </div>
               </div>
               <div>
                 <label htmlFor="message" className="block text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">Message</label>
-                <textarea id="message" rows={5} className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all" placeholder="How can the Hive help you?"></textarea>
+                <textarea
+                  id="message"
+                  rows={5}
+                  required
+                  minLength={10}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-bee-amber outline-none transition-all"
+                  placeholder="How can the Hive help you?"
+                />
               </div>
-              <button type="submit" className="w-full py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow text-lg">
+              <button
+                type="submit"
+                disabled={status === 'loading'}
+                className="w-full py-5 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow text-lg disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {status === 'loading' && <Loader2 className="w-5 h-5 animate-spin" />}
                 Send Message
               </button>
+              <p className="text-center text-sm text-slate-500">
+                Need a full B2B scoping call?{' '}
+                <Link to={BOOK_CONSULTATION_PATH} className="text-bee-amber hover:underline">
+                  Book a consultation
+                </Link>
+              </p>
             </form>
           </motion.section>
         </div>

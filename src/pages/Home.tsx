@@ -201,10 +201,66 @@ export default function Home() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <PrimaryCtaLink>Schedule an Automation Audit</PrimaryCtaLink>
+            <Link
+              to="/get-started"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 text-white font-bold rounded-lg border border-white/20 hover:bg-white/15 transition-colors text-base sm:text-lg"
+            >
+              Upload a file for translation
+              <ArrowRight className="w-5 h-5" aria-hidden />
+            </Link>
           </motion.div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.28 }}
+            className="mt-8 text-sm text-slate-400 max-w-2xl mx-auto"
+          >
+            <span className="text-bee-amber font-semibold">Enterprise agentic AI</span> — custom
+            workflows, book a strategy call.{' '}
+            <span className="text-white font-semibold">Self-serve studio</span> — instant pricing,
+            pay online, files back in minutes.
+          </motion.p>
         </motion.div>
+      </section>
+
+      <section className="py-10 border-y border-white/5 bg-bee-black/80">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Link
+              to={BOOK_CONSULTATION_PATH}
+              className="group p-6 rounded-2xl border border-bee-amber/30 bg-bee-amber/5 hover:bg-bee-amber/10 transition-colors"
+            >
+              <p className="text-xs uppercase tracking-widest text-bee-amber font-bold mb-2">
+                B2B · Agentic AI
+              </p>
+              <h2 className="text-xl font-bold text-white mb-2 group-hover:text-bee-amber transition-colors">
+                Hire digital employees for your stack
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Lead gen, customer ops, ERP sync, real estate SMS, phone integrations — scoped with
+                your team on a strategy call.
+              </p>
+            </Link>
+            <Link
+              to="/get-started"
+              className="group p-6 rounded-2xl border border-white/15 bg-white/5 hover:border-white/25 transition-colors"
+            >
+              <p className="text-xs uppercase tracking-widest text-slate-300 font-bold mb-2">
+                Self-serve · Transcription studio
+              </p>
+              <h2 className="text-xl font-bold text-white mb-2 group-hover:text-bee-amber transition-colors">
+                Translate, transcribe, or clone voice now
+              </h2>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Upload audio or text, see your price instantly, checkout with Stripe, and download
+                results with multi-pass accuracy checks.
+              </p>
+            </Link>
+          </div>
+        </div>
       </section>
 
       <SectionDivider />
