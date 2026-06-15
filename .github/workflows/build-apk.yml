@@ -1,0 +1,44 @@
+name: Build Android APK
+on:
+  push:
+    branches:
+      - main-fixed
+    paths:
+      - 'taylored-mobile/**'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v3
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: 🏗 Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }} # You can build locally without EAS if you use prebuild
+
+      - name: 📦 Install dependencies
+        working-directory: ./taylored-mobile
+        run: npm install
+
+      - name: 🚀 Build APK (Local Prebuild)
+        working-directory: ./taylored-mobile
+        run: |
+          npx expo prebuild -p android
+          cd android
+          ./gradlew assembleRelease
+
+      - name: 📤 Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: taylored-mobile-apk
+          path: taylored-mobile/android/app/build/outputs/apk/release/app-release.apk
