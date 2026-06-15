@@ -60,6 +60,8 @@ export default function AutoBotResumeResultScreen() {
             const base64Data = await FileSystem.readAsStringAsync(resumeUri, { encoding: FileSystem.EncodingType.Base64 });
             let mimeType = 'text/plain';
             if (resumeUri.endsWith('.pdf')) mimeType = 'application/pdf';
+            if (resumeUri.endsWith('.doc')) mimeType = 'application/msword';
+            if (resumeUri.endsWith('.docx')) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
             contentParts.push({ inlineData: { data: base64Data, mimeType } });
           }
         } catch (e) { console.log('Could not read resume'); }
