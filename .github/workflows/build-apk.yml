@@ -5,6 +5,7 @@ on:
       - main-fixed
     paths:
       - 'taylored-mobile/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 jobs:
@@ -12,19 +13,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🏗 Setup repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🏗 Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18.x
+
+      - name: 🏗 Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: 🏗 Setup Expo and EAS
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
           eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }} # You can build locally without EAS if you use prebuild
 
       - name: 📦 Install dependencies
         working-directory: ./taylored-mobile
@@ -35,10 +41,10 @@ jobs:
         run: |
           npx expo prebuild -p android
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
 
       - name: 📤 Upload APK Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: taylored-mobile-apk
-          path: taylored-mobile/android/app/build/outputs/apk/release/app-release.apk
+          path: taylored-mobile/android/app/build/outputs/apk/debug/app-debug.apk
