@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, Image, Text, ViewStyle } from 'react-native';
+import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { VersionBadge } from './VersionBadge';
 import { colors, spacing } from '../theme/colors';
 
 type ScreenLayoutProps = {
@@ -42,15 +43,7 @@ export function ScreenLayout({
       </View>
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.sm }, contentStyle]}>
-        {showBrand && (
-          <View style={styles.brandRow}>
-            <Image source={require('../../assets/aibhive-logo.png')} style={styles.logo} resizeMode="contain" />
-            <View style={styles.brandTextWrap}>
-              <Text style={styles.brandTitle}>AiBhive</Text>
-              <Text style={styles.brandSubtitle}>Taylored Mobile</Text>
-            </View>
-          </View>
-        )}
+        <VersionBadge />
         {!!title && <Text style={styles.title}>{title}</Text>}
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         {children}
@@ -88,31 +81,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  logo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-  },
-  brandTextWrap: {
-    flex: 1,
-  },
-  brandTitle: {
-    color: colors.amberLight,
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-  },
-  brandSubtitle: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    display: 'none',
   },
   title: {
     color: colors.text,

@@ -1,23 +1,20 @@
-import * as SecureStore from 'expo-secure-store';
+export {
+  GEMINI_MODEL,
+  getActiveLlmConfig,
+  getApiKeyForProvider,
+  getFirecrawlApiKey,
+  getGeminiApiKey,
+  getProviderApiKey,
+  getSelectedProvider,
+  loadAiPrefs,
+  saveFirecrawlApiKey,
+  saveProviderApiKey,
+  setActiveProvider,
+  setCustomModel,
+  setProviderEnabled,
+  setProviderModel,
+  type ActiveLlmConfig,
+  type AiPrefs,
+} from './settings';
 
-export const GEMINI_MODEL = 'gemini-2.0-flash';
-
-export async function getSelectedProvider(): Promise<string> {
-  return (await SecureStore.getItemAsync('selected_ai_provider')) || 'Gemini';
-}
-
-export async function getApiKeyForProvider(provider: string): Promise<string | null> {
-  return SecureStore.getItemAsync(`api_key_${provider.toLowerCase()}`);
-}
-
-export async function getGeminiApiKey(): Promise<string | null> {
-  const selected = await getSelectedProvider();
-  if (selected === 'Gemini') {
-    return getApiKeyForProvider('Gemini');
-  }
-  return getApiKeyForProvider('Gemini');
-}
-
-export async function getFirecrawlApiKey(): Promise<string | null> {
-  return SecureStore.getItemAsync('api_key_firecrawl');
-}
+export { generateWithParts, sendChatMessage, type ChatTurn } from './llm';
