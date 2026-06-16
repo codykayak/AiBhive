@@ -41,7 +41,7 @@ export default function HomeScreen() {
       id: '1',
       role: 'ai',
       content:
-        'Welcome to AiBhive Hive Magic. Describe any feature in a few words — I will estimate cost and time, then build it for you. Try: "Add a job application tracker to Hive Apps."',
+        'Welcome to Hive Magic. Describe any app, module, or feature in plain English — I estimate cost and time, you approve once, then wait for the ding. Try: "Build me a resume tailor for job postings."',
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);

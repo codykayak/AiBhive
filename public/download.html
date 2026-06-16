@@ -18,7 +18,7 @@
             padding: 24px;
         }
         .card {
-            max-width: 420px;
+            max-width: 480px;
             width: 100%;
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid rgba(245, 158, 11, 0.25);
@@ -27,6 +27,7 @@
             box-shadow: 0 0 40px rgba(245, 158, 11, 0.12);
         }
         h1 { margin: 0 0 8px; color: #fbbf24; font-size: 1.6rem; }
+        h2 { margin: 20px 0 8px; color: #fbbf24; font-size: 1rem; }
         p { color: #94a3b8; line-height: 1.5; }
         .btn {
             display: block;
@@ -48,27 +49,60 @@
             border: 1px solid rgba(245, 158, 11, 0.35);
             margin-top: 12px;
         }
-        ol { color: #cbd5e1; padding-left: 20px; }
+        ol, ul { color: #cbd5e1; padding-left: 20px; }
         li { margin-bottom: 8px; }
         .note { font-size: 0.9rem; margin-top: 18px; }
+        .warn {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 16px;
+            color: #fecaca;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .ok {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 16px;
+            color: #bbf7d0;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Taylored Mobile</h1>
-        <p>Android APK for AiBhive mobile. Tap the button below to download.</p>
+        <p>Hive Magic — describe an app or feature in plain English, approve the estimate, wait for the ding.</p>
 
-        <a class="btn" href="/api/download/apk" id="download-btn">Download APK (86 MB)</a>
-        <a class="btn btn-secondary" href="/api/download/apk?compressed=1" id="download-gz-btn">Download smaller file (37 MB, .gz)</a>
+        <a class="btn" href="/api/download/apk?compressed=1" id="download-gz-btn">Download (37 MB .gz) — recommended on phone</a>
+        <a class="btn btn-secondary" href="/api/download/apk" id="download-btn">Download full APK (86 MB)</a>
 
-        <p class="note"><strong>Verify install:</strong> Settings → App version <strong>1.0.2</strong> (Hive Magic). v1.0.1 also has the home screen.</p>
-
-        <p class="note"><strong>After download:</strong></p>
+        <h2>Install steps (read this)</h2>
         <ol>
-            <li>Open your Downloads folder</li>
-            <li>Tap the APK (or extract the .gz with ZArchiver first)</li>
-            <li>Allow install from Chrome/Files if Android asks</li>
+            <li><strong>Uninstall</strong> any old Taylored / AiBhive app first (Settings → Apps → Uninstall). Required if you tried before.</li>
+            <li>Download the <strong>.gz</strong> file above.</li>
+            <li>Open with <strong>ZArchiver</strong> → Extract <em>once</em> → you get one file: <code>taylored-mobile.apk</code></li>
+            <li>Tap that <strong>.apk file</strong> to install.</li>
         </ol>
+
+        <div class="warn">
+            <strong>Do NOT extract the .apk itself.</strong> If you see folders like <code>classes.dex</code>, <code>lib</code>, or <code>AndroidManifest.xml</code> next to the apk, you unzipped the apk by mistake. Delete that folder, re-download, extract only the .gz, then install the single .apk file.
+        </div>
+
+        <div class="ok">
+            <strong>Success check:</strong> Settings tab → <strong>App version 1.0.3</strong>. Build tab → Hive Magic toggle ON.
+        </div>
+
+        <p class="note"><strong>Still says "App not installed"?</strong></p>
+        <ul>
+            <li>Uninstall every copy of the app, reboot phone, try again</li>
+            <li>Do not install <code>app-debug.apk</code> — use <code>taylored-mobile.apk</code> only</li>
+            <li>Enable "Install unknown apps" for ZArchiver or Files</li>
+        </ul>
     </div>
 </body>
 </html>

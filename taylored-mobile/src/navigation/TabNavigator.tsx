@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Home, Grid, Settings } from 'lucide-react-native';
+import { Wand2, Grid, Settings } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -44,14 +44,20 @@ export default function TabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Home"
+        name="Build"
         component={HomeScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Home color={color} size={size} /> }}
+        options={{
+          tabBarLabel: 'Build',
+          tabBarIcon: ({ color, size }) => <Wand2 color={color} size={size} />,
+        }}
       />
       <Tab.Screen
         name="Apps"
         component={AppsScreen}
-        options={{ tabBarIcon: ({ color, size }) => <Grid color={color} size={size} /> }}
+        options={{
+          tabBarLabel: 'My Apps',
+          tabBarIcon: ({ color, size }) => <Grid color={color} size={size} />,
+        }}
       />
       <Tab.Screen
         name="Settings"

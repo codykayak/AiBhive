@@ -46,13 +46,13 @@ jobs:
           sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
           yes | sdkmanager --licenses || true
 
-          keytool -genkey -v -keystore my-release-key.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=TayloredMobile, OU=App, O=Taylored, L=City, ST=State, C=US"
+          cp ../credentials/android-release.keystore my-release-key.keystore
 
           ./gradlew assembleRelease \
             -Pandroid.injected.signing.store.file=$(pwd)/my-release-key.keystore \
-            -Pandroid.injected.signing.store.password=android \
-            -Pandroid.injected.signing.key.alias=my-key-alias \
-            -Pandroid.injected.signing.key.password=android
+            -Pandroid.injected.signing.store.password=taylored2026 \
+            -Pandroid.injected.signing.key.alias=taylored-release \
+            -Pandroid.injected.signing.key.password=taylored2026
 
       - name: 📤 Upload APK Artifact
         uses: actions/upload-artifact@v4
