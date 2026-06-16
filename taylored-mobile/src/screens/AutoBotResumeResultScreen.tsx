@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as Clipboard from 'expo-clipboard';
 import { Copy, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
-import { GEMINI_MODEL, getGeminiApiKey } from '../lib/ai';
+import { getActiveLlmConfig, generateWithParts } from '../lib/ai';
 import { mimeTypeForUri, readUriAsBase64 } from '../lib/files';
 import { scrapeJobPosting } from '../lib/jobIntel';
 
@@ -39,9 +38,9 @@ export default function AutoBotResumeResultScreen() {
 
   const generateApplication = async () => {
     try {
-      const apiKey = await getGeminiApiKey();
-      if (!apiKey) {
-        Alert.alert('API key required', 'Add your Gemini API key in Settings to generate applications.');
+      const config = await getActiveLlmConfig();
+      if (!config) {
+        Alert.alert('API key required', 'Enable a provider in Settings, add an API key, and set it active.');
         setLoading(false);
         return;
       }
@@ -49,8 +48,6 @@ export default function AutoBotResumeResultScreen() {
       setStatus('Reading job listing...');
       const scrapedJob = jobUrl ? await scrapeJobPosting(jobUrl) : null;
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
       const contentParts: Array<string | { inlineData: { data: string; mimeType: string } }> = [];
 
       const prompt = `
@@ -106,9 +103,8 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
         }
       }
 
-      setStatus('Drafting tailored resume and outreach...');
-      const result = await model.generateContent(contentParts);
-      const text = result.response.text();
+      setStatus(`Drafting with ${config.providerLabel}…`);
+      const text = await generateWithParts(config, prompt, contentParts);
 
       setExtractedJobDetails(extractSection(text, 'JOB DETAILS', 'COVER LETTER') || 'Could not parse job details.');
       setCoverLetter(extractSection(text, 'COVER LETTER', 'REWRITTEN RESUME') || 'Could not parse cover letter.');

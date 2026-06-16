@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Linking } from 'react-native';
 import { useRoute } from '@react-navigation/native';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Mail, Phone } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
-import { GEMINI_MODEL, getFirecrawlApiKey, getGeminiApiKey } from '../lib/ai';
+import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/ai';
 import { searchCompanyIntel } from '../lib/jobIntel';
 
 export default function DeeperScreen() {
@@ -26,10 +25,10 @@ export default function DeeperScreen() {
 
   const runDeeperAnalysis = async () => {
     try {
-      const geminiKey = await getGeminiApiKey();
+      const llm = await getActiveLlmConfig();
       const firecrawlKey = await getFirecrawlApiKey();
-      if (!geminiKey) {
-        Alert.alert('API key required', 'Add your Gemini API key in Settings.');
+      if (!llm) {
+        Alert.alert('API key required', 'Enable a provider in Settings and add an API key.');
         setLoading(false);
         return;
       }
@@ -39,12 +38,15 @@ export default function DeeperScreen() {
         return;
       }
 
-      const genAI = new GoogleGenerativeAI(geminiKey);
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-      const extractRes = await model.generateContent(
-        `Extract ONLY the company name from this job application text. If unknown, reply "Unknown":\n${companyDetails}`
-      );
-      const companyName = extractRes.response.text().trim().replace(/[".]/g, '');
+      const companyName = (
+        await sendChatMessage(
+          llm,
+          [],
+          `Extract ONLY the company name from this job application text. If unknown, reply "Unknown":\n${companyDetails}`
+        )
+      )
+        .trim()
+        .replace(/[".]/g, '');
 
       if (!companyName || companyName.toLowerCase() === 'unknown') {
         Alert.alert('Company not found', 'Could not identify a company name from the job details.');
@@ -76,8 +78,8 @@ Return STRICT JSON only:
   ]
 }`;
 
-      const finalResult = await model.generateContent(prompt);
-      const responseText = finalResult.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const finalResult = await sendChatMessage(llm, [], prompt);
+      const responseText = finalResult.replace(/```json/g, '').replace(/```/g, '').trim();
 
       try {
         const parsedData = JSON.parse(responseText);

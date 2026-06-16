@@ -12,11 +12,10 @@ import {
   Vibration,
 } from 'react-native';
 import { Send, Sparkles, Wand2 } from 'lucide-react-native';
-import * as SecureStore from 'expo-secure-store';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useTabBarPadding } from '../components/TabScreenContainer';
-import { GEMINI_MODEL } from '../lib/ai';
+import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
+import { AI_PROVIDERS } from '../constants/providers';
 import {
   approveHiveTask,
   createHiveTask,
@@ -45,17 +44,18 @@ export default function HomeScreen() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [provider, setProvider] = useState('Gemini');
+  const [activeLabel, setActiveLabel] = useState('Gemini');
   const [magicMode, setMagicMode] = useState(true);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const checkProvider = async () => {
-      const p = await SecureStore.getItemAsync('selected_ai_provider');
-      if (p) setProvider(p);
+    const refresh = async () => {
+      const prefs = await loadAiPrefs();
+      const def = AI_PROVIDERS.find((p) => p.id === prefs.activeProviderId);
+      if (def) setActiveLabel(def.label);
     };
-    checkProvider();
-    const interval = setInterval(checkProvider, 3000);
+    refresh();
+    const interval = setInterval(refresh, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -114,46 +114,32 @@ export default function HomeScreen() {
     }
   };
 
-  const runLocalGemini = async (userMsg: Message) => {
-    const apiKey = await SecureStore.getItemAsync(`api_key_${provider.toLowerCase()}`);
-    if (!apiKey) {
+  const runLocalChat = async (userMsg: Message) => {
+    const config = await getActiveLlmConfig();
+    if (!config) {
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: 'ai',
-          content: `Add your ${provider} API key in Settings to unlock the hive.`,
+          content: 'Enable a provider in Settings, add an API key, and set it as active.',
         },
       ]);
       return;
     }
 
-    if (provider !== 'Gemini') {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          role: 'ai',
-          content: `${provider} support is coming soon. Switch to Gemini in Settings.`,
-        },
-      ]);
-      return;
-    }
+    const history = messages
+      .filter((m) => m.id !== '1' && !m.task)
+      .map((m) => ({ role: m.role, content: m.content }));
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-    const chat = model.startChat({
-      history: messages
-        .filter((m) => m.id !== '1' && !m.task)
-        .map((m) => ({
-          role: m.role === 'ai' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        })),
-    });
-    const result = await chat.sendMessage(userMsg.content);
+    const reply = await sendChatMessage(config, history, userMsg.content);
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), role: 'ai', content: result.response.text() },
+      {
+        id: Date.now().toString(),
+        role: 'ai',
+        content: `${reply}\n\n— ${config.providerLabel} · ${config.model}`,
+      },
     ]);
   };
 
@@ -183,7 +169,7 @@ export default function HomeScreen() {
           // Hive API not deployed yet — fall through to local Gemini
         }
       }
-      await runLocalGemini(userMsg);
+      await runLocalChat(userMsg);
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -219,8 +205,8 @@ export default function HomeScreen() {
       </View>
       <Text style={styles.heroSubtitle}>
         {magicMode
-          ? 'Ask for any feature — approve the estimate, then wait for the ding.'
-          : 'Chat mode — Gemini only, no auto-build.'}
+          ? `Hive Magic ON · active: ${activeLabel}. Approve estimates, wait for the ding.`
+          : `Chat mode · ${activeLabel}. Toggle Magic ON to auto-build features.`}
       </Text>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
