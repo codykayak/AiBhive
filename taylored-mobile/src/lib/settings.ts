@@ -7,6 +7,7 @@ import {
 } from '../constants/providers';
 
 const PREFS_KEY = 'hive_ai_prefs_v2';
+const MIGRATION_FLAG = 'hive_ai_prefs_migrated_v2';
 
 export type ProviderPrefs = {
   enabled: boolean;
@@ -19,7 +20,7 @@ export type AiPrefs = {
   providers: Record<ProviderId, ProviderPrefs>;
 };
 
-const DEFAULT_PREFS: AiPrefs = {
+export const DEFAULT_PREFS: AiPrefs = {
   activeProviderId: 'gemini',
   providers: {
     gemini: { enabled: true, model: 'gemini-2.0-flash' },
@@ -34,68 +35,86 @@ function keyForProvider(id: ProviderId): string {
   return `api_key_${id}`;
 }
 
+function clonePrefs(): AiPrefs {
+  return {
+    activeProviderId: DEFAULT_PREFS.activeProviderId,
+    providers: { ...DEFAULT_PREFS.providers },
+  };
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => {
+      setTimeout(() => resolve(fallback), ms);
+    }),
+  ]);
+}
+
 async function secureSet(key: string, value: string): Promise<void> {
   const trimmed = value.trim();
   if (!trimmed) {
-    await SecureStore.deleteItemAsync(key);
+    await withTimeout(SecureStore.deleteItemAsync(key), 2500, undefined);
     return;
   }
-  await SecureStore.setItemAsync(key, trimmed);
+  await withTimeout(SecureStore.setItemAsync(key, trimmed), 2500, undefined);
 }
 
 async function secureGet(key: string): Promise<string | null> {
   try {
-    return await SecureStore.getItemAsync(key);
+    return await withTimeout(SecureStore.getItemAsync(key), 2500, null);
   } catch {
     return null;
   }
 }
 
 async function migrateLegacySettings(): Promise<void> {
-  const existing = await AsyncStorage.getItem(PREFS_KEY);
-  if (existing) return;
+  const migrated = await AsyncStorage.getItem(MIGRATION_FLAG);
+  if (migrated === '1') return;
 
-  const prefs: AiPrefs = {
-    ...DEFAULT_PREFS,
-    providers: { ...DEFAULT_PREFS.providers },
-  };
+  await AsyncStorage.setItem(MIGRATION_FLAG, '1');
+  const prefs = clonePrefs();
 
-  const legacyProvider = await SecureStore.getItemAsync('selected_ai_provider');
-  if (legacyProvider) {
-    const id = AI_PROVIDERS.find(
-      (p) => p.label.toLowerCase() === legacyProvider.toLowerCase() || p.id === legacyProvider.toLowerCase()
-    )?.id;
-    if (id) {
-      prefs.activeProviderId = id;
-      prefs.providers[id].enabled = true;
+  try {
+    const legacyProvider = await secureGet('selected_ai_provider');
+    if (legacyProvider) {
+      const id = AI_PROVIDERS.find(
+        (p) => p.label.toLowerCase() === legacyProvider.toLowerCase() || p.id === legacyProvider.toLowerCase()
+      )?.id;
+      if (id) {
+        prefs.activeProviderId = id;
+        prefs.providers[id].enabled = true;
+      }
     }
-  }
 
-  for (const def of AI_PROVIDERS) {
-    const key =
-      (await SecureStore.getItemAsync(`api_key_${def.id}`)) ||
-      (await SecureStore.getItemAsync(`api_key_${def.label.toLowerCase()}`));
-    if (key?.trim()) {
-      await secureSet(keyForProvider(def.id), key);
-      prefs.providers[def.id].enabled = true;
+    for (const def of AI_PROVIDERS) {
+      const key =
+        (await secureGet(`api_key_${def.id}`)) ||
+        (await secureGet(`api_key_${def.label.toLowerCase()}`));
+      if (key?.trim()) {
+        await secureSet(keyForProvider(def.id), key);
+        prefs.providers[def.id].enabled = true;
+      }
     }
-  }
 
-  await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  }
 }
 
 export async function loadAiPrefs(): Promise<AiPrefs> {
   await migrateLegacySettings();
   try {
     const raw = await AsyncStorage.getItem(PREFS_KEY);
-    if (!raw) return { ...DEFAULT_PREFS, providers: { ...DEFAULT_PREFS.providers } };
+    if (!raw) return clonePrefs();
     const parsed = JSON.parse(raw) as Partial<AiPrefs>;
     return {
       activeProviderId: parsed.activeProviderId ?? DEFAULT_PREFS.activeProviderId,
       providers: { ...DEFAULT_PREFS.providers, ...parsed.providers },
     };
   } catch {
-    return { ...DEFAULT_PREFS, providers: { ...DEFAULT_PREFS.providers } };
+    return clonePrefs();
   }
 }
 
@@ -151,7 +170,11 @@ export async function setProviderModel(id: ProviderId, model: string): Promise<A
 
 export async function setCustomModel(id: ProviderId, customModel: string): Promise<AiPrefs> {
   const prefs = await loadAiPrefs();
-  prefs.providers[id] = { ...prefs.providers[id], customModel, model: customModel.trim() || prefs.providers[id].model };
+  prefs.providers[id] = {
+    ...prefs.providers[id],
+    customModel,
+    model: customModel.trim() || prefs.providers[id].model,
+  };
   await saveAiPrefs(prefs);
   return prefs;
 }
@@ -163,7 +186,6 @@ export type ActiveLlmConfig = {
   apiKey: string;
 };
 
-/** Returns the active enabled provider with a saved API key, or null. */
 export async function getActiveLlmConfig(): Promise<ActiveLlmConfig | null> {
   const prefs = await loadAiPrefs();
   const order: ProviderId[] = [prefs.activeProviderId, ...AI_PROVIDERS.map((p) => p.id)];
@@ -175,9 +197,7 @@ export async function getActiveLlmConfig(): Promise<ActiveLlmConfig | null> {
     if (!apiKey) continue;
     const def = getProviderDef(id);
     const model =
-      id === 'custom' && p.customModel?.trim()
-        ? p.customModel.trim()
-        : p.model || def.defaultModel;
+      id === 'custom' && p.customModel?.trim() ? p.customModel.trim() : p.model || def.defaultModel;
     return {
       providerId: id,
       providerLabel: def.label,
@@ -188,7 +208,6 @@ export async function getActiveLlmConfig(): Promise<ActiveLlmConfig | null> {
   return null;
 }
 
-/** Back-compat for resume / intel screens that expect Gemini key when Gemini is active. */
 export async function getGeminiApiKey(): Promise<string | null> {
   const config = await getActiveLlmConfig();
   if (config?.providerId === 'gemini') return config.apiKey;

@@ -8,11 +8,12 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/ai';
+import { saveCompanyIntel } from '../lib/jobs';
 import { searchCompanyIntel } from '../lib/jobIntel';
 
 export default function DeeperScreen() {
   const route = useRoute<any>();
-  const { companyDetails, coldEmail } = route.params || { companyDetails: '', coldEmail: '' };
+  const { jobId, companyDetails, coldEmail } = route.params || { companyDetails: '', coldEmail: '' };
   const insets = useSafeAreaInsets();
 
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,9 @@ Return STRICT JSON only:
         const parsedData = JSON.parse(responseText);
         setSummary(parsedData.summary || 'No summary available.');
         setContacts(parsedData.decision_makers || []);
+        if (jobId && parsedData.summary) {
+          await saveCompanyIntel(jobId, parsedData.summary);
+        }
       } catch {
         setSummary(responseText || 'Could not parse research results.');
         setContacts([]);

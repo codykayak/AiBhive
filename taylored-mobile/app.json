@@ -2,8 +2,8 @@
   "expo": {
     "name": "taylored-mobile",
     "slug": "taylored-mobile",
-    "version": "1.0.4",
-    "orientation": "portrait",
+    "version": "1.0.5",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -21,8 +21,18 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#020617"
       },
-      "package": "com.tayloredmobile.app"
+      "package": "com.tayloredmobile.app",
+      "resizeableActivity": true
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow photo access to attach job listing screenshots.",
+          "cameraPermission": "Allow camera access to capture job listing screenshots."
+        }
+      ]
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     }
