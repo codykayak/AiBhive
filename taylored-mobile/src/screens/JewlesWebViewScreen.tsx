@@ -1,15 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { colors } from '../theme/colors';
 
 export default function JewlesWebViewScreen() {
   const [loading, setLoading] = useState(true);
-  useEffect(() => { setTimeout(() => setLoading(false), 1000); }, []);
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#00e5ff" /></View>;
-  return <WebView source={{ uri: 'https://aibeehive.com' }} style={styles.container} />;
+  return (
+    <View style={styles.container}>
+      {loading && (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.amberLight} />
+        </View>
+      )}
+      <WebView
+        source={{ uri: 'https://aibhive.com' }}
+        style={styles.container}
+        onLoadEnd={() => setLoading(false)}
+      />
+    </View>
+  );
 }
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0a0a' }
+  container: { flex: 1, backgroundColor: colors.bg },
+  center: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.bg,
+  },
 });
