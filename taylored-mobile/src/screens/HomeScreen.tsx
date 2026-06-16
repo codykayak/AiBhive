@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,28 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Vibration,
 } from 'react-native';
-import { Send, Sparkles } from 'lucide-react-native';
+import { Send, Sparkles, Wand2 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { GEMINI_MODEL } from '../lib/ai';
+import {
+  approveHiveTask,
+  createHiveTask,
+  getHiveTask,
+  getOrCreateHiveUserId,
+  type HiveTask,
+} from '../lib/hiveApi';
 import { colors, radii, spacing } from '../theme/colors';
 
 type Message = {
   id: string;
   role: 'user' | 'ai';
   content: string;
+  task?: HiveTask;
 };
 
 export default function HomeScreen() {
@@ -31,11 +40,14 @@ export default function HomeScreen() {
     {
       id: '1',
       role: 'ai',
-      content: 'Welcome to AiBhive Mobile. I can help you brainstorm applications, outreach, and career moves. Add your Gemini API key in Settings to get started.',
+      content:
+        'Welcome to AiBhive Hive Magic. Describe any feature in a few words — I will estimate cost and time, then build it for you. Try: "Add a job application tracker to Hive Apps."',
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [provider, setProvider] = useState('Gemini');
+  const [magicMode, setMagicMode] = useState(true);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const checkProvider = async () => {
@@ -47,8 +59,106 @@ export default function HomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const dingReady = useCallback(() => {
+    Vibration.vibrate([0, 120, 80, 120]);
+  }, []);
+
+  const updateMessageTask = useCallback((taskId: string, task: HiveTask) => {
+    setMessages((prev) =>
+      prev.map((m) => (m.task?.id === taskId ? { ...m, content: task.reply || m.content, task } : m))
+    );
+  }, []);
+
+  const startPolling = useCallback(
+    (taskId: string) => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = setInterval(async () => {
+        try {
+          const task = await getHiveTask(taskId);
+          updateMessageTask(taskId, task);
+          if (task.status === 'complete') {
+            dingReady();
+            if (pollRef.current) clearInterval(pollRef.current);
+          } else if (task.status === 'failed') {
+            if (pollRef.current) clearInterval(pollRef.current);
+          }
+        } catch {
+          // keep polling — server may still be deploying
+        }
+      }, 8000);
+    },
+    [dingReady, updateMessageTask]
+  );
+
+  const handleApprove = async (task: HiveTask) => {
+    setIsLoading(true);
+    try {
+      const approved = await approveHiveTask(task.id);
+      updateMessageTask(task.id, approved);
+      startPolling(task.id);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not start build';
+      updateMessageTask(task.id, {
+        ...task,
+        status: 'failed',
+        reply: msg,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const runLocalGemini = async (userMsg: Message) => {
+    const apiKey = await SecureStore.getItemAsync(`api_key_${provider.toLowerCase()}`);
+    if (!apiKey) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'ai',
+          content: `Add your ${provider} API key in Settings to unlock the hive.`,
+        },
+      ]);
+      return;
+    }
+
+    if (provider !== 'Gemini') {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'ai',
+          content: `${provider} support is coming soon. Switch to Gemini in Settings.`,
+        },
+      ]);
+      return;
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const chat = model.startChat({
+      history: messages
+        .filter((m) => m.id !== '1' && !m.task)
+        .map((m) => ({
+          role: m.role === 'ai' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        })),
+    });
+    const result = await chat.sendMessage(userMsg.content);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), role: 'ai', content: result.response.text() },
+    ]);
+  };
+
   const handleSend = async () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || isLoading) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: inputText.trim() };
     setMessages((prev) => [...prev, userMsg]);
@@ -56,53 +166,31 @@ export default function HomeScreen() {
     setIsLoading(true);
 
     try {
-      const apiKey = await SecureStore.getItemAsync(`api_key_${provider.toLowerCase()}`);
-      if (!apiKey) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
+      if (magicMode) {
+        try {
+          const userId = await getOrCreateHiveUserId();
+          const task = await createHiveTask(userMsg.content, userId);
+          const aiMsg: Message = {
+            id: `${Date.now()}_ai`,
             role: 'ai',
-            content: `Add your ${provider} API key in Settings to unlock the hive.`,
-          },
-        ]);
-        return;
+            content: task.reply || task.summary || 'Working on it…',
+            task,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+          if (task.status === 'building') startPolling(task.id);
+          return;
+        } catch {
+          // Hive API not deployed yet — fall through to local Gemini
+        }
       }
-
-      if (provider === 'Gemini') {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-        const chat = model.startChat({
-          history: messages
-            .filter((m) => m.id !== '1')
-            .map((m) => ({
-              role: m.role === 'ai' ? 'model' : 'user',
-              parts: [{ text: m.content }],
-            })),
-        });
-
-        const result = await chat.sendMessage(userMsg.content);
-        setMessages((prev) => [
-          ...prev,
-          { id: Date.now().toString(), role: 'ai', content: result.response.text() },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            role: 'ai',
-            content: `${provider} support is coming soon. Switch to Gemini in Settings for full chat.`,
-          },
-        ]);
-      }
+      await runLocalGemini(userMsg);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: 'ai',
-          content: 'Connection failed. Double-check your API key in Settings.',
+          content: 'Connection failed. Check your API key in Settings.',
         },
       ]);
     } finally {
@@ -114,11 +202,26 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout showBrand={false} contentStyle={styles.screenContent}>
-      <View style={styles.hero}>
-        <Sparkles color={colors.amberLight} size={18} />
-        <Text style={styles.heroTitle}>AiBhive Assistant</Text>
+      <View style={styles.heroRow}>
+        <View style={styles.hero}>
+          <Sparkles color={colors.amberLight} size={18} />
+          <Text style={styles.heroTitle}>Hive Magic</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.magicToggle, magicMode && styles.magicToggleOn]}
+          onPress={() => setMagicMode((v) => !v)}
+        >
+          <Wand2 color={magicMode ? colors.black : colors.amberLight} size={16} />
+          <Text style={[styles.magicToggleText, magicMode && styles.magicToggleTextOn]}>
+            {magicMode ? 'ON' : 'OFF'}
+          </Text>
+        </TouchableOpacity>
       </View>
-      <Text style={styles.heroSubtitle}>Your pocket career co-pilot</Text>
+      <Text style={styles.heroSubtitle}>
+        {magicMode
+          ? 'Ask for any feature — approve the estimate, then wait for the ding.'
+          : 'Chat mode — Gemini only, no auto-build.'}
+      </Text>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -127,11 +230,38 @@ export default function HomeScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {messages.map((msg) => (
-            <View
-              key={msg.id}
-              style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}
-            >
-              <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.content}</Text>
+            <View key={msg.id}>
+              <View
+                style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}
+              >
+                <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.content}</Text>
+              </View>
+              {msg.task?.status === 'awaiting_approval' && msg.task.estimate && (
+                <View style={styles.approvalCard}>
+                  <Text style={styles.approvalTitle}>Ready to build?</Text>
+                  <Text style={styles.approvalMeta}>
+                    ~${msg.task.estimate.costUsd} · ~{msg.task.estimate.minutes} min
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={() => handleApprove(msg.task!)}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.approveBtnText}>Approve & Build</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {msg.task?.status === 'building' && (
+                <View style={styles.buildingRow}>
+                  <ActivityIndicator color={colors.amberLight} size="small" />
+                  <Text style={styles.buildingText}>Building your feature…</Text>
+                </View>
+              )}
+              {msg.task?.status === 'complete' && (
+                <View style={styles.doneCard}>
+                  <Text style={styles.doneText}>✨ Ding! Your feature is ready.</Text>
+                </View>
+              )}
             </View>
           ))}
           {isLoading && (
@@ -144,7 +274,7 @@ export default function HomeScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="Ask anything..."
+            placeholder={magicMode ? 'Describe a feature…' : 'Ask anything…'}
             placeholderTextColor={colors.textDim}
             value={inputText}
             onChangeText={setInputText}
@@ -164,16 +294,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   flex: { flex: 1 },
+  heroRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+  },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: spacing.sm,
   },
   heroTitle: {
     color: colors.amberLight,
     fontSize: 24,
     fontWeight: '800',
+  },
+  magicToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+  },
+  magicToggleOn: {
+    backgroundColor: colors.amber,
+    borderColor: colors.amber,
+  },
+  magicToggleText: {
+    color: colors.amberLight,
+    fontWeight: '800',
+    fontSize: 12,
+  },
+  magicToggleTextOn: {
+    color: colors.black,
   },
   heroSubtitle: {
     color: colors.textMuted,
@@ -203,6 +360,62 @@ const styles = StyleSheet.create({
   loadingBubble: { alignSelf: 'flex-start' },
   messageText: { color: colors.text, fontSize: 16, lineHeight: 22 },
   userText: { color: colors.black, fontWeight: '600' },
+  approvalCard: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.amber,
+    padding: 14,
+    marginBottom: 12,
+    marginTop: -4,
+    maxWidth: '88%',
+  },
+  approvalTitle: {
+    color: colors.amberLight,
+    fontWeight: '800',
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  approvalMeta: {
+    color: colors.textMuted,
+    marginBottom: 12,
+  },
+  approveBtn: {
+    backgroundColor: colors.amber,
+    borderRadius: radii.md,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  approveBtnText: {
+    color: colors.black,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  buildingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  buildingText: {
+    color: colors.textMuted,
+    fontSize: 14,
+  },
+  doneCard: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderRadius: radii.md,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.amber,
+  },
+  doneText: {
+    color: colors.amberLight,
+    fontWeight: '700',
+  },
   inputContainer: {
     flexDirection: 'row',
     paddingTop: 12,
