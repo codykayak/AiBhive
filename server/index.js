@@ -12,6 +12,7 @@ import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -812,6 +813,41 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
+
+function resolveApkPath() {
+  const candidates = [
+    path.join(__dirname, '../dist/taylored-mobile.apk'),
+    path.join(__dirname, '../public/taylored-mobile.apk'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+app.get('/api/download/apk', (req, res) => {
+  const apkPath = resolveApkPath();
+  if (!apkPath) {
+    return res.status(404).json({ error: 'APK not available yet. Try again after the mobile build finishes.' });
+  }
+
+  if (req.query.compressed === '1') {
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="taylored-mobile.apk.gz"');
+    return fs.createReadStream(apkPath).pipe(zlib.createGzip()).pipe(res);
+  }
+
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="taylored-mobile.apk"');
+  return res.sendFile(apkPath);
+});
+
+app.get('/taylored-mobile.apk', (req, res) => {
+  const apkPath = resolveApkPath();
+  if (!apkPath) {
+    return res.status(404).send('APK not available yet.');
+  }
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="taylored-mobile.apk"');
+  return res.sendFile(apkPath);
+});
 
 // Serve the standalone Cody website at /cody (static assets + fallback to cody/index.html)
 app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
