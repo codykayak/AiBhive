@@ -21,7 +21,7 @@ jobs:
       - name: 🏗 Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: 🏗 Setup Java
         uses: actions/setup-java@v3
@@ -76,3 +76,6 @@ jobs:
             git commit -m "chore(mobile): deploy Taylored Mobile APK [skip ci]"
             git push
           fi
+
+      - name: 📲 Publish Firebase download mirror
+        run: node scripts/publish-apk-firebase.mjs

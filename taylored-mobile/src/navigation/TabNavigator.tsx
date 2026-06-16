@@ -9,32 +9,29 @@ import SettingsScreen from '../screens/SettingsScreen';
 import { colors } from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
+const TAB_BAR_BODY_HEIGHT = 58;
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 12);
 
   return (
     <Tab.Navigator
+      safeAreaInsets={{ bottom: bottomInset }}
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         tabBarStyle: {
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: Math.max(insets.bottom, 10),
-          height: 64,
+          backgroundColor: colors.bgElevated,
+          borderTopWidth: 1,
+          borderTopColor: colors.borderMuted,
+          height: TAB_BAR_BODY_HEIGHT + bottomInset,
           paddingTop: 8,
-          paddingBottom: 8,
-          backgroundColor: 'rgba(2, 6, 23, 0.96)',
-          borderTopWidth: 0,
-          borderRadius: 22,
-          borderWidth: 1,
-          borderColor: colors.border,
-          shadowColor: colors.amber,
-          shadowOpacity: 0.18,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: -2 },
-          elevation: 12,
+          paddingBottom: bottomInset,
+          paddingHorizontal: 8,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 2,
         },
         tabBarActiveTintColor: colors.amberLight,
         tabBarInactiveTintColor: colors.textDim,
@@ -42,7 +39,7 @@ export default function TabNavigator() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '700',
-          marginTop: 2,
+          marginBottom: 2,
         },
       }}
     >
@@ -64,3 +61,5 @@ export default function TabNavigator() {
     </Tab.Navigator>
   );
 }
+
+export const TAB_BAR_TOTAL_HEIGHT = TAB_BAR_BODY_HEIGHT + 12;

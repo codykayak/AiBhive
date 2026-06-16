@@ -11,12 +11,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Send, Sparkles } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { colors, radii, spacing } from '../theme/colors';
+import { useTabBarPadding } from '../components/TabScreenContainer';
 import { GEMINI_MODEL } from '../lib/ai';
+import { colors, radii, spacing } from '../theme/colors';
 
 type Message = {
   id: string;
@@ -25,7 +25,7 @@ type Message = {
 };
 
 export default function HomeScreen() {
-  const insets = useSafeAreaInsets();
+  const tabBarPadding = useTabBarPadding(12);
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -110,7 +110,7 @@ export default function HomeScreen() {
     }
   };
 
-  const bottomPad = 96 + Math.max(insets.bottom, 8);
+  const bottomPad = tabBarPadding;
 
   return (
     <ScreenLayout showBrand={false} contentStyle={styles.screenContent}>
@@ -141,7 +141,7 @@ export default function HomeScreen() {
           )}
         </ScrollView>
 
-        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) + 74 }]}>
+        <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
             placeholder="Ask anything..."

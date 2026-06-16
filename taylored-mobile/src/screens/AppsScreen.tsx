@@ -2,14 +2,14 @@ import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Bot, AppWindow, Briefcase } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
 
 export default function AppsScreen() {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
+  const tabBarPadding = useTabBarPadding(24);
 
   return (
     <ScreenLayout
@@ -19,7 +19,7 @@ export default function AppsScreen() {
     >
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: tabBarPadding }}
       >
         <TouchableOpacity
           style={styles.appCard}
