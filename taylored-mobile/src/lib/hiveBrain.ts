@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { buildTriageSystemPrompt } from '../constants/hivePrompt';
+import { buildTriageSystemPrompt } from '../lib/hivePromptBuilder';
 import type { HiveTask } from './hiveApi';
 import type { ActiveLlmConfig } from './settings';
 

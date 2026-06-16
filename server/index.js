@@ -7,6 +7,7 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
 import { triageHiveTask, spawnCursorAgent, startCursorRunPoller } from './hiveOrchestrator.js';
+import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -827,6 +828,15 @@ app.get('/api/hive/status', (_req, res) => {
       : cursorConfigured
         ? 'Hive + Cursor ready'
         : 'Hive ready; set CURSOR_API_KEY to enable builds',
+  });
+});
+
+app.get('/api/hive/mission', (_req, res) => {
+  const markdown = loadHiveMissionMarkdown();
+  return res.json({
+    version: '1.0',
+    markdown,
+    updatedAt: new Date().toISOString(),
   });
 });
 

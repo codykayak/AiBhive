@@ -4,10 +4,12 @@ import { StatusBar } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ResponsiveShell } from './src/components/ResponsiveShell';
 import { checkForOtaUpdate } from './src/lib/otaUpdates';
+import { preloadHiveMission } from './src/lib/hiveMission';
 import { colors } from './src/theme/colors';
 
 export default function App() {
   useEffect(() => {
+    void preloadHiveMission();
     void checkForOtaUpdate();
   }, []);
 

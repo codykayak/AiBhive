@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { getToolsManifestForPrompt, HIVE_REPO } from './hiveTools.js';
+import { getMissionPromptBlock } from '../shared/hiveMission.js';
 
 const TRIAGE_MODEL = process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash';
 const CURSOR_API = 'https://api.cursor.com/v1';
@@ -41,11 +42,9 @@ export async function triageHiveTask(message) {
     };
   }
 
-  const system = `You are the AiBhive Hive orchestrator. Decide if a user request can be handled by EXISTING app tools or needs a CODE CHANGE (new screen, feature, integration, dependency).
+  const system = `${getMissionPromptBlock('triage')}
 
-CURSOR BUILD AGENT:
-- When route=cursor, a Cursor Cloud Agent will edit github.com/codykayak/AiBhive and open a PR after user approval.
-- Questions about Cursor API access → route=local, explain Hive Magic approve flow.
+You are the AiBhive Hive orchestrator. Decide if a user request can be handled by EXISTING app tools or needs a CODE CHANGE (new screen, feature, integration, dependency).
 
 Existing tools:
 ${getToolsManifestForPrompt()}
@@ -114,7 +113,8 @@ export async function spawnCursorAgent(buildPrompt, taskId) {
 
   const agentPrompt = `${buildPrompt}
 
-Context: This is for the AiBhive Taylored Mobile app (taylored-mobile/) and Express backend (server/).
+${getMissionPromptBlock('cursor')}
+
 Task ID: ${taskId}
 Match existing amber/dark theme in taylored-mobile/src/theme/colors.ts.
 Keep changes focused. Open a PR when done.`;

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ActiveLlmConfig } from './settings';
-import { buildSystemInstruction, type AiBehaviorPrefs } from '../constants/hivePrompt';
+import { buildSystemInstruction, type AiBehaviorPrefs } from './hivePromptBuilder';
 
 export type ChatTurn = { role: 'user' | 'ai'; content: string };
 
