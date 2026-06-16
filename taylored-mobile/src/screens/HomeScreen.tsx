@@ -1,8 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ImageBackground, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { Send } from 'lucide-react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { Send, Sparkles } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ScreenLayout } from '../components/ScreenLayout';
+import { colors, radii, spacing } from '../theme/colors';
+import { GEMINI_MODEL } from '../lib/ai';
 
 type Message = {
   id: string;
@@ -11,9 +25,14 @@ type Message = {
 };
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', role: 'ai', content: 'Hello. I am ready. How can I assist you today?' }
+    {
+      id: '1',
+      role: 'ai',
+      content: 'Welcome to AiBhive Mobile. I can help you brainstorm applications, outreach, and career moves. Add your Gemini API key in Settings to get started.',
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [provider, setProvider] = useState('Gemini');
@@ -24,7 +43,7 @@ export default function HomeScreen() {
       if (p) setProvider(p);
     };
     checkProvider();
-    const interval = setInterval(checkProvider, 2000);
+    const interval = setInterval(checkProvider, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -32,84 +51,183 @@ export default function HomeScreen() {
     if (!inputText.trim()) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content: inputText.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInputText('');
     setIsLoading(true);
 
     try {
       const apiKey = await SecureStore.getItemAsync(`api_key_${provider.toLowerCase()}`);
       if (!apiKey) {
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: `Please configure your ${provider} API key in Settings.` }]);
-        setIsLoading(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'ai',
+            content: `Add your ${provider} API key in Settings to unlock the hive.`,
+          },
+        ]);
         return;
       }
 
       if (provider === 'Gemini') {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
         const chat = model.startChat({
-            history: messages.filter(m => m.id !== '1').map(m => ({
-                role: m.role === 'ai' ? 'model' : 'user',
-                parts: [{ text: m.content }]
-            }))
+          history: messages
+            .filter((m) => m.id !== '1')
+            .map((m) => ({
+              role: m.role === 'ai' ? 'model' : 'user',
+              parts: [{ text: m.content }],
+            })),
         });
 
         const result = await chat.sendMessage(userMsg.content);
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: result.response.text() }]);
+        setMessages((prev) => [
+          ...prev,
+          { id: Date.now().toString(), role: 'ai', content: result.response.text() },
+        ]);
       } else {
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: `Mock response from ${provider}. Integration coming soon.` }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'ai',
+            content: `${provider} support is coming soon. Switch to Gemini in Settings for full chat.`,
+          },
+        ]);
       }
-    } catch (error) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', content: 'Error communicating with the AI. Please check your API key.' }]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'ai',
+          content: 'Connection failed. Double-check your API key in Settings.',
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const bottomPad = 96 + Math.max(insets.bottom, 8);
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ImageBackground source={require('../../assets/background.jpg')} style={styles.background}>
-        <View style={styles.overlay}>
-          <ScrollView style={styles.chatContainer} contentContainerStyle={{ padding: 20 }}>
-            {messages.map(msg => (
-              <View key={msg.id} style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
-                <Text style={styles.messageText}>{msg.content}</Text>
-              </View>
-            ))}
-            {isLoading && (
-              <View style={[styles.messageBubble, styles.aiBubble, { alignSelf: 'flex-start' }]}>
-                <ActivityIndicator color="#00e5ff" />
-              </View>
-            )}
-          </ScrollView>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Communicate..."
-              placeholderTextColor="#666"
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-            />
-            <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
-              <Send color="#000" size={20} />
-            </TouchableOpacity>
-          </View>
+    <ScreenLayout showBrand={false} contentStyle={styles.screenContent}>
+      <View style={styles.hero}>
+        <Sparkles color={colors.amberLight} size={18} />
+        <Text style={styles.heroTitle}>AiBhive Assistant</Text>
+      </View>
+      <Text style={styles.heroSubtitle}>Your pocket career co-pilot</Text>
+
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          style={styles.chatContainer}
+          contentContainerStyle={[styles.chatContent, { paddingBottom: bottomPad }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {messages.map((msg) => (
+            <View
+              key={msg.id}
+              style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}
+            >
+              <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.content}</Text>
+            </View>
+          ))}
+          {isLoading && (
+            <View style={[styles.messageBubble, styles.aiBubble, styles.loadingBubble]}>
+              <ActivityIndicator color={colors.amberLight} />
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 10) + 74 }]}>
+          <TextInput
+            style={styles.input}
+            placeholder="Ask anything..."
+            placeholderTextColor={colors.textDim}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+          />
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
+            <Send color={colors.black} size={20} />
+          </TouchableOpacity>
         </View>
-      </ImageBackground>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  background: { flex: 1, resizeMode: 'cover' },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', paddingTop: 50 },
+  screenContent: {
+    paddingHorizontal: spacing.md,
+  },
+  flex: { flex: 1 },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: spacing.sm,
+  },
+  heroTitle: {
+    color: colors.amberLight,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  heroSubtitle: {
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+    marginTop: 4,
+  },
   chatContainer: { flex: 1 },
-  messageBubble: { maxWidth: '85%', padding: 15, borderRadius: 15, marginBottom: 15 },
-  userBubble: { backgroundColor: '#00e5ff', alignSelf: 'flex-end', borderBottomRightRadius: 0 },
-  aiBubble: { backgroundColor: '#1a1a1a', alignSelf: 'flex-start', borderBottomLeftRadius: 0, borderWidth: 1, borderColor: '#333' },
-  messageText: { color: '#fff', fontSize: 16 },
-  inputContainer: { flexDirection: 'row', padding: 15, backgroundColor: '#121212', borderTopWidth: 1, borderTopColor: '#333', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: '#1a1a1a', color: '#fff', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 10, fontSize: 16, maxHeight: 100, minHeight: 40 },
-  sendButton: { backgroundColor: '#00e5ff', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
+  chatContent: { paddingTop: spacing.sm },
+  messageBubble: {
+    maxWidth: '88%',
+    padding: 14,
+    borderRadius: radii.md,
+    marginBottom: 12,
+  },
+  userBubble: {
+    backgroundColor: colors.amber,
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
+  },
+  aiBubble: {
+    backgroundColor: colors.bgCard,
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+  },
+  loadingBubble: { alignSelf: 'flex-start' },
+  messageText: { color: colors.text, fontSize: 16, lineHeight: 22 },
+  userText: { color: colors.black, fontWeight: '600' },
+  inputContainer: {
+    flexDirection: 'row',
+    paddingTop: 12,
+    alignItems: 'flex-end',
+    gap: 10,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: colors.bgInput,
+    color: colors.text,
+    borderRadius: radii.pill,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 16,
+    maxHeight: 110,
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+  },
+  sendButton: {
+    backgroundColor: colors.amber,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

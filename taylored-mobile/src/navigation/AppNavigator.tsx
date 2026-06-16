@@ -7,22 +7,37 @@ import JewlesWebViewScreen from '../screens/JewlesWebViewScreen';
 import AutoBotResumeScreen from '../screens/AutoBotResumeScreen';
 import AutoBotResumeResultScreen from '../screens/AutoBotResumeResultScreen';
 import DeeperScreen from '../screens/DeeperScreen';
+import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
 
-const HighTechDarkTheme = {
+const AiBhiveTheme = {
   ...DarkTheme,
-  colors: { ...DarkTheme.colors, background: '#0a0a0a', card: '#121212', text: '#ffffff', border: '#333333', primary: '#00e5ff' },
+  colors: {
+    ...DarkTheme.colors,
+    background: colors.bg,
+    card: colors.bgElevated,
+    text: colors.text,
+    border: colors.borderMuted,
+    primary: colors.amber,
+  },
 };
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer theme={HighTechDarkTheme}>
-      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor: '#121212' }, headerTintColor: '#00e5ff', headerTitleStyle: { fontWeight: 'bold' } }}>
+    <NavigationContainer theme={AiBhiveTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.bgElevated },
+          headerTintColor: colors.amberLight,
+          headerTitleStyle: { fontWeight: '800' },
+          contentStyle: { backgroundColor: colors.bg },
+        }}
+      >
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
         <Stack.Screen name="JewlesWebView" component={JewlesWebViewScreen} options={{ title: 'Jewles' }} />
-        <Stack.Screen name="AutoBotResume" component={AutoBotResumeScreen} options={{ title: 'auto-bot=resume' }} />
-        <Stack.Screen name="AutoBotResumeResult" component={AutoBotResumeResultScreen} options={{ title: 'Application' }} />
+        <Stack.Screen name="AutoBotResume" component={AutoBotResumeScreen} options={{ title: 'Auto-Bot Resume' }} />
+        <Stack.Screen name="AutoBotResumeResult" component={AutoBotResumeResultScreen} options={{ title: 'Application Kit' }} />
         <Stack.Screen name="Deeper" component={DeeperScreen} options={{ title: 'Company Intel' }} />
       </Stack.Navigator>
     </NavigationContainer>
