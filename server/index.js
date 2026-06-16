@@ -6,6 +6,7 @@ import admin from 'firebase-admin';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
+import { triageHiveTask, spawnCursorAgent, startCursorRunPoller } from './hiveOrchestrator.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -808,6 +809,100 @@ app.post('/api/create-checkout-session', async (req, res) => {
   } catch (err) {
     console.error('[checkout] failed:', err);
     return res.status(500).json({ error: err.message || 'Checkout failed.' });
+  }
+});
+
+// --- Hive Magic: self-evolving task orchestrator ---
+const HIVE_TASKS = 'hive_tasks';
+
+app.post('/api/hive/tasks', async (req, res) => {
+  try {
+    const { message, userId } = req.body || {};
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Message is required.' });
+    }
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'Message is too long.' });
+    }
+
+    const triage = await triageHiveTask(message.trim());
+    const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+
+    let status = 'complete';
+    let reply = triage.localReply || triage.summary;
+
+    if (triage.route === 'clarify') {
+      status = 'clarify';
+      reply = triage.clarifyingQuestion || triage.summary;
+    } else if (triage.route === 'cursor') {
+      status = 'awaiting_approval';
+      reply = `I don't have that yet. I can ask our build agent to add it.\n\n**${triage.summary}**\n\nEstimated cost: ~$${triage.estimate?.costUsd ?? 3}\nEstimated time: ~${triage.estimate?.minutes ?? 20} min\n\nTap Approve to start building.`;
+    }
+
+    const doc = {
+      id: taskId,
+      message: message.trim(),
+      userId: userId || 'anonymous',
+      route: triage.route,
+      status,
+      summary: triage.summary,
+      estimate: triage.estimate || null,
+      buildPrompt: triage.buildPrompt || message.trim(),
+      reply,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.collection(HIVE_TASKS).doc(taskId).set(doc);
+    return res.json({ task: doc });
+  } catch (err) {
+    console.error('[hive/tasks] create error:', err);
+    return res.status(500).json({ error: err.message || 'Hive task failed.' });
+  }
+});
+
+app.get('/api/hive/tasks/:taskId', async (req, res) => {
+  try {
+    const snap = await db.collection(HIVE_TASKS).doc(req.params.taskId).get();
+    if (!snap.exists) return res.status(404).json({ error: 'Task not found.' });
+    return res.json({ task: snap.data() });
+  } catch (err) {
+    console.error('[hive/tasks] get error:', err);
+    return res.status(500).json({ error: 'Could not load task.' });
+  }
+});
+
+app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
+  try {
+    const ref = db.collection(HIVE_TASKS).doc(req.params.taskId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Task not found.' });
+
+    const task = snap.data();
+    if (task.status !== 'awaiting_approval') {
+      return res.status(400).json({ error: 'Task is not awaiting approval.' });
+    }
+
+    const cursor = await spawnCursorAgent(task.buildPrompt || task.message, task.id);
+    const now = new Date().toISOString();
+
+    await ref.update({
+      status: 'building',
+      cursorAgentId: cursor.agentId,
+      cursorRunId: cursor.runId,
+      cursorAgentUrl: cursor.agentUrl,
+      reply: 'Build agent started. I will ping you when it is ready.',
+      approvedAt: now,
+      updatedAt: now,
+    });
+
+    startCursorRunPoller(db, task.id);
+    const updated = (await ref.get()).data();
+    return res.json({ task: updated });
+  } catch (err) {
+    console.error('[hive/tasks] approve error:', err);
+    return res.status(500).json({ error: err.message || 'Could not start build agent.' });
   }
 });
 

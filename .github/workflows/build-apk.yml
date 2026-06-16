@@ -77,5 +77,8 @@ jobs:
             git push
           fi
 
+      - name: 📦 Install root deps (Firebase publish script)
+        run: npm ci
+
       - name: 📲 Publish Firebase download mirror
         run: node scripts/publish-apk-firebase.mjs

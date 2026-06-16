@@ -95,7 +95,7 @@ export default function SettingsScreen() {
         />
 
         <PrimaryButton label="Save Settings" onPress={saveKeys} style={styles.saveButton} />
-        <Text style={styles.version}>App version 1.0.1</Text>
+        <Text style={styles.version}>App version 1.0.2</Text>
       </ScrollView>
     </ScreenLayout>
   );
