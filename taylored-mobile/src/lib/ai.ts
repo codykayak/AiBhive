@@ -19,3 +19,11 @@ export {
 } from './settings';
 
 export { generateWithParts, sendChatMessage, type ChatTurn } from './llm';
+
+export {
+  loadAiBehavior,
+  saveAiBehavior,
+  setCustomInstructions,
+  setMaxOutputTokens,
+  setResponseStyle,
+} from './aiBehavior';

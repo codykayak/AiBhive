@@ -13,9 +13,28 @@ export type HiveTask = {
   summary?: string;
   estimate?: HiveEstimate | null;
   reply?: string;
+  buildPrompt?: string;
   prUrl?: string;
   cursorAgentUrl?: string;
+  source?: 'server' | 'local';
 };
+
+export type HiveStatus = {
+  online: boolean;
+  cursorConfigured: boolean;
+  triageModel: string;
+  message: string;
+};
+
+export async function getHiveStatus(): Promise<HiveStatus | null> {
+  try {
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/status`);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export async function createHiveTask(message: string, userId: string): Promise<HiveTask> {
   const res = await fetch(`${HIVE_API_BASE}/api/hive/tasks`, {

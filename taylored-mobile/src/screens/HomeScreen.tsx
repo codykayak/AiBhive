@@ -15,10 +15,14 @@ import { Send, Sparkles, Wand2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
+import { loadAiBehavior } from '../lib/aiBehavior';
+import { triageLocally, localTaskToHiveTask } from '../lib/hiveBrain';
+import { dingFeatureReady, ensureNotificationPermission } from '../lib/notifications';
 import { AI_PROVIDERS } from '../constants/providers';
 import {
   approveHiveTask,
   createHiveTask,
+  getHiveStatus,
   getHiveTask,
   getOrCreateHiveUserId,
   type HiveTask,
@@ -46,7 +50,15 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeLabel, setActiveLabel] = useState('Gemini');
   const [magicMode, setMagicMode] = useState(true);
+  const [hiveStatus, setHiveStatus] = useState<string>('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    void ensureNotificationPermission();
+    getHiveStatus().then((s) => {
+      if (s) setHiveStatus(s.message);
+    });
+  }, []);
 
   useEffect(() => {
     const refresh = async () => {
@@ -84,6 +96,7 @@ export default function HomeScreen() {
           updateMessageTask(taskId, task);
           if (task.status === 'complete') {
             dingReady();
+            void dingFeatureReady();
             if (pollRef.current) clearInterval(pollRef.current);
           } else if (task.status === 'failed') {
             if (pollRef.current) clearInterval(pollRef.current);
@@ -99,9 +112,15 @@ export default function HomeScreen() {
   const handleApprove = async (task: HiveTask) => {
     setIsLoading(true);
     try {
-      const approved = await approveHiveTask(task.id);
-      updateMessageTask(task.id, approved);
-      startPolling(task.id);
+      let taskId = task.id;
+      if (task.source === 'local' || !taskId.startsWith('hive_')) {
+        const userId = await getOrCreateHiveUserId();
+        const serverTask = await createHiveTask(task.buildPrompt || task.message, userId);
+        taskId = serverTask.id;
+      }
+      const approved = await approveHiveTask(taskId);
+      updateMessageTask(task.id, { ...approved, id: taskId, source: 'server' });
+      startPolling(taskId);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not start build';
       updateMessageTask(task.id, {
@@ -128,17 +147,21 @@ export default function HomeScreen() {
       return;
     }
 
+    const behavior = await loadAiBehavior();
     const history = messages
       .filter((m) => m.id !== '1' && !m.task)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    const reply = await sendChatMessage(config, history, userMsg.content);
+    const reply = await sendChatMessage(config, history, userMsg.content, {
+      behavior,
+      magicMode,
+    });
     setMessages((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
         role: 'ai',
-        content: `${reply}\n\n— ${config.providerLabel} · ${config.model}`,
+        content: reply,
       },
     ]);
   };
@@ -153,21 +176,25 @@ export default function HomeScreen() {
 
     try {
       if (magicMode) {
+        const userId = await getOrCreateHiveUserId();
+        let task: HiveTask;
         try {
-          const userId = await getOrCreateHiveUserId();
-          const task = await createHiveTask(userMsg.content, userId);
-          const aiMsg: Message = {
-            id: `${Date.now()}_ai`,
-            role: 'ai',
-            content: task.reply || task.summary || 'Working on it…',
-            task,
-          };
-          setMessages((prev) => [...prev, aiMsg]);
-          if (task.status === 'building') startPolling(task.id);
-          return;
+          task = { ...(await createHiveTask(userMsg.content, userId)), source: 'server' };
         } catch {
-          // Hive API not deployed yet — fall through to local Gemini
+          const config = await getActiveLlmConfig();
+          if (!config) throw new Error('No API key');
+          const partial = await triageLocally(config, userMsg.content);
+          task = { ...localTaskToHiveTask(userMsg.content, partial), source: 'local' };
         }
+        const aiMsg: Message = {
+          id: `${Date.now()}_ai`,
+          role: 'ai',
+          content: task.reply || task.summary || 'Working on it…',
+          task,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+        if (task.status === 'building') startPolling(task.id);
+        return;
       }
       await runLocalChat(userMsg);
     } catch {
@@ -205,8 +232,8 @@ export default function HomeScreen() {
       </View>
       <Text style={styles.heroSubtitle}>
         {magicMode
-          ? `Hive Magic ON · active: ${activeLabel}. Approve estimates, wait for the ding.`
-          : `Chat mode · ${activeLabel}. Toggle Magic ON to auto-build features.`}
+          ? `Hive Magic ON · ${activeLabel}${hiveStatus ? ` · ${hiveStatus}` : ''}`
+          : `Chat mode · ${activeLabel}. Toggle Magic ON for Cursor builds.`}
       </Text>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
