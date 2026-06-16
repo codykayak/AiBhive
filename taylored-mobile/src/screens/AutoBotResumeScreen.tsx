@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,11 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
-import { Upload, Camera, FileText, Link2 } from 'lucide-react-native';
+import { Camera, FileText, Link2, ImagePlus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { PrimaryButton } from '../components/ui';
+import { createJobDraft } from '../lib/jobs';
 import { colors, radii, spacing } from '../theme/colors';
 
 export default function AutoBotResumeScreen() {
@@ -45,24 +46,76 @@ export default function AutoBotResumeScreen() {
     }
   };
 
-  const pickJobImage = async () => {
+  const addImageUri = (uri: string) => {
+    setJobImages((prev) => [...prev, uri]);
+  };
+
+  const pickFromLibrary = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to attach job listing screenshots.');
+      Alert.alert('Permission needed', 'Allow photo access in Settings to attach job screenshots.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: false,
-      quality: 0.9,
+      quality: 0.85,
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
     });
+
     if (!result.canceled && result.assets?.length) {
-      setJobImages((prev) => [...prev, result.assets[0].uri]);
+      result.assets.forEach((a) => addImageUri(a.uri));
     }
   };
 
-  const handleGenerate = () => {
+  const pickFromCamera = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Allow camera access to capture job listing screenshots.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+    });
+
+    if (!result.canceled && result.assets?.length) {
+      addImageUri(result.assets[0].uri);
+    }
+  };
+
+  const pickFromFiles = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*'],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+      if (!result.canceled && result.assets?.length) {
+        result.assets.forEach((a) => addImageUri(a.uri));
+      }
+    } catch (err: unknown) {
+      Alert.alert('Upload failed', err instanceof Error ? err.message : 'Could not open file picker.');
+    }
+  };
+
+  const pickJobImage = () => {
+    Alert.alert('Add job screenshot', 'Choose a source', [
+      { text: 'Photo library', onPress: () => void pickFromLibrary() },
+      { text: 'Camera', onPress: () => void pickFromCamera() },
+      { text: 'Browse files (DeX)', onPress: () => void pickFromFiles() },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const removeImage = (index: number) => {
+    setJobImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGenerate = async () => {
     if (!name.trim()) {
       Alert.alert('Missing info', 'Enter your full name.');
       return;
@@ -77,22 +130,38 @@ export default function AutoBotResumeScreen() {
     }
 
     setLoading(true);
-    navigation.navigate('AutoBotResumeResult', {
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      history: history.trim(),
-      jobUrl: jobUrl.trim(),
-      resumeUri,
-      jobImages,
-    });
-    setLoading(false);
+    try {
+      const job = await createJobDraft({
+        candidateName: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        jobUrl: jobUrl.trim(),
+        notes: history.trim(),
+        resumeUri: resumeUri || undefined,
+        screenshotUris: jobImages,
+      });
+
+      navigation.navigate('AutoBotResumeResult', {
+        jobId: job.id,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        history: history.trim(),
+        jobUrl: jobUrl.trim(),
+        resumeUri,
+        jobImages: job.screenshotUris,
+      });
+    } catch {
+      Alert.alert('Error', 'Could not save job draft. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <ScreenLayout
       title="Auto-Bot Resume"
-      subtitle="Drop in a job listing and your background. We will craft a tailored application kit."
+      subtitle="Drop in a job listing and your background. We save each application to your Job Tracker."
       showBrand={false}
       contentStyle={styles.content}
     >
@@ -168,22 +237,32 @@ export default function AutoBotResumeScreen() {
           <Text style={styles.label}>Job Listing Screenshots</Text>
           <TouchableOpacity style={styles.uploadButton} onPress={pickJobImage}>
             <Camera color={colors.amberLight} size={22} />
-            <Text style={styles.uploadText}>Add screenshot</Text>
+            <Text style={styles.uploadText}>Add screenshot (gallery, camera, or files)</Text>
           </TouchableOpacity>
           <View style={styles.imageGrid}>
             {jobImages.map((uri, index) => (
-              <Image key={`${uri}-${index}`} source={{ uri }} style={styles.thumbnail} />
+              <TouchableOpacity key={`${uri}-${index}`} onLongPress={() => removeImage(index)}>
+                <Image source={{ uri }} style={styles.thumbnail} />
+              </TouchableOpacity>
             ))}
           </View>
+          {jobImages.length > 0 && (
+            <Text style={styles.hint}>Long-press a thumbnail to remove it.</Text>
+          )}
         </View>
 
         <PrimaryButton
-          label={loading ? 'Launching...' : 'Generate Application Kit'}
+          label={loading ? 'Saving & launching...' : 'Generate Application Kit'}
           onPress={handleGenerate}
           disabled={loading}
           style={styles.generateButton}
         />
         {loading && <ActivityIndicator color={colors.amberLight} style={{ marginTop: 12 }} />}
+
+        <TouchableOpacity style={styles.trackerLink} onPress={() => navigation.navigate('JobTracker')}>
+          <ImagePlus color={colors.amberLight} size={18} />
+          <Text style={styles.trackerLinkText}>View saved jobs in Job Tracker</Text>
+        </TouchableOpacity>
       </ScrollView>
     </ScreenLayout>
   );
@@ -205,11 +284,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   textArea: { minHeight: 110, textAlignVertical: 'top' },
-  urlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
+  urlRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   urlInput: { flex: 1 },
   uploadButton: {
     flexDirection: 'row',
@@ -225,5 +300,15 @@ const styles = StyleSheet.create({
   uploadText: { color: colors.amberLight, fontSize: 15, fontWeight: '600', flex: 1 },
   imageGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, gap: 10 },
   thumbnail: { width: 84, height: 84, borderRadius: radii.sm, borderWidth: 1, borderColor: colors.border },
+  hint: { color: colors.textDim, fontSize: 12, marginTop: 6 },
   generateButton: { marginTop: spacing.sm },
+  trackerLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: spacing.lg,
+    paddingVertical: 12,
+  },
+  trackerLinkText: { color: colors.amberLight, fontWeight: '700' },
 });

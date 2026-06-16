@@ -15,6 +15,7 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard } from '../components/ui';
 import { AI_PROVIDERS, type ProviderId } from '../constants/providers';
 import {
+  DEFAULT_PREFS,
   getFirecrawlApiKey,
   getProviderApiKey,
   loadAiPrefs,
@@ -28,30 +29,53 @@ import {
 } from '../lib/ai';
 import { colors, radii, spacing } from '../theme/colors';
 
+const EMPTY_KEYS: Record<ProviderId, string> = {
+  gemini: '',
+  kimi: '',
+  grok: '',
+  claude: '',
+  custom: '',
+};
+
 export default function SettingsScreen() {
   const tabBarPadding = useTabBarPadding(24);
-  const [prefs, setPrefs] = useState<AiPrefs | null>(null);
-  const [keys, setKeys] = useState<Record<ProviderId, string>>({
-    gemini: '',
-    kimi: '',
-    grok: '',
-    claude: '',
-    custom: '',
-  });
+  const [prefs, setPrefs] = useState<AiPrefs>(() => ({
+    activeProviderId: DEFAULT_PREFS.activeProviderId,
+    providers: { ...DEFAULT_PREFS.providers },
+  }));
+  const [keys, setKeys] = useState(EMPTY_KEYS);
+  const [keysLoading, setKeysLoading] = useState(true);
   const [firecrawlKey, setFirecrawlKey] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
 
   const boot = useCallback(async () => {
-    const loaded = await loadAiPrefs();
-    setPrefs(loaded);
-    const fc = (await getFirecrawlApiKey()) || '';
-    setFirecrawlKey(fc);
-    const keyMap = {} as Record<ProviderId, string>;
-    for (const p of AI_PROVIDERS) {
-      keyMap[p.id] = (await getProviderApiKey(p.id)) || '';
+    setKeysLoading(true);
+    try {
+      const loaded = await loadAiPrefs();
+      setPrefs(loaded);
+    } catch {
+      setPrefs({
+        activeProviderId: DEFAULT_PREFS.activeProviderId,
+        providers: { ...DEFAULT_PREFS.providers },
+      });
     }
-    setKeys(keyMap);
+
+    try {
+      const fc = (await getFirecrawlApiKey()) || '';
+      setFirecrawlKey(fc);
+      const keyMap = { ...EMPTY_KEYS };
+      await Promise.all(
+        AI_PROVIDERS.map(async (p) => {
+          keyMap[p.id] = (await getProviderApiKey(p.id)) || '';
+        })
+      );
+      setKeys(keyMap);
+    } catch {
+      // Keys unavailable — UI still usable for toggles/models
+    } finally {
+      setKeysLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -105,14 +129,6 @@ export default function SettingsScreen() {
     flashSaved('Model');
   };
 
-  if (!prefs) {
-    return (
-      <ScreenLayout title="Settings" showBrand={false}>
-        <ActivityIndicator color={colors.amberLight} style={{ marginTop: 40 }} />
-      </ScreenLayout>
-    );
-  }
-
   return (
     <ScreenLayout
       title="Settings"
@@ -122,6 +138,9 @@ export default function SettingsScreen() {
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarPadding }}>
         {!!saveStatus && <Text style={styles.saved}>{saveStatus}</Text>}
+        {keysLoading && (
+          <ActivityIndicator color={colors.amberLight} style={{ marginBottom: spacing.sm }} />
+        )}
 
         <Text style={styles.sectionTitle}>AI providers</Text>
         {AI_PROVIDERS.map((def) => {
@@ -203,7 +222,7 @@ export default function SettingsScreen() {
         })}
 
         <Text style={styles.sectionTitle}>Firecrawl</Text>
-        <Text style={styles.hint}>Job URL scraping and company intel.</Text>
+        <Text style={styles.hint}>Job URL scraping and company research.</Text>
         <TextInput
           style={styles.input}
           placeholder="Firecrawl API key"

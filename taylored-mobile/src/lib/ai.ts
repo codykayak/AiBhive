@@ -13,6 +13,7 @@ export {
   setCustomModel,
   setProviderEnabled,
   setProviderModel,
+  DEFAULT_PREFS,
   type ActiveLlmConfig,
   type AiPrefs,
 } from './settings';

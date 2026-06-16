@@ -8,6 +8,7 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig, generateWithParts } from '../lib/ai';
+import { saveJobGenerated } from '../lib/jobs';
 import { mimeTypeForUri, readUriAsBase64 } from '../lib/files';
 import { scrapeJobPosting } from '../lib/jobIntel';
 
@@ -23,7 +24,7 @@ export default function AutoBotResumeResultScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { name, email, phone, history, jobUrl, resumeUri, jobImages } = route.params;
+  const { jobId, name, email, phone, history, jobUrl, resumeUri, jobImages } = route.params;
 
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('Preparing your application kit...');
@@ -110,6 +111,15 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
       setCoverLetter(extractSection(text, 'COVER LETTER', 'REWRITTEN RESUME') || 'Could not parse cover letter.');
       setRewrittenResume(extractSection(text, 'REWRITTEN RESUME', 'COLD EMAIL') || 'Could not parse resume rewrite.');
       setColdEmail(extractSection(text, 'COLD EMAIL') || text);
+
+      if (jobId) {
+        await saveJobGenerated(jobId, {
+          jobDetails: extractSection(text, 'JOB DETAILS', 'COVER LETTER') || '',
+          coverLetter: extractSection(text, 'COVER LETTER', 'REWRITTEN RESUME') || '',
+          rewrittenResume: extractSection(text, 'REWRITTEN RESUME', 'COLD EMAIL') || '',
+          coldEmail: extractSection(text, 'COLD EMAIL') || text,
+        });
+      }
     } catch (error) {
       console.error(error);
       Alert.alert('Generation failed', 'Check your API keys and try again with a clearer job listing.');
@@ -145,9 +155,17 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
 
         <PrimaryButton
           label="Find Decision Makers"
-          onPress={() => navigation.navigate('Deeper', { companyDetails: extractedJobDetails, coldEmail })}
+          onPress={() => navigation.navigate('Deeper', { jobId, companyDetails: extractedJobDetails, coldEmail })}
           style={styles.deeperButton}
         />
+        {!!jobId && (
+          <PrimaryButton
+            label="Open in Job Tracker"
+            variant="secondary"
+            onPress={() => navigation.navigate('JobDetail', { jobId })}
+            style={styles.deeperButton}
+          />
+        )}
         <TouchableOpacity style={styles.deeperHint} onPress={() => navigation.navigate('Deeper', { companyDetails: extractedJobDetails, coldEmail })}>
           <Text style={styles.deeperHintText}>Requires Firecrawl API key for web research</Text>
           <ChevronRight color={colors.amber} size={18} />

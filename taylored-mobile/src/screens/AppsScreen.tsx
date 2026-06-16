@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, ScrollView, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Bot, AppWindow, Briefcase, Wand2, Sparkles } from 'lucide-react-native';
+import { Bot, AppWindow, Briefcase, Wand2, Sparkles, FolderKanban } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton } from '../components/ui';
@@ -9,12 +9,20 @@ import { colors, radii, spacing } from '../theme/colors';
 
 const BUILT_IN_APPS = [
   {
+    id: 'tracker',
+    title: 'Job Tracker',
+    desc: 'Every application saved with cover letter, resume, status, and company research.',
+    icon: FolderKanban,
+    route: 'JobTracker',
+    tag: 'Core',
+  },
+  {
     id: 'resume',
     title: 'Auto-Bot Resume',
     desc: 'Tailor resume, cover letter, and cold email to any job.',
     icon: Bot,
     route: 'AutoBotResume',
-    tag: 'Example',
+    tag: 'Apply',
   },
   {
     id: 'jewles',
