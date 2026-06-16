@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, TextInput, ScrollView, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { PrimaryButton } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
@@ -9,7 +9,7 @@ import { colors, radii, spacing } from '../theme/colors';
 const AI_PROVIDERS = ['Gemini', 'Grok', 'Kimi', 'Claude', 'Custom'];
 
 export default function SettingsScreen() {
-  const insets = useSafeAreaInsets();
+  const tabBarPadding = useTabBarPadding(24);
   const [selectedAI, setSelectedAI] = useState('Gemini');
   const [aiKey, setAiKey] = useState('');
   const [firecrawlKey, setFirecrawlKey] = useState('');
@@ -57,7 +57,7 @@ export default function SettingsScreen() {
       subtitle="Connect your AI providers. Gemini powers resume generation; Firecrawl unlocks company intel."
       contentStyle={styles.content}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarPadding }}>
         <Text style={styles.sectionTitle}>AI Provider</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.providerRow}>
           {AI_PROVIDERS.map((provider) => (
@@ -95,6 +95,7 @@ export default function SettingsScreen() {
         />
 
         <PrimaryButton label="Save Settings" onPress={saveKeys} style={styles.saveButton} />
+        <Text style={styles.version}>App version 1.0.1</Text>
       </ScrollView>
     </ScreenLayout>
   );
@@ -135,5 +136,11 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     marginTop: spacing.xl,
+  },
+  version: {
+    color: colors.textDim,
+    textAlign: 'center',
+    marginTop: spacing.md,
+    fontSize: 12,
   },
 });
