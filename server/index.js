@@ -815,6 +815,21 @@ app.post('/api/create-checkout-session', async (req, res) => {
 // --- Hive Magic: self-evolving task orchestrator ---
 const HIVE_TASKS = 'hive_tasks';
 
+app.get('/api/hive/status', (_req, res) => {
+  const cursorConfigured = !!process.env.CURSOR_API_KEY;
+  const geminiConfigured = !!process.env.GEMINI_API_KEY;
+  return res.json({
+    online: geminiConfigured,
+    cursorConfigured,
+    triageModel: process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash',
+    message: !geminiConfigured
+      ? 'Server missing GEMINI_API_KEY'
+      : cursorConfigured
+        ? 'Hive + Cursor ready'
+        : 'Hive ready; set CURSOR_API_KEY to enable builds',
+  });
+});
+
 app.post('/api/hive/tasks', async (req, res) => {
   try {
     const { message, userId } = req.body || {};

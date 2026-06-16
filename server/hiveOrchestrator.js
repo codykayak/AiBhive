@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { getToolsManifestForPrompt, HIVE_REPO } from './hiveTools.js';
 
-const TRIAGE_MODEL = process.env.HIVE_TRIAGE_MODEL || 'gemini-2.0-flash';
+const TRIAGE_MODEL = process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash';
 const CURSOR_API = 'https://api.cursor.com/v1';
 
 let aiClient;
@@ -43,6 +43,10 @@ export async function triageHiveTask(message) {
 
   const system = `You are the AiBhive Hive orchestrator. Decide if a user request can be handled by EXISTING app tools or needs a CODE CHANGE (new screen, feature, integration, dependency).
 
+CURSOR BUILD AGENT:
+- When route=cursor, a Cursor Cloud Agent will edit github.com/codykayak/AiBhive and open a PR after user approval.
+- Questions about Cursor API access → route=local, explain Hive Magic approve flow.
+
 Existing tools:
 ${getToolsManifestForPrompt()}
 
@@ -51,15 +55,16 @@ Respond ONLY with JSON (no markdown outside the object):
   "route": "local" | "cursor" | "clarify",
   "summary": "one sentence for the user",
   "estimate": { "costUsd": number, "minutes": number },
-  "localReply": "helpful answer if route is local — tell them which App to open if relevant",
+  "localReply": "SHORT answer if route is local (max 80 words)",
   "clarifyingQuestion": "only if route is clarify",
   "buildPrompt": "detailed implementation prompt for a coding agent if route is cursor"
 }
 
 Rules:
-- route=local if existing tools suffice (even if user must open Apps tab).
+- route=local if existing tools suffice OR user asks how Cursor/Hive Magic works.
 - route=cursor if new UI, new feature, new API integration, or missing capability.
 - route=clarify if request is vague.
+- localReply must be concise — never write essays.
 - estimate.costUsd: $1–8 for small UI, $5–25 for medium features.
 - estimate.minutes: 10–45 typical.
 - buildPrompt must reference taylored-mobile/ for mobile UI and server/ for backend.`;

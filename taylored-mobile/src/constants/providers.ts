@@ -18,10 +18,10 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: 'gemini',
     label: 'Gemini',
     keyHint: 'Google AI Studio API key',
-    defaultModel: 'gemini-2.0-flash',
+    defaultModel: 'gemini-2.5-flash',
     models: [
-      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (fast)' },
-      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (fast)' },
+      { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
     ],
   },

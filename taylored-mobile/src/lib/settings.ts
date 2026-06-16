@@ -23,7 +23,7 @@ export type AiPrefs = {
 export const DEFAULT_PREFS: AiPrefs = {
   activeProviderId: 'gemini',
   providers: {
-    gemini: { enabled: true, model: 'gemini-2.0-flash' },
+    gemini: { enabled: true, model: 'gemini-2.5-flash' },
     kimi: { enabled: false, model: 'kimi-k2.6' },
     grok: { enabled: false, model: 'grok-3-mini' },
     claude: { enabled: false, model: 'claude-sonnet-4-20250514' },

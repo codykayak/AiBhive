@@ -6,6 +6,16 @@ export const HIVE_TOOLS = [
     capabilities: ['brainstorm', 'career advice', 'general questions', 'writing help'],
   },
   {
+    id: 'hive_magic',
+    name: 'Hive Magic + Cursor Build Agent',
+    capabilities: [
+      'spawn Cursor Cloud Agent on GitHub',
+      'build new app features after user approval',
+      'estimate cost and time',
+      'open PR when build completes',
+    ],
+  },
+  {
     id: 'auto_bot_resume',
     name: 'Auto-Bot Resume',
     capabilities: [

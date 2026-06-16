@@ -2,7 +2,14 @@
   "expo": {
     "name": "taylored-mobile",
     "slug": "taylored-mobile",
-    "version": "1.0.5",
+    "version": "1.0.6",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -30,6 +37,13 @@
         {
           "photosPermission": "Allow photo access to attach job listing screenshots.",
           "cameraPermission": "Allow camera access to capture job listing screenshots."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#f59e0b"
         }
       ]
     ],

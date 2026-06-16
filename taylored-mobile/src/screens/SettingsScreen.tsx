@@ -27,6 +27,20 @@ import {
   setProviderModel,
   type AiPrefs,
 } from '../lib/ai';
+import {
+  loadAiBehavior,
+  saveAiBehavior,
+  setCustomInstructions,
+  setMaxOutputTokens,
+  setResponseStyle,
+} from '../lib/aiBehavior';
+import {
+  DEFAULT_BEHAVIOR,
+  MAX_TOKEN_OPTIONS,
+  RESPONSE_STYLE_HINTS,
+  type AiBehaviorPrefs,
+  type ResponseStyle,
+} from '../constants/hivePrompt';
 import { colors, radii, spacing } from '../theme/colors';
 
 const EMPTY_KEYS: Record<ProviderId, string> = {
@@ -46,8 +60,10 @@ export default function SettingsScreen() {
   const [keys, setKeys] = useState(EMPTY_KEYS);
   const [keysLoading, setKeysLoading] = useState(true);
   const [firecrawlKey, setFirecrawlKey] = useState('');
+  const [behavior, setBehavior] = useState<AiBehaviorPrefs>(() => ({ ...DEFAULT_BEHAVIOR }));
   const [saveStatus, setSaveStatus] = useState('');
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
+  const instructionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const boot = useCallback(async () => {
     setKeysLoading(true);
@@ -59,6 +75,13 @@ export default function SettingsScreen() {
         activeProviderId: DEFAULT_PREFS.activeProviderId,
         providers: { ...DEFAULT_PREFS.providers },
       });
+    }
+
+    try {
+      const loadedBehavior = await loadAiBehavior();
+      setBehavior(loadedBehavior);
+    } catch {
+      setBehavior({ ...DEFAULT_BEHAVIOR });
     }
 
     try {
@@ -127,6 +150,33 @@ export default function SettingsScreen() {
     const next = await setProviderModel(id, model);
     setPrefs(next);
     flashSaved('Model');
+  };
+
+  const onPickResponseStyle = async (style: ResponseStyle) => {
+    const next = await setResponseStyle(style);
+    setBehavior(next);
+    flashSaved('Response style');
+  };
+
+  const onPickMaxTokens = async (tokens: number) => {
+    const next = await setMaxOutputTokens(tokens);
+    setBehavior(next);
+    flashSaved('Max length');
+  };
+
+  const onCustomInstructionsChange = (text: string) => {
+    setBehavior((prev) => ({ ...prev, customInstructions: text }));
+    if (instructionsTimer.current) clearTimeout(instructionsTimer.current);
+    instructionsTimer.current = setTimeout(async () => {
+      await setCustomInstructions(text);
+      flashSaved('AI instructions');
+    }, 500);
+  };
+
+  const onResetBehavior = async () => {
+    await saveAiBehavior({ ...DEFAULT_BEHAVIOR });
+    setBehavior({ ...DEFAULT_BEHAVIOR });
+    flashSaved('Defaults restored');
   };
 
   return (
@@ -220,6 +270,63 @@ export default function SettingsScreen() {
             </GlassCard>
           );
         })}
+
+        <Text style={styles.sectionTitle}>AI behavior</Text>
+        <GlassCard style={styles.providerCard}>
+          <Text style={styles.fieldLabel}>Custom instructions</Text>
+          <Text style={styles.hint}>
+            Tell the AI how to behave — e.g. keep answers short, focus on Hive Magic, avoid long essays.
+          </Text>
+          <TextInput
+            style={[styles.input, styles.instructionsInput]}
+            placeholder="Example: Answer in 1-2 sentences. Mention Cursor builds when asked about app features."
+            placeholderTextColor={colors.textDim}
+            value={behavior.customInstructions}
+            onChangeText={onCustomInstructionsChange}
+            multiline
+            textAlignVertical="top"
+          />
+
+          <Text style={styles.fieldLabel}>Response length</Text>
+          <View style={styles.chipRow}>
+            {(['concise', 'balanced', 'detailed'] as ResponseStyle[]).map((style) => (
+              <TouchableOpacity
+                key={style}
+                style={[styles.modelChip, behavior.responseStyle === style && styles.modelChipOn]}
+                onPress={() => onPickResponseStyle(style)}
+              >
+                <Text
+                  style={[styles.modelChipText, behavior.responseStyle === style && styles.modelChipTextOn]}
+                >
+                  {style.charAt(0).toUpperCase() + style.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.hint}>{RESPONSE_STYLE_HINTS[behavior.responseStyle]}</Text>
+
+          <Text style={styles.fieldLabel}>Max tokens</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.modelRow}>
+            {MAX_TOKEN_OPTIONS.map((n) => (
+              <TouchableOpacity
+                key={n}
+                style={[styles.modelChip, behavior.maxOutputTokens === n && styles.modelChipOn]}
+                onPress={() => onPickMaxTokens(n)}
+              >
+                <Text
+                  style={[styles.modelChipText, behavior.maxOutputTokens === n && styles.modelChipTextOn]}
+                >
+                  {n}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <Text style={styles.hint}>Lower = shorter replies. 512 is good for quick chat.</Text>
+
+          <TouchableOpacity style={styles.resetBtn} onPress={onResetBehavior}>
+            <Text style={styles.resetBtnText}>Reset to defaults</Text>
+          </TouchableOpacity>
+        </GlassCard>
 
         <Text style={styles.sectionTitle}>Firecrawl</Text>
         <Text style={styles.hint}>Job URL scraping and company research.</Text>
@@ -340,5 +447,24 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 15,
     marginTop: 4,
+  },
+  instructionsInput: {
+    minHeight: 96,
+    maxHeight: 160,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: spacing.xs,
+  },
+  resetBtn: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  resetBtnText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
