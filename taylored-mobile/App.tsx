@@ -3,6 +3,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { StatusBar } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ResponsiveShell } from './src/components/ResponsiveShell';
+import { AuthProvider } from './src/contexts/AuthContext';
 import { checkForOtaUpdate } from './src/lib/otaUpdates';
 import { preloadHiveMission } from './src/lib/hiveMission';
 import { colors } from './src/theme/colors';
@@ -16,9 +17,11 @@ export default function App() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
       <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
-      <ResponsiveShell>
-        <AppNavigator />
-      </ResponsiveShell>
+      <AuthProvider>
+        <ResponsiveShell>
+          <AppNavigator />
+        </ResponsiveShell>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

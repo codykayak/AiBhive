@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,12 +19,16 @@ import { Camera, FileText, Link2, ImagePlus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { PrimaryButton } from '../components/ui';
+import { useAuth } from '../contexts/AuthContext';
 import { createJobDraft } from '../lib/jobs';
+import { loadUserProfile, syncProfileToCloud } from '../lib/userProfile';
+import { keyboardAvoidBehavior } from '../hooks/useKeyboardInset';
 import { colors, radii, spacing } from '../theme/colors';
 
 export default function AutoBotResumeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -31,6 +37,19 @@ export default function AutoBotResumeScreen() {
   const [resumeUri, setResumeUri] = useState<string | null>(null);
   const [jobImages, setJobImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    void loadUserProfile(user.uid).then((profile) => {
+      if (!profile) return;
+      if (profile.candidateName) setName(profile.candidateName);
+      if (profile.email) setEmail(profile.email);
+      if (profile.phone) setPhone(profile.phone);
+      if (profile.history) setHistory(profile.history);
+      if (profile.resumeDownloadUrl) setResumeUri(profile.resumeDownloadUrl);
+      else if (profile.resumeUri) setResumeUri(profile.resumeUri);
+    });
+  }, [user?.uid]);
 
   const pickResume = async () => {
     try {
@@ -141,6 +160,16 @@ export default function AutoBotResumeScreen() {
         screenshotUris: jobImages,
       });
 
+      if (user?.uid) {
+        await syncProfileToCloud(user.uid, {
+          candidateName: name.trim(),
+          email: email.trim(),
+          phone: phone.trim(),
+          history: history.trim(),
+          resumeUri: resumeUri || undefined,
+        });
+      }
+
       navigation.navigate('AutoBotResumeResult', {
         jobId: job.id,
         name: name.trim(),
@@ -161,10 +190,11 @@ export default function AutoBotResumeScreen() {
   return (
     <ScreenLayout
       title="Auto-Bot Resume"
-      subtitle="Drop in a job listing and your background. We save each application to your Job Tracker."
+      subtitle={user ? 'Your profile is saved to your account.' : 'Sign in with Google in Settings to save your resume and contact info.'}
       showBrand={false}
       contentStyle={styles.content}
     >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={keyboardAvoidBehavior()} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}>
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Full Name *</Text>
@@ -264,6 +294,7 @@ export default function AutoBotResumeScreen() {
           <Text style={styles.trackerLinkText}>View saved jobs in Job Tracker</Text>
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenLayout>
   );
 }

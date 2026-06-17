@@ -1,3 +1,5 @@
+import { auth } from '../firebaseConfig';
+
 const HIVE_API_BASE = 'https://aibhive.com';
 
 export type HiveEstimate = {
@@ -26,6 +28,16 @@ export type HiveStatus = {
   message: string;
 };
 
+async function authHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export async function getHiveStatus(): Promise<HiveStatus | null> {
   try {
     const res = await fetch(`${HIVE_API_BASE}/api/hive/status`);
@@ -36,10 +48,29 @@ export async function getHiveStatus(): Promise<HiveStatus | null> {
   }
 }
 
+export async function registerHiveUserWithAuth(
+  userId: string,
+  idToken: string,
+  email?: string
+): Promise<void> {
+  try {
+    await fetch(`${HIVE_API_BASE}/api/hive/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+      body: JSON.stringify({ userId, email }),
+    });
+    const { setItemAsync } = await import('expo-secure-store');
+    await setItemAsync('hive_user_id', userId);
+  } catch {
+    // server may not be deployed yet
+  }
+}
+
 export async function createHiveTask(message: string, userId: string): Promise<HiveTask> {
+  const headers = await authHeaders();
   const res = await fetch(`${HIVE_API_BASE}/api/hive/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ message, userId }),
   });
   const data = await res.json();
@@ -47,10 +78,12 @@ export async function createHiveTask(message: string, userId: string): Promise<H
   return data.task;
 }
 
-export async function approveHiveTask(taskId: string): Promise<HiveTask> {
+export async function approveHiveTask(taskId: string, userId?: string): Promise<HiveTask> {
+  const headers = await authHeaders();
   const res = await fetch(`${HIVE_API_BASE}/api/hive/tasks/${taskId}/approve`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
+    body: JSON.stringify({ userId }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Could not approve task');
@@ -64,11 +97,14 @@ export async function getHiveTask(taskId: string): Promise<HiveTask> {
   return data.task;
 }
 
+/** Prefer signed-in Firebase uid; fall back to anonymous device id. */
 export async function getOrCreateHiveUserId(): Promise<string> {
+  if (auth.currentUser?.uid) return auth.currentUser.uid;
+
   const { getItemAsync, setItemAsync } = await import('expo-secure-store');
   let id = await getItemAsync('hive_user_id');
   if (!id) {
-    id = `user_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    id = `anon_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
     await setItemAsync('hive_user_id', id);
   }
   return id;

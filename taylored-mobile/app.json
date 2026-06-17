@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "taylored-mobile",
+    "name": "Taylored",
     "slug": "taylored-mobile",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -12,7 +12,7 @@
     },
     "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -29,7 +29,16 @@
         "backgroundColor": "#020617"
       },
       "package": "com.tayloredmobile.app",
-      "resizeableActivity": true
+      "versionCode": 2,
+      "resizeableActivity": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS",
+        "VIBRATE"
+      ]
     },
     "plugins": [
       [
@@ -49,6 +58,11 @@
     ],
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "taylored-mobile"
+      }
     }
   }
 }

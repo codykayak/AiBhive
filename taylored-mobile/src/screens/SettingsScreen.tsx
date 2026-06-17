@@ -42,6 +42,9 @@ import {
   type ResponseStyle,
 } from '../constants/hivePrompt';
 import { colors, radii, spacing } from '../theme/colors';
+import { useAuth } from '../contexts/AuthContext';
+import { fetchHiveAccount, openAddCredits } from '../lib/hiveAccount';
+import { HIVE_COPY } from '../constants/hiveCopy';
 
 const EMPTY_KEYS: Record<ProviderId, string> = {
   gemini: '',
@@ -53,6 +56,8 @@ const EMPTY_KEYS: Record<ProviderId, string> = {
 
 export default function SettingsScreen() {
   const tabBarPadding = useTabBarPadding(24);
+  const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [prefs, setPrefs] = useState<AiPrefs>(() => ({
     activeProviderId: DEFAULT_PREFS.activeProviderId,
     providers: { ...DEFAULT_PREFS.providers },
@@ -104,6 +109,16 @@ export default function SettingsScreen() {
   useEffect(() => {
     boot();
   }, [boot]);
+
+  useEffect(() => {
+    if (user) {
+      fetchHiveAccount().then((a) => {
+        if (a) setCreditBalance(a.creditBalanceUsd);
+      });
+    } else {
+      setCreditBalance(null);
+    }
+  }, [user]);
 
   const flashSaved = (label: string) => {
     setSaveStatus(`${label} saved`);
@@ -188,11 +203,41 @@ export default function SettingsScreen() {
     >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarPadding }}>
         {!!saveStatus && <Text style={styles.saved}>{saveStatus}</Text>}
+
+        <Text style={styles.sectionTitle}>Your account</Text>
+        <GlassCard style={styles.providerCard}>
+          {authLoading ? (
+            <ActivityIndicator color={colors.amberLight} />
+          ) : user ? (
+            <>
+              <Text style={styles.providerName}>{user.displayName || 'Signed in'}</Text>
+              <Text style={styles.hint}>{user.email}</Text>
+              {creditBalance !== null && (
+                <Text style={styles.creditLine}>{HIVE_COPY.balanceLabel(creditBalance)}</Text>
+              )}
+              <TouchableOpacity style={styles.useBtn} onPress={() => void openAddCredits()}>
+                <Text style={styles.useBtnText}>Add Hive credits</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.signOutBtn} onPress={() => void signOut()}>
+                <Text style={styles.signOutText}>Sign out</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={styles.hint}>
+                Sign in with Google to save your resume, jobs, and $5 welcome Hive credits across devices.
+              </Text>
+              <TouchableOpacity style={styles.googleBtn} onPress={() => void signInWithGoogle()}>
+                <Text style={styles.googleBtnText}>Continue with Google</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </GlassCard>
+
+        <Text style={styles.sectionTitle}>AI providers</Text>
         {keysLoading && (
           <ActivityIndicator color={colors.amberLight} style={{ marginBottom: spacing.sm }} />
         )}
-
-        <Text style={styles.sectionTitle}>AI providers</Text>
         {AI_PROVIDERS.map((def) => {
           const p = prefs.providers[def.id];
           const isActive = prefs.activeProviderId === def.id;
@@ -465,6 +510,32 @@ const styles = StyleSheet.create({
   resetBtnText: {
     color: colors.textMuted,
     fontSize: 13,
+    fontWeight: '600',
+  },
+  creditLine: {
+    color: colors.amberLight,
+    fontWeight: '800',
+    marginTop: spacing.sm,
+    fontSize: 14,
+  },
+  googleBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.amber,
+    borderRadius: radii.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  googleBtnText: {
+    color: colors.black,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  signOutBtn: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  signOutText: {
+    color: colors.textMuted,
     fontWeight: '600',
   },
 });

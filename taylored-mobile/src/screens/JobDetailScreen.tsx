@@ -10,22 +10,27 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
-import { Copy, Search, ChevronRight } from 'lucide-react-native';
+import { Copy, ChevronRight, Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { GlassCard, PrimaryButton } from '../components/ui';
-import { getJob, statusLabel, updateJob, type JobStatus } from '../lib/jobs';
+import { CompanyResearchPanel } from '../components/CompanyResearchPanel';
+import { GlassCard } from '../components/ui';
+import { getJob, statusLabel, updateJob, type JobApplication, type JobStatus } from '../lib/jobs';
 import { colors, radii, spacing } from '../theme/colors';
 
 const STATUS_OPTIONS: JobStatus[] = ['draft', 'generated', 'submitted', 'interviewing', 'rejected', 'offer'];
+type TabId = 'overview' | 'application' | 'research';
 
 export default function JobDetailScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const jobId = route.params?.jobId as string;
-  const [job, setJob] = useState<Awaited<ReturnType<typeof getJob>>>(null);
+  const initialTab = (route.params?.tab as TabId) || 'overview';
+
+  const [job, setJob] = useState<JobApplication | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<TabId>(initialTab);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -59,77 +64,84 @@ export default function JobDetailScreen() {
 
   return (
     <ScreenLayout showBrand={false} contentStyle={styles.content}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 + insets.bottom }} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{job.companyName || 'Job application'}</Text>
-        <Text style={styles.subtitle}>{job.roleTitle || job.jobUrl || job.candidateName}</Text>
+      <Text style={styles.title}>{job.companyName || 'Job application'}</Text>
+      <Text style={styles.subtitle}>{job.roleTitle || job.jobUrl || job.candidateName}</Text>
 
-        <Text style={styles.sectionLabel}>Status</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusRow}>
-          {STATUS_OPTIONS.map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={[styles.statusChip, job.status === s && styles.statusChipOn]}
-              onPress={() => void setStatus(s)}
-            >
-              <Text style={[styles.statusChipText, job.status === s && styles.statusChipTextOn]}>
-                {statusLabel(s)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+      <View style={styles.tabRow}>
+        {(
+          [
+            ['overview', 'Overview'],
+            ['application', 'Application'],
+            ['research', 'Research'],
+          ] as const
+        ).map(([id, label]) => (
+          <TouchableOpacity
+            key={id}
+            style={[styles.tab, tab === id && styles.tabOn]}
+            onPress={() => setTab(id)}
+          >
+            <Text style={[styles.tabText, tab === id && styles.tabTextOn]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {tab === 'overview' && (
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 + insets.bottom }} showsVerticalScrollIndicator={false}>
+          <Text style={styles.sectionLabel}>Status</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusRow}>
+            {STATUS_OPTIONS.map((s) => (
+              <TouchableOpacity
+                key={s}
+                style={[styles.statusChip, job.status === s && styles.statusChipOn]}
+                onPress={() => void setStatus(s)}
+              >
+                <Text style={[styles.statusChipText, job.status === s && styles.statusChipTextOn]}>
+                  {statusLabel(s)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {!!job.notes && (
+            <GlassCard style={styles.block}>
+              <Text style={styles.blockTitle}>Your notes</Text>
+              <Text style={styles.blockText}>{job.notes}</Text>
+            </GlassCard>
+          )}
+
+          <TouchableOpacity
+            style={styles.linkRow}
+            onPress={() =>
+              navigation.navigate('AutoBotResumeResult', {
+                jobId: job.id,
+                name: job.candidateName,
+                email: job.email,
+                phone: job.phone,
+                history: job.notes,
+                jobUrl: job.jobUrl,
+                resumeUri: job.resumeUri,
+                jobImages: job.screenshotUris,
+                regenerate: true,
+              })
+            }
+          >
+            <Search color={colors.amberLight} size={18} />
+            <Text style={styles.linkText}>Regenerate application kit</Text>
+            <ChevronRight color={colors.amber} size={18} />
+          </TouchableOpacity>
         </ScrollView>
+      )}
 
-        <PrimaryButton
-          label={job.companyIntelSummary ? 'View company research' : 'Run company research'}
-          onPress={() =>
-            navigation.navigate('Deeper', {
-              jobId: job.id,
-              companyDetails: job.jobDetails || job.companyName || '',
-              coldEmail: job.coldEmail || '',
-            })
-          }
-          style={styles.researchBtn}
-        />
+      {tab === 'application' && (
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 + insets.bottom }} showsVerticalScrollIndicator={false}>
+          <MaterialBlock title="Job details" text={job.jobDetails} onCopy={() => copyText(job.jobDetails || '', 'Job details')} />
+          <MaterialBlock title="Cover letter" text={job.coverLetter} onCopy={() => copyText(job.coverLetter || '', 'Cover letter')} />
+          <MaterialBlock title="Tailored resume" text={job.rewrittenResume} onCopy={() => copyText(job.rewrittenResume || '', 'Resume')} />
+          <MaterialBlock title="Cold email" text={job.coldEmail} onCopy={() => copyText(job.coldEmail || '', 'Cold email')} />
+        </ScrollView>
+      )}
 
-        {!!job.companyIntelSummary && (
-          <GlassCard style={styles.block}>
-            <Text style={styles.blockTitle}>Company intel</Text>
-            <Text style={styles.blockText}>{job.companyIntelSummary}</Text>
-          </GlassCard>
-        )}
-
-        <MaterialBlock title="Job details" text={job.jobDetails} onCopy={() => copyText(job.jobDetails || '', 'Job details')} />
-        <MaterialBlock title="Cover letter" text={job.coverLetter} onCopy={() => copyText(job.coverLetter || '', 'Cover letter')} />
-        <MaterialBlock title="Tailored resume" text={job.rewrittenResume} onCopy={() => copyText(job.rewrittenResume || '', 'Resume')} />
-        <MaterialBlock title="Cold email" text={job.coldEmail} onCopy={() => copyText(job.coldEmail || '', 'Cold email')} />
-
-        {!!job.notes && (
-          <GlassCard style={styles.block}>
-            <Text style={styles.blockTitle}>Your notes</Text>
-            <Text style={styles.blockText}>{job.notes}</Text>
-          </GlassCard>
-        )}
-
-        <TouchableOpacity
-          style={styles.linkRow}
-          onPress={() =>
-            navigation.navigate('AutoBotResumeResult', {
-              jobId: job.id,
-              name: job.candidateName,
-              email: job.email,
-              phone: job.phone,
-              history: job.notes,
-              jobUrl: job.jobUrl,
-              resumeUri: job.resumeUri,
-              jobImages: job.screenshotUris,
-              regenerate: true,
-            })
-          }
-        >
-          <Search color={colors.amberLight} size={18} />
-          <Text style={styles.linkText}>Regenerate application kit</Text>
-          <ChevronRight color={colors.amber} size={18} />
-        </TouchableOpacity>
-      </ScrollView>
+      {tab === 'research' && <CompanyResearchPanel job={job} onUpdated={setJob} />}
     </ScreenLayout>
   );
 }
@@ -164,6 +176,22 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   title: { color: colors.text, fontSize: 26, fontWeight: '800', marginTop: spacing.sm },
   subtitle: { color: colors.textMuted, marginBottom: spacing.md, lineHeight: 20 },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.md,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    alignItems: 'center',
+  },
+  tabOn: { backgroundColor: colors.amber, borderColor: colors.amber },
+  tabText: { color: colors.textMuted, fontWeight: '800', fontSize: 13 },
+  tabTextOn: { color: colors.black },
   sectionLabel: {
     color: colors.textDim,
     fontSize: 12,
@@ -184,7 +212,6 @@ const styles = StyleSheet.create({
   statusChipOn: { backgroundColor: colors.amber, borderColor: colors.amber },
   statusChipText: { color: colors.textMuted, fontWeight: '700', fontSize: 12 },
   statusChipTextOn: { color: colors.black },
-  researchBtn: { marginBottom: spacing.md },
   block: { marginBottom: spacing.md, padding: spacing.md },
   blockHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   blockTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 15 },

@@ -16,6 +16,7 @@ import {
   applyCreditPurchase,
   checkBuildCredits,
 } from './hiveBilling.js';
+import { verifyHiveAuth } from './hiveAuth.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -863,6 +864,38 @@ app.get('/api/hive/mission', (_req, res) => {
   });
 });
 
+app.post('/api/hive/auth/register', async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    if (!authUser) return res.status(401).json({ error: 'Invalid or missing auth token.' });
+
+    const { userId, email } = req.body || {};
+    const uid = authUser.uid;
+    if (userId && userId !== uid) {
+      return res.status(400).json({ error: 'userId must match authenticated uid.' });
+    }
+
+    const account = await ensureHiveUser(db, uid);
+    if (email || authUser.email) {
+      await db.collection('hive_users').doc(uid).set(
+        { email: email || authUser.email, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    }
+
+    return res.json({
+      account: {
+        userId: uid,
+        creditBalanceUsd: account.creditBalanceUsd,
+        welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 5),
+      },
+    });
+  } catch (err) {
+    console.error('[hive/auth/register]', err);
+    return res.status(500).json({ error: err.message || 'Registration failed.' });
+  }
+});
+
 app.get('/api/hive/account/:userId', async (req, res) => {
   try {
     const account = await getHiveAccount(db, req.params.userId);
@@ -923,6 +956,8 @@ app.post('/api/hive/tasks/:taskId/prepare-pay', async (req, res) => {
 app.post('/api/hive/tasks', async (req, res) => {
   try {
     const { message, userId } = req.body || {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId || 'anonymous';
     if (!message || typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ error: 'Message is required.' });
     }
@@ -950,7 +985,7 @@ app.post('/api/hive/tasks', async (req, res) => {
     const doc = {
       id: taskId,
       message: message.trim(),
-      userId: userId || 'anonymous',
+      userId: resolvedUserId,
       route: triage.route,
       status,
       summary: triage.summary,
@@ -992,12 +1027,14 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
     }
 
     const userId = task.userId || req.body?.userId;
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
     const cost = task.estimate?.costUsd ?? 0;
-    if (userId && userId !== 'anonymous') {
-      const reservation = await reserveBuildCredits(db, userId, task.id, cost);
+    if (resolvedUserId && resolvedUserId !== 'anonymous') {
+      const reservation = await reserveBuildCredits(db, resolvedUserId, task.id, cost);
       if (!reservation.ok) {
         const session = await createCreditsCheckout(stripe, {
-          userId,
+          userId: resolvedUserId,
           amountUsd: reservation.amountUsd,
           taskId: task.id,
         });

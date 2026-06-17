@@ -3,7 +3,7 @@ import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import TabNavigator from './TabNavigator';
-import JewlesWebViewScreen from '../screens/JewlesWebViewScreen';
+import EnterpriseWebViewScreen from '../screens/EnterpriseWebViewScreen';
 import AutoBotResumeScreen from '../screens/AutoBotResumeScreen';
 import AutoBotResumeResultScreen from '../screens/AutoBotResumeResultScreen';
 import DeeperScreen from '../screens/DeeperScreen';
@@ -37,7 +37,11 @@ export default function AppNavigator() {
         }}
       >
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="JewlesWebView" component={JewlesWebViewScreen} options={{ title: 'Jewles' }} />
+        <Stack.Screen
+          name="EnterpriseWebView"
+          component={EnterpriseWebViewScreen}
+          options={{ title: 'AiBhive Enterprise' }}
+        />
         <Stack.Screen name="AutoBotResume" component={AutoBotResumeScreen} options={{ title: 'Auto-Bot Resume' }} />
         <Stack.Screen name="AutoBotResumeResult" component={AutoBotResumeResultScreen} options={{ title: 'Application Kit' }} />
         <Stack.Screen name="Deeper" component={DeeperScreen} options={{ title: 'Company Intel' }} />

@@ -1,5 +1,19 @@
 import { getFirecrawlApiKey } from './ai';
 
+export type CompanySearchOptions = {
+  companyName: string;
+  location?: string;
+  radiusMiles?: number;
+};
+
+function buildSearchQuery(opts: CompanySearchOptions): string {
+  const { companyName, location, radiusMiles = 50 } = opts;
+  const locPart = location?.trim()
+    ? ` near ${location.trim()} within ${radiusMiles} miles local regional`
+    : '';
+  return `${companyName}${locPart} leadership hiring manager recruiter HR director contact email phone`;
+}
+
 export async function scrapeJobPosting(jobUrl: string): Promise<string | null> {
   const firecrawlKey = await getFirecrawlApiKey();
   if (!firecrawlKey || !jobUrl.trim()) return null;
@@ -29,9 +43,12 @@ export async function scrapeJobPosting(jobUrl: string): Promise<string | null> {
   }
 }
 
-export async function searchCompanyIntel(companyName: string): Promise<string> {
+export async function searchCompanyIntel(opts: CompanySearchOptions): Promise<string> {
   const firecrawlKey = await getFirecrawlApiKey();
-  if (!firecrawlKey || !companyName.trim()) return '';
+  const companyName = opts.companyName?.trim();
+  if (!firecrawlKey || !companyName) return '';
+
+  const query = buildSearchQuery(opts);
 
   try {
     const response = await fetch('https://api.firecrawl.dev/v1/search', {
@@ -41,8 +58,8 @@ export async function searchCompanyIntel(companyName: string): Promise<string> {
         Authorization: `Bearer ${firecrawlKey}`,
       },
       body: JSON.stringify({
-        query: `${companyName} leadership hiring manager HR contact`,
-        limit: 5,
+        query,
+        limit: 8,
         scrapeOptions: { formats: ['markdown'] },
       }),
     });
@@ -56,8 +73,13 @@ export async function searchCompanyIntel(companyName: string): Promise<string> {
         item.markdown || item.description || item.title || ''
       )
       .join('\n\n')
-      .substring(0, 8000);
+      .substring(0, 12000);
   } catch {
     return '';
   }
+}
+
+/** Backward-compatible wrapper */
+export async function searchCompanyIntelByName(companyName: string): Promise<string> {
+  return searchCompanyIntel({ companyName, radiusMiles: 50 });
 }

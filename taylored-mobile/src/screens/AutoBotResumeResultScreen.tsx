@@ -155,7 +155,7 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
 
         <PrimaryButton
           label="Find Decision Makers"
-          onPress={() => navigation.navigate('Deeper', { jobId, companyDetails: extractedJobDetails, coldEmail })}
+          onPress={() => navigation.navigate('JobDetail', { jobId, tab: 'research' })}
           style={styles.deeperButton}
         />
         {!!jobId && (
@@ -166,7 +166,7 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
             style={styles.deeperButton}
           />
         )}
-        <TouchableOpacity style={styles.deeperHint} onPress={() => navigation.navigate('Deeper', { companyDetails: extractedJobDetails, coldEmail })}>
+        <TouchableOpacity style={styles.deeperHint} onPress={() => navigation.navigate('JobDetail', { jobId, tab: 'research' })}>
           <Text style={styles.deeperHintText}>Requires Firecrawl API key for web research</Text>
           <ChevronRight color={colors.amber} size={18} />
         </TouchableOpacity>

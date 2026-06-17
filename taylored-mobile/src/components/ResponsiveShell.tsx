@@ -2,16 +2,17 @@ import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { colors } from '../theme/colors';
 
-const MAX_CONTENT_WIDTH = 920;
+const MAX_CONTENT_WIDTH = 1100;
 
 type ResponsiveShellProps = {
   children: React.ReactNode;
 };
 
-/** Centers and scales content on Samsung DeX / tablets instead of a tiny phone column. */
+/** Centers and scales content on Samsung DeX / tablets / desktop mode. */
 export function ResponsiveShell({ children }: ResponsiveShellProps) {
   const { width, height } = useWindowDimensions();
   const isWide = width >= 600;
+  const isDesktop = width >= 900;
 
   return (
     <View style={[styles.root, isWide && styles.rootWide]}>
@@ -19,7 +20,7 @@ export function ResponsiveShell({ children }: ResponsiveShellProps) {
         style={[
           styles.inner,
           isWide && {
-            maxWidth: MAX_CONTENT_WIDTH,
+            maxWidth: isDesktop ? MAX_CONTENT_WIDTH : 920,
             width: '100%',
             minHeight: height,
           },

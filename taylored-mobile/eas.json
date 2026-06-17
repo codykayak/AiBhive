@@ -19,12 +19,17 @@
     },
     "production": {
       "android": {
-        "buildType": "apk"
-      }
+        "buildType": "app-bundle"
+      },
+      "autoIncrement": true
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
   },
   "update": {
     "development": {

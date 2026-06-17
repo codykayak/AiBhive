@@ -32,9 +32,9 @@ export const HIVE_TOOLS = [
     capabilities: ['company research', 'decision makers', 'deeper lookup'],
   },
   {
-    id: 'jewles_web',
-    name: 'Jewles Web Studio',
-    capabilities: ['open aibhive.com in app'],
+    id: 'enterprise_web',
+    name: 'AiBhive Enterprise',
+    capabilities: ['autopilot your company', 'B2B AI agents', 'book consultation'],
   },
 ];
 

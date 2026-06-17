@@ -14,6 +14,7 @@ import {
 import { Send, Sparkles, Wand2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useTabBarPadding } from '../components/TabScreenContainer';
+import { dexInputBarStyle, keyboardAvoidBehavior, keyboardVerticalOffset, useKeyboardInset } from '../hooks/useKeyboardInset';
 import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
 import { loadAiBehavior } from '../lib/aiBehavior';
 import { triageLocally, localTaskToHiveTask } from '../lib/hiveBrain';
@@ -40,6 +41,7 @@ type Message = {
 
 export default function HomeScreen() {
   const tabBarPadding = useTabBarPadding(12);
+  const { bottomPad: keyboardPad, isWide, keyboardHeight } = useKeyboardInset(0);
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -135,7 +137,8 @@ export default function HomeScreen() {
       }
       if (pay.creditBalanceUsd !== undefined) setCreditBalance(pay.creditBalanceUsd);
 
-      const approved = await approveHiveTask(taskId);
+      const userId = await getOrCreateHiveUserId();
+      const approved = await approveHiveTask(taskId, userId);
       updateMessageTask(task.id, { ...approved, id: taskId, source: 'server' });
       startPolling(taskId);
       fetchHiveAccount().then((a) => {
@@ -262,10 +265,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={keyboardAvoidBehavior()}
+        keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
+      >
         <ScrollView
           style={styles.chatContainer}
-          contentContainerStyle={[styles.chatContent, { paddingBottom: bottomPad }]}
+          contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(bottomPad, 24) }]}
           keyboardShouldPersistTaps="handled"
         >
           {messages.map((msg) => (
@@ -310,9 +317,9 @@ export default function HomeScreen() {
           )}
         </ScrollView>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, dexInputBarStyle(keyboardHeight > 0), { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isWide && styles.inputWide]}
             placeholder={magicMode ? 'Describe a feature…' : 'Ask anything…'}
             placeholderTextColor={colors.textDim}
             value={inputText}
@@ -489,7 +496,12 @@ const styles = StyleSheet.create({
     maxHeight: 110,
     minHeight: 48,
     borderWidth: 1,
-    borderColor: colors.borderMuted,
+    borderColor: colors.amber,
+  },
+  inputWide: {
+    minHeight: 52,
+    fontSize: 17,
+    maxHeight: 140,
   },
   sendButton: {
     backgroundColor: colors.amber,

@@ -17,7 +17,7 @@ export async function ensureHiveUser(db, userId) {
   const now = new Date().toISOString();
   const doc = {
     userId,
-    creditBalanceUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD || 0),
+    creditBalanceUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 5),
     totalSpentUsd: 0,
     buildCount: 0,
     createdAt: now,

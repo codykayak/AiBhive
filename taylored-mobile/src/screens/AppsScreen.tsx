@@ -25,12 +25,12 @@ const BUILT_IN_APPS = [
     tag: 'Apply',
   },
   {
-    id: 'jewles',
-    title: 'Jewles Web Studio',
-    desc: 'Open the AiBhive web experience inside the app.',
+    id: 'enterprise',
+    title: 'AiBhive Enterprise',
+    desc: 'Autopilot your company — AI agents for leads, ops, and workflows.',
     icon: AppWindow,
-    route: 'JewlesWebView',
-    tag: 'Built-in',
+    route: 'EnterpriseWebView',
+    tag: 'Enterprise',
   },
 ];
 

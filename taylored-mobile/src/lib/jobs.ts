@@ -1,14 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   copyAsync,
   documentDirectory,
   makeDirectoryAsync,
   getInfoAsync,
 } from 'expo-file-system/legacy';
-
-const JOBS_KEY = 'hive_job_applications_v1';
+import { auth } from '../firebaseConfig';
+import { readAllJobsLocal, writeAllJobsLocal } from './jobsStorage';
 
 export type JobStatus = 'draft' | 'generated' | 'submitted' | 'interviewing' | 'rejected' | 'offer';
+
+export type CompanyContact = {
+  name?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+};
 
 export type JobApplication = {
   id: string;
@@ -27,6 +33,9 @@ export type JobApplication = {
   rewrittenResume?: string;
   coldEmail?: string;
   companyIntelSummary?: string;
+  companyContacts?: CompanyContact[];
+  searchRadiusMiles?: number;
+  searchLocation?: string;
   screenshotUris: string[];
   resumeUri?: string;
 };
@@ -35,27 +44,19 @@ function newId() {
   return `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function readAll(): Promise<JobApplication[]> {
-  try {
-    const raw = await AsyncStorage.getItem(JOBS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as JobApplication[];
-    return Array.isArray(parsed) ? parsed.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function writeAll(jobs: JobApplication[]) {
-  await AsyncStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+async function persistAfterWrite(job: JobApplication) {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return;
+  const { syncJobToCloud } = await import('./jobSync');
+  await syncJobToCloud(uid, job);
 }
 
 export async function listJobs(): Promise<JobApplication[]> {
-  return readAll();
+  return readAllJobsLocal();
 }
 
 export async function getJob(id: string): Promise<JobApplication | null> {
-  const jobs = await readAll();
+  const jobs = await readAllJobsLocal();
   return jobs.find((j) => j.id === id) ?? null;
 }
 
@@ -110,9 +111,10 @@ export async function createJobDraft(input: {
     screenshotUris: screenshots,
   };
 
-  const jobs = await readAll();
+  const jobs = await readAllJobsLocal();
   jobs.unshift(job);
-  await writeAll(jobs);
+  await writeAllJobsLocal(jobs);
+  await persistAfterWrite(job);
   return job;
 }
 
@@ -127,7 +129,7 @@ export async function saveJobGenerated(
     roleTitle?: string;
   }
 ): Promise<JobApplication | null> {
-  const jobs = await readAll();
+  const jobs = await readAllJobsLocal();
   const idx = jobs.findIndex((j) => j.id === id);
   if (idx < 0) return null;
 
@@ -142,21 +144,34 @@ export async function saveJobGenerated(
     status: 'generated',
     updatedAt: new Date().toISOString(),
   };
-  await writeAll(jobs);
+  await writeAllJobsLocal(jobs);
+  await persistAfterWrite(jobs[idx]);
   return jobs[idx];
 }
 
 export async function updateJob(id: string, patch: Partial<JobApplication>): Promise<JobApplication | null> {
-  const jobs = await readAll();
+  const jobs = await readAllJobsLocal();
   const idx = jobs.findIndex((j) => j.id === id);
   if (idx < 0) return null;
   jobs[idx] = { ...jobs[idx], ...patch, updatedAt: new Date().toISOString() };
-  await writeAll(jobs);
+  await writeAllJobsLocal(jobs);
+  await persistAfterWrite(jobs[idx]);
   return jobs[idx];
 }
 
-export async function saveCompanyIntel(id: string, summary: string): Promise<JobApplication | null> {
-  return updateJob(id, { companyIntelSummary: summary, status: 'submitted' });
+export async function saveCompanyIntel(
+  id: string,
+  summary: string,
+  contacts: CompanyContact[] = [],
+  opts?: { searchRadiusMiles?: number; searchLocation?: string }
+): Promise<JobApplication | null> {
+  return updateJob(id, {
+    companyIntelSummary: summary,
+    companyContacts: contacts,
+    searchRadiusMiles: opts?.searchRadiusMiles,
+    searchLocation: opts?.searchLocation,
+    status: 'submitted',
+  });
 }
 
 export function statusLabel(status: JobStatus): string {
