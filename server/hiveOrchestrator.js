@@ -60,7 +60,7 @@ Respond ONLY with JSON (no markdown outside the object):
 }
 
 Rules:
-- route=local if existing tools suffice OR user asks how Cursor/Hive Magic works.
+- route=local if existing tools suffice OR user asks how building / Hive Magic works.
 - route=cursor if new UI, new feature, new API integration, or missing capability.
 - route=clarify if request is vague.
 - localReply must be concise — never write essays.
@@ -197,16 +197,16 @@ export function startCursorRunPoller(db, taskId) {
       if (runStatus === 'COMPLETED' || runStatus === 'FINISHED' || runStatus === 'DONE') {
         updates.status = 'complete';
         updates.reply =
-          'Your feature is built and the PR is ready. Pull to refresh Apps — or install the next update when it ships.';
+          'Your update is ready! Check My Apps — or pull down to refresh. Want changes? Describe them on the Build tab.';
         if (run.prUrl) updates.prUrl = run.prUrl;
         clearInterval(timer);
       } else if (runStatus === 'FAILED' || runStatus === 'CANCELLED' || runStatus === 'ERROR') {
         updates.status = 'failed';
-        updates.reply = 'The build agent hit a snag. Check the Cursor agent link for details.';
+        updates.reply = 'The build hit a snag. Try again or describe a smaller first version.';
         clearInterval(timer);
       } else {
         updates.status = 'building';
-        updates.reply = `Build agent is working… (${runStatus || 'in progress'})`;
+        updates.reply = 'Still building your project…';
       }
 
       await db.collection('hive_tasks').doc(taskId).update(updates);

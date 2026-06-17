@@ -8,6 +8,14 @@ import { processLeadJob } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
 import { triageHiveTask, spawnCursorAgent, startCursorRunPoller } from './hiveOrchestrator.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
+import {
+  ensureHiveUser,
+  getHiveAccount,
+  reserveBuildCredits,
+  createCreditsCheckout,
+  applyCreditPurchase,
+  checkBuildCredits,
+} from './hiveBilling.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -145,6 +153,21 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   // Handle the event
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+
+    if (session.metadata?.purpose === 'hive_credits' && session.metadata?.hiveUserId) {
+      try {
+        await applyCreditPurchase(db, {
+          userId: session.metadata.hiveUserId,
+          amountUsd: Number(session.metadata.creditAmountUsd) || 0,
+          stripeSessionId: session.id,
+        });
+        console.log(`[hive] credits added for ${session.metadata.hiveUserId}`);
+      } catch (err) {
+        console.error('[hive] credit purchase failed:', err);
+      }
+      return res.json({ received: true });
+    }
+
     const leadId = session.client_reference_id;
 
     console.log(`Payment successful for lead: ${leadId}`);
@@ -834,10 +857,67 @@ app.get('/api/hive/status', (_req, res) => {
 app.get('/api/hive/mission', (_req, res) => {
   const markdown = loadHiveMissionMarkdown();
   return res.json({
-    version: '1.0',
+    version: '1.1',
     markdown,
     updatedAt: new Date().toISOString(),
   });
+});
+
+app.get('/api/hive/account/:userId', async (req, res) => {
+  try {
+    const account = await getHiveAccount(db, req.params.userId);
+    return res.json({ account });
+  } catch (err) {
+    console.error('[hive/account] get error:', err);
+    return res.status(400).json({ error: err.message || 'Could not load account.' });
+  }
+});
+
+app.post('/api/hive/account/:userId/checkout', async (req, res) => {
+  try {
+    const { amountUsd, successUrl, cancelUrl } = req.body || {};
+    await ensureHiveUser(db, req.params.userId);
+    const session = await createCreditsCheckout(stripe, {
+      userId: req.params.userId,
+      amountUsd: amountUsd ?? 10,
+      taskId: '',
+      successUrl,
+      cancelUrl,
+    });
+    return res.json({ checkoutUrl: session.url });
+  } catch (err) {
+    console.error('[hive/account] checkout error:', err);
+    return res.status(500).json({ error: err.message || 'Checkout failed.' });
+  }
+});
+
+app.post('/api/hive/tasks/:taskId/prepare-pay', async (req, res) => {
+  try {
+    const { userId, amountUsd } = req.body || {};
+    if (!userId) return res.status(400).json({ error: 'userId required.' });
+
+    const cost = Number(amountUsd) || 0;
+    const check = await checkBuildCredits(db, userId, cost);
+
+    if (check.ok) {
+      return res.json({ ready: true, creditBalanceUsd: check.creditBalanceUsd });
+    }
+
+    const session = await createCreditsCheckout(stripe, {
+      userId,
+      amountUsd: check.amountUsd,
+      taskId: req.params.taskId,
+    });
+    return res.json({
+      ready: false,
+      needPayment: true,
+      amountUsd: check.amountUsd,
+      checkoutUrl: session.url,
+    });
+  } catch (err) {
+    console.error('[hive/tasks] prepare-pay error:', err);
+    return res.status(500).json({ error: err.message || 'Payment check failed.' });
+  }
 });
 
 app.post('/api/hive/tasks', async (req, res) => {
@@ -862,7 +942,9 @@ app.post('/api/hive/tasks', async (req, res) => {
       reply = triage.clarifyingQuestion || triage.summary;
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
-      reply = `I don't have that yet. I can ask our build agent to add it.\n\n**${triage.summary}**\n\nEstimated cost: ~$${triage.estimate?.costUsd ?? 3}\nEstimated time: ~${triage.estimate?.minutes ?? 20} min\n\nTap Approve to start building.`;
+      const cost = triage.estimate?.costUsd ?? 3;
+      const mins = triage.estimate?.minutes ?? 20;
+      reply = `I can build that for you.\n\n${triage.summary}\n\nAbout $${cost} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
     }
 
     const doc = {
@@ -909,6 +991,25 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
       return res.status(400).json({ error: 'Task is not awaiting approval.' });
     }
 
+    const userId = task.userId || req.body?.userId;
+    const cost = task.estimate?.costUsd ?? 0;
+    if (userId && userId !== 'anonymous') {
+      const reservation = await reserveBuildCredits(db, userId, task.id, cost);
+      if (!reservation.ok) {
+        const session = await createCreditsCheckout(stripe, {
+          userId,
+          amountUsd: reservation.amountUsd,
+          taskId: task.id,
+        });
+        return res.status(402).json({
+          error: 'Insufficient Hive credit.',
+          needPayment: true,
+          amountUsd: reservation.amountUsd,
+          checkoutUrl: session.url,
+        });
+      }
+    }
+
     const cursor = await spawnCursorAgent(task.buildPrompt || task.message, task.id);
     const now = new Date().toISOString();
 
@@ -917,7 +1018,7 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
       cursorAgentId: cursor.agentId,
       cursorRunId: cursor.runId,
       cursorAgentUrl: cursor.agentUrl,
-      reply: 'Build agent started. I will ping you when it is ready.',
+      reply: 'Build started. We\'ll notify you when it\'s ready.',
       approvedAt: now,
       updatedAt: now,
     });

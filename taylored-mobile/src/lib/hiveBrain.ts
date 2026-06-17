@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { buildTriageSystemPrompt } from '../lib/hivePromptBuilder';
 import type { HiveTask } from './hiveApi';
 import type { ActiveLlmConfig } from './settings';
+import { formatBuildOffer } from '../constants/hiveCopy';
 
 function parseJsonBlock(text: string) {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -38,7 +39,7 @@ export async function triageLocally(config: ActiveLlmConfig, message: string): P
       status: 'complete',
       summary: 'Here is a quick answer.',
       reply:
-        'I can help via chat, Job Tracker, and Auto-Bot Resume. For new features, Hive Magic can spawn a Cursor build agent after you approve the estimate — keep Magic ON.',
+        'I can help with chat, Job Tracker, and Auto-Bot Resume in My Apps. For something new, keep Build mode on — describe it, approve the estimate, and we\'ll notify you when it\'s ready.',
     };
   }
 }
@@ -61,7 +62,11 @@ function taskFromTriage(message: string, parsed: TriageResult): Omit<HiveTask, '
       summary: parsed.summary,
       estimate: parsed.estimate ?? { costUsd: 3, minutes: 20 },
       buildPrompt: parsed.buildPrompt || message,
-      reply: `I can build that with our Cursor agent.\n\n${parsed.summary}\n\nEstimated ~$${parsed.estimate?.costUsd ?? 3} · ~${parsed.estimate?.minutes ?? 20} min\n\nTap Approve to start. (Requires Hive server online.)`,
+      reply: formatBuildOffer(
+        parsed.summary,
+        parsed.estimate?.costUsd ?? 3,
+        parsed.estimate?.minutes ?? 20
+      ) + '\n\n(Connect to our build service to start — or try again shortly.)',
     };
   }
 

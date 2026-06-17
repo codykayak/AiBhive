@@ -13,6 +13,18 @@ This document is the single source of truth for what Taylored Mobile is, what ev
 | Mobile chat / local triage | Bundled copy + `GET /api/hive/mission` cache |
 | Humans | Edit `hive-mission.md` directly |
 
+## Platform billing (global users)
+
+Each install gets a `hive_user_id`. Firestore tracks `creditBalanceUsd` and a ledger. Stripe checkout adds credits; builds deduct the estimate on approve.
+
+| API | Purpose |
+|-----|---------|
+| `GET /api/hive/account/:userId` | Balance + recent activity |
+| `POST /api/hive/account/:userId/checkout` | Add credits |
+| `POST /api/hive/tasks/:id/prepare-pay` | Check balance before approve |
+
+Set `HIVE_WELCOME_CREDIT_USD` for optional free starter credit on new accounts.
+
 ## After editing
 
 ```bash

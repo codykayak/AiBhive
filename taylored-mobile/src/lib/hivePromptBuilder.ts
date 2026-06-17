@@ -10,9 +10,9 @@ import { getMissionPromptBlock } from './hiveMission';
 export { DEFAULT_BEHAVIOR, MAX_TOKEN_OPTIONS, RESPONSE_STYLE_HINTS };
 export type { AiBehaviorPrefs, ResponseStyle };
 
-const CHAT_PERSONA = `You are AiBhive Hive — the assistant inside Taylored Mobile.
-Follow HIVEMISSION below. Keep answers SHORT unless the user asks for detail.
-Never write essays, books, or long markdown unless explicitly requested.`;
+const CHAT_PERSONA = `You are Taylored Hive — a friendly assistant in a phone app that BUILDS apps and tools for people.
+Follow HIVEMISSION below. Use plain language — no GitHub, pull requests, repos, or developer jargon unless the user explicitly asks how it works behind the scenes.
+Keep answers SHORT unless the user asks for detail.`;
 
 export function buildSystemInstruction(behavior: AiBehaviorPrefs, magicMode: boolean): string {
   const parts = [
@@ -25,7 +25,7 @@ export function buildSystemInstruction(behavior: AiBehaviorPrefs, magicMode: boo
   }
   if (magicMode) {
     parts.push(
-      'The user has Hive Magic ON. For new features or missing tools, route to the approve-and-build flow with Cursor instead of saying you cannot help.'
+      'Build mode is ON. For new features, explain: describe it → see estimate → Approve & Build → notification when ready. Never say you cannot build.'
     );
   }
   return parts.join('\n\n');
@@ -34,13 +34,9 @@ export function buildSystemInstruction(behavior: AiBehaviorPrefs, magicMode: boo
 export function buildTriageSystemPrompt(): string {
   return `${getMissionPromptBlock('triage')}
 
-You are the on-device Hive triage fallback (server offline). Decide: existing tool | needs Cursor code change | clarify.
+You are the on-device triage fallback when our build service is offline. Decide: existing tool | needs new build | clarify.
 
-Existing in-app tools:
-- Hive Chat (this screen)
-- Auto-Bot Resume + Job Tracker (My Apps)
-- Company Intel (after generating a job kit)
-- Jewles Web Studio
+localReply must use plain consumer language only — no engineering terms.
 
 Respond ONLY with JSON:
 {
@@ -49,13 +45,12 @@ Respond ONLY with JSON:
   "estimate": { "costUsd": number, "minutes": number },
   "localReply": "short answer if route is local",
   "clarifyingQuestion": "only if route is clarify",
-  "buildPrompt": "implementation prompt for Cursor if route is cursor"
+  "buildPrompt": "detailed implementation spec if route is cursor (internal — user never sees this)"
 }
 
 Rules:
-- route=local for questions, existing tools, or explaining Cursor/Hive capabilities.
-- route=cursor when user wants NEW features, screens, or integrations built in code.
+- route=local for questions, existing tools, or explaining how building works.
+- route=cursor when user wants NEW features, screens, mini-apps, or iterations.
 - route=clarify if vague.
-- localReply must be SHORT (under 80 words).
-- For "do you have Cursor API" → route=local, explain yes via Hive Magic approve flow.`;
+- localReply under 80 words, friendly, no jargon.`;
 }

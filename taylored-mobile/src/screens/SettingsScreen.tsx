@@ -275,11 +275,11 @@ export default function SettingsScreen() {
         <GlassCard style={styles.providerCard}>
           <Text style={styles.fieldLabel}>Custom instructions</Text>
           <Text style={styles.hint}>
-            Tell the AI how to behave — e.g. keep answers short, focus on Hive Magic, avoid long essays.
+            Tell the AI how to behave — e.g. keep answers short, focus on building apps for the user, avoid technical jargon.
           </Text>
           <TextInput
             style={[styles.input, styles.instructionsInput]}
-            placeholder="Example: Answer in 1-2 sentences. Mention Cursor builds when asked about app features."
+            placeholder="Example: Keep answers short and friendly. Help people build apps, don't use technical jargon."
             placeholderTextColor={colors.textDim}
             value={behavior.customInstructions}
             onChangeText={onCustomInstructionsChange}

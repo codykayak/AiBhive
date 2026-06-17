@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HIVE_MISSION_MARKDOWN } from '../constants/hiveMissionBundled';
 
-const MISSION_CACHE_KEY = 'hive_mission_v1';
+const MISSION_CACHE_KEY = 'hive_mission_v2';
 const MISSION_API = 'https://aibhive.com/api/hive/mission';
 
 let memoryMission = HIVE_MISSION_MARKDOWN;
@@ -61,8 +61,14 @@ export function getMissionPromptBlock(role: MissionRole = 'general'): string {
 
   const header = sections.get('1. What this app is') || '';
   const loop = sections.get('3. The core loop — Hive Magic') || '';
-  const existing = sections.get('5. Existing capabilities (NO code change required)') || '';
-  const cursor = sections.get('6. Requires Cursor build (route `cursor`)') || '';
+  const existing =
+    sections.get('5. Existing capabilities (NO build required)') ||
+    sections.get('5. Existing capabilities (NO code change required)') ||
+    '';
+  const cursor =
+    sections.get('6. Requires a new build (route `cursor`)') ||
+    sections.get('6. Requires Cursor build (route `cursor`)') ||
+    '';
   const tree = sections.get('7. Decision tree (all AIs)') || '';
   const contract = sections.get('9. Response contract (chat & local replies)') || '';
   const examples = sections.get('10. Example interactions') || '';
@@ -91,9 +97,13 @@ export function getMissionPromptBlock(role: MissionRole = 'general'): string {
     return [
       '=== BUILD AGENT MISSION ===',
       header,
-      sections.get('4c. Cursor Cloud build agent') || '',
+      sections.get('4c. Background build agent (internal — not shown to users)') ||
+        sections.get('4c. Cursor Cloud build agent') ||
+        '',
       cursor,
-      sections.get('8. Technical context') || '',
+      sections.get('12. Internal — engineering pipeline (build agents ONLY — never show users)') ||
+        sections.get('8. Technical context') ||
+        '',
       '=== END BUILD AGENT MISSION ===',
     ]
       .filter(Boolean)

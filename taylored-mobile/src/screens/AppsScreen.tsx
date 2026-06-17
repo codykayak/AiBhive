@@ -41,7 +41,7 @@ export default function AppsScreen() {
   return (
     <ScreenLayout
       title="My Hive Apps"
-      subtitle="Apps and modules you create live here. Resume bot was just the first example — describe anything on the Build tab."
+      subtitle="Apps and tools you create show up here. The resume helper was our first example — describe anything new on the Build tab."
       contentStyle={styles.content}
     >
       <ScrollView
@@ -54,7 +54,7 @@ export default function AppsScreen() {
             <Text style={styles.buildTitle}>Create something new</Text>
           </View>
           <Text style={styles.buildText}>
-            Non-tech friendly: type what you want in plain English on the Build tab. Approve the estimate. Wait for the ding.
+            No coding needed: type what you want in plain English on the Build tab. Approve the quote. Wait for the ding.
           </Text>
           <PrimaryButton
             label="Go to Build"

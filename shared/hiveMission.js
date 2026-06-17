@@ -35,8 +35,14 @@ export function getMissionPromptBlock(role = 'general') {
         sections.get('4. AI roles and responsibilities')
       : sections.get('4a. On-device chat AI (Gemini / Kimi / Grok / Claude — user picks in Settings)') ||
         sections.get('4. AI roles and responsibilities');
-  const existing = sections.get('5. Existing capabilities (NO code change required)') || '';
-  const cursor = sections.get('6. Requires Cursor build (route `cursor`)') || '';
+  const existing =
+    sections.get('5. Existing capabilities (NO build required)') ||
+    sections.get('5. Existing capabilities (NO code change required)') ||
+    '';
+  const cursor =
+    sections.get('6. Requires a new build (route `cursor`)') ||
+    sections.get('6. Requires Cursor build (route `cursor`)') ||
+    '';
   const tree = sections.get('7. Decision tree (all AIs)') || '';
   const contract = sections.get('9. Response contract (chat & local replies)') || '';
   const examples = sections.get('10. Example interactions') || '';
@@ -61,9 +67,13 @@ export function getMissionPromptBlock(role = 'general') {
     return [
       '=== BUILD AGENT MISSION ===',
       header,
-      sections.get('4c. Cursor Cloud build agent') || '',
+      sections.get('4c. Background build agent (internal — not shown to users)') ||
+        sections.get('4c. Cursor Cloud build agent') ||
+        '',
       cursor,
-      sections.get('8. Technical context') || '',
+      sections.get('12. Internal — engineering pipeline (build agents ONLY — never show users)') ||
+        sections.get('8. Technical context') ||
+        '',
       '=== END BUILD AGENT MISSION ===',
     ]
       .filter(Boolean)

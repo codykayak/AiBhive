@@ -27,6 +27,8 @@ import {
   getOrCreateHiveUserId,
   type HiveTask,
 } from '../lib/hiveApi';
+import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
+import { fetchHiveAccount, ensureCreditsForTask, openAddCredits } from '../lib/hiveAccount';
 import { colors, radii, spacing } from '../theme/colors';
 
 type Message = {
@@ -43,20 +45,23 @@ export default function HomeScreen() {
     {
       id: '1',
       role: 'ai',
-      content:
-        'Welcome to Hive Magic. Describe any app, module, or feature in plain English — I estimate cost and time, you approve once, then wait for the ding. Try: "Build me a resume tailor for job postings."',
+      content: HIVE_COPY.welcome,
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeLabel, setActiveLabel] = useState('Gemini');
   const [magicMode, setMagicMode] = useState(true);
   const [hiveStatus, setHiveStatus] = useState<string>('');
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     void ensureNotificationPermission();
     getHiveStatus().then((s) => {
       if (s) setHiveStatus(s.message);
+    });
+    fetchHiveAccount().then((a) => {
+      if (a) setCreditBalance(a.creditBalanceUsd);
     });
   }, []);
 
@@ -118,9 +123,24 @@ export default function HomeScreen() {
         const serverTask = await createHiveTask(task.buildPrompt || task.message, userId);
         taskId = serverTask.id;
       }
+
+      const cost = task.estimate?.costUsd ?? 0;
+      const pay = await ensureCreditsForTask(taskId, cost);
+      if (!pay.ok) {
+        updateMessageTask(task.id, {
+          ...task,
+          reply: HIVE_COPY.needCredits(pay.amountUsd),
+        });
+        return;
+      }
+      if (pay.creditBalanceUsd !== undefined) setCreditBalance(pay.creditBalanceUsd);
+
       const approved = await approveHiveTask(taskId);
       updateMessageTask(task.id, { ...approved, id: taskId, source: 'server' });
       startPolling(taskId);
+      fetchHiveAccount().then((a) => {
+        if (a) setCreditBalance(a.creditBalanceUsd);
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not start build';
       updateMessageTask(task.id, {
@@ -232,9 +252,15 @@ export default function HomeScreen() {
       </View>
       <Text style={styles.heroSubtitle}>
         {magicMode
-          ? `Hive Magic ON · ${activeLabel}${hiveStatus ? ` · ${hiveStatus}` : ''}`
-          : `Chat mode · ${activeLabel}. Toggle Magic ON for Cursor builds.`}
+          ? HIVE_COPY.magicOnSubtitle(activeLabel, hiveStatus)
+          : HIVE_COPY.magicOffSubtitle(activeLabel)}
       </Text>
+      {creditBalance !== null && (
+        <TouchableOpacity onPress={() => void openAddCredits()} style={styles.creditRow}>
+          <Text style={styles.creditText}>{HIVE_COPY.balanceLabel(creditBalance)}</Text>
+          <Text style={styles.creditAdd}>+ Add</Text>
+        </TouchableOpacity>
+      )}
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
@@ -251,28 +277,28 @@ export default function HomeScreen() {
               </View>
               {msg.task?.status === 'awaiting_approval' && msg.task.estimate && (
                 <View style={styles.approvalCard}>
-                  <Text style={styles.approvalTitle}>Ready to build?</Text>
+                  <Text style={styles.approvalTitle}>{HIVE_COPY.approveTitle}</Text>
                   <Text style={styles.approvalMeta}>
-                    ~${msg.task.estimate.costUsd} · ~{msg.task.estimate.minutes} min
+                    {formatEstimateCard(msg.task.estimate.costUsd, msg.task.estimate.minutes)}
                   </Text>
                   <TouchableOpacity
                     style={styles.approveBtn}
                     onPress={() => handleApprove(msg.task!)}
                     disabled={isLoading}
                   >
-                    <Text style={styles.approveBtnText}>Approve & Build</Text>
+                    <Text style={styles.approveBtnText}>{HIVE_COPY.approveButton}</Text>
                   </TouchableOpacity>
                 </View>
               )}
               {msg.task?.status === 'building' && (
                 <View style={styles.buildingRow}>
                   <ActivityIndicator color={colors.amberLight} size="small" />
-                  <Text style={styles.buildingText}>Building your feature…</Text>
+                  <Text style={styles.buildingText}>{HIVE_COPY.building}</Text>
                 </View>
               )}
               {msg.task?.status === 'complete' && (
                 <View style={styles.doneCard}>
-                  <Text style={styles.doneText}>✨ Ding! Your feature is ready.</Text>
+                  <Text style={styles.doneText}>{HIVE_COPY.done}</Text>
                 </View>
               )}
             </View>
@@ -347,8 +373,25 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     color: colors.textMuted,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     marginTop: 4,
+  },
+  creditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+    paddingVertical: 6,
+  },
+  creditText: {
+    color: colors.amberLight,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  creditAdd: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
   },
   chatContainer: { flex: 1 },
   chatContent: { paddingTop: spacing.sm },
