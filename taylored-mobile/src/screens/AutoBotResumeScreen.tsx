@@ -190,7 +190,7 @@ export default function AutoBotResumeScreen() {
   return (
     <ScreenLayout
       title="Auto-Bot Resume"
-      subtitle={user ? 'Your profile is saved to your account.' : 'Sign in with Google in Settings to save your resume and contact info.'}
+      subtitle="Drop in a job listing and your background. Each application saves to Job Tracker on this device."
       showBrand={false}
       contentStyle={styles.content}
     >

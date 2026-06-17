@@ -42,6 +42,7 @@ import {
   type ResponseStyle,
 } from '../constants/hivePrompt';
 import { colors, radii, spacing } from '../theme/colors';
+import { GOOGLE_AUTH_ENABLED } from '../constants/features';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchHiveAccount, openAddCredits } from '../lib/hiveAccount';
 import { HIVE_COPY } from '../constants/hiveCopy';
@@ -206,7 +207,14 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>Your account</Text>
         <GlassCard style={styles.providerCard}>
-          {authLoading ? (
+          {!GOOGLE_AUTH_ENABLED ? (
+            <>
+              <Text style={styles.providerName}>Local mode</Text>
+              <Text style={styles.hint}>
+                Jobs and settings stay on this device. Google sign-in and cloud sync arrive in the next update.
+              </Text>
+            </>
+          ) : authLoading ? (
             <ActivityIndicator color={colors.amberLight} />
           ) : user ? (
             <>
