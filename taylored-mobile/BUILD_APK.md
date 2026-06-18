@@ -1,26 +1,16 @@
-# Taylored Mobile — when does a full APK rebuild happen?
+# Emergency rollback: install `public/taylored-mobile.apk` — last CI-verified **v1.0.5** build.
 
-Full APK builds take **~25–35 minutes** on GitHub Actions. To avoid burning minutes on every small push:
+**Badge to verify:** top-right should show **v1.0.5**
 
-## APK builds run ONLY when:
+Source on `main-fixed` may be ahead (v1.1.0 code). The committed APK is the stable install until the next manual CI build succeeds.
 
-1. **Manual:** GitHub → Actions → **Build Android APK** → **Run workflow**
+## Build a new APK (manual only)
 
-Pushes to `main-fixed` **do not** auto-build anymore.
+GitHub → Actions → **Build Android APK** → **Run workflow**
 
-## Before asking for an APK build, batch:
+Builds use phone CPUs only (arm64) so CI finishes in ~30 min instead of hanging.
 
-- [ ] New icon in `assets/icon.png` + `android-icon-foreground.png`
-- [ ] Version bump in `app.json` if you want a new badge
-- [ ] Any mobile fixes you want in this install
-- [ ] One commit or PR, then `[build-apk]` or manual workflow
-
-## Install without waiting for CI
-
-The last good APK may already be at `public/taylored-mobile.apk` on `main-fixed` (check file date/size).
-
-## Required assets (build fails fast if missing)
-
-- `taylored-mobile/assets/icon.png`
-- `taylored-mobile/assets/splash-icon.png`
-- `taylored-mobile/assets/android-icon-foreground.png`
+Required files:
+- `assets/icon.png`
+- `assets/splash-icon.png`
+- `assets/android-icon-foreground.png`

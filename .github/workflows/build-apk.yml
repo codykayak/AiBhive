@@ -1,6 +1,4 @@
 name: Build Android APK
-# Full APK build (~30 min). Run manually when ready — batch mobile changes first.
-# GitHub → Actions → Build Android APK → Run workflow
 on:
   workflow_dispatch:
 
@@ -23,11 +21,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: npm
-          cache-dependency-path: taylored-mobile/package-lock.json
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           distribution: zulu
           java-version: 17
@@ -37,13 +33,12 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./taylored-mobile
-        run: npm ci
+        run: npm install
 
-      - name: Build APK (arm phones, validated assets)
+      - name: Build APK
         working-directory: ./taylored-mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx3g
         run: bash scripts/ci-android-build.sh
 
       - name: Upload APK Artifact
