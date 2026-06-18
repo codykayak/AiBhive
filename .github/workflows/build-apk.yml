@@ -1,13 +1,8 @@
 name: Build Android APK
-# APK builds are expensive (~30 min). They run ONLY when:
-#   1. You click "Run workflow" in GitHub Actions (workflow_dispatch), OR
-#   2. A commit message contains [build-apk]
-# Pushing mobile code alone does NOT auto-build anymore — batch changes first.
+# Full APK build (~30 min). Run manually when ready — batch mobile changes first.
+# GitHub → Actions → Build Android APK → Run workflow
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main-fixed
 
 permissions:
   contents: write
@@ -18,7 +13,6 @@ concurrency:
 
 jobs:
   build-android:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[build-apk]')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

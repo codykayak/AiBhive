@@ -5,14 +5,8 @@ Full APK builds take **~25–35 minutes** on GitHub Actions. To avoid burning mi
 ## APK builds run ONLY when:
 
 1. **Manual:** GitHub → Actions → **Build Android APK** → **Run workflow**
-2. **Commit tag:** Include `[build-apk]` in the commit message, e.g.  
-   `feat(mobile): batch release [build-apk]`
 
-## APK builds do NOT run when:
-
-- You push mobile/UI changes without `[build-apk]`
-- You upload images or edit Settings copy
-- Server-only changes
+Pushes to `main-fixed` **do not** auto-build anymore.
 
 ## Before asking for an APK build, batch:
 
