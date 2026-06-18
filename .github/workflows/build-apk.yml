@@ -11,61 +11,58 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build-apk-main-fixed
+  cancel-in-progress: true
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - name: 🏗 Setup repo
+      - name: Setup repo
         uses: actions/checkout@v4
 
-      - name: 🏗 Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
+          cache: npm
+          cache-dependency-path: taylored-mobile/package-lock.json
 
-      - name: 🏗 Setup Java
-        uses: actions/setup-java@v3
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: zulu
+          java-version: 17
+          cache: gradle
 
-      - name: 🤖 Setup Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         working-directory: ./taylored-mobile
-        run: npm install
+        run: npm ci
 
-      - name: 🚀 Build APK (Local Prebuild Release)
+      - name: Build APK (arm phones, validated assets)
         working-directory: ./taylored-mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-        run: |
-          npx expo prebuild -p android
-          cd android
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
-          yes | sdkmanager --licenses || true
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx3g
+        run: bash scripts/ci-android-build.sh
 
-          cp ../credentials/android-release.keystore my-release-key.keystore
-
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=$(pwd)/my-release-key.keystore \
-            -Pandroid.injected.signing.store.password=taylored2026 \
-            -Pandroid.injected.signing.key.alias=taylored-release \
-            -Pandroid.injected.signing.key.password=taylored2026
-
-      - name: 📤 Upload APK Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: taylored-mobile-apk
           path: taylored-mobile/android/app/build/outputs/apk/release/app-release.apk
 
-      - name: 🌐 Deploy APK to public download
+      - name: Deploy APK to public download
         run: |
           cp taylored-mobile/android/app/build/outputs/apk/release/app-release.apk public/taylored-mobile.apk
           ls -lh public/taylored-mobile.apk
 
-      - name: 📝 Commit deployed APK
+      - name: Commit deployed APK
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -77,8 +74,8 @@ jobs:
             git push
           fi
 
-      - name: 📦 Install root deps (Firebase publish script)
+      - name: Install root deps (Firebase publish script)
         run: npm ci
 
-      - name: 📲 Publish Firebase download mirror
+      - name: Publish Firebase download mirror
         run: node scripts/publish-apk-firebase.mjs
