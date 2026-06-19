@@ -1069,6 +1069,26 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
   }
 });
 
+// --- Mobile release manifest (APK + OTA metadata) ---
+
+function loadMobileReleaseManifest() {
+  const manifestPath = path.join(__dirname, '../public/mobile-releases.json');
+  if (!fs.existsSync(manifestPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+app.get('/api/mobile/releases', (_req, res) => {
+  const manifest = loadMobileReleaseManifest();
+  if (!manifest) {
+    return res.status(404).json({ error: 'Release manifest not available.' });
+  }
+  return res.json(manifest);
+});
+
 // --- Serve Frontend Static Files for Production ---
 // In production (Cloud Run), the Express server acts as the host for the built Vite React app
 

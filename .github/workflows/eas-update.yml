@@ -13,7 +13,6 @@ on:
 jobs:
   eas-update:
     runs-on: ubuntu-latest
-    if: ${{ secrets.EXPO_TOKEN != '' }}
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
@@ -32,4 +31,8 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN not set — skipping OTA publish. Add the secret to enable JS-only updates."
+            exit 0
+          fi
           npx eas-cli update --branch production --message "OTA from ${{ github.sha }}" --non-interactive

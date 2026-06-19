@@ -4,7 +4,7 @@ import { StatusBar } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ResponsiveShell } from './src/components/ResponsiveShell';
 import { AuthProvider } from './src/contexts/AuthContext';
-import { checkForOtaUpdate } from './src/lib/otaUpdates';
+import { checkForOtaUpdate } from './src/lib/appUpdates';
 import { preloadHiveMission } from './src/lib/hiveMission';
 import { colors } from './src/theme/colors';
 

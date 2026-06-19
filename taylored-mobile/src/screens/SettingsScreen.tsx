@@ -46,6 +46,14 @@ import { GOOGLE_AUTH_ENABLED } from '../constants/features';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchHiveAccount, openAddCredits } from '../lib/hiveAccount';
 import { HIVE_COPY } from '../constants/hiveCopy';
+import { APP_VERSION } from '../constants/version';
+import {
+  applyPendingOtaRestart,
+  checkForAppUpdate,
+  getOtaStatus,
+  openUpdateDownload,
+  type UpdateCheckResult,
+} from '../lib/appUpdates';
 
 const EMPTY_KEYS: Record<ProviderId, string> = {
   gemini: '',
@@ -68,6 +76,9 @@ export default function SettingsScreen() {
   const [firecrawlKey, setFirecrawlKey] = useState('');
   const [behavior, setBehavior] = useState<AiBehaviorPrefs>(() => ({ ...DEFAULT_BEHAVIOR }));
   const [saveStatus, setSaveStatus] = useState('');
+  const [updateStatus, setUpdateStatus] = useState<UpdateCheckResult | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
+  const [otaPending, setOtaPending] = useState(false);
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const instructionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -110,6 +121,37 @@ export default function SettingsScreen() {
   useEffect(() => {
     boot();
   }, [boot]);
+
+  useEffect(() => {
+    void getOtaStatus().then((s) => setOtaPending(s.pendingRestart));
+  }, []);
+
+  const onCheckForUpdates = async () => {
+    setUpdateChecking(true);
+    try {
+      const result = await checkForAppUpdate();
+      setUpdateStatus(result);
+      if (result.status === 'ota-pending') setOtaPending(true);
+    } finally {
+      setUpdateChecking(false);
+    }
+  };
+
+  const onApplyOtaRestart = async () => {
+    const applied = await applyPendingOtaRestart();
+    if (!applied) {
+      Alert.alert('Update', 'Close Taylored completely and open it again to apply the update.');
+    }
+  };
+
+  const onDownloadUpdate = async () => {
+    if (updateStatus?.status !== 'native-available') return;
+    try {
+      await openUpdateDownload(updateStatus.downloadUrl);
+    } catch (err) {
+      Alert.alert('Download', err instanceof Error ? err.message : 'Could not open download link.');
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -381,6 +423,39 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </GlassCard>
 
+        <Text style={styles.sectionTitle}>App updates</Text>
+        <GlassCard style={styles.providerCard}>
+          <Text style={styles.providerName}>Installed: v{APP_VERSION}</Text>
+          <Text style={styles.hint}>{HIVE_COPY.updateSectionHint}</Text>
+          {updateStatus && <Text style={styles.updateMessage}>{updateStatus.message}</Text>}
+          {updateStatus?.status === 'native-available' && updateStatus.releaseNotes ? (
+            <Text style={styles.hint}>{updateStatus.releaseNotes}</Text>
+          ) : null}
+          <TouchableOpacity
+            style={styles.useBtn}
+            onPress={() => void onCheckForUpdates()}
+            disabled={updateChecking}
+          >
+            {updateChecking ? (
+              <ActivityIndicator color={colors.amberLight} size="small" />
+            ) : (
+              <Text style={styles.useBtnText}>{HIVE_COPY.updateCheck}</Text>
+            )}
+          </TouchableOpacity>
+          {otaPending && (
+            <TouchableOpacity style={styles.googleBtn} onPress={() => void onApplyOtaRestart()}>
+              <Text style={styles.googleBtnText}>{HIVE_COPY.updateRestart}</Text>
+            </TouchableOpacity>
+          )}
+          {updateStatus?.status === 'native-available' && (
+            <TouchableOpacity style={styles.googleBtn} onPress={() => void onDownloadUpdate()}>
+              <Text style={styles.googleBtnText}>
+                {HIVE_COPY.updateInstall} (v{updateStatus.latestVersion})
+              </Text>
+            </TouchableOpacity>
+          )}
+        </GlassCard>
+
         <Text style={styles.sectionTitle}>Firecrawl</Text>
         <Text style={styles.hint}>Job URL scraping and company research.</Text>
         <TextInput
@@ -467,6 +542,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: spacing.sm,
     lineHeight: 17,
+  },
+  updateMessage: {
+    color: colors.amberLight,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
   modelRow: {
     marginBottom: spacing.xs,

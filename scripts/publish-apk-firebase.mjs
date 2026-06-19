@@ -4,6 +4,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import fs from 'fs';
 import zlib from 'zlib';
 import { promisify } from 'util';
+import { spawnSync } from 'child_process';
 
 const gzip = promisify(zlib.gzip);
 
@@ -37,3 +38,12 @@ const gzUrl = await getDownloadURL(gzRef);
 console.log('FIREBASE_GZ_URL=' + gzUrl);
 console.log('APK_BYTES=' + apk.length);
 console.log('GZ_BYTES=' + gz.length);
+
+const writeRelease = spawnSync(
+  process.execPath,
+  ['scripts/write-mobile-release.mjs', '--firebase-gz-url', gzUrl],
+  { cwd: process.cwd(), stdio: 'inherit' }
+);
+if (writeRelease.status !== 0) {
+  process.exit(writeRelease.status ?? 1);
+}
