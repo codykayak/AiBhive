@@ -1,0 +1,11 @@
+{
+  "shippedNativeVersion": "1.0.5",
+  "versionCode": 1,
+  "sourceVersion": "1.1.0",
+  "releaseNotes": "Stable v1.0.5 install. Source on main-fixed is ahead (v1.1.0) — run a manual APK build when ready to ship native changes.",
+  "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
+  "fullApkUrl": "https://aibhive.com/api/download/apk",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1781826364003%2Ftaylored-mobile.apk.gz?alt=media&token=7c1a74ef-daad-477d-87d4-5b4b55054d4e",
+  "publishedAt": "2026-06-16T00:00:00.000Z",
+  "otaChannel": "production"
+}
