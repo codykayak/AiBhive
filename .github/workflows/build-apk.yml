@@ -12,7 +12,7 @@ concurrency:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
@@ -39,6 +39,7 @@ jobs:
         working-directory: ./taylored-mobile
         env:
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m
         run: bash scripts/ci-android-build.sh
 
       - name: Upload APK Artifact
