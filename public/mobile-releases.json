@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.0.5",
-  "versionCode": 1,
+  "shippedNativeVersion": "1.1.0",
+  "versionCode": 2,
   "sourceVersion": "1.1.0",
-  "releaseNotes": "Stable v1.0.5 install. Source on main-fixed is ahead (v1.1.0) — run a manual APK build when ready to ship native changes.",
+  "releaseNotes": "v1.1.0 — AI behavior settings, job research tabs, DeX keyboard fixes, in-app update checks, Hive billing scaffold.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1781826364003%2Ftaylored-mobile.apk.gz?alt=media&token=7c1a74ef-daad-477d-87d4-5b4b55054d4e",
-  "publishedAt": "2026-06-16T00:00:00.000Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1781908722111%2Ftaylored-mobile.apk.gz?alt=media&token=371398da-90f5-40fc-8198-f5d2e25e22ce",
+  "publishedAt": "2026-06-19T22:38:43.005Z",
   "otaChannel": "production"
 }

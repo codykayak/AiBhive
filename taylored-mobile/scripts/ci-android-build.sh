@@ -20,13 +20,16 @@ sed -i 's/reactNativeArchitectures=.*/reactNativeArchitectures=armeabi-v7a,arm64
 
 echo "==> CI Gradle tuning (memory + skip release lint OOM)"
 GRADLE_PROPS=android/gradle.properties
+# Prebuild may end gradle.properties without a trailing newline — fix before appending.
+sed -i 's/expo\.inlineModules\.watchedDirectories=\[\].*/expo.inlineModules.watchedDirectories=[]/' "$GRADLE_PROPS"
 if grep -q '^org.gradle.jvmargs=' "$GRADLE_PROPS"; then
   sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m/' "$GRADLE_PROPS"
 else
-  echo 'org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m' >> "$GRADLE_PROPS"
+  printf '\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m\n' >> "$GRADLE_PROPS"
 fi
-grep -q 'android.lint.checkReleaseBuilds' "$GRADLE_PROPS" || \
-  echo 'android.lint.checkReleaseBuilds=false' >> "$GRADLE_PROPS"
+if ! grep -q '^android.lint.checkReleaseBuilds=' "$GRADLE_PROPS"; then
+  printf '\nandroid.lint.checkReleaseBuilds=false\n' >> "$GRADLE_PROPS"
+fi
 
 cd android
 sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" >/dev/null
