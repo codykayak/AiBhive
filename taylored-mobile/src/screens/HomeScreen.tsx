@@ -7,14 +7,23 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Vibration,
 } from 'react-native';
-import { Send, Sparkles, Wand2 } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Send, Sparkles, Wand2, Grid, Zap, Trash2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { HiveOrb } from '../components/HiveOrb';
+import { QuickPrompts } from '../components/QuickPrompts';
+import { GlassCard, PrimaryButton, StatusPill } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
-import { dexInputBarStyle, keyboardAvoidBehavior, keyboardVerticalOffset, useKeyboardInset } from '../hooks/useKeyboardInset';
+import { useToast } from '../contexts/ToastContext';
+import {
+  dexInputBarStyle,
+  keyboardAvoidBehavior,
+  keyboardVerticalOffset,
+  useKeyboardInset,
+} from '../hooks/useKeyboardInset';
 import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
 import { loadAiBehavior } from '../lib/aiBehavior';
 import { triageLocally, localTaskToHiveTask } from '../lib/hiveBrain';
@@ -30,40 +39,70 @@ import {
 } from '../lib/hiveApi';
 import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
 import { fetchHiveAccount, ensureCreditsForTask, openAddCredits } from '../lib/hiveAccount';
+import { loadChatHistory, saveChatHistory, clearChatHistory, type StoredChatMessage } from '../lib/chatHistory';
+import { upsertHiveAppFromTask } from '../lib/hiveApps';
 import { colors, radii, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { shadows } from '../theme/shadows';
 
-type Message = {
-  id: string;
-  role: 'user' | 'ai';
-  content: string;
-  task?: HiveTask;
+type Message = StoredChatMessage;
+
+const WELCOME: Message = {
+  id: 'welcome',
+  role: 'ai',
+  content: HIVE_COPY.welcome,
+  at: new Date().toISOString(),
 };
 
 export default function HomeScreen() {
+  const navigation = useNavigation<any>();
+  const { showToast } = useToast();
   const tabBarPadding = useTabBarPadding(12);
   const { bottomPad: keyboardPad, isWide, keyboardHeight } = useKeyboardInset(0);
+  const scrollRef = useRef<ScrollView>(null);
+
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'ai',
-      content: HIVE_COPY.welcome,
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeLabel, setActiveLabel] = useState('Gemini');
   const [magicMode, setMagicMode] = useState(true);
-  const [hiveStatus, setHiveStatus] = useState<string>('');
+  const [hiveOnline, setHiveOnline] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hydrated = useRef(false);
+
+  const scrollToEnd = useCallback(() => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+  }, []);
+
+  const persistMessages = useCallback(async (next: Message[]) => {
+    if (!hydrated.current) return;
+    await saveChatHistory(next.filter((m) => m.id !== 'welcome'));
+  }, []);
+
+  const setMessagesAndSave = useCallback(
+    (updater: Message[] | ((prev: Message[]) => Message[])) => {
+      setMessages((prev) => {
+        const next = typeof updater === 'function' ? updater(prev) : updater;
+        void persistMessages(next);
+        return next;
+      });
+      scrollToEnd();
+    },
+    [persistMessages, scrollToEnd]
+  );
 
   useEffect(() => {
     void ensureNotificationPermission();
     getHiveStatus().then((s) => {
-      if (s) setHiveStatus(s.message);
+      if (s) setHiveOnline(s.online);
     });
     fetchHiveAccount().then((a) => {
       if (a) setCreditBalance(a.creditBalanceUsd);
+    });
+    loadChatHistory().then((saved) => {
+      if (saved?.length) setMessages([WELCOME, ...saved]);
+      hydrated.current = true;
     });
   }, []);
 
@@ -74,7 +113,7 @@ export default function HomeScreen() {
       if (def) setActiveLabel(def.label);
     };
     refresh();
-    const interval = setInterval(refresh, 3000);
+    const interval = setInterval(refresh, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -88,35 +127,48 @@ export default function HomeScreen() {
     Vibration.vibrate([0, 120, 80, 120]);
   }, []);
 
-  const updateMessageTask = useCallback((taskId: string, task: HiveTask) => {
-    setMessages((prev) =>
-      prev.map((m) => (m.task?.id === taskId ? { ...m, content: task.reply || m.content, task } : m))
-    );
+  const syncTaskToApps = useCallback(async (task: HiveTask, prompt?: string) => {
+    if (task.status === 'building' || task.status === 'complete' || task.status === 'failed') {
+      await upsertHiveAppFromTask(task, prompt);
+    }
   }, []);
 
+  const updateMessageTask = useCallback(
+    (taskId: string, task: HiveTask, prompt?: string) => {
+      setMessagesAndSave((prev) =>
+        prev.map((m) =>
+          m.task?.id === taskId ? { ...m, content: task.reply || m.content, task } : m
+        )
+      );
+      void syncTaskToApps(task, prompt);
+    },
+    [setMessagesAndSave, syncTaskToApps]
+  );
+
   const startPolling = useCallback(
-    (taskId: string) => {
+    (taskId: string, prompt?: string) => {
       if (pollRef.current) clearInterval(pollRef.current);
       pollRef.current = setInterval(async () => {
         try {
           const task = await getHiveTask(taskId);
-          updateMessageTask(taskId, task);
+          updateMessageTask(taskId, task, prompt);
           if (task.status === 'complete') {
             dingReady();
             void dingFeatureReady();
+            showToast('Your app is ready — check My Apps', 'success');
             if (pollRef.current) clearInterval(pollRef.current);
           } else if (task.status === 'failed') {
             if (pollRef.current) clearInterval(pollRef.current);
           }
         } catch {
-          // keep polling — server may still be deploying
+          // server may still be deploying
         }
-      }, 8000);
+      }, 6000);
     },
-    [dingReady, updateMessageTask]
+    [dingReady, showToast, updateMessageTask]
   );
 
-  const handleApprove = async (task: HiveTask) => {
+  const handleApprove = async (task: HiveTask, prompt?: string) => {
     setIsLoading(true);
     try {
       let taskId = task.id;
@@ -129,28 +181,23 @@ export default function HomeScreen() {
       const cost = task.estimate?.costUsd ?? 0;
       const pay = await ensureCreditsForTask(taskId, cost);
       if (!pay.ok) {
-        updateMessageTask(task.id, {
-          ...task,
-          reply: HIVE_COPY.needCredits(pay.amountUsd),
-        });
+        updateMessageTask(task.id, { ...task, reply: HIVE_COPY.needCredits(pay.amountUsd) }, prompt);
         return;
       }
       if (pay.creditBalanceUsd !== undefined) setCreditBalance(pay.creditBalanceUsd);
 
       const userId = await getOrCreateHiveUserId();
       const approved = await approveHiveTask(taskId, userId);
-      updateMessageTask(task.id, { ...approved, id: taskId, source: 'server' });
-      startPolling(taskId);
+      const merged = { ...approved, id: taskId, source: 'server' as const };
+      updateMessageTask(task.id, merged, prompt);
+      void upsertHiveAppFromTask(merged, prompt);
+      startPolling(taskId, prompt);
       fetchHiveAccount().then((a) => {
         if (a) setCreditBalance(a.creditBalanceUsd);
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not start build';
-      updateMessageTask(task.id, {
-        ...task,
-        status: 'failed',
-        reply: msg,
-      });
+      updateMessageTask(task.id, { ...task, status: 'failed', reply: msg }, prompt);
     } finally {
       setIsLoading(false);
     }
@@ -159,12 +206,13 @@ export default function HomeScreen() {
   const runLocalChat = async (userMsg: Message) => {
     const config = await getActiveLlmConfig();
     if (!config) {
-      setMessages((prev) => [
+      setMessagesAndSave((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: 'ai',
           content: 'Enable a provider in Settings, add an API key, and set it as active.',
+          at: new Date().toISOString(),
         },
       ]);
       return;
@@ -172,28 +220,27 @@ export default function HomeScreen() {
 
     const behavior = await loadAiBehavior();
     const history = messages
-      .filter((m) => m.id !== '1' && !m.task)
+      .filter((m) => m.id !== 'welcome' && !m.task)
       .map((m) => ({ role: m.role, content: m.content }));
 
-    const reply = await sendChatMessage(config, history, userMsg.content, {
-      behavior,
-      magicMode,
-    });
-    setMessages((prev) => [
+    const reply = await sendChatMessage(config, history, userMsg.content, { behavior, magicMode });
+    setMessagesAndSave((prev) => [
       ...prev,
-      {
-        id: Date.now().toString(),
-        role: 'ai',
-        content: reply,
-      },
+      { id: Date.now().toString(), role: 'ai', content: reply, at: new Date().toISOString() },
     ]);
   };
 
-  const handleSend = async () => {
-    if (!inputText.trim() || isLoading) return;
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
 
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', content: inputText.trim() };
-    setMessages((prev) => [...prev, userMsg]);
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: trimmed,
+      at: new Date().toISOString(),
+    };
+    setMessagesAndSave((prev) => [...prev, userMsg]);
     setInputText('');
     setIsLoading(true);
 
@@ -202,31 +249,34 @@ export default function HomeScreen() {
         const userId = await getOrCreateHiveUserId();
         let task: HiveTask;
         try {
-          task = { ...(await createHiveTask(userMsg.content, userId)), source: 'server' };
+          task = { ...(await createHiveTask(trimmed, userId)), source: 'server' };
         } catch {
           const config = await getActiveLlmConfig();
           if (!config) throw new Error('No API key');
-          const partial = await triageLocally(config, userMsg.content);
-          task = { ...localTaskToHiveTask(userMsg.content, partial), source: 'local' };
+          const partial = await triageLocally(config, trimmed);
+          task = { ...localTaskToHiveTask(trimmed, partial), source: 'local' };
         }
         const aiMsg: Message = {
           id: `${Date.now()}_ai`,
           role: 'ai',
           content: task.reply || task.summary || 'Working on it…',
           task,
+          at: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, aiMsg]);
-        if (task.status === 'building') startPolling(task.id);
+        setMessagesAndSave((prev) => [...prev, aiMsg]);
+        void upsertHiveAppFromTask(task, trimmed);
+        if (task.status === 'building') startPolling(task.id, trimmed);
         return;
       }
       await runLocalChat(userMsg);
     } catch {
-      setMessages((prev) => [
+      setMessagesAndSave((prev) => [
         ...prev,
         {
           id: Date.now().toString(),
           role: 'ai',
           content: 'Connection failed. Check your API key in Settings.',
+          at: new Date().toISOString(),
         },
       ]);
     } finally {
@@ -234,34 +284,54 @@ export default function HomeScreen() {
     }
   };
 
-  const bottomPad = tabBarPadding;
+  const handleClearChat = async () => {
+    await clearChatHistory();
+    setMessages([WELCOME]);
+    showToast(HIVE_COPY.chatCleared);
+  };
 
   return (
-    <ScreenLayout showBrand={false} contentStyle={styles.screenContent}>
-      <View style={styles.heroRow}>
-        <View style={styles.hero}>
-          <Sparkles color={colors.amberLight} size={18} />
-          <Text style={styles.heroTitle}>Hive Magic</Text>
+    <ScreenLayout showBrand={false} contentStyle={styles.screenContent} compactBadge>
+      <View style={styles.heroBlock}>
+        <View style={styles.heroLeft}>
+          <HiveOrb size={44} active={magicMode} />
+          <View style={styles.heroText}>
+            <View style={styles.titleRow}>
+              <Text style={styles.heroTitle}>Hive Magic</Text>
+              {hiveOnline && (
+                <View style={styles.livePill}>
+                  <Zap color={colors.success} size={10} />
+                  <Text style={styles.liveText}>Live</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.heroSubtitle} numberOfLines={2}>
+              {magicMode
+                ? HIVE_COPY.magicOnSubtitle(activeLabel)
+                : HIVE_COPY.magicOffSubtitle(activeLabel)}
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity
-          style={[styles.magicToggle, magicMode && styles.magicToggleOn]}
-          onPress={() => setMagicMode((v) => !v)}
-        >
-          <Wand2 color={magicMode ? colors.black : colors.amberLight} size={16} />
-          <Text style={[styles.magicToggleText, magicMode && styles.magicToggleTextOn]}>
-            {magicMode ? 'ON' : 'OFF'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.heroActions}>
+          <TouchableOpacity
+            style={[styles.magicToggle, magicMode && styles.magicToggleOn]}
+            onPress={() => setMagicMode((v) => !v)}
+          >
+            <Wand2 color={magicMode ? colors.black : colors.amberLight} size={16} />
+            <Text style={[styles.magicToggleText, magicMode && styles.magicToggleTextOn]}>
+              {magicMode ? 'ON' : 'OFF'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => void handleClearChat()} style={styles.iconBtn}>
+            <Trash2 color={colors.textDim} size={18} />
+          </TouchableOpacity>
+        </View>
       </View>
-      <Text style={styles.heroSubtitle}>
-        {magicMode
-          ? HIVE_COPY.magicOnSubtitle(activeLabel, hiveStatus)
-          : HIVE_COPY.magicOffSubtitle(activeLabel)}
-      </Text>
+
       {creditBalance !== null && (
-        <TouchableOpacity onPress={() => void openAddCredits()} style={styles.creditRow}>
+        <TouchableOpacity onPress={() => void openAddCredits()} style={styles.creditCard} activeOpacity={0.9}>
           <Text style={styles.creditText}>{HIVE_COPY.balanceLabel(creditBalance)}</Text>
-          <Text style={styles.creditAdd}>+ Add</Text>
+          <Text style={styles.creditAdd}>+ Add credits</Text>
         </TouchableOpacity>
       )}
 
@@ -271,64 +341,112 @@ export default function HomeScreen() {
         keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
       >
         <ScrollView
+          ref={scrollRef}
           style={styles.chatContainer}
-          contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(bottomPad, 24) }]}
+          contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(tabBarPadding, 24) }]}
           keyboardShouldPersistTaps="handled"
+          onContentSizeChange={scrollToEnd}
         >
           {messages.map((msg) => (
-            <View key={msg.id}>
+            <View key={msg.id} style={styles.msgWrap}>
+              {msg.role === 'ai' && msg.id !== 'welcome' && (
+                <View style={styles.aiAvatar}>
+                  <Sparkles color={colors.amber} size={12} />
+                </View>
+              )}
               <View
-                style={[styles.messageBubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}
+                style={[
+                  styles.messageBubble,
+                  msg.role === 'user' ? styles.userBubble : styles.aiBubble,
+                  msg.id === 'welcome' && styles.welcomeBubble,
+                ]}
               >
                 <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.content}</Text>
               </View>
+
               {msg.task?.status === 'awaiting_approval' && msg.task.estimate && (
-                <View style={styles.approvalCard}>
+                <GlassCard style={styles.approvalCard} glow>
                   <Text style={styles.approvalTitle}>{HIVE_COPY.approveTitle}</Text>
                   <Text style={styles.approvalMeta}>
                     {formatEstimateCard(msg.task.estimate.costUsd, msg.task.estimate.minutes)}
                   </Text>
-                  <TouchableOpacity
-                    style={styles.approveBtn}
-                    onPress={() => handleApprove(msg.task!)}
+                  <PrimaryButton
+                    label={HIVE_COPY.approveButton}
+                    onPress={() => handleApprove(msg.task!, msg.task?.message)}
                     disabled={isLoading}
-                  >
-                    <Text style={styles.approveBtnText}>{HIVE_COPY.approveButton}</Text>
-                  </TouchableOpacity>
-                </View>
+                    icon={Wand2}
+                  />
+                </GlassCard>
               )}
+
               {msg.task?.status === 'building' && (
-                <View style={styles.buildingRow}>
+                <View style={styles.buildingCard}>
                   <ActivityIndicator color={colors.amberLight} size="small" />
                   <Text style={styles.buildingText}>{HIVE_COPY.building}</Text>
+                  <StatusPill label="In progress" tone="amber" />
                 </View>
               )}
+
               {msg.task?.status === 'complete' && (
-                <View style={styles.doneCard}>
+                <GlassCard style={styles.doneCard} glow>
                   <Text style={styles.doneText}>{HIVE_COPY.done}</Text>
+                  <PrimaryButton
+                    label="Open My Apps"
+                    variant="secondary"
+                    icon={Grid}
+                    onPress={() => navigation.navigate('Apps')}
+                    style={styles.doneBtn}
+                  />
+                </GlassCard>
+              )}
+
+              {msg.task?.status === 'failed' && (
+                <View style={styles.failedCard}>
+                  <Text style={styles.failedText}>{msg.task.reply || HIVE_COPY.buildFailed}</Text>
                 </View>
               )}
             </View>
           ))}
+
           {isLoading && (
             <View style={[styles.messageBubble, styles.aiBubble, styles.loadingBubble]}>
               <ActivityIndicator color={colors.amberLight} />
+              <Text style={styles.typingText}>Thinking…</Text>
             </View>
           )}
         </ScrollView>
 
-        <View style={[styles.inputContainer, dexInputBarStyle(keyboardHeight > 0), { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 }]}>
-          <TextInput
-            style={[styles.input, isWide && styles.inputWide]}
-            placeholder={magicMode ? 'Describe a feature…' : 'Ask anything…'}
-            placeholderTextColor={colors.textDim}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-          />
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
-            <Send color={colors.black} size={20} />
-          </TouchableOpacity>
+        <View style={styles.composer}>
+          {magicMode && !isLoading && (
+            <QuickPrompts
+              prompts={HIVE_COPY.quickPrompts}
+              onSelect={(p) => void sendMessage(p)}
+              disabled={isLoading}
+            />
+          )}
+          <View
+            style={[
+              styles.inputContainer,
+              dexInputBarStyle(keyboardHeight > 0),
+              { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 },
+            ]}
+          >
+            <TextInput
+              style={[styles.input, isWide && styles.inputWide]}
+              placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
+              placeholderTextColor={colors.textDim}
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendDisabled]}
+              onPress={() => void sendMessage(inputText)}
+              disabled={isLoading || !inputText.trim()}
+            >
+              <Send color={colors.black} size={20} />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </ScreenLayout>
@@ -336,26 +454,32 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenContent: {
-    paddingHorizontal: spacing.md,
-  },
+  screenContent: { paddingHorizontal: spacing.md },
   flex: { flex: 1 },
-  heroRow: {
+  heroBlock: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
-  },
-  hero: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
     gap: 8,
   },
-  heroTitle: {
-    color: colors.amberLight,
-    fontSize: 24,
-    fontWeight: '800',
+  heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  heroText: { flex: 1 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  heroTitle: { ...typography.h2, color: colors.amberLight },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.successSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.pill,
   },
+  liveText: { color: colors.success, fontSize: 10, fontWeight: '800' },
+  heroSubtitle: { color: colors.textMuted, fontSize: 13, marginTop: 2, lineHeight: 18 },
+  heroActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   magicToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -366,122 +490,100 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderMuted,
   },
-  magicToggleOn: {
-    backgroundColor: colors.amber,
-    borderColor: colors.amber,
-  },
-  magicToggleText: {
-    color: colors.amberLight,
-    fontWeight: '800',
-    fontSize: 12,
-  },
-  magicToggleTextOn: {
-    color: colors.black,
-  },
-  heroSubtitle: {
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-    marginTop: 4,
-  },
-  creditRow: {
+  magicToggleOn: { backgroundColor: colors.amber, borderColor: colors.amber, ...shadows.amber },
+  magicToggleText: { color: colors.amberLight, fontWeight: '800', fontSize: 12 },
+  magicToggleTextOn: { color: colors.black },
+  iconBtn: { padding: 8 },
+  creditCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    paddingVertical: 6,
-  },
-  creditText: {
-    color: colors.amberLight,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  creditAdd: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  chatContainer: { flex: 1 },
-  chatContent: { paddingTop: spacing.sm },
-  messageBubble: {
-    maxWidth: '88%',
-    padding: 14,
+    backgroundColor: colors.amberSoft,
     borderRadius: radii.md,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: spacing.sm,
+  },
+  creditText: { color: colors.amberLight, fontWeight: '800', fontSize: 14 },
+  creditAdd: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
+  chatContainer: { flex: 1 },
+  chatContent: { paddingTop: spacing.xs },
+  msgWrap: { marginBottom: 14 },
+  aiAvatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.amberSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  messageBubble: {
+    maxWidth: '90%',
+    padding: 14,
+    borderRadius: radii.lg,
+  },
+  welcomeBubble: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.bgElevated,
+    alignSelf: 'stretch',
+    maxWidth: '100%',
   },
   userBubble: {
     backgroundColor: colors.amber,
     alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
+    ...shadows.amber,
   },
   aiBubble: {
     backgroundColor: colors.bgCard,
     alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: 6,
     borderWidth: 1,
     borderColor: colors.borderMuted,
   },
-  loadingBubble: { alignSelf: 'flex-start' },
-  messageText: { color: colors.text, fontSize: 16, lineHeight: 22 },
-  userText: { color: colors.black, fontWeight: '600' },
-  approvalCard: {
+  loadingBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.amber,
-    padding: 14,
-    marginBottom: 12,
-    marginTop: -4,
-    maxWidth: '88%',
-  },
-  approvalTitle: {
-    color: colors.amberLight,
-    fontWeight: '800',
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  approvalMeta: {
-    color: colors.textMuted,
-    marginBottom: 12,
-  },
-  approveBtn: {
-    backgroundColor: colors.amber,
-    borderRadius: radii.md,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  approveBtnText: {
-    color: colors.black,
-    fontWeight: '800',
-    fontSize: 15,
-  },
-  buildingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+  },
+  typingText: { color: colors.textMuted, fontSize: 14 },
+  messageText: { color: colors.text, fontSize: 16, lineHeight: 24 },
+  userText: { color: colors.black, fontWeight: '600' },
+  approvalCard: { marginTop: 8, maxWidth: '92%', alignSelf: 'flex-start', gap: 8 },
+  approvalTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 16 },
+  approvalMeta: { color: colors.textMuted, marginBottom: 4, fontSize: 15 },
+  buildingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
     marginLeft: 4,
+    flexWrap: 'wrap',
   },
-  buildingText: {
-    color: colors.textMuted,
-    fontSize: 14,
-  },
-  doneCard: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+  buildingText: { color: colors.textMuted, fontSize: 14 },
+  doneCard: { marginTop: 8, maxWidth: '92%', alignSelf: 'flex-start', gap: 10 },
+  doneText: { color: colors.amberLight, fontWeight: '700', fontSize: 15 },
+  doneBtn: { alignSelf: 'flex-start', paddingHorizontal: 20 },
+  failedCard: {
+    marginTop: 8,
+    backgroundColor: colors.dangerSoft,
     borderRadius: radii.md,
     padding: 12,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: colors.amber,
+    borderColor: 'rgba(248,113,113,0.35)',
+    maxWidth: '90%',
   },
-  doneText: {
-    color: colors.amberLight,
-    fontWeight: '700',
-  },
+  failedText: { color: colors.danger, fontSize: 14, lineHeight: 20 },
+  composer: { paddingTop: 4 },
   inputContainer: {
     flexDirection: 'row',
-    paddingTop: 12,
+    paddingTop: 8,
     alignItems: 'flex-end',
     gap: 10,
   },
@@ -493,22 +595,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 12,
     fontSize: 16,
-    maxHeight: 110,
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: colors.amber,
+    maxHeight: 120,
+    minHeight: 50,
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
-  inputWide: {
-    minHeight: 52,
-    fontSize: 17,
-    maxHeight: 140,
-  },
+  inputWide: { minHeight: 54, fontSize: 17, maxHeight: 140 },
   sendButton: {
     backgroundColor: colors.amber,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.amber,
   },
+  sendDisabled: { opacity: 0.45 },
 });

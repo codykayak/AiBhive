@@ -28,6 +28,19 @@ export const HIVE_COPY = {
   updateInstall: 'Download update',
   updateRestart: 'Restart to apply',
   updateSectionHint: 'Small UI fixes arrive automatically after the next app install. Full installs are only needed occasionally.',
+  quickPrompts: [
+    'Build me a habit tracker',
+    'Add expense tracker',
+    'Interview prep flashcards',
+    'Lead follow-up reminder',
+  ],
+  appsHeroTitle: 'Your personal app factory',
+  appsHeroBody: 'Everything the Hive builds for you lives here — plus our starter tools.',
+  appsRecent: 'Built by the Hive',
+  appsBuiltIn: 'Starter tools',
+  appsEmptyBuilds: 'No custom apps yet — describe one on Build and approve the quote.',
+  chatCleared: 'Chat cleared',
+  copied: 'Copied to clipboard',
 };
 
 export function formatEstimateCard(costUsd: number, minutes: number): string {

@@ -1,18 +1,39 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  TextInput,
+} from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Briefcase, ChevronRight } from 'lucide-react-native';
+import { Briefcase, ChevronRight, Search, Plus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { PrimaryButton } from '../components/ui';
-import { listJobs, statusLabel, type JobApplication } from '../lib/jobs';
+import { EmptyState, PrimaryButton, StatusPill } from '../components/ui';
+import { listJobs, statusLabel, type JobApplication, type JobStatus } from '../lib/jobs';
+import { jobStatusTone } from '../lib/jobStatusUi';
 import { colors, radii, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { shadows } from '../theme/shadows';
+
+const FILTERS: Array<{ id: 'all' | JobStatus; label: string }> = [
+  { id: 'all', label: 'All' },
+  { id: 'generated', label: 'Kit ready' },
+  { id: 'submitted', label: 'Submitted' },
+  { id: 'interviewing', label: 'Interview' },
+  { id: 'offer', label: 'Offer' },
+];
 
 export default function JobTrackerScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<'all' | JobStatus>('all');
+  const [query, setQuery] = useState('');
 
   const load = useCallback(async () => {
     setJobs(await listJobs());
@@ -30,49 +51,122 @@ export default function JobTrackerScreen() {
     setRefreshing(false);
   };
 
+  const filtered = useMemo(() => {
+    let list = [...jobs];
+    if (filter !== 'all') list = list.filter((j) => j.status === filter);
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (j) =>
+          (j.companyName || '').toLowerCase().includes(q) ||
+          (j.roleTitle || '').toLowerCase().includes(q) ||
+          (j.jobUrl || '').toLowerCase().includes(q)
+      );
+    }
+    return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }, [jobs, filter, query]);
+
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: jobs.length };
+    for (const j of jobs) c[j.status] = (c[j.status] || 0) + 1;
+    return c;
+  }, [jobs]);
+
   return (
     <ScreenLayout
       title="Job Tracker"
-      subtitle="Every application you generate is saved here with materials and research."
+      subtitle="Your application pipeline — every kit, status, and research note in one place."
       showBrand={false}
       contentStyle={styles.content}
     >
       <PrimaryButton
         label="New application"
+        icon={Plus}
         onPress={() => navigation.navigate('AutoBotResume')}
         style={styles.newBtn}
       />
 
+      <View style={styles.searchRow}>
+        <Search color={colors.textDim} size={18} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search company or role…"
+          placeholderTextColor={colors.textDim}
+          value={query}
+          onChangeText={setQuery}
+        />
+      </View>
+
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.amberLight} />}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterRow}
+      >
+        {FILTERS.map((f) => {
+          const active = filter === f.id;
+          const count = counts[f.id] ?? 0;
+          return (
+            <TouchableOpacity
+              key={f.id}
+              style={[styles.filterChip, active && styles.filterChipOn]}
+              onPress={() => setFilter(f.id)}
+            >
+              <Text style={[styles.filterText, active && styles.filterTextOn]}>
+                {f.label}{count > 0 ? ` · ${count}` : ''}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.amberLight} />
+        }
         contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
         showsVerticalScrollIndicator={false}
       >
-        {jobs.length === 0 ? (
-          <View style={styles.empty}>
-            <Briefcase color={colors.textDim} size={40} />
-            <Text style={styles.emptyTitle}>No jobs yet</Text>
-            <Text style={styles.emptyText}>Generate an application kit and it will appear here automatically.</Text>
-          </View>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={Briefcase}
+            title={jobs.length === 0 ? 'No jobs yet' : 'No matches'}
+            body={
+              jobs.length === 0
+                ? 'Generate an application kit and it lands here automatically.'
+                : 'Try a different filter or search term.'
+            }
+            action={
+              jobs.length === 0 ? (
+                <PrimaryButton
+                  label="Create application kit"
+                  variant="secondary"
+                  onPress={() => navigation.navigate('AutoBotResume')}
+                  style={{ marginTop: 12 }}
+                />
+              ) : undefined
+            }
+          />
         ) : (
-          jobs.map((job) => (
+          filtered.map((job) => (
             <TouchableOpacity
               key={job.id}
               style={styles.card}
-              activeOpacity={0.9}
+              activeOpacity={0.88}
               onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
             >
+              <View style={styles.cardAccent} />
               <View style={styles.cardBody}>
                 <Text style={styles.company}>{job.companyName || job.roleTitle || 'Untitled role'}</Text>
-                <Text style={styles.role}>{job.roleTitle || job.jobUrl || 'Tap for details'}</Text>
+                <Text style={styles.role} numberOfLines={1}>
+                  {job.roleTitle || job.jobUrl || 'Tap for details'}
+                </Text>
                 <View style={styles.metaRow}>
-                  <View style={styles.statusPill}>
-                    <Text style={styles.statusText}>{statusLabel(job.status)}</Text>
-                  </View>
+                  <StatusPill label={statusLabel(job.status)} tone={jobStatusTone(job.status)} />
                   <Text style={styles.date}>{new Date(job.updatedAt).toLocaleDateString()}</Text>
                 </View>
               </View>
-              <ChevronRight color={colors.amber} size={20} />
+              <ChevronRight color={colors.amber} size={22} />
             </TouchableOpacity>
           ))
         )}
@@ -84,30 +178,59 @@ export default function JobTrackerScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.md },
   newBtn: { marginBottom: spacing.md },
-  empty: { alignItems: 'center', paddingTop: 48, gap: 8 },
-  emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
-  emptyText: { color: colors.textMuted, textAlign: 'center', lineHeight: 20, paddingHorizontal: spacing.lg },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.bgInput,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    paddingHorizontal: 14,
+    marginBottom: spacing.sm,
+    minHeight: 46,
+  },
+  searchInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    paddingVertical: 10,
+  },
+  filterScroll: { marginBottom: spacing.md, maxHeight: 44 },
+  filterRow: { gap: 8, paddingRight: spacing.md },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    backgroundColor: colors.bgCard,
+  },
+  filterChipOn: {
+    backgroundColor: colors.amber,
+    borderColor: colors.amber,
+  },
+  filterText: { color: colors.textMuted, fontWeight: '700', fontSize: 12 },
+  filterTextOn: { color: colors.black },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
     borderRadius: radii.lg,
-    padding: spacing.md,
     marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.borderMuted,
-    gap: spacing.sm,
+    overflow: 'hidden',
+    ...shadows.soft,
   },
-  cardBody: { flex: 1 },
-  company: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  cardAccent: {
+    width: 4,
+    alignSelf: 'stretch',
+    backgroundColor: colors.amber,
+  },
+  cardBody: { flex: 1, padding: spacing.md },
+  company: { ...typography.h3, color: colors.text },
   role: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
-  statusPill: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radii.sm,
-  },
-  statusText: { color: colors.amberLight, fontSize: 11, fontWeight: '800' },
   date: { color: colors.textDim, fontSize: 12 },
 });

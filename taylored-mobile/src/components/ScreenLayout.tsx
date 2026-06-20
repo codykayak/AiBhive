@@ -1,18 +1,20 @@
 import React from 'react';
 import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop, Circle } from 'react-native-svg';
 import { VersionBadge } from './VersionBadge';
 import { colors, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
 
 type ScreenLayoutProps = {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
-  scroll?: boolean;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
   showBrand?: boolean;
+  /** Smaller, subtler version badge */
+  compactBadge?: boolean;
 };
 
 export function ScreenLayout({
@@ -21,7 +23,7 @@ export function ScreenLayout({
   subtitle,
   style,
   contentStyle,
-  showBrand = true,
+  compactBadge = false,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
 
@@ -31,19 +33,23 @@ export function ScreenLayout({
         <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
           <Defs>
             <LinearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor="#020617" />
-              <Stop offset="0.55" stopColor="#0f172a" />
-              <Stop offset="1" stopColor="#111827" />
+              <Stop offset="0" stopColor="#01040f" />
+              <Stop offset="0.45" stopColor="#0f172a" />
+              <Stop offset="1" stopColor="#1a1033" />
+            </LinearGradient>
+            <LinearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+              <Stop offset="0" stopColor={colors.amber} stopOpacity="0.25" />
+              <Stop offset="1" stopColor={colors.purple} stopOpacity="0.08" />
             </LinearGradient>
           </Defs>
           <Rect width="100%" height="100%" fill="url(#bg)" />
+          <Circle cx="85%" cy="8%" r="120" fill="url(#glow)" opacity={0.5} />
+          <Circle cx="10%" cy="75%" r="90" fill={colors.amberGlow} opacity={0.2} />
         </Svg>
-        <View style={styles.glowTop} />
-        <View style={styles.glowBottom} />
       </View>
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.sm }, contentStyle]}>
-        <VersionBadge />
+        <VersionBadge compact={compactBadge} />
         {!!title && <Text style={styles.title}>{title}</Text>}
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         {children}
@@ -57,42 +63,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
-  glowTop: {
-    position: 'absolute',
-    top: -80,
-    right: -40,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: colors.amberGlow,
-    opacity: 0.35,
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: 120,
-    left: -60,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-  },
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
   },
-  brandRow: {
-    display: 'none',
-  },
   title: {
+    ...typography.h1,
     color: colors.text,
-    fontSize: 28,
-    fontWeight: '800',
     marginBottom: spacing.xs,
   },
   subtitle: {
+    ...typography.bodySm,
     color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
     marginBottom: spacing.lg,
+    lineHeight: 21,
   },
 });

@@ -1,103 +1,173 @@
-import React from 'react';
-import { Text, StyleSheet, TouchableOpacity, ScrollView, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Bot, AppWindow, Briefcase, Wand2, Sparkles, FolderKanban } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import { Text, StyleSheet, ScrollView, View } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Hammer } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { GlassCard, PrimaryButton } from '../components/ui';
-import { colors, radii, spacing } from '../theme/colors';
+import { HiveOrb } from '../components/HiveOrb';
+import {
+  AppLauncherCard,
+  EmptyState,
+  GlassCard,
+  PrimaryButton,
+  SectionLabel,
+} from '../components/ui';
+import { HIVE_COPY } from '../constants/hiveCopy';
+import { listHiveApps, type HiveAppRecord } from '../lib/hiveApps';
+import { colors, spacing } from '../theme/colors';
+import { typography } from '../theme/typography';
 
 const BUILT_IN_APPS = [
   {
     id: 'tracker',
     title: 'Job Tracker',
-    desc: 'Every application saved with cover letter, resume, status, and company research.',
+    desc: 'Pipeline for every application — materials, status, company research.',
     icon: FolderKanban,
     route: 'JobTracker',
     tag: 'Core',
+    accent: 'amber' as const,
   },
   {
     id: 'resume',
     title: 'Auto-Bot Resume',
-    desc: 'Tailor resume, cover letter, and cold email to any job.',
+    desc: 'Tailored resume, cover letter, and cold email in one tap.',
     icon: Bot,
     route: 'AutoBotResume',
     tag: 'Apply',
+    accent: 'info' as const,
   },
   {
     id: 'enterprise',
     title: 'AiBhive Enterprise',
-    desc: 'Autopilot your company — AI agents for leads, ops, and workflows.',
+    desc: 'AI agents for leads, ops, and workflows at scale.',
     icon: AppWindow,
     route: 'EnterpriseWebView',
     tag: 'Enterprise',
+    accent: 'purple' as const,
   },
 ];
+
+function hiveStatusLabel(status: HiveAppRecord['status']) {
+  if (status === 'complete') return 'Ready';
+  if (status === 'failed') return 'Needs attention';
+  return 'Building';
+}
 
 export default function AppsScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
+  const [hiveApps, setHiveApps] = useState<HiveAppRecord[]>([]);
+
+  const load = useCallback(async () => {
+    setHiveApps(await listHiveApps());
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
+
+  const buildingCount = hiveApps.filter((a) => a.status === 'building').length;
 
   return (
-    <ScreenLayout
-      title="My Hive Apps"
-      subtitle="Apps and tools you create show up here. The resume helper was our first example — describe anything new on the Build tab."
-      contentStyle={styles.content}
-    >
+    <ScreenLayout showBrand={false} contentStyle={styles.content}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: tabBarPadding }}
       >
-        <GlassCard style={styles.buildCard}>
+        <View style={styles.hero}>
+          <HiveOrb size={52} />
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroTitle}>{HIVE_COPY.appsHeroTitle}</Text>
+            <Text style={styles.heroBody}>{HIVE_COPY.appsHeroBody}</Text>
+          </View>
+        </View>
+
+        <GlassCard style={styles.statsRow} glow>
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{hiveApps.length}</Text>
+            <Text style={styles.statLabel}>Apps</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={[styles.statNum, buildingCount > 0 && styles.statActive]}>{buildingCount}</Text>
+            <Text style={styles.statLabel}>Building</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{hiveApps.filter((a) => a.status === 'complete').length}</Text>
+            <Text style={styles.statLabel}>Ready</Text>
+          </View>
+        </GlassCard>
+
+        <GlassCard style={styles.buildCard} glow>
           <View style={styles.buildHeader}>
             <Wand2 color={colors.amberLight} size={22} />
             <Text style={styles.buildTitle}>Create something new</Text>
           </View>
           <Text style={styles.buildText}>
-            No coding needed: type what you want in plain English on the Build tab. Approve the quote. Wait for the ding.
+            Plain English in → working app out. No code. Approve once. Wait for the ding.
           </Text>
           <PrimaryButton
             label="Go to Build"
             onPress={() => navigation.navigate('Build')}
             style={styles.buildBtn}
+            icon={Sparkles}
           />
         </GlassCard>
 
-        <Text style={styles.sectionLabel}>Your apps & examples</Text>
+        <SectionLabel>{HIVE_COPY.appsRecent}</SectionLabel>
 
-        {BUILT_IN_APPS.map((app) => {
-          const Icon = app.icon;
-          return (
-            <TouchableOpacity
+        {hiveApps.length === 0 ? (
+          <EmptyState
+            icon={Boxes}
+            title="Your factory is warming up"
+            body={HIVE_COPY.appsEmptyBuilds}
+            action={
+              <PrimaryButton
+                label="Start building"
+                variant="secondary"
+                onPress={() => navigation.navigate('Build')}
+                style={{ marginTop: 12 }}
+              />
+            }
+          />
+        ) : (
+          hiveApps.map((app) => (
+            <AppLauncherCard
               key={app.id}
-              style={styles.appCard}
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate(app.route)}
-            >
-              <View style={styles.iconContainer}>
-                <Icon color={colors.amberLight} size={34} />
-              </View>
-              <View style={styles.cardBody}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.appTitle}>{app.title}</Text>
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{app.tag}</Text>
-                  </View>
-                </View>
-                <Text style={styles.appDesc}>{app.desc}</Text>
-              </View>
-              <Briefcase color={colors.amber} size={18} />
-            </TouchableOpacity>
-          );
-        })}
+              title={app.title}
+              desc={app.summary}
+              tag={hiveStatusLabel(app.status)}
+              icon={app.status === 'building' ? Hammer : Sparkles}
+              accent={app.status === 'complete' ? 'amber' : 'info'}
+              onPress={() => navigation.navigate('Build')}
+            />
+          ))
+        )}
+
+        <SectionLabel>{HIVE_COPY.appsBuiltIn}</SectionLabel>
+
+        {BUILT_IN_APPS.map((app) => (
+          <AppLauncherCard
+            key={app.id}
+            title={app.title}
+            desc={app.desc}
+            tag={app.tag}
+            icon={app.icon}
+            accent={app.accent}
+            onPress={() => navigation.navigate(app.route)}
+          />
+        ))}
 
         <GlassCard style={styles.tipCard}>
           <View style={styles.tipHeader}>
             <Sparkles color={colors.amberLight} size={16} />
-            <Text style={styles.tipTitle}>Try asking the hive</Text>
+            <Text style={styles.tipTitle}>Hive ideas</Text>
           </View>
           <Text style={styles.tipText}>
-            "Add expense tracker" · "Build a habit tracker" · "Create interview prep cards" · "Make a lead follow-up bot"
+            {HIVE_COPY.quickPrompts.join(' · ')}
           </Text>
         </GlassCard>
       </ScrollView>
@@ -106,110 +176,36 @@ export default function AppsScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: spacing.md,
+  content: { paddingHorizontal: spacing.md },
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
-  buildCard: {
+  heroCopy: { flex: 1 },
+  heroTitle: { ...typography.h1, color: colors.text, marginBottom: 4 },
+  heroBody: { ...typography.bodySm, color: colors.textMuted, lineHeight: 20 },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
     marginBottom: spacing.lg,
-    borderColor: colors.amber,
-    borderWidth: 1,
+    paddingVertical: spacing.md,
   },
-  buildHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  buildTitle: {
-    color: colors.amberLight,
-    fontWeight: '800',
-    fontSize: 17,
-  },
-  buildText: {
-    color: colors.textMuted,
-    lineHeight: 20,
-    fontSize: 14,
-    marginBottom: spacing.md,
-  },
-  buildBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 24,
-  },
-  sectionLabel: {
-    color: colors.textDim,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    marginBottom: spacing.sm,
-  },
-  appCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  iconContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardBody: { flex: 1 },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-    flexWrap: 'wrap',
-  },
-  appTitle: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  tag: {
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radii.sm,
-  },
-  tagText: {
-    color: colors.amberLight,
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  appDesc: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  tipCard: {
-    marginTop: spacing.sm,
-  },
-  tipHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  tipTitle: {
-    color: colors.amberLight,
-    fontWeight: '800',
-  },
-  tipText: {
-    color: colors.textMuted,
-    lineHeight: 20,
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
+  stat: { alignItems: 'center', flex: 1 },
+  statNum: { ...typography.h2, color: colors.amberLight },
+  statActive: { color: colors.info },
+  statLabel: { ...typography.caption, color: colors.textDim, marginTop: 2 },
+  statDivider: { width: 1, height: 36, backgroundColor: colors.borderMuted },
+  buildCard: { marginBottom: spacing.lg, borderColor: colors.borderStrong },
+  buildHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  buildTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 17 },
+  buildText: { color: colors.textMuted, lineHeight: 21, fontSize: 14, marginBottom: spacing.md },
+  buildBtn: { alignSelf: 'flex-start', paddingHorizontal: 24 },
+  tipCard: { marginTop: spacing.sm, marginBottom: spacing.md },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
+  tipTitle: { color: colors.amberLight, fontWeight: '800' },
+  tipText: { color: colors.textMuted, lineHeight: 22, fontSize: 14, fontStyle: 'italic' },
 });
