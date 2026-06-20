@@ -13,7 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Send, Sparkles, Wand2, Grid, Zap, Trash2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { HiveOrb } from '../components/HiveOrb';
+import { HiveLogo } from '../components/HiveLogo';
 import { QuickPrompts } from '../components/QuickPrompts';
 import { GlassCard, PrimaryButton, StatusPill } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
@@ -294,7 +294,7 @@ export default function HomeScreen() {
     <ScreenLayout showBrand={false} contentStyle={styles.screenContent} compactBadge>
       <View style={styles.heroBlock}>
         <View style={styles.heroLeft}>
-          <HiveOrb size={44} active={magicMode} />
+          <HiveLogo size={48} glow animate={magicMode} />
           <View style={styles.heroText}>
             <View style={styles.titleRow}>
               <Text style={styles.heroTitle}>Hive Magic</Text>

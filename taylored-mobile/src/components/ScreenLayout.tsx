@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop, Circle } from 'react-native-svg';
 import { VersionBadge } from './VersionBadge';
+import { HiveLogo } from './HiveLogo';
 import { colors, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -23,6 +24,7 @@ export function ScreenLayout({
   subtitle,
   style,
   contentStyle,
+  showBrand = false,
   compactBadge = false,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
@@ -49,7 +51,17 @@ export function ScreenLayout({
       </View>
 
       <View style={[styles.content, { paddingTop: insets.top + spacing.sm }, contentStyle]}>
-        <VersionBadge compact={compactBadge} />
+        <View style={styles.topRow}>
+          {showBrand ? (
+            <View style={styles.brandRow}>
+              <HiveLogo size={32} />
+              <Text style={styles.brandText}>AiBhive</Text>
+            </View>
+          ) : (
+            <View />
+          )}
+          <VersionBadge compact={compactBadge} />
+        </View>
         {!!title && <Text style={styles.title}>{title}</Text>}
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         {children}
@@ -66,6 +78,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+    minHeight: 28,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandText: {
+    color: colors.amberLight,
+    fontWeight: '900',
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
   title: {
     ...typography.h1,

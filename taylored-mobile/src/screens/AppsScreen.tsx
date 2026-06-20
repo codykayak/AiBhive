@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Hammer } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { HiveOrb } from '../components/HiveOrb';
+import { HiveLogo } from '../components/HiveLogo';
 import {
   AppLauncherCard,
   EmptyState,
@@ -71,13 +71,13 @@ export default function AppsScreen() {
   const buildingCount = hiveApps.filter((a) => a.status === 'building').length;
 
   return (
-    <ScreenLayout showBrand={false} contentStyle={styles.content}>
+    <ScreenLayout showBrand contentStyle={styles.content}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: tabBarPadding }}
       >
         <View style={styles.hero}>
-          <HiveOrb size={52} />
+          <HiveLogo size={56} glow animate />
           <View style={styles.heroCopy}>
             <Text style={styles.heroTitle}>{HIVE_COPY.appsHeroTitle}</Text>
             <Text style={styles.heroBody}>{HIVE_COPY.appsHeroBody}</Text>

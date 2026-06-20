@@ -3,6 +3,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+echo "==> Sync AiBhive logo into launcher assets"
+bash scripts/sync-hive-branding.sh
+
 echo "==> Checking required assets"
 for f in assets/icon.png assets/splash-icon.png assets/android-icon-foreground.png; do
   if [[ ! -f "$f" ]]; then

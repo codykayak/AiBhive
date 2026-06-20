@@ -3,7 +3,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { StatusBar } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ResponsiveShell } from './src/components/ResponsiveShell';
-import { OnboardingOverlay } from './src/components/OnboardingOverlay';
+import { WelcomeTutorial } from './src/components/WelcomeTutorial';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { checkForOtaUpdate } from './src/lib/appUpdates';
@@ -35,7 +35,7 @@ export default function App() {
           <ResponsiveShell>
             <AppNavigator />
           </ResponsiveShell>
-          <OnboardingOverlay visible={showOnboarding} onDone={() => void finishOnboarding()} />
+          <WelcomeTutorial visible={showOnboarding} onDone={() => void finishOnboarding()} />
         </AuthProvider>
       </ToastProvider>
     </SafeAreaProvider>
