@@ -1,14 +1,9 @@
 name: EAS Update (JS OTA)
 on:
-  push:
-    branches:
-      - main-fixed
-    paths:
-      - 'taylored-mobile/src/**'
-      - 'taylored-mobile/App.tsx'
-      - 'taylored-mobile/app.json'
-      - '.github/workflows/eas-update.yml'
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   eas-update:
@@ -32,7 +27,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "EXPO_TOKEN not set — skipping OTA publish. Add the secret to enable JS-only updates."
+            echo "EXPO_TOKEN not set — skipping OTA publish."
             exit 0
           fi
-          npx eas-cli update --branch production --message "OTA from ${{ github.sha }}" --non-interactive
+          npx eas-cli update --branch production --message "OTA manual dispatch" --non-interactive

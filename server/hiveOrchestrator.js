@@ -4,6 +4,8 @@ import { getMissionPromptBlock } from '../shared/hiveMission.js';
 
 const TRIAGE_MODEL = process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash';
 const CURSOR_API = 'https://api.cursor.com/v1';
+/** Builds only — no Anthropic/OpenAI coding agents unless env overrides. */
+const CURSOR_BUILD_MODEL = process.env.HIVE_CURSOR_MODEL || 'composer-2.5';
 
 let aiClient;
 
@@ -116,6 +118,8 @@ export async function spawnCursorAgent(buildPrompt, taskId) {
 ${getMissionPromptBlock('cursor')}
 
 Task ID: ${taskId}
+Build model: ${CURSOR_BUILD_MODEL} only — do not switch models.
+Do NOT edit .github/workflows unless the user explicitly asked for CI changes.
 Match existing amber/dark theme in taylored-mobile/src/theme/colors.ts.
 Keep changes focused. Open a PR when done.`;
 
@@ -127,6 +131,7 @@ Keep changes focused. Open a PR when done.`;
     },
     body: JSON.stringify({
       prompt: { text: agentPrompt },
+      model: { id: CURSOR_BUILD_MODEL },
       repos: [{ url: HIVE_REPO.url, startingRef: HIVE_REPO.branch }],
       autoCreatePR: true,
       name: `Hive: ${buildPrompt.slice(0, 60)}`,

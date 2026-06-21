@@ -17,6 +17,8 @@ import {
   checkBuildCredits,
 } from './hiveBilling.js';
 import { verifyHiveAuth } from './hiveAuth.js';
+import { priceEstimate, getPricingConfig } from './hivePricing.js';
+import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -840,13 +842,24 @@ app.post('/api/create-checkout-session', async (req, res) => {
 // --- Hive Magic: self-evolving task orchestrator ---
 const HIVE_TASKS = 'hive_tasks';
 
-app.get('/api/hive/status', (_req, res) => {
+app.get('/api/hive/status', async (_req, res) => {
   const cursorConfigured = !!process.env.CURSOR_API_KEY;
   const geminiConfigured = !!process.env.GEMINI_API_KEY;
+  const stripeConfigured = !!process.env.STRIPE_SECRET_KEY && !String(process.env.STRIPE_SECRET_KEY).startsWith('sk_test_123');
+  let usage = null;
+  try {
+    usage = await getBuildUsage(db);
+  } catch {
+    // non-fatal
+  }
   return res.json({
     online: geminiConfigured,
     cursorConfigured,
+    stripeConfigured,
     triageModel: process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash',
+    buildModel: process.env.HIVE_CURSOR_MODEL || 'composer-2.5',
+    pricing: getPricingConfig(),
+    buildUsage: usage,
     message: !geminiConfigured
       ? 'Server missing GEMINI_API_KEY'
       : cursorConfigured
@@ -977,9 +990,12 @@ app.post('/api/hive/tasks', async (req, res) => {
       reply = triage.clarifyingQuestion || triage.summary;
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
-      const cost = triage.estimate?.costUsd ?? 3;
-      const mins = triage.estimate?.minutes ?? 20;
+      const priced = priceEstimate(triage.estimate);
+      const cost = priced.user.costUsd;
+      const mins = priced.user.minutes;
       reply = `I can build that for you.\n\n${triage.summary}\n\nAbout $${cost} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
+      triage.estimate = priced.user;
+      triage.estimateBase = priced.base;
     }
 
     const doc = {
@@ -990,6 +1006,7 @@ app.post('/api/hive/tasks', async (req, res) => {
       status,
       summary: triage.summary,
       estimate: triage.estimate || null,
+      estimateBase: triage.estimateBase || null,
       buildPrompt: triage.buildPrompt || message.trim(),
       reply,
       createdAt: now,
@@ -1029,6 +1046,12 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
     const userId = task.userId || req.body?.userId;
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
+
+    const capacity = await assertCanStartBuild(db, resolvedUserId || 'anonymous');
+    if (!capacity.ok) {
+      return res.status(429).json({ error: capacity.reason, buildUsage: capacity.usage });
+    }
+
     const cost = task.estimate?.costUsd ?? 0;
     if (resolvedUserId && resolvedUserId !== 'anonymous') {
       const reservation = await reserveBuildCredits(db, resolvedUserId, task.id, cost);
@@ -1048,6 +1071,7 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
     }
 
     const cursor = await spawnCursorAgent(task.buildPrompt || task.message, task.id);
+    await recordBuildStart(db, resolvedUserId || 'anonymous');
     const now = new Date().toISOString();
 
     await ref.update({
