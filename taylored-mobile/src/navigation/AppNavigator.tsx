@@ -9,6 +9,7 @@ import AutoBotResumeResultScreen from '../screens/AutoBotResumeResultScreen';
 import DeeperScreen from '../screens/DeeperScreen';
 import JobTrackerScreen from '../screens/JobTrackerScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
+import AdditionCalculatorScreen from '../screens/AdditionCalculatorScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -47,6 +48,11 @@ export default function AppNavigator() {
         <Stack.Screen name="Deeper" component={DeeperScreen} options={{ title: 'Company Intel' }} />
         <Stack.Screen name="JobTracker" component={JobTrackerScreen} options={{ title: 'Job Tracker' }} />
         <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Profile' }} />
+        <Stack.Screen
+          name="AdditionCalculator"
+          component={AdditionCalculatorScreen}
+          options={{ title: 'Addition Calculator' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

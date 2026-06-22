@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Text, StyleSheet, ScrollView, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Hammer } from 'lucide-react-native';
+import { Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Hammer, Calculator } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { HiveLogo } from '../components/HiveLogo';
@@ -44,6 +44,15 @@ const BUILT_IN_APPS = [
     route: 'EnterpriseWebView',
     tag: 'Enterprise',
     accent: 'purple' as const,
+  },
+  {
+    id: 'addition-calculator',
+    title: 'Addition Calculator',
+    desc: 'Add two numbers together — quick and simple.',
+    icon: Calculator,
+    route: 'AdditionCalculator',
+    tag: 'Utility',
+    accent: 'amber' as const,
   },
 ];
 
