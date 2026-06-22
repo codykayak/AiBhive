@@ -1,0 +1,84 @@
+# Umbrella auto-deploy that runs after every merge to main-fixed.
+# - JS-only mobile changes:  triggers `EAS Update` (see eas-update.yml).
+# - Native / version bumps:  triggers `Build Android APK` (see build-apk.yml).
+# - Web / server changes:    rebuilds the Cloud Run image and triggers a deploy.
+#
+# All three workflows run independently; this file ONLY handles the Cloud Run
+# redeploy because the other two have their own path filters and have to
+# control their own checkout/credentials.
+name: Auto-deploy (web + server)
+
+on:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'src/**'
+      - 'server/**'
+      - 'shared/**'
+      - 'cody/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'firebase-applet-config.json'
+      - '.github/workflows/auto-deploy.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: auto-deploy-main-fixed
+  cancel-in-progress: false
+
+jobs:
+  cloud-run-deploy:
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[skip-deploy]') }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build website + cody
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/auth@v2
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CLOUD_RUN_SERVICE != '' }}
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+          CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ secrets.CLOUD_RUN_SERVICE }}
+          region: ${{ secrets.CLOUD_RUN_REGION }}
+          source: .
+
+      - name: Skip notice
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CLOUD_RUN_SERVICE == '' }}
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+        run: |
+          echo "Cloud Run secrets (GCP_WORKLOAD_IDENTITY_PROVIDER / GCP_SERVICE_ACCOUNT / CLOUD_RUN_SERVICE) are not configured."
+          echo "Skipping deploy. Add them in repo Settings → Secrets to enable automatic redeploy."

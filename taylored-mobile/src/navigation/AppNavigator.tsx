@@ -11,9 +11,29 @@ import JobTrackerScreen from '../screens/JobTrackerScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
 import HiveAppDetailScreen from '../screens/HiveAppDetailScreen';
+import UserAppHostScreen from '../screens/UserAppHostScreen';
+import { HIVE_USER_APPS } from '../userApps';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
+
+const linking = {
+  prefixes: ['aibhive://', 'https://aibhive.com'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Build: 'build',
+          Apps: 'apps',
+          Settings: 'settings',
+        },
+      },
+      UserApp: 'userApps/:slug',
+      HiveAppDetail: 'apps/detail',
+      UserGuide: 'guide',
+    },
+  },
+};
 
 const AiBhiveTheme = {
   ...DarkTheme,
@@ -29,7 +49,7 @@ const AiBhiveTheme = {
 
 export default function AppNavigator() {
   return (
-    <NavigationContainer theme={AiBhiveTheme}>
+    <NavigationContainer theme={AiBhiveTheme} linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.bgElevated },
@@ -51,7 +71,10 @@ export default function AppNavigator() {
         <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Profile' }} />
         <Stack.Screen name="UserGuide" component={UserGuideScreen} options={{ title: 'User Guide' }} />
         <Stack.Screen name="HiveAppDetail" component={HiveAppDetailScreen} options={{ title: 'Your App' }} />
+        <Stack.Screen name="UserApp" component={UserAppHostScreen} options={{ title: 'Hive App' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+export { HIVE_USER_APPS };
