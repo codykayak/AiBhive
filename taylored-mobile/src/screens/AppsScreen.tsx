@@ -139,11 +139,17 @@ export default function AppsScreen() {
             <AppLauncherCard
               key={app.id}
               title={app.title}
-              desc={app.summary}
+              desc={
+                app.status === 'complete'
+                  ? 'Ready — tap for how to open in AiBhive'
+                  : app.status === 'building'
+                    ? 'Building in the cloud…'
+                    : app.summary
+              }
               tag={hiveStatusLabel(app.status)}
               icon={app.status === 'building' ? Hammer : Sparkles}
               accent={app.status === 'complete' ? 'amber' : 'info'}
-              onPress={() => navigation.navigate('Build')}
+              onPress={() => navigation.navigate('HiveAppDetail', { app })}
             />
           ))
         )}
@@ -167,9 +173,13 @@ export default function AppsScreen() {
             <Sparkles color={colors.amberLight} size={16} />
             <Text style={styles.tipTitle}>Hive ideas</Text>
           </View>
-          <Text style={styles.tipText}>
-            {HIVE_COPY.quickPrompts.join(' · ')}
-          </Text>
+          <Text style={styles.tipText}>{HIVE_COPY.quickPrompts.join(' · ')}</Text>
+          <PrimaryButton
+            label="How do I open my apps?"
+            variant="secondary"
+            onPress={() => navigation.navigate('UserGuide')}
+            style={{ marginTop: 12, alignSelf: 'flex-start' }}
+          />
         </GlassCard>
       </ScrollView>
     </ScreenLayout>
