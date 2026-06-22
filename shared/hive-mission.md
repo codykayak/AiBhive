@@ -1,6 +1,6 @@
 # AiBhive Hive — Product Mission & AI Operating Manual
 
-**Version:** 1.2 (auto-deploy + delivery targets)  
+**Version:** 1.3 (instant operational apps + paid export)  
 **Audience:** Every AI in AiBhive — chat, triage, and background build agents.
 
 ---
@@ -50,14 +50,28 @@ Build tab (Magic ON)
 **Magic ON** = build path enabled.  
 **Magic OFF** = friendly chat and existing tools only.
 
-### Delivery targets the triage AI picks from
+### Delivery targets + build methods the triage AI picks from
 
-| Target | When | Where it lives | How the user opens it |
-|--------|------|----------------|------------------------|
-| `host_screen` | Default. Phone-first tools that need our chat/AI/Firebase. | `taylored-mobile/src/userApps/<slug>/` | Tap card in My Apps → opens inside AiBhive |
-| `web_app` | Shareable links, desktop, calculators, landing pages, lead forms. | `cody/apps/<owner>/<slug>/` | `https://aibhive.com/u/<owner>/<slug>/` |
-| `native_app` | User explicitly wants their own branded Android app / Play Store listing. | `apps/native/<slug>/` (separate Expo project) | Install separate APK / Play Internal Testing |
-| `iteration` | User asked to change a previous build. | Same folder as the previous build's slug. | Same card; deliverable URL/screen replaced in place |
+There are now TWO build methods: `spec` (instant, Firestore-backed, no Play
+Store update) and `cursor` (real code, opens a PR, auto-merges).
+
+| Target | Method | When | Where it lives | How the user opens it | Floor price |
+|--------|--------|------|----------------|------------------------|-------------|
+| `host_screen` | `spec` | Default for almost everything — anything that can be expressed as list / tracker / note / calculator / info pages. | `hive_apps/<id>` Firestore doc | Tap "Your Hive apps" card → renders dynamically in AiBhive | **~$1, instant** |
+| `host_screen` | `cursor` | Only when the request needs custom code (camera, payments, real-time, voice). | `taylored-mobile/src/userApps/<slug>/` | Tap card; opens after next OTA. | ~$4 |
+| `web_app` | `cursor` | Shareable links, desktop, calculators-meant-for-the-browser. | `cody/apps/<owner>/<slug>/` | `https://aibhive.com/u/<owner>/<slug>/` | ~$5 |
+| `native_app` | `cursor` | User wants a standalone installable APK. | `apps/native/<slug>/` (separate Expo project) | Download .apk → install on phone | ~$18 |
+| `play_store` | `cursor` | User wants their app on the Play Store. | `apps/native/<slug>/` + `PLAY_STORE_*.md` | Signed AAB + Play Console step-by-step | ~$35 |
+| `iteration` | inherits | User asks to change an existing build. | Same as the original slug. | Updates in place. | ~$0.50 (or 50% of original) |
+
+**The spec path is the heart of the product.** Most user requests fit one of
+the five page types (list, tracker, note, calculator, info). Rendering
+happens dynamically inside AiBhive v1.4.1+, so the user gets their app the
+moment Gemini finishes — no APK install, no Play Store update.
+
+**Export buttons live inside each spec app** (top-right "Export"). When the
+user wants to publish a web link / installable APK / Play Store app, those
+are paid upgrades that DO invoke Cursor and follow the auto-merge pipeline.
 
 **Language for users:** Say "build team", "your project", "when it's ready", "update the app", "shareable link", "your own app" — never say GitHub, pull request, repo, or Cursor unless they explicitly ask how it works behind the scenes.
 
@@ -193,6 +207,24 @@ Users never manage servers. They pay, approve, and receive.
 | 2026-06-16 | v1.0 initial mission |
 | 2026-06-16 | v1.1 public language; billing platform section |
 | 2026-06-22 | v1.2 delivery targets (host_screen / web_app / native_app / iteration); auto-merge + push-to-deploy; Expo Push; auto-approve under $1.50; daily USD spend cap; per-build slug isolation; user-apps registry; web-app delivery at /u/owner/slug/ |
+| 2026-06-22 | v1.3 instant operational apps (HiveAppSpec → Firestore → dynamic renderer); pricing redesign (no more flat $0.50); paid export targets (web/APK/Play Store); ExportOptionsScreen with plain-English steps; 5 page types (list, tracker, note, calculator, info); 6 themes + 18 icons |
+
+---
+
+## 11a. Pricing tiers (server-side, v1.3)
+
+| Tier | User-facing floor | Build method | Notes |
+|------|-------------------|--------------|-------|
+| spec | $1 | Gemini → Firestore | Instant; the default for nearly all "build me X" |
+| host_screen (cursor) | $4 | Cursor + auto-merge | Only when custom RN code is required |
+| web_app | $5 | Cursor + auto-merge | Hosted at `/u/<owner>/<slug>/` |
+| native_app | $18 | Cursor + EAS preview build | Standalone branded APK |
+| play_store | $35 | Cursor + signed AAB + listing | Includes step-by-step Play Console walkthrough |
+| iteration | $0.50 | Inherits original | Or 50% of original tier, whichever is higher |
+
+Env overrides (all optional): `HIVE_PRICE_SPEC`, `HIVE_PRICE_HOST_SCREEN`,
+`HIVE_PRICE_WEB_APP`, `HIVE_PRICE_NATIVE_APP`, `HIVE_PRICE_PLAY_STORE`,
+`HIVE_PRICE_ITERATION`, `HIVE_ITERATION_DISCOUNT`, `HIVE_MARKUP_MULTIPLIER`.
 
 ---
 

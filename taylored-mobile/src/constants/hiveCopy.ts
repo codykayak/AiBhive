@@ -1,7 +1,7 @@
 /** User-facing strings — plain language, no developer jargon. */
 export const HIVE_COPY = {
   welcome:
-    'Welcome to AiBhive. Describe any app, tool, or feature in plain English — I\'ll quote time and cost, tiny tweaks start automatically, and we\'ll ping your phone the moment it ships. Try: "Build me a habit tracker" or "Make me a web app to track my leads."',
+    'Welcome to AiBhive. Describe any app in plain English — most build instantly inside the app (about $1, ready in seconds, no Play Store update needed). When you love it, you can publish it as a web link, installable APK, or full Play Store app. Try: "Build me a habit tracker" or "Make a tip calculator."',
   magicOnSubtitle: (provider: string, status?: string) =>
     `Build mode · ${provider}${status ? ` · ${status}` : ''}`,
   magicOffSubtitle: (provider: string) =>
@@ -37,10 +37,12 @@ export const HIVE_COPY = {
     'Lead follow-up reminder',
   ],
   appsHeroTitle: 'Your personal app factory',
-  appsHeroBody: 'Everything the Hive builds for you lives here — plus our starter tools.',
-  appsRecent: 'Built by the Hive',
+  appsHeroBody:
+    'Everything the Hive builds for you appears here instantly — open it, use it, change it, export it.',
+  appsRecent: 'Your Hive apps',
   appsBuiltIn: 'Starter tools',
-  appsEmptyBuilds: 'No custom apps yet — describe one on Build and approve the quote.',
+  appsEmptyBuilds:
+    'No apps yet — describe one on Build. Most ready in under a minute, ~$1 each. No Play Store update needed.',
   chatCleared: 'Chat cleared',
   copied: 'Copied to clipboard',
 };
