@@ -26,10 +26,16 @@ import {
   sendTestSms,
   updateCaptions,
   updateConfig,
+  updateProfile,
+  GROK_TEXT_MODELS,
+  GROK_IMAGE_MODELS,
+  GEMINI_TEXT_MODELS,
+  GEMINI_IMAGE_MODELS,
   type AutoSocialConfig,
   type PipelineStep,
   type PlatformId,
   type SocialPost,
+  type UserAutoSocialProfile,
   type WorkflowStep,
 } from '../../lib/autoSocialApi';
 
@@ -219,7 +225,9 @@ function PostCard({
 
       {post.modelsUsed && (
         <p className="text-xs text-slate-500">
-          Models: text <code className="text-slate-400">{post.modelsUsed.text}</code>
+          Provider: <code className="text-slate-400">{post.provider || post.modelsUsed.provider || 'gemini'}</code>
+          {' · '}
+          text <code className="text-slate-400">{post.modelsUsed.text}</code>
           {' · '}
           image <code className="text-slate-400">{post.modelsUsed.image}</code>
         </p>
@@ -355,10 +363,22 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
   const [toast, setToast] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [notifyPhone, setNotifyPhone] = useState('');
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [socialLinks, setSocialLinks] = useState({ facebook: '', instagram: '', x: '' });
+
+  const [profile, setProfile] = useState<UserAutoSocialProfile | null>(null);
+  const [primaryProvider, setPrimaryProvider] = useState<'grok' | 'gemini'>('gemini');
+  const [grokEnabled, setGrokEnabled] = useState(false);
+  const [geminiEnabled, setGeminiEnabled] = useState(true);
+  const [grokTextModel, setGrokTextModel] = useState('grok-3-mini');
+  const [grokImageModel, setGrokImageModel] = useState('grok-imagine-image-quality');
+  const [geminiTextModel, setGeminiTextModel] = useState('gemini-2.5-flash');
+  const [geminiImageModel, setGeminiImageModel] = useState('gemini-2.5-flash-image');
+  const [grokKeyInput, setGrokKeyInput] = useState('');
+  const [geminiKeyInput, setGeminiKeyInput] = useState('');
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -380,6 +400,20 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
       setNotifyPhone(workflowRes.config.notifyPhone || '');
       setNotifyEnabled(workflowRes.config.notifyEnabled !== false);
       setSocialLinks(workflowRes.config.socialLinks || { facebook: '', instagram: '', x: '' });
+
+      const p = workflowRes.profile;
+      if (p) {
+        setProfile(p);
+        setPrimaryProvider(p.primaryProvider);
+        setGrokEnabled(p.providers.grok.enabled);
+        setGeminiEnabled(p.providers.gemini.enabled);
+        setGrokTextModel(p.providers.grok.textModel);
+        setGrokImageModel(p.providers.grok.imageModel);
+        setGeminiTextModel(p.providers.gemini.textModel);
+        setGeminiImageModel(p.providers.gemini.imageModel);
+        setGrokKeyInput(p.providers.grok.apiKey.set ? p.providers.grok.apiKey.hint : '');
+        setGeminiKeyInput(p.providers.gemini.apiKey.set ? p.providers.gemini.apiKey.hint : '');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load Auto Social');
     } finally {
@@ -417,6 +451,40 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
       showToast(msg);
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    try {
+      const body: Record<string, unknown> = {
+        primaryProvider,
+        providers: {
+          grok: {
+            enabled: grokEnabled,
+            textModel: grokTextModel,
+            imageModel: grokImageModel,
+          },
+          gemini: {
+            enabled: geminiEnabled,
+            textModel: geminiTextModel,
+            imageModel: geminiImageModel,
+          },
+        },
+      };
+      if (grokKeyInput && !grokKeyInput.includes('••••')) {
+        (body.providers as { grok: { apiKey: string } }).grok.apiKey = grokKeyInput;
+      }
+      if (geminiKeyInput && !geminiKeyInput.includes('••••')) {
+        (body.providers as { gemini: { apiKey: string } }).gemini.apiKey = geminiKeyInput;
+      }
+      await updateProfile(user, body);
+      showToast('AI provider profile saved');
+      await refresh();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setSavingProfile(false);
     }
   }
 
@@ -460,10 +528,13 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
             Auto Social
           </h2>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Daily AI pipeline: research → captions → images → review → post. Raw Gemini output is saved per step below.
-            {models && (
+            Daily AI pipeline: research → captions → images → review → post. Choose Grok or Gemini per your profile — keys are saved per Google account.
+            {profile && (
               <span className="block mt-1 text-xs text-slate-500">
-                Using {models.text} (text) and {models.image} (images)
+                Active provider: <strong className="text-bee-amber">{primaryProvider}</strong>
+                {profile.serverGeminiAvailable && !profile.providers.gemini.apiKey.set && (
+                  <span> · Gemini can use server key</span>
+                )}
               </span>
             )}
           </p>
@@ -508,6 +579,136 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
           </button>
         </div>
       </div>
+
+      <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-white">AI providers (saved to your profile)</h3>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span>Primary:</span>
+            <select
+              value={primaryProvider}
+              onChange={(e) => setPrimaryProvider(e.target.value as 'grok' | 'gemini')}
+              className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-white text-xs"
+            >
+              <option value="grok">Grok</option>
+              <option value="gemini">Gemini</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-white/10 p-4 space-y-3">
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <span className="text-sm font-medium text-white">Grok (xAI)</span>
+              <input
+                type="checkbox"
+                checked={grokEnabled}
+                onChange={(e) => setGrokEnabled(e.target.checked)}
+                className="rounded"
+              />
+            </label>
+            <p className="text-xs text-slate-500">
+              Grok generates the article research, captions, and images when enabled.
+            </p>
+            <label className="block">
+              <span className="text-xs text-slate-500 mb-1 block">xAI API key</span>
+              <input
+                type="password"
+                value={grokKeyInput}
+                onChange={(e) => setGrokKeyInput(e.target.value)}
+                placeholder="xai-..."
+                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-xs text-slate-500 mb-1 block">Text model</span>
+                <select
+                  value={grokTextModel}
+                  onChange={(e) => setGrokTextModel(e.target.value)}
+                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                >
+                  {GROK_TEXT_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs text-slate-500 mb-1 block">Image model</span>
+                <select
+                  value={grokImageModel}
+                  onChange={(e) => setGrokImageModel(e.target.value)}
+                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                >
+                  {GROK_IMAGE_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/10 p-4 space-y-3">
+            <label className="flex items-center justify-between gap-3 cursor-pointer">
+              <span className="text-sm font-medium text-white">Gemini (Google)</span>
+              <input
+                type="checkbox"
+                checked={geminiEnabled}
+                onChange={(e) => setGeminiEnabled(e.target.checked)}
+                className="rounded"
+              />
+            </label>
+            <p className="text-xs text-slate-500">
+              Gemini generates article, captions, and images. Leave key blank to use the server key on Cloud Run.
+            </p>
+            <label className="block">
+              <span className="text-xs text-slate-500 mb-1 block">Gemini API key (optional)</span>
+              <input
+                type="password"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                placeholder={profile?.serverGeminiAvailable ? 'Using server key if blank' : 'AIza...'}
+                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-xs text-slate-500 mb-1 block">Text model</span>
+                <select
+                  value={geminiTextModel}
+                  onChange={(e) => setGeminiTextModel(e.target.value)}
+                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                >
+                  {GEMINI_TEXT_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs text-slate-500 mb-1 block">Image model</span>
+                <select
+                  value={geminiImageModel}
+                  onChange={(e) => setGeminiImageModel(e.target.value)}
+                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                >
+                  {GEMINI_IMAGE_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          disabled={savingProfile}
+          onClick={handleSaveProfile}
+          className="px-4 py-2 rounded-lg bg-bee-amber text-bee-black font-semibold text-sm disabled:opacity-50"
+        >
+          {savingProfile ? 'Saving…' : 'Save AI provider profile'}
+        </button>
+      </section>
 
       <div className="grid grid-cols-3 gap-3 max-w-lg">
         {[

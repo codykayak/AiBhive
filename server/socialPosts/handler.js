@@ -12,6 +12,11 @@ import {
 } from './store.js';
 import { todayDateKey } from './topics.js';
 import { WORKFLOW_PIPELINE } from './workflow.js';
+import {
+  getUserProfile,
+  saveUserProfile,
+  sanitizeUserProfile,
+} from './userProfile.js';
 
 function computeStats(posts) {
   const today = todayDateKey();
@@ -31,9 +36,14 @@ function computeStats(posts) {
   return { counts, today, todayPost: todayPost ? serializePost(todayPost) : null };
 }
 
-export async function handleSocialPostsRequest(req) {
+export async function handleSocialPostsRequest(req, authUser) {
   if (req.method === 'GET') {
     const action = req.query?.action || 'list';
+
+    if (action === 'profile' && authUser?.uid) {
+      const profile = await getUserProfile(authUser.uid);
+      return { status: 200, data: { profile: sanitizeUserProfile(profile) } };
+    }
 
     if (action === 'list') {
       const limit = Math.min(Number(req.query?.limit) || 30, 100);
@@ -52,11 +62,15 @@ export async function handleSocialPostsRequest(req) {
 
     if (action === 'workflow') {
       const config = await getConfig();
+      const profile = authUser?.uid
+        ? sanitizeUserProfile(await getUserProfile(authUser.uid))
+        : null;
       return {
         status: 200,
         data: {
           pipeline: WORKFLOW_PIPELINE,
           config,
+          profile,
           models: {
             text: config.textModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
             image: config.imageModel || process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
@@ -83,9 +97,11 @@ export async function handleSocialPostsRequest(req) {
   const { action, postId, updates, force } = req.body ?? {};
 
   if (action === 'generate') {
+    const userProfile = authUser?.uid ? await getUserProfile(authUser.uid) : null;
     const result = await generateDailySocialPost({
       force: !!force,
       generatedBy: 'manual',
+      userProfile,
     });
     return {
       status: 200,
@@ -133,6 +149,12 @@ export async function handleSocialPostsRequest(req) {
     const phone = req.body?.phone || config.notifyPhone;
     const result = await sendTestSms(phone);
     return { status: 200, data: { ok: true, result } };
+  }
+
+  if (action === 'updateProfile' && authUser?.uid) {
+    const { action: _a, ...updates } = req.body ?? {};
+    const profile = await saveUserProfile(authUser.uid, authUser.email, updates);
+    return { status: 200, data: { profile: sanitizeUserProfile(profile) } };
   }
 
   if (action === 'updateConfig') {

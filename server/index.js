@@ -529,7 +529,7 @@ app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
   try {
-    const { status, data } = await handleSocialPostsRequest(req);
+    const { status, data } = await handleSocialPostsRequest(req, req.user);
     return res.status(status).json(data);
   } catch (error) {
     console.error('[autoposter] error:', error);

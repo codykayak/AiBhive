@@ -11,6 +11,12 @@ import {
   uploadSocialImage,
 } from './store.js';
 import { notifyPostReady } from './notify.js';
+import { resolveGenerationProvider } from './userProfile.js';
+import {
+  grokResearchArticle,
+  grokWriteCaptions,
+  grokGeneratePlatformImage,
+} from './grokProvider.js';
 
 function getTextModel() {
   return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -22,10 +28,10 @@ function getImageModels(config) {
   return [primary, ...fallbacks];
 }
 
-function getGenAI() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured.');
-  return new GoogleGenerativeAI(apiKey);
+function getGenAI(apiKey) {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY is not configured.');
+  return new GoogleGenerativeAI(key);
 }
 
 function extractJson(text) {
@@ -77,8 +83,8 @@ function trimXCaption(caption, link) {
   return `${text.slice(0, Math.max(0, budget)).trim()}…${suffix}`.trim();
 }
 
-async function researchArticle(topic, textModel) {
-  const genAI = getGenAI();
+async function researchArticle(topic, textModel, apiKey) {
+  const genAI = getGenAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: textModel,
     tools: [{ googleSearch: {} }],
@@ -119,8 +125,8 @@ Rules:
   return { article, raw: text };
 }
 
-async function writeCaptions(topic, article, knowledge, textModel) {
-  const genAI = getGenAI();
+async function writeCaptions(topic, article, knowledge, textModel, apiKey) {
+  const genAI = getGenAI(apiKey);
   const model = genAI.getGenerativeModel({ model: textModel });
 
   const prompt = `You are the social media manager for ${BRAND.name} (${BRAND.siteUrl}).
@@ -179,8 +185,8 @@ Professional social media marketing graphic for ${BRAND.name}.`;
   throw new Error(`No image from ${modelName}`);
 }
 
-async function generateImage(prompt, aspectHint, imageModels) {
-  const genAI = getGenAI();
+async function generateImage(prompt, aspectHint, imageModels, apiKey) {
+  const genAI = getGenAI(apiKey);
   let lastError;
 
   for (const modelName of imageModels) {
@@ -195,9 +201,9 @@ async function generateImage(prompt, aspectHint, imageModels) {
   throw lastError || new Error('All image models failed.');
 }
 
-async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint, imageModels) {
+async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint, imageModels, apiKey) {
   try {
-    const { buffer, model } = await generateImage(imagePrompt, aspectHint, imageModels);
+    const { buffer, model } = await generateImage(imagePrompt, aspectHint, imageModels, apiKey);
     const url = await uploadSocialImage(dateKey, key, buffer);
     return { url, model, error: null };
   } catch (e) {
@@ -205,6 +211,7 @@ async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint, imag
       `${imagePrompt}. Simpler composition, bold typography, minimal elements.`,
       aspectHint,
       imageModels,
+      apiKey,
     );
     const url = await uploadSocialImage(dateKey, key, buffer);
     return { url, model, error: e.message };
@@ -232,9 +239,24 @@ export async function generateDailySocialPost(options = {}) {
   const date = options.date || new Date();
   const dateKey = todayDateKey(date);
   const config = await getConfig();
-  const textModel = config.textModel || getTextModel();
-  const imageModels = getImageModels(config);
   const workflowLog = [];
+
+  let provider = 'gemini';
+  let textModel = config.textModel || getTextModel();
+  let imageModels = getImageModels(config);
+  let apiKey = process.env.GEMINI_API_KEY;
+
+  if (options.userProfile) {
+    const resolved = resolveGenerationProvider(options.userProfile);
+    provider = resolved.provider;
+    apiKey = resolved.credentials.apiKey;
+    textModel = resolved.credentials.textModel;
+    if (provider === 'grok') {
+      imageModels = [resolved.credentials.imageModel];
+    } else {
+      imageModels = [resolved.credentials.imageModel, ...IMAGE_MODELS.filter((m) => m !== resolved.credentials.imageModel)];
+    }
+  }
 
   if (!options.force) {
     const existing = await getPostByDate(dateKey);
@@ -266,10 +288,18 @@ export async function generateDailySocialPost(options = {}) {
     output: topic,
   });
 
+  logStep(workflowLog, {
+    step: 'provider',
+    label: 'AI provider',
+    status: 'done',
+    output: { provider, textModel, imageModel: imageModels[0] },
+  });
+
   await persistProgress(dateKey, {
     status: 'generating',
     workflowLog,
-    modelsUsed: { text: textModel, image: imageModels[0] },
+    provider,
+    modelsUsed: { provider, text: textModel, image: imageModels[0] },
   });
 
   try {
@@ -277,14 +307,16 @@ export async function generateDailySocialPost(options = {}) {
     let researchRaw = '';
     logStep(workflowLog, {
       step: 'research',
-      label: 'Research news',
+      label: provider === 'grok' ? 'Grok — research article' : 'Gemini — research news',
       status: 'running',
       model: textModel,
     });
     await persistProgress(dateKey, { workflowLog });
 
     try {
-      const researched = await researchArticle(topic, textModel);
+      const researched = provider === 'grok'
+        ? await grokResearchArticle(topic, BRAND, textModel, apiKey)
+        : await researchArticle(topic, textModel, apiKey);
       article = researched.article;
       researchRaw = researched.raw;
       logStep(workflowLog, {
@@ -319,13 +351,15 @@ export async function generateDailySocialPost(options = {}) {
     let captionsRaw = '';
     logStep(workflowLog, {
       step: 'captions',
-      label: 'Write captions',
+      label: provider === 'grok' ? 'Grok — write captions' : 'Gemini — write captions',
       status: 'running',
       model: textModel,
     });
     await persistProgress(dateKey, { workflowLog });
 
-    const captionResult = await writeCaptions(topic, article, knowledge, textModel);
+    const captionResult = provider === 'grok'
+      ? await grokWriteCaptions(topic, article, knowledge, BRAND, PLATFORM_SPECS, textModel, apiKey)
+      : await writeCaptions(topic, article, knowledge, textModel, apiKey);
     captions = captionResult.captions;
     captionsRaw = captionResult.raw;
     logStep(workflowLog, {
@@ -341,7 +375,7 @@ export async function generateDailySocialPost(options = {}) {
 
     logStep(workflowLog, {
       step: 'images',
-      label: 'Generate images',
+      label: provider === 'grok' ? 'Grok — generate images' : 'Gemini — generate images',
       status: 'running',
       model: imageModels[0],
       output: { imagePrompt },
@@ -353,7 +387,25 @@ export async function generateDailySocialPost(options = {}) {
       platformKeys.map(async (key) => {
         const spec = PLATFORM_SPECS[key];
         try {
-          const result = await generatePlatformImage(dateKey, key, imagePrompt, spec.aspectHint, imageModels);
+          if (provider === 'grok') {
+            const result = await grokGeneratePlatformImage(
+              apiKey,
+              imageModels[0],
+              imagePrompt,
+              BRAND,
+              spec.aspectHint,
+            );
+            const url = await uploadSocialImage(dateKey, key, result.buffer);
+            return { key, url, model: result.model, error: null };
+          }
+          const result = await generatePlatformImage(
+            dateKey,
+            key,
+            imagePrompt,
+            spec.aspectHint,
+            imageModels,
+            apiKey,
+          );
           return { key, url: result.url, model: result.model, error: result.error };
         } catch (e) {
           return { key, url: null, model: null, error: e.message };
@@ -402,7 +454,12 @@ export async function generateDailySocialPost(options = {}) {
       },
       imagePrompt,
       workflowLog,
-      modelsUsed: { text: textModel, image: imageResults.find((r) => r.model)?.model || imageModels[0] },
+      provider,
+      modelsUsed: {
+        provider,
+        text: textModel,
+        image: imageResults.find((r) => r.model)?.model || imageModels[0],
+      },
       status: 'pending_review',
       generatedBy: options.generatedBy || 'scheduler',
       createdAt: Timestamp.now(),
