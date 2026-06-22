@@ -66,9 +66,11 @@ export async function findPreviousTaskForIteration(db, userId, message) {
           taskId: t.id,
           slug: t.slug,
           target: t.target,
+          buildMethod: t.buildMethod,
           title: t.title || t.summary,
           summary: t.summary,
           branch: t.cursorBranch,
+          appId: t.appId,
         };
       }
     }
@@ -80,10 +82,11 @@ export async function findPreviousTaskForIteration(db, userId, message) {
 
 /**
  * @param {string} message
- * @param {{ previous?: { slug: string, target?: string, title?: string, summary?: string } | null }} [opts]
+ * @param {{ previous?: { slug: string, target?: string, title?: string, summary?: string, buildMethod?: string } | null }} [opts]
  * @returns {Promise<{
  *   route: 'local' | 'cursor' | 'clarify',
- *   target: 'host_screen' | 'web_app' | 'native_app' | 'iteration',
+ *   target: 'host_screen' | 'web_app' | 'native_app' | 'play_store' | 'iteration',
+ *   buildMethod: 'spec' | 'cursor',
  *   slug: string,
  *   title: string,
  *   summary: string,
@@ -100,6 +103,7 @@ export async function triageHiveTask(message, opts = {}) {
     return {
       route: 'local',
       target: 'host_screen',
+      buildMethod: 'spec',
       slug: slugify(message),
       title: 'Server offline',
       summary: 'Server AI offline',
@@ -117,15 +121,19 @@ Existing tools:
 ${getToolsManifestForPrompt()}
 
 Delivery targets (pick exactly one in JSON field "target"):
-- "host_screen" — feature lives inside the AiBhive mobile app (best default for phone tools that use chat/AI/Firebase). Lands at taylored-mobile/src/userApps/<slug>/.
-- "web_app" — standalone shareable web tool at https://aibhive.com/u/<userId>/<slug>/ (best for calculators, landing pages, lead forms, dashboards, anything desktop or share-by-link).
-- "native_app" — separate Expo project / branded APK for Play Store (rare, expensive). Only when user explicitly asks for a standalone app or Play Store listing.
-- "iteration" — modify the user's PREVIOUS build (we know they have one — see Previous build context).
+- "host_screen" — runs INSIDE AiBhive. Default for almost everything. Two build methods:
+    • method "spec" — Gemini emits a HiveAppSpec (lists, trackers, notes, calculators, info pages) that we render dynamically. Ships INSTANTLY. No Play Store update. Use this whenever the request can be expressed with those page types.
+    • method "cursor" — only when the user explicitly needs custom code (real-time, camera, file system, integration with Stripe / external API, voice, etc.).
+- "web_app" — shareable web tool at https://aibhive.com/u/<userId>/<slug>/. Always Cursor.
+- "native_app" — separate Expo project + signed APK download. Always Cursor.
+- "play_store" — Play-Store-ready: signed AAB, icon set, listing copy, screenshots, Play Console steps. Always Cursor.
+- "iteration" — modify the user's PREVIOUS build (slug supplied below). Inherits previous buildMethod.
 
 Respond ONLY with JSON (no markdown outside the object):
 {
   "route": "local" | "cursor" | "clarify",
-  "target": "host_screen" | "web_app" | "native_app" | "iteration",
+  "target": "host_screen" | "web_app" | "native_app" | "play_store" | "iteration",
+  "buildMethod": "spec" | "cursor",
   "slug": "kebab-case 2-4 word identifier",
   "title": "2-6 word human title",
   "summary": "one sentence the user will see",
@@ -137,13 +145,14 @@ Respond ONLY with JSON (no markdown outside the object):
 
 Rules:
 - route=local if existing tools suffice OR user asks how building / Hive Magic works.
-- route=cursor if new UI, new feature, new API integration, or missing capability.
+- route=cursor for any build that needs cursor (host_screen+cursor, web_app, native_app, play_store, iteration of a cursor build).
+- route=cursor with buildMethod="spec" for host_screen specs (the server handles the spec internally — Cursor is not actually invoked).
 - route=clarify only if request is truly unintelligible.
 - localReply must be concise — never write essays.
-- estimate is optional — pricing is computed server-side from Cursor build model after triage.
-- buildPrompt must reference taylored-mobile/src/userApps/<slug>/ for host_screen, cody/apps/<userId>/<slug>/ for web_app.
+- estimate is optional — pricing is computed server-side from tier + token model.
+- buildPrompt is required only for buildMethod="cursor". For "spec" you can leave it empty.
 - slug must be short, kebab-case, no leading "hive-".
-- If a Previous build is supplied and the user wants to modify it, route=cursor target=iteration and REUSE the previous slug.${
+- If a Previous build is supplied and the user wants to modify it, target="iteration" and REUSE the previous slug and buildMethod.${
     previous
       ? `
 
@@ -162,10 +171,15 @@ Previous build context (the user has this build already, slug=${previous.slug}, 
     const parsed = parseJsonBlock(text);
     const route = parsed.route || 'clarify';
     let target = parsed.target || 'host_screen';
-    if (!['host_screen', 'web_app', 'native_app', 'iteration'].includes(target)) {
+    if (!['host_screen', 'web_app', 'native_app', 'play_store', 'iteration'].includes(target)) {
       target = 'host_screen';
     }
     if (target === 'iteration' && !previous) target = 'host_screen';
+    let buildMethod = parsed.buildMethod || (target === 'host_screen' ? 'spec' : 'cursor');
+    if (target !== 'host_screen' && target !== 'iteration') buildMethod = 'cursor';
+    if (target === 'iteration' && previous?.buildMethod) buildMethod = previous.buildMethod;
+    if (buildMethod !== 'spec' && buildMethod !== 'cursor') buildMethod = 'cursor';
+
     const slug =
       target === 'iteration' && previous?.slug
         ? previous.slug
@@ -173,10 +187,11 @@ Previous build context (the user has this build already, slug=${previous.slug}, 
     return {
       route,
       target,
+      buildMethod,
       slug,
       title: (parsed.title || parsed.summary || 'New Hive build').slice(0, 64),
       summary: parsed.summary || 'Let me understand what you need.',
-      estimate: parsed.estimate || { costUsd: 3, minutes: 20 },
+      estimate: parsed.estimate || { costUsd: 0, minutes: 0 },
       localReply: parsed.localReply,
       clarifyingQuestion: parsed.clarifyingQuestion,
       buildPrompt: parsed.buildPrompt || message,
@@ -185,6 +200,7 @@ Previous build context (the user has this build already, slug=${previous.slug}, 
     return {
       route: 'clarify',
       target: 'host_screen',
+      buildMethod: 'spec',
       slug: slugify(message),
       title: 'Need details',
       summary: 'I need a bit more detail.',

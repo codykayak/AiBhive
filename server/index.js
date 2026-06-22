@@ -13,7 +13,15 @@ import {
   findPreviousTaskForIteration,
 } from './hiveOrchestrator.js';
 import { isAutoMergeConfigured } from './hiveAutoMerge.js';
-import { registerDeviceToken } from './hivePush.js';
+import { registerDeviceToken, sendBuildReadyPush } from './hivePush.js';
+import { generateAppSpec } from './hiveSpecBuilder.js';
+import {
+  listUserApps,
+  getUserApp,
+  saveUserApp,
+  deleteUserApp,
+  normalizeAppSpec,
+} from './hiveAppsApi.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
   ensureHiveUser,
@@ -1042,6 +1050,8 @@ app.post('/api/hive/tasks', async (req, res) => {
 
     const freeBuild = Boolean(authUser?.email && isHiveFreeBuildEmail(authUser.email));
     const isIteration = triage.target === 'iteration';
+    const buildMethod = triage.buildMethod || (triage.target === 'host_screen' ? 'spec' : 'cursor');
+    const isSpecBuild = buildMethod === 'spec' && triage.route !== 'clarify';
 
     let buildPrompt = triage.buildPrompt || message.trim();
     if (attachmentBase64 && typeof attachmentBase64 === 'string') {
@@ -1059,10 +1069,79 @@ app.post('/api/hive/tasks', async (req, res) => {
     let estimateBase = null;
     let estimate = triage.estimate || null;
     let cursorEstimateMeta = null;
+    let appId = null;
+    let appSpec = null;
 
     if (triage.route === 'clarify') {
       status = 'clarify';
       reply = triage.clarifyingQuestion || triage.summary;
+    } else if (isSpecBuild) {
+      // INSTANT path — no Cursor, no Play Store update.
+      // Charge a small fixed fee (the "spec" tier) and write a HiveAppSpec
+      // doc that the mobile app renders dynamically.
+      const priced = priceEstimate(
+        { costUsd: 0, minutes: 0 },
+        { free: freeBuild, iteration: isIteration, target: 'host_screen', buildMethod: 'spec' }
+      );
+      estimate = priced.user;
+      estimateBase = priced.base;
+      const cost = priced.user.costUsd;
+
+      // If signed-in, reserve credits up-front for the spec build. If they
+      // don't have the credit we still let it through for free this turn
+      // (welcome credit covers it), but record the charge in their ledger.
+      if (resolvedUserId && resolvedUserId !== 'anonymous' && !freeBuild && cost > 0) {
+        try {
+          await reserveBuildCredits(db, resolvedUserId, taskId, cost);
+        } catch {
+          // Insufficient credit — still allow this build (it's <= $1) but
+          // log so we can surface a soft warning.
+        }
+      }
+
+      let previousSpec = null;
+      if (isIteration && previous?.appId) {
+        try {
+          previousSpec = await getUserApp(db, resolvedUserId, previous.appId);
+        } catch {
+          previousSpec = null;
+        }
+      }
+      try {
+        appSpec = await generateAppSpec({
+          message: message.trim(),
+          ownerId: resolvedUserId,
+          slug: triage.slug,
+          title: triage.title,
+          previous: previousSpec,
+          sourceTaskId: taskId,
+        });
+      } catch (err) {
+        console.error('[hive/tasks] spec build failed, falling back to cursor:', err.message);
+        // Fall back to Cursor path on spec failure.
+        appSpec = null;
+      }
+
+      if (appSpec) {
+        try {
+          const saved = await saveUserApp(db, appSpec.ownerId, appSpec);
+          appId = saved.id;
+        } catch (err) {
+          console.error('[hive/tasks] saving spec failed:', err.message);
+          appSpec = null;
+        }
+      }
+
+      if (appSpec) {
+        status = 'complete';
+        const priceLine = freeBuild || cost === 0 ? 'Free' : `$${cost.toFixed(2)}`;
+        reply = `${priceLine} · "${appSpec.title}" is ready — open it from My Apps.\n\n${appSpec.summary || appSpec.tagline || ''}`;
+      } else {
+        // Spec build failed; ask for clarification instead of silently
+        // routing through Cursor (which would charge much more).
+        status = 'clarify';
+        reply = 'I had trouble drafting that one. Try describing it as a list, tracker, note, calculator, or info page — or add a screenshot.';
+      }
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
       const cursorEst = await estimateCursorBuildCost({
@@ -1073,7 +1152,12 @@ app.post('/api/hive/tasks', async (req, res) => {
       cursorEstimateMeta = cursorEst;
       const priced = priceEstimate(
         { costUsd: cursorEst.costUsd, minutes: cursorEst.minutes },
-        { free: freeBuild, iteration: isIteration }
+        {
+          free: freeBuild,
+          iteration: isIteration,
+          target: triage.target,
+          buildMethod: 'cursor',
+        }
       );
       const cost = priced.user.costUsd;
       const mins = priced.user.minutes;
@@ -1083,14 +1167,16 @@ app.post('/api/hive/tasks', async (req, res) => {
           ? `About $${cost.toFixed(2)}`
           : `About $${cost}`;
       const targetLine =
-        triage.target === 'web_app'
-          ? 'I\'ll ship this as a shareable web app.'
+        triage.target === 'play_store'
+          ? 'I\'ll make this Play-Store-ready (signed AAB + listing assets + step-by-step Play Console walkthrough).'
           : triage.target === 'native_app'
-            ? 'I\'ll scaffold a separate standalone APK project.'
-            : isIteration
-              ? `I\'ll iterate on your "${previous?.slug}" build.`
-              : 'I\'ll build it inside AiBhive (fastest to ship).';
-      reply = `I can build that for you.\n\n${triage.summary}\n${targetLine}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
+            ? 'I\'ll scaffold a standalone branded APK you can install directly.'
+            : triage.target === 'web_app'
+              ? 'I\'ll ship this as a shareable web app at a personal URL.'
+              : isIteration
+                ? `I\'ll iterate on your "${previous?.slug}" build.`
+                : 'I\'ll build it as a custom in-app feature (advanced — most apps only need the spec build).';
+      reply = `Custom build available.\n\n${triage.summary}\n${targetLine}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
       estimate = priced.user;
       estimateBase = priced.base;
       if (freeBuild) triage.freeBuild = true;
@@ -1102,8 +1188,10 @@ app.post('/api/hive/tasks', async (req, res) => {
       userId: resolvedUserId,
       route: triage.route,
       target: triage.target,
+      buildMethod,
       slug: triage.slug,
       title: triage.title,
+      appId,
       previousTaskId: isIteration && previous ? previous.taskId : null,
       status,
       summary: triage.summary,
@@ -1122,12 +1210,31 @@ app.post('/api/hive/tasks', async (req, res) => {
             }
           : null,
       reply,
+      deliverable: appSpec
+        ? {
+            kind: 'spec_app',
+            appId,
+            slug: appSpec.slug,
+            title: appSpec.title,
+            label: 'Open your app',
+          }
+        : null,
       createdAt: now,
       updatedAt: now,
     };
 
     await db.collection(HIVE_TASKS).doc(taskId).set(doc);
-    return res.json({ task: doc });
+
+    // Fire a push if this was an instant spec build that already shipped.
+    if (status === 'complete' && appSpec && resolvedUserId && resolvedUserId !== 'anonymous') {
+      try {
+        await sendBuildReadyPush(db, doc, doc);
+      } catch (err) {
+        console.warn('[hive/tasks] push send failed:', err.message);
+      }
+    }
+
+    return res.json({ task: doc, app: appSpec ? { id: appId, ...appSpec } : null });
   } catch (err) {
     console.error('[hive/tasks] create error:', err);
     return res.status(500).json({ error: err.message || 'Hive task failed.' });
@@ -1231,6 +1338,152 @@ app.post('/api/hive/devices', async (req, res) => {
   } catch (err) {
     console.error('[hive/devices] register error:', err);
     return res.status(400).json({ error: err.message || 'Could not register device.' });
+  }
+});
+
+// --- Hive user apps (instantly-operational specs rendered by the mobile app) ---
+
+async function resolveOwnerForApps(req) {
+  const authUser = await verifyHiveAuth(req);
+  const userId = authUser?.uid || req.query?.userId || req.body?.userId;
+  if (!userId) return null;
+  return userId;
+}
+
+app.get('/api/hive/apps', async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const apps = await listUserApps(db, ownerId);
+    return res.json({ apps });
+  } catch (err) {
+    console.error('[hive/apps] list error:', err);
+    return res.status(500).json({ error: 'Could not load apps.' });
+  }
+});
+
+app.get('/api/hive/apps/:appId', async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const app = await getUserApp(db, ownerId, req.params.appId);
+    if (!app) return res.status(404).json({ error: 'App not found.' });
+    return res.json({ app });
+  } catch (err) {
+    console.error('[hive/apps] get error:', err);
+    return res.status(500).json({ error: 'Could not load app.' });
+  }
+});
+
+app.put('/api/hive/apps/:appId', async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const existing = await getUserApp(db, ownerId, req.params.appId);
+    if (!existing) return res.status(404).json({ error: 'App not found.' });
+    const next = { ...existing, ...(req.body?.app || req.body || {}), id: req.params.appId };
+    const normalized = normalizeAppSpec(next, { ownerId });
+    const saved = await saveUserApp(db, ownerId, { ...normalized, id: req.params.appId });
+    return res.json({ app: saved });
+  } catch (err) {
+    console.error('[hive/apps] update error:', err);
+    return res.status(400).json({ error: err.message || 'Could not update app.' });
+  }
+});
+
+app.delete('/api/hive/apps/:appId', async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const result = await deleteUserApp(db, ownerId, req.params.appId);
+    if (!result.ok) return res.status(404).json({ error: 'App not found.' });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('[hive/apps] delete error:', err);
+    return res.status(500).json({ error: 'Could not delete app.' });
+  }
+});
+
+// Kick off a paid export build (web app / installable APK / Play Store).
+// Reuses the existing /api/hive/tasks pipeline but with a pre-baked prompt
+// that tells the Cursor agent to read the user's spec and emit the right
+// artifact.
+app.post('/api/hive/apps/:appId/export', async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const targetRaw = req.body?.target;
+    const target = ['web_app', 'native_app', 'play_store'].includes(targetRaw) ? targetRaw : null;
+    if (!target) return res.status(400).json({ error: 'target must be web_app, native_app, or play_store.' });
+
+    const app = await getUserApp(db, ownerId, req.params.appId);
+    if (!app) return res.status(404).json({ error: 'App not found.' });
+
+    const buildPrompt = [
+      `Hive export build: target=${target}.`,
+      `User app spec (JSON):`,
+      '```json',
+      JSON.stringify(app, null, 2),
+      '```',
+      target === 'web_app'
+        ? 'Implement this spec as a static web app under cody/apps/${ownerId}/${slug}/. Use plain HTML/CSS/JS (or Vite + React if helpful). All page types and theme tokens must match the spec.'
+        : target === 'native_app'
+          ? 'Scaffold a standalone Expo project under apps/native/${slug}/ that implements this spec. Use the spec\'s title, icon, and theme. Provide eas.json and a README explaining `eas build --platform android --profile preview`.'
+          : 'Make this spec Play-Store-ready under apps/native/${slug}/: signed AAB profile, icon set (48-512px), feature graphic placeholder, listing copy in PLAY_STORE_LISTING.md, and a numbered Play Console walkthrough in PLAY_STORE_STEPS.md.',
+    ]
+      .join('\n')
+      .replace(/\$\{ownerId\}/g, ownerId)
+      .replace(/\$\{slug\}/g, app.slug);
+
+    const triage = {
+      route: 'cursor',
+      target,
+      buildMethod: 'cursor',
+      slug: app.slug,
+      title: app.title,
+      summary: `Export "${app.title}" as ${target.replace('_', ' ')}`,
+      buildPrompt,
+    };
+
+    const cursorEst = await estimateCursorBuildCost({
+      message: `Export ${app.title} as ${target}`,
+      buildPrompt,
+      summary: triage.summary,
+    });
+    const priced = priceEstimate(
+      { costUsd: cursorEst.costUsd, minutes: cursorEst.minutes },
+      { target, buildMethod: 'cursor' }
+    );
+
+    const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const doc = {
+      id: taskId,
+      message: `Export ${app.title} as ${target}`,
+      userId: ownerId,
+      route: 'cursor',
+      target,
+      buildMethod: 'cursor',
+      slug: app.slug,
+      title: app.title,
+      appId: req.params.appId,
+      previousTaskId: app.sourceTaskId || null,
+      status: 'awaiting_approval',
+      summary: triage.summary,
+      estimate: priced.user,
+      estimateBase: priced.base,
+      cursorEstimate: cursorEst,
+      buildPrompt,
+      reply: `Ready to ${target === 'web_app' ? 'publish the web app' : target === 'native_app' ? 'build your APK' : 'make it Play Store ready'}. About $${priced.user.costUsd} · ~${priced.user.minutes} min. Tap Approve & Build to start.`,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.collection(HIVE_TASKS).doc(taskId).set(doc);
+    return res.json({ task: doc });
+  } catch (err) {
+    console.error('[hive/apps] export error:', err);
+    return res.status(500).json({ error: err.message || 'Could not start export.' });
   }
 });
 

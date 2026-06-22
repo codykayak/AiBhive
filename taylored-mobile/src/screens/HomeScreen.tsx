@@ -297,6 +297,20 @@ export default function HomeScreen() {
         dismissComposer();
         if (task.status === 'building') startPolling(task.id, trimmed);
 
+        // Instant spec build — already complete, just open it.
+        if (
+          task.status === 'complete' &&
+          task.deliverable &&
+          (task.deliverable as any).kind === 'spec_app' &&
+          (task.deliverable as any).appId
+        ) {
+          const appId = (task.deliverable as any).appId;
+          dingReady();
+          void dingFeatureReady('Your app is ready', task.title || 'Open it from My Apps.');
+          showToast('App ready — tap to open', 'success');
+          setTimeout(() => navigation.navigate('DynamicApp', { appId }), 400);
+        }
+
         if (task.status === 'awaiting_approval' && task.estimate) {
           const cap = await getAutoApproveUnderUsd();
           const cost = task.estimate.costUsd ?? 0;

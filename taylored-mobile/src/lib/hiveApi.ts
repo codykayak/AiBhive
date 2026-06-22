@@ -8,10 +8,13 @@ export type HiveEstimate = {
 };
 
 export type HiveDeliverable = {
-  kind: 'host_screen' | 'web_app' | 'native_app';
+  kind: 'host_screen' | 'web_app' | 'native_app' | 'play_store' | 'spec_app';
   url?: string;
   deepLink?: string;
   label?: string;
+  appId?: string;
+  slug?: string;
+  title?: string;
 };
 
 export type HiveTask = {
@@ -19,9 +22,11 @@ export type HiveTask = {
   message: string;
   status: 'clarify' | 'awaiting_approval' | 'building' | 'complete' | 'failed';
   route: 'local' | 'cursor' | 'clarify';
-  target?: 'host_screen' | 'web_app' | 'native_app' | 'iteration';
+  target?: 'host_screen' | 'web_app' | 'native_app' | 'play_store' | 'iteration';
+  buildMethod?: 'spec' | 'cursor';
   slug?: string;
   title?: string;
+  appId?: string | null;
   previousTaskId?: string | null;
   summary?: string;
   estimate?: HiveEstimate | null;

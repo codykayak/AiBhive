@@ -144,6 +144,7 @@ export function AppLauncherCard({
   icon: Icon,
   onPress,
   accent,
+  style,
 }: {
   title: string;
   desc: string;
@@ -151,6 +152,7 @@ export function AppLauncherCard({
   icon: LucideIcon;
   onPress: () => void;
   accent?: 'amber' | 'purple' | 'info';
+  style?: ViewStyle;
 }) {
   const accentColor =
     accent === 'purple' ? colors.purple : accent === 'info' ? colors.info : colors.amberLight;
@@ -158,7 +160,7 @@ export function AppLauncherCard({
     accent === 'purple' ? colors.purpleSoft : accent === 'info' ? colors.infoSoft : colors.amberSoft;
 
   return (
-    <TouchableOpacity style={styles.appCard} activeOpacity={0.88} onPress={onPress}>
+    <TouchableOpacity style={[styles.appCard, style]} activeOpacity={0.88} onPress={onPress}>
       <View style={[styles.appIcon, { backgroundColor: accentBg, borderColor: colors.border }]}>
         <Icon color={accentColor} size={30} />
       </View>

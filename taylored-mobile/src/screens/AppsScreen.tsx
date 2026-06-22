@@ -1,7 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { Text, StyleSheet, ScrollView, View } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Hammer } from 'lucide-react-native';
+import {
+  Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes,
+} from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { HiveLogo } from '../components/HiveLogo';
@@ -13,8 +15,10 @@ import {
   SectionLabel,
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
-import { listHiveApps, pruneNonBuildApps, type HiveAppRecord } from '../lib/hiveApps';
-import { colors, spacing } from '../theme/colors';
+import { fetchUserApps } from '../lib/hiveUserApps';
+import { brandFor, iconFor } from '../dynamicApps/branding';
+import type { HiveAppSpec } from '../dynamicApps/types';
+import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
 const BUILT_IN_APPS = [
@@ -47,20 +51,20 @@ const BUILT_IN_APPS = [
   },
 ];
 
-function hiveStatusLabel(status: HiveAppRecord['status']) {
-  if (status === 'complete') return 'Ready';
-  if (status === 'failed') return 'Needs attention';
-  return 'Building';
-}
-
 export default function AppsScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
-  const [hiveApps, setHiveApps] = useState<HiveAppRecord[]>([]);
+  const [userApps, setUserApps] = useState<HiveAppSpec[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    await pruneNonBuildApps();
-    setHiveApps(await listHiveApps());
+    setLoading(true);
+    try {
+      const apps = await fetchUserApps();
+      setUserApps(apps);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useFocusEffect(
@@ -68,8 +72,6 @@ export default function AppsScreen() {
       void load();
     }, [load])
   );
-
-  const buildingCount = hiveApps.filter((a) => a.status === 'building').length;
 
   return (
     <ScreenLayout showBrand contentStyle={styles.content}>
@@ -87,28 +89,30 @@ export default function AppsScreen() {
 
         <GlassCard style={styles.statsRow} glow>
           <View style={styles.stat}>
-            <Text style={styles.statNum}>{hiveApps.length}</Text>
-            <Text style={styles.statLabel}>Apps</Text>
+            <Text style={styles.statNum}>{userApps.length}</Text>
+            <Text style={styles.statLabel}>Your apps</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={[styles.statNum, buildingCount > 0 && styles.statActive]}>{buildingCount}</Text>
-            <Text style={styles.statLabel}>Building</Text>
+            <Text style={styles.statNum}>{userApps.reduce((n, a) => n + (a.pages?.length || 0), 0)}</Text>
+            <Text style={styles.statLabel}>Pages</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statNum}>{hiveApps.filter((a) => a.status === 'complete').length}</Text>
-            <Text style={styles.statLabel}>Ready</Text>
+            <Text style={styles.statNum}>3</Text>
+            <Text style={styles.statLabel}>Starter tools</Text>
           </View>
         </GlassCard>
 
         <GlassCard style={styles.buildCard} glow>
           <View style={styles.buildHeader}>
             <Wand2 color={colors.amberLight} size={22} />
-            <Text style={styles.buildTitle}>Create something new</Text>
+            <Text style={styles.buildTitle}>Make a new app — instantly</Text>
           </View>
           <Text style={styles.buildText}>
-            Plain English in → working app out. No code. Approve once. Wait for the ding.
+            Describe it on the Build tab. Most apps appear here in under a minute — no Play Store
+            update needed. When you love it, tap Export to publish as a web app, an installable APK,
+            or a real Play Store listing.
           </Text>
           <PrimaryButton
             label="Go to Build"
@@ -118,13 +122,17 @@ export default function AppsScreen() {
           />
         </GlassCard>
 
-        <SectionLabel>{HIVE_COPY.appsRecent}</SectionLabel>
+        <SectionLabel>Your Hive apps</SectionLabel>
 
-        {hiveApps.length === 0 ? (
+        {loading ? (
+          <View style={styles.loaderRow}>
+            <ActivityIndicator color={colors.amberLight} />
+          </View>
+        ) : userApps.length === 0 ? (
           <EmptyState
             icon={Boxes}
             title="Your factory is warming up"
-            body={HIVE_COPY.appsEmptyBuilds}
+            body='No apps yet. Try: "Build me a habit tracker" or "Make a tip calculator" on the Build tab.'
             action={
               <PrimaryButton
                 label="Start building"
@@ -135,27 +143,25 @@ export default function AppsScreen() {
             }
           />
         ) : (
-          hiveApps.map((app) => (
-            <AppLauncherCard
-              key={app.id}
-              title={app.title}
-              desc={
-                app.status === 'complete'
-                  ? 'Ready — tap for how to open in AiBhive'
-                  : app.status === 'building'
-                    ? 'Building in the cloud…'
-                    : app.summary
-              }
-              tag={hiveStatusLabel(app.status)}
-              icon={app.status === 'building' ? Hammer : Sparkles}
-              accent={app.status === 'complete' ? 'amber' : 'info'}
-              onPress={() => navigation.navigate('HiveAppDetail', { app })}
-            />
-          ))
+          userApps.map((app) => {
+            const brand = brandFor(app.theme);
+            const Icon = iconFor(app.icon);
+            return (
+              <AppLauncherCard
+                key={app.id}
+                title={app.title}
+                desc={app.tagline || app.summary || `${app.pages?.length || 0} page(s)`}
+                tag="Live"
+                icon={Icon}
+                accent="amber"
+                onPress={() => navigation.navigate('DynamicApp', { appId: app.id, app })}
+                style={{ borderLeftWidth: 4, borderLeftColor: brand.primary }}
+              />
+            );
+          })
         )}
 
         <SectionLabel>{HIVE_COPY.appsBuiltIn}</SectionLabel>
-
         {BUILT_IN_APPS.map((app) => (
           <AppLauncherCard
             key={app.id}
@@ -175,7 +181,7 @@ export default function AppsScreen() {
           </View>
           <Text style={styles.tipText}>{HIVE_COPY.quickPrompts.join(' · ')}</Text>
           <PrimaryButton
-            label="How do I open my apps?"
+            label="How it all works"
             variant="secondary"
             onPress={() => navigation.navigate('UserGuide')}
             style={{ marginTop: 12, alignSelf: 'flex-start' }}
@@ -207,14 +213,14 @@ const styles = StyleSheet.create({
   },
   stat: { alignItems: 'center', flex: 1 },
   statNum: { ...typography.h2, color: colors.amberLight },
-  statActive: { color: colors.info },
   statLabel: { ...typography.caption, color: colors.textDim, marginTop: 2 },
   statDivider: { width: 1, height: 36, backgroundColor: colors.borderMuted },
-  buildCard: { marginBottom: spacing.lg, borderColor: colors.borderStrong },
+  buildCard: { marginBottom: spacing.lg, borderColor: colors.borderStrong, borderRadius: radii.lg },
   buildHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   buildTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 17 },
   buildText: { color: colors.textMuted, lineHeight: 21, fontSize: 14, marginBottom: spacing.md },
   buildBtn: { alignSelf: 'flex-start', paddingHorizontal: 24 },
+  loaderRow: { paddingVertical: spacing.lg, alignItems: 'center' },
   tipCard: { marginTop: spacing.sm, marginBottom: spacing.md },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   tipTitle: { color: colors.amberLight, fontWeight: '800' },

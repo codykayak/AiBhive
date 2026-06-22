@@ -12,6 +12,8 @@ import JobDetailScreen from '../screens/JobDetailScreen';
 import UserGuideScreen from '../screens/UserGuideScreen';
 import HiveAppDetailScreen from '../screens/HiveAppDetailScreen';
 import UserAppHostScreen from '../screens/UserAppHostScreen';
+import DynamicAppHost from '../dynamicApps/DynamicAppHost';
+import HiveExportOptionsScreen from '../screens/HiveExportOptionsScreen';
 import { HIVE_USER_APPS } from '../userApps';
 import { colors } from '../theme/colors';
 
@@ -29,6 +31,8 @@ const linking = {
         },
       },
       UserApp: 'userApps/:slug',
+      DynamicApp: 'app/:appId',
+      HiveExportOptions: 'app/:appId/export',
       HiveAppDetail: 'apps/detail',
       UserGuide: 'guide',
     },
@@ -72,6 +76,12 @@ export default function AppNavigator() {
         <Stack.Screen name="UserGuide" component={UserGuideScreen} options={{ title: 'User Guide' }} />
         <Stack.Screen name="HiveAppDetail" component={HiveAppDetailScreen} options={{ title: 'Your App' }} />
         <Stack.Screen name="UserApp" component={UserAppHostScreen} options={{ title: 'Hive App' }} />
+        <Stack.Screen name="DynamicApp" component={DynamicAppHost} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="HiveExportOptions"
+          component={HiveExportOptionsScreen}
+          options={{ title: 'Export' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
