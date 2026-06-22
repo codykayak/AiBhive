@@ -29,6 +29,7 @@ export type UserAppEntry = {
 };
 
 import HiveAppPlaceholderScreen from './HiveAppPlaceholderScreen';
+import HouseFlippingCalculator from './house-flipping-calculator';
 
 export const HIVE_USER_APPS: UserAppEntry[] = [
   // Build agents append entries here after generating
@@ -43,6 +44,16 @@ export const HIVE_USER_APPS: UserAppEntry[] = [
   //     component: HabitTracker,
   //   });
 ];
+
+HIVE_USER_APPS.push({
+  slug: 'house-flipping-calculator',
+  title: 'House Flipping Cost Calculator',
+  description: 'Estimate Oregon flip costs, profit, and ROI.',
+  icon: 'calculator',
+  accent: 'amber',
+  taskId: 'hive_1782158179170_k2wfxm',
+  component: HouseFlippingCalculator,
+});
 
 export function findUserApp(slug?: string | null): UserAppEntry | null {
   if (!slug) return null;
