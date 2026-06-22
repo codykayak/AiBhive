@@ -12,7 +12,7 @@ import {
 } from './socialPostStore.js';
 import { notifyPostReady } from './socialPostNotify.js';
 
-const TEXT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const TEXT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;

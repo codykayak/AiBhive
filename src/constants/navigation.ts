@@ -29,6 +29,10 @@ export const SOLUTION_CATEGORIES = [
     name: 'Phone Systems',
     path: '/solutions/phone-systems-ai-integration',
   },
+  {
+    name: 'Auto Social',
+    path: '/autoposter',
+  },
 ] as const;
 
 export const TRANSCRIPTION_SERVICES_LINKS = [

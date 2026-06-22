@@ -11,6 +11,7 @@ import {
   serializePost,
 } from './store.js';
 import { todayDateKey } from './topics.js';
+import { WORKFLOW_PIPELINE } from './workflow.js';
 
 function computeStats(posts) {
   const today = todayDateKey();
@@ -46,7 +47,22 @@ export async function handleSocialPostsRequest(req) {
 
     if (action === 'config') {
       const config = await getConfig();
-      return { status: 200, data: { config } };
+      return { status: 200, data: { config, pipeline: WORKFLOW_PIPELINE } };
+    }
+
+    if (action === 'workflow') {
+      const config = await getConfig();
+      return {
+        status: 200,
+        data: {
+          pipeline: WORKFLOW_PIPELINE,
+          config,
+          models: {
+            text: config.textModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+            image: config.imageModel || process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+          },
+        },
+      };
     }
 
     if (action === 'get' && req.query?.postId) {
@@ -120,12 +136,23 @@ export async function handleSocialPostsRequest(req) {
   }
 
   if (action === 'updateConfig') {
-    const { notifyPhone, notifyEnabled, scheduleHour, adminBaseUrl } = req.body ?? {};
+    const {
+      notifyPhone,
+      notifyEnabled,
+      scheduleHour,
+      adminBaseUrl,
+      socialLinks,
+      textModel,
+      imageModel,
+    } = req.body ?? {};
     const patch = {};
     if (notifyPhone !== undefined) patch.notifyPhone = String(notifyPhone);
     if (notifyEnabled !== undefined) patch.notifyEnabled = !!notifyEnabled;
     if (scheduleHour !== undefined) patch.scheduleHour = Number(scheduleHour);
     if (adminBaseUrl !== undefined) patch.adminBaseUrl = String(adminBaseUrl);
+    if (socialLinks !== undefined) patch.socialLinks = socialLinks;
+    if (textModel !== undefined) patch.textModel = String(textModel);
+    if (imageModel !== undefined) patch.imageModel = String(imageModel);
     const config = await saveConfig(patch);
     return { status: 200, data: { config } };
   }
