@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.1.0",
-  "versionCode": 2,
-  "sourceVersion": "1.1.0",
-  "releaseNotes": "v1.1.0 — AI behavior settings, job research tabs, DeX keyboard fixes, in-app update checks, Hive billing scaffold.",
+  "shippedNativeVersion": "1.2.3",
+  "versionCode": 6,
+  "sourceVersion": "1.2.3",
+  "releaseNotes": "v1.2.3 — Friendlier Hive pricing ($4–$5 builds), owner free testing when signed in, AiBhive background + logo.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1781908722111%2Ftaylored-mobile.apk.gz?alt=media&token=371398da-90f5-40fc-8198-f5d2e25e22ce",
-  "publishedAt": "2026-06-19T22:38:43.005Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782117179467%2Ftaylored-mobile.apk.gz?alt=media&token=b20f737e-ccd2-4eec-85dd-accfc7a122dd",
+  "publishedAt": "2026-06-22T08:33:00.354Z",
   "otaChannel": "production"
 }

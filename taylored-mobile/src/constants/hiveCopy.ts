@@ -44,7 +44,9 @@ export const HIVE_COPY = {
 };
 
 export function formatEstimateCard(costUsd: number, minutes: number): string {
-  return `~$${costUsd} · ~${minutes} min`;
+  if (costUsd <= 0) return `Free · ~${minutes} min`;
+  const price = costUsd % 1 === 0 ? `$${costUsd}` : `$${costUsd.toFixed(2)}`;
+  return `~${price} · ~${minutes} min`;
 }
 
 export function formatBuildOffer(summary: string, costUsd: number, minutes: number): string {

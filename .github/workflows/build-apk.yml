@@ -1,3 +1,4 @@
+# Manual fallback — prefer GCP Cloud Build (taylored-mobile/cloudbuild.yaml) to save Actions minutes.
 name: Build Android APK
 on:
   workflow_dispatch:

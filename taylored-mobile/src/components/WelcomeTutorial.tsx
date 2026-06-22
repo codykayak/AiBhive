@@ -8,6 +8,7 @@ import {
   Dimensions,
   Animated,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageCircle, ThumbsUp, Bell, LayoutGrid, Wand2 } from 'lucide-react-native';
@@ -18,6 +19,7 @@ import { typography } from '../theme/typography';
 import { shadows } from '../theme/shadows';
 
 const { width, height } = Dimensions.get('window');
+const HIVE_BG = require('../../assets/aibhive-background.png');
 
 type Slide = {
   id: string;
@@ -94,7 +96,12 @@ export function WelcomeTutorial({ visible, onDone }: Props) {
 
   return (
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
-      <View style={[styles.screen, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+      <ImageBackground
+        source={HIVE_BG}
+        style={[styles.screen, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
+        imageStyle={styles.bgImage}
+      >
+        <View style={styles.bgDim} />
         <View style={styles.glowTop} />
         <View style={styles.glowBottom} />
 
@@ -158,7 +165,7 @@ export function WelcomeTutorial({ visible, onDone }: Props) {
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </ImageBackground>
     </Modal>
   );
 }
@@ -169,6 +176,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
     paddingHorizontal: spacing.lg,
     maxHeight: height,
+  },
+  bgImage: {
+    opacity: 0.5,
+  },
+  bgDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(2, 6, 23, 0.55)',
   },
   glowTop: {
     position: 'absolute',
