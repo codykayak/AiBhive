@@ -1,0 +1,12 @@
+{
+  "name": "AiBhive",
+  "siteUrl": "https://www.aibhive.com",
+  "adminBaseUrl": "https://www.aibhive.com/autoposter",
+  "colors": {
+    "primary": "navy blue (#020617)",
+    "accent": "amber (#f59e0b)",
+    "highlight": "gold (#fbbf24)"
+  },
+  "voice": "Professional, confident, helpful. Not salesy. U.S. English. Emphasize practical AI automation for businesses.",
+  "imageStyle": "Modern social marketing graphic for an AI automation company. Clean corporate design with subtle honeycomb or tech motifs. Amber and navy palette. No fake logos, no copyrighted brand names, no celebrity faces. Subtle gradient background."
+}

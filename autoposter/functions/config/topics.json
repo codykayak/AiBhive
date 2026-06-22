@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "hive-product",
+    "title": "AiBhive Hive — build apps from your phone",
+    "angle": "how AiBhive lets anyone describe an app in plain English and get it built in the cloud",
+    "siteLink": "https://www.aibhive.com",
+    "searchQueries": ["AI app builder news", "no-code AI automation trends", "mobile AI development"]
+  },
+  {
+    "slug": "business-automation",
+    "title": "AI automation for real businesses",
+    "angle": "practical ways SMBs use AI agents for leads, operations, and document workflows",
+    "siteLink": "https://www.aibhive.com/solutions/ai-lead-generation-automation",
+    "searchQueries": ["AI business automation news", "SMB AI adoption", "workflow automation trends"]
+  },
+  {
+    "slug": "industry-insight",
+    "title": "Industry insight",
+    "angle": "commentary on relevant AI and automation headlines with a practical takeaway",
+    "siteLink": "https://www.aibhive.com/about",
+    "searchQueries": ["artificial intelligence business news today", "enterprise AI trends", "agentic AI news"]
+  }
+]

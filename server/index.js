@@ -29,6 +29,12 @@ import { priceEstimate, getPricingConfig, getAutoApproveDefaultUsd } from './hiv
 import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
+import {
+  initSocialPostsService,
+  handleSocialPostsRequest,
+  runScheduledSocialPost,
+} from './socialPosts/index.js';
+import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -112,6 +118,8 @@ const bucketName = 'aibhive-media'; // Must be lowercase for GCS
 const gcsBucket = storage.bucket(bucketName);
 const ragSourcesService = createRagSourcesService({ db, gcsBucket });
 initRagSourcesService(ragSourcesService);
+initSocialPostsService({ db, bucket: gcsBucket });
+startAutoposterScheduler();
 
 const ragUpload = multer({
   storage: multer.memoryStorage(),
@@ -507,6 +515,40 @@ app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/rag-sources/delete] error:', error);
     return res.status(400).json({ error: error.message || 'Failed to delete source' });
+  }
+});
+
+// --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
+app.all('/api/autoposter', verifyAdmin, async (req, res) => {
+  try {
+    const { status, data } = await handleSocialPostsRequest(req);
+    return res.status(status).json(data);
+  } catch (error) {
+    console.error('[autoposter] error:', error);
+    return res.status(500).json({ error: error.message || 'AutoPoster request failed' });
+  }
+});
+
+// Cloud Scheduler hook (optional) — POST with X-Cron-Secret header
+app.post('/api/autoposter/cron', async (req, res) => {
+  const secret = process.env.AUTOPOSTER_CRON_SECRET;
+  if (secret) {
+    const provided = req.get('X-Cron-Secret') || req.get('x-cron-secret') || '';
+    if (provided !== secret) {
+      return res.status(401).json({ error: 'Unauthorized cron request' });
+    }
+  }
+  try {
+    const result = await runScheduledSocialPost();
+    return res.json({
+      ok: true,
+      skipped: result.skipped,
+      reason: result.reason,
+      date: result.post?.date,
+    });
+  } catch (error) {
+    console.error('[autoposter/cron] error:', error);
+    return res.status(500).json({ error: error.message || 'Scheduler failed' });
   }
 });
 
@@ -1310,6 +1352,11 @@ app.get('/privacy', (_req, res) => res.redirect(301, '/privacy-policy.html'));
 app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
 app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
+});
+
+app.use('/autoposter', express.static(path.join(__dirname, '../dist/autoposter')));
+app.get(['/autoposter', '/autoposter/*'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/autoposter/index.html'));
 });
 
 app.use(express.static(path.join(__dirname, '../dist')));
