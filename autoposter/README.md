@@ -2,92 +2,67 @@
 
 Automated daily social media pipeline for **Facebook**, **Instagram**, and **X** — lives at [aibhive.com/autoposter](https://www.aibhive.com/autoposter).
 
-- Picks a topic from `functions/config/topics.json`
-- Researches industry news (Gemini + Google Search)
-- Writes platform-specific captions
-- Generates branded images (Gemini)
-- Optional daily SMS via Twilio
-- Admin UI to review, edit, copy, and approve
+**No separate Firebase deploy required.** AutoPoster runs on the same Cloud Run service as aibhive.com and uses the existing `GEMINI_API_KEY`, Firestore, and `aibhive-media` storage bucket.
 
-**Authentication:** Sign in with Google (same admin allowlist as `/admin`). No manual API key in the browser.
+## Features
+
+- AI researches industry news, writes platform-specific captions, generates branded images
+- Google sign-in (same admin allowlist as `/admin`) — no API keys in the browser
+- Optional daily SMS via Twilio
+- Daily scheduler at 7:00 AM Pacific (in-process + optional Cloud Scheduler hook)
 
 ## Folder layout
 
 ```
 autoposter/
-  admin/           React UI (Vite) — served at /autoposter
-  functions/       Firebase Cloud Functions + config
-  firebase.json
-  firestore.rules
+  admin/              React UI (Vite) — served at /autoposter
+  functions/          Original Firebase reference implementation (optional)
+  functions/config/   Brand, topics, knowledge — read by the Cloud Run server
 ```
 
-## Quick start
+## Setup (zero extra secrets for Gemini)
 
-### 1. Customize config
+AutoPoster is included in the main site build and server. When you deploy aibhive.com to Cloud Run:
 
-Edit `functions/config/` before first run:
+1. **`GEMINI_API_KEY`** — already on Cloud Run for the main site. AutoPoster uses the same key.
+2. **Google sign-in** — use your allowlisted Google account at `/autoposter`.
+3. **Optional Twilio SMS** — set on Cloud Run if you want daily texts:
+   - `TWILIO_ACCOUNT_SID`
+   - `TWILIO_AUTH_TOKEN`
+   - `TWILIO_FROM_NUMBER`
+   - `SOCIAL_NOTIFY_PHONE` (default notify number)
 
-- `brand.json` — name, site URL, admin URL, voice, image style
-- `topics.json` — rotating post topics + site links
-- `knowledge.txt` — product/brand context for captions
+### Customize content
 
-### 2. Deploy Firebase functions
+Edit before generating posts:
+
+- `functions/config/brand.json`
+- `functions/config/topics.json`
+- `functions/config/knowledge.txt`
+
+### Build
 
 ```bash
-cd autoposter/functions
-npm ci
-firebase functions:secrets:set GEMINI_API_KEY
-firebase functions:secrets:set SOCIAL_ADMIN_API_KEY   # server-side only
-# Optional Twilio SMS:
-firebase functions:secrets:set TWILIO_ACCOUNT_SID
-firebase functions:secrets:set TWILIO_AUTH_TOKEN
-firebase functions:secrets:set TWILIO_FROM_NUMBER
-firebase functions:secrets:set SOCIAL_NOTIFY_PHONE
-
-export FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-firebase deploy --only functions,firestore:rules,firestore:indexes
+npm run build   # from repo root — includes autoposter UI
 ```
 
-### 3. Configure the main site server
+### Optional: Cloud Scheduler (more reliable than in-process)
 
-Add to your server `.env` (never commit real values):
+Create a Cloud Scheduler job that POSTs daily at 7 AM Pacific:
 
-```bash
-SOCIAL_API_URL=https://us-central1-YOUR_PROJECT.cloudfunctions.net/socialPosts
-SOCIAL_ADMIN_API_KEY=your-secret-key-matching-firebase-secret
-# ADMIN_EMAILS=you@gmail.com   # optional extra allowlist emails
+```
+POST https://www.aibhive.com/api/autoposter/cron
+Header: X-Cron-Secret: <your-secret>   # if AUTOPOSTER_CRON_SECRET is set on Cloud Run
 ```
 
-The Express server proxies `/api/autoposter` → Firebase function using that key. Clients only send a Google ID token.
+Set `DISABLE_AUTOPOSTER_SCHEDULER=true` on Cloud Run if you only want the external cron.
 
-### 4. Build & run the UI
+### Admin access
 
-From the repo root:
-
-```bash
-cd autoposter/admin && npm ci && npm run dev   # http://localhost:5175/autoposter/
-```
-
-Production build is included in the main site build:
-
-```bash
-npm run build   # from repo root
-```
-
-Open `/autoposter`, click **Continue with Google**, and start generating posts.
-
-### 5. Scheduler
-
-`socialPostScheduler` runs daily at **7:00 AM Pacific**. Adjust in `functions/index.js`.
+Same allowlist as `/admin`: `codykayak@gmail.com`, `admin@aibhive.com`, plus `ADMIN_EMAILS` env var.
 
 ## API
 
-Browser → `GET/POST /api/autoposter` (Google admin auth)
-
-Server → Firebase `socialPosts` function (server-side `X-Social-Admin-Key`)
+Browser → `GET/POST /api/autoposter` (Google Bearer token)
 
 Actions: `list`, `config`, `generate`, `approve`, `reject`, `markPosted`, `update`, `resendNotify`, `testSms`, `updateConfig`
-
-## Admin access
-
-Allowed emails are defined in `server/index.js` (`DEFAULT_ADMIN_EMAILS`) and can be extended via the `ADMIN_EMAILS` env var — same list as the main `/admin` dashboard.
