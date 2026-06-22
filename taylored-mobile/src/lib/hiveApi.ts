@@ -7,17 +7,31 @@ export type HiveEstimate = {
   minutes: number;
 };
 
+export type HiveDeliverable = {
+  kind: 'host_screen' | 'web_app' | 'native_app';
+  url?: string;
+  deepLink?: string;
+  label?: string;
+};
+
 export type HiveTask = {
   id: string;
   message: string;
   status: 'clarify' | 'awaiting_approval' | 'building' | 'complete' | 'failed';
   route: 'local' | 'cursor' | 'clarify';
+  target?: 'host_screen' | 'web_app' | 'native_app' | 'iteration';
+  slug?: string;
+  title?: string;
+  previousTaskId?: string | null;
   summary?: string;
   estimate?: HiveEstimate | null;
   reply?: string;
   buildPrompt?: string;
   prUrl?: string;
   cursorAgentUrl?: string;
+  cursorBranch?: string;
+  deliverable?: HiveDeliverable | null;
+  autoMerge?: { merged: boolean; reason?: string };
   source?: 'server' | 'local';
 };
 
@@ -124,4 +138,24 @@ export async function getOrCreateHiveUserId(): Promise<string> {
     await setItemAsync('hive_user_id', id);
   }
   return id;
+}
+
+/** Register an Expo push token so the server can ding the device on build complete. */
+export async function registerHiveDevice(
+  userId: string,
+  token: string,
+  platform: string
+): Promise<boolean> {
+  if (!userId || userId === 'anonymous' || !token) return false;
+  try {
+    const headers = await authHeaders();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/devices`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId, token, platform }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

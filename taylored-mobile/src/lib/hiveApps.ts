@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { HiveTask } from './hiveApi';
+import type { HiveDeliverable, HiveTask } from './hiveApi';
 
 const STORAGE_KEY = 'hive_my_apps_v1';
 
@@ -13,6 +13,9 @@ export type HiveAppRecord = {
   taskId?: string;
   prUrl?: string;
   prompt?: string;
+  target?: 'host_screen' | 'web_app' | 'native_app' | 'iteration';
+  slug?: string;
+  deliverable?: HiveDeliverable | null;
 };
 
 function titleFromTask(task: HiveTask, fallback: string): string {
@@ -62,6 +65,9 @@ export async function upsertHiveAppFromTask(task: HiveTask, prompt?: string): Pr
     taskId: task.id,
     prUrl: task.prUrl,
     prompt: prompt ?? task.message,
+    target: task.target,
+    slug: task.slug,
+    deliverable: task.deliverable ?? null,
   };
 
   if (existingIdx >= 0) apps[existingIdx] = record;

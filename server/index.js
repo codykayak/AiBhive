@@ -6,7 +6,14 @@ import admin from 'firebase-admin';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { processLeadJob } from './processing.js';
 import { getAssistantReply } from './assistantChat.js';
-import { triageHiveTask, spawnCursorAgent, startCursorRunPoller } from './hiveOrchestrator.js';
+import {
+  triageHiveTask,
+  spawnCursorAgent,
+  startCursorRunPoller,
+  findPreviousTaskForIteration,
+} from './hiveOrchestrator.js';
+import { isAutoMergeConfigured } from './hiveAutoMerge.js';
+import { registerDeviceToken } from './hivePush.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
   ensureHiveUser,
@@ -18,7 +25,7 @@ import {
 } from './hiveBilling.js';
 import { verifyHiveAuth } from './hiveAuth.js';
 import { isHiveFreeBuildEmail } from './hiveAdmin.js';
-import { priceEstimate, getPricingConfig } from './hivePricing.js';
+import { priceEstimate, getPricingConfig, getAutoApproveDefaultUsd } from './hivePricing.js';
 import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
@@ -890,6 +897,7 @@ app.get('/api/hive/status', async (_req, res) => {
   const cursorConfigured = !!process.env.CURSOR_API_KEY;
   const geminiConfigured = !!process.env.GEMINI_API_KEY;
   const stripeConfigured = !!process.env.STRIPE_SECRET_KEY && !String(process.env.STRIPE_SECRET_KEY).startsWith('sk_test_123');
+  const autoMergeConfigured = isAutoMergeConfigured();
   let usage = null;
   try {
     usage = await getBuildUsage(db);
@@ -900,14 +908,18 @@ app.get('/api/hive/status', async (_req, res) => {
     online: geminiConfigured,
     cursorConfigured,
     stripeConfigured,
+    autoMergeConfigured,
     triageModel: process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash',
     buildModel: process.env.HIVE_CURSOR_MODEL || 'composer-2.5',
     pricing: getPricingConfig(),
+    autoApproveDefaultUsd: getAutoApproveDefaultUsd(),
     buildUsage: usage,
     message: !geminiConfigured
       ? 'Server missing GEMINI_API_KEY'
       : cursorConfigured
-        ? 'Hive + Cursor ready'
+        ? autoMergeConfigured
+          ? 'Hive + Cursor + auto-merge ready'
+          : 'Hive + Cursor ready (set HIVE_GITHUB_TOKEN to auto-merge)'
         : 'Hive ready; set CURSOR_API_KEY to enable builds',
   });
 });
@@ -1023,11 +1035,13 @@ app.post('/api/hive/tasks', async (req, res) => {
       return res.status(400).json({ error: 'Message is too long.' });
     }
 
-    const triage = await triageHiveTask(message.trim());
+    const previous = await findPreviousTaskForIteration(db, resolvedUserId, message.trim());
+    const triage = await triageHiveTask(message.trim(), { previous });
     const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
 
     const freeBuild = Boolean(authUser?.email && isHiveFreeBuildEmail(authUser.email));
+    const isIteration = triage.target === 'iteration';
 
     let buildPrompt = triage.buildPrompt || message.trim();
     if (attachmentBase64 && typeof attachmentBase64 === 'string') {
@@ -1035,6 +1049,9 @@ app.post('/api/hive/tasks', async (req, res) => {
         return res.status(400).json({ error: 'Image attachment is too large. Try a smaller screenshot.' });
       }
       buildPrompt += `\n\nUser attached a reference image (${attachmentWidth || '?'}x${attachmentHeight || '?'}). Match layout, colors, and icon style where it helps.`;
+    }
+    if (isIteration && previous) {
+      buildPrompt += `\n\nThis is an ITERATION on the previous build with slug "${previous.slug}" (task ${previous.taskId}). Edit existing files for that slug; do not create a parallel folder.`;
     }
 
     let status = 'complete';
@@ -1056,14 +1073,24 @@ app.post('/api/hive/tasks', async (req, res) => {
       cursorEstimateMeta = cursorEst;
       const priced = priceEstimate(
         { costUsd: cursorEst.costUsd, minutes: cursorEst.minutes },
-        { free: freeBuild }
+        { free: freeBuild, iteration: isIteration }
       );
       const cost = priced.user.costUsd;
       const mins = priced.user.minutes;
       const priceLine = freeBuild
         ? 'Free for your account (beta testing)'
-        : `About $${cost}`;
-      reply = `I can build that for you.\n\n${triage.summary}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
+        : cost < 1
+          ? `About $${cost.toFixed(2)}`
+          : `About $${cost}`;
+      const targetLine =
+        triage.target === 'web_app'
+          ? 'I\'ll ship this as a shareable web app.'
+          : triage.target === 'native_app'
+            ? 'I\'ll scaffold a separate standalone APK project.'
+            : isIteration
+              ? `I\'ll iterate on your "${previous?.slug}" build.`
+              : 'I\'ll build it inside AiBhive (fastest to ship).';
+      reply = `I can build that for you.\n\n${triage.summary}\n${targetLine}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
       estimate = priced.user;
       estimateBase = priced.base;
       if (freeBuild) triage.freeBuild = true;
@@ -1074,6 +1101,10 @@ app.post('/api/hive/tasks', async (req, res) => {
       message: message.trim(),
       userId: resolvedUserId,
       route: triage.route,
+      target: triage.target,
+      slug: triage.slug,
+      title: triage.title,
+      previousTaskId: isIteration && previous ? previous.taskId : null,
       status,
       summary: triage.summary,
       estimate: estimate || null,
@@ -1129,12 +1160,12 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
 
-    const capacity = await assertCanStartBuild(db, resolvedUserId || 'anonymous');
+    const cost = task.estimate?.costUsd ?? 0;
+    const capacity = await assertCanStartBuild(db, resolvedUserId || 'anonymous', cost);
     if (!capacity.ok) {
       return res.status(429).json({ error: capacity.reason, buildUsage: capacity.usage });
     }
 
-    const cost = task.estimate?.costUsd ?? 0;
     const skipCharge = cost === 0 || task.freeBuild;
     if (resolvedUserId && resolvedUserId !== 'anonymous' && !skipCharge) {
       const reservation = await reserveBuildCredits(db, resolvedUserId, task.id, cost);
@@ -1153,8 +1184,13 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
       }
     }
 
-    const cursor = await spawnCursorAgent(task.buildPrompt || task.message, task.id);
-    await recordBuildStart(db, resolvedUserId || 'anonymous');
+    const cursor = await spawnCursorAgent(task.buildPrompt || task.message, task.id, {
+      target: task.target || 'host_screen',
+      slug: task.slug,
+      title: task.title,
+      userId: resolvedUserId,
+    });
+    await recordBuildStart(db, resolvedUserId || 'anonymous', cost);
     const now = new Date().toISOString();
 
     await ref.update({
@@ -1162,6 +1198,7 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
       cursorAgentId: cursor.agentId,
       cursorRunId: cursor.runId,
       cursorAgentUrl: cursor.agentUrl,
+      cursorBranchHint: cursor.branchHint,
       reply: 'Build started. We\'ll notify you when it\'s ready.',
       approvedAt: now,
       updatedAt: now,
@@ -1173,6 +1210,27 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
   } catch (err) {
     console.error('[hive/tasks] approve error:', err);
     return res.status(500).json({ error: err.message || 'Could not start build agent.' });
+  }
+});
+
+// --- Hive device registration (Expo push tokens) ---
+
+app.post('/api/hive/devices', async (req, res) => {
+  try {
+    const { userId, token, platform } = req.body || {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || resolvedUserId === 'anonymous') {
+      return res.status(400).json({ error: 'A user id is required to register a device.' });
+    }
+    if (!token) {
+      return res.status(400).json({ error: 'Expo push token is required.' });
+    }
+    const result = await registerDeviceToken(db, { userId: resolvedUserId, token, platform });
+    return res.json({ ok: true, deviceId: result.id });
+  } catch (err) {
+    console.error('[hive/devices] register error:', err);
+    return res.status(400).json({ error: err.message || 'Could not register device.' });
   }
 });
 
@@ -1194,6 +1252,53 @@ app.get('/api/mobile/releases', (_req, res) => {
     return res.status(404).json({ error: 'Release manifest not available.' });
   }
   return res.json(manifest);
+});
+
+// --- Hive personal web apps: /u/:owner/:slug/* ---
+// Serves the static bundles produced by `web_app` Hive builds.
+// Source layout: cody/apps/<owner>/<slug>/  (committed by build agents)
+// Built layout (preferred): dist/cody/apps/<owner>/<slug>/  (vite build output)
+
+function safeSegment(value) {
+  return /^[a-zA-Z0-9_-]{1,64}$/.test(value || '');
+}
+
+app.get('/u/:owner/:slug/*', (req, res, next) => {
+  const { owner, slug } = req.params;
+  if (!safeSegment(owner) || !safeSegment(slug)) return next();
+
+  const rest = req.params[0] || 'index.html';
+  const safeRest = path.posix.normalize('/' + rest).replace(/^\/+/, '');
+  if (safeRest.includes('..')) return next();
+
+  const builtPath = path.join(__dirname, '..', 'dist', 'cody', 'apps', owner, slug, safeRest);
+  const sourcePath = path.join(__dirname, '..', 'cody', 'apps', owner, slug, safeRest);
+  const fallbackIndex = (root) => path.join(root, 'index.html');
+
+  for (const candidate of [
+    builtPath,
+    fallbackIndex(path.dirname(builtPath)),
+    sourcePath,
+    fallbackIndex(path.dirname(sourcePath)),
+  ]) {
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+      return res.sendFile(candidate);
+    }
+  }
+  return res
+    .status(404)
+    .type('html')
+    .send(
+      '<!doctype html><meta charset=utf-8><title>Hive app not built yet</title>' +
+        '<style>body{font-family:system-ui;background:#0c0a09;color:#fde68a;max-width:520px;margin:48px auto;padding:24px;line-height:1.5}</style>' +
+        '<h1>This Hive web app is on its way</h1>' +
+        `<p>We do not have a build for <code>${owner}/${slug}</code> yet. The Hive build pipeline publishes web apps to this URL within a few minutes of completion.</p>` +
+        '<p><a style="color:#fbbf24" href="/">Back to AiBhive</a></p>'
+    );
+});
+
+app.get('/u/:owner/:slug', (req, res) => {
+  res.redirect(301, `/u/${req.params.owner}/${req.params.slug}/`);
 });
 
 // --- Serve Frontend Static Files for Production ---

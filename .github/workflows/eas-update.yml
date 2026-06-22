@@ -1,13 +1,34 @@
+# Ships a JS bundle OTA via EAS Update on every push to main-fixed.
+# Existing v1.4.0 installs receive the update on the next cold start.
+# Native changes (app.json version bump, native modules) still need a fresh APK
+# from `build-apk.yml` — that workflow runs in parallel on the same trigger.
 name: EAS Update (JS OTA)
+
 on:
   workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'taylored-mobile/src/**'
+      - 'taylored-mobile/index.ts'
+      - 'taylored-mobile/App.tsx'
+      - 'taylored-mobile/package.json'
+      - 'taylored-mobile/package-lock.json'
+      - 'shared/**'
+      - '.github/workflows/eas-update.yml'
 
 permissions:
   contents: read
 
+concurrency:
+  group: eas-update-main-fixed
+  cancel-in-progress: true
+
 jobs:
   eas-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ !contains(github.event.head_commit.message, '[skip-ota]') }}
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
@@ -30,4 +51,7 @@ jobs:
             echo "EXPO_TOKEN not set — skipping OTA publish."
             exit 0
           fi
-          npx eas-cli update --branch production --message "OTA manual dispatch" --non-interactive
+          MSG="${{ github.event.head_commit.message }}"
+          [ -z "$MSG" ] && MSG="OTA update"
+          MSG="${MSG%%$'\n'*}"
+          npx eas-cli update --branch production --message "${MSG:0:140}" --non-interactive

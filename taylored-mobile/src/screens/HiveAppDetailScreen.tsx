@@ -1,10 +1,11 @@
 import React from 'react';
 import { ScrollView, Text, StyleSheet, View, Linking, Alert } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { CheckCircle2, Hammer, ExternalLink, BookOpen } from 'lucide-react-native';
+import { CheckCircle2, Hammer, ExternalLink, BookOpen, Rocket } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton, StatusPill } from '../components/ui';
 import type { HiveAppRecord } from '../lib/hiveApps';
+import { findUserApp } from '../userApps';
 import { colors, spacing } from '../theme/colors';
 
 type Params = { app: HiveAppRecord };
@@ -35,6 +36,38 @@ export default function HiveAppDetailScreen() {
   const statusLabel =
     app.status === 'complete' ? 'Ready' : app.status === 'failed' ? 'Needs attention' : 'Building';
 
+  const deliverable = app.deliverable;
+  const hostScreenEntry = app.target === 'host_screen' && app.slug ? findUserApp(app.slug) : null;
+
+  const openDeliverable = () => {
+    if (app.target === 'host_screen') {
+      if (hostScreenEntry) {
+        navigation.navigate('UserApp', { slug: app.slug, title: app.title, summary: app.summary });
+      } else {
+        Alert.alert(
+          'Open in AiBhive',
+          'Install the latest AiBhive update from Settings → Check for updates to use this build.'
+        );
+      }
+      return;
+    }
+    if (deliverable?.url) {
+      void Linking.openURL(deliverable.url);
+      return;
+    }
+    if (deliverable?.deepLink) {
+      void Linking.openURL(deliverable.deepLink);
+    }
+  };
+
+  const openLabel =
+    deliverable?.label ||
+    (app.target === 'web_app'
+      ? 'Open web app'
+      : app.target === 'native_app'
+        ? 'Install your APK'
+        : 'Open in AiBhive');
+
   return (
     <ScreenLayout title={app.title} subtitle={app.summary} contentStyle={styles.content}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -57,22 +90,31 @@ export default function HiveAppDetailScreen() {
           <GlassCard style={styles.card} glow>
             <View style={styles.row}>
               <CheckCircle2 color={colors.success} size={22} />
-              <Text style={styles.cardTitle}>Build finished — how to use it</Text>
+              <Text style={styles.cardTitle}>Build finished — open it</Text>
             </View>
             <Text style={styles.body}>
-              Your feature is built inside the AiBhive codebase. To use it on your phone:
+              {app.target === 'web_app'
+                ? 'Your build is live on the web. Tap to open or share the link.'
+                : app.target === 'native_app'
+                  ? 'Your standalone APK is ready to download and install.'
+                  : hostScreenEntry
+                    ? 'Your screen is registered inside AiBhive. Tap to open it now.'
+                    : 'Your screen is built. The next AiBhive update (auto-shipping now) will make it tappable.'}
             </Text>
-            <View style={styles.steps}>
-              <Text style={styles.step}>1. Settings → Check for updates → install the latest AiBhive.</Text>
-              <Text style={styles.step}>2. Return to My Apps and tap this card.</Text>
-              <Text style={styles.step}>3. Or ask on Build for a web link / export if you need it outside the app.</Text>
-            </View>
             <PrimaryButton
-              label="Check for updates"
-              variant="secondary"
-              onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
+              label={openLabel}
+              icon={Rocket}
+              onPress={openDeliverable}
               style={styles.btn}
             />
+            {app.target !== 'web_app' && (
+              <PrimaryButton
+                label="Check for updates"
+                variant="secondary"
+                onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
+                style={styles.btn}
+              />
+            )}
           </GlassCard>
         )}
 

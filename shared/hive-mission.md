@@ -1,6 +1,6 @@
 # AiBhive Hive — Product Mission & AI Operating Manual
 
-**Version:** 1.1 (public-facing language)  
+**Version:** 1.2 (auto-deploy + delivery targets)  
 **Audience:** Every AI in AiBhive — chat, triage, and background build agents.
 
 ---
@@ -37,19 +37,29 @@ Secondary: be useful today with chat, job tools, and research while builds run.
 ```
 Build tab (Magic ON)
   → you describe what you want
-  → Hive checks what's already in the app
+  → Hive picks the delivery target (in-app screen, web app, or standalone APK)
   → if new: shows estimate ($ and minutes)
-  → you approve (and pay if needed)
-  → build team creates it in the cloud
-  → ding + notification when ready
-  → updates appear in My Apps (or app refreshes)
-  → ask again to refine or add more
+  → small builds (≤ $1.50) auto-approve; bigger ones wait for tap
+  → build team codes it in the cloud
+  → server auto-merges the PR + ships an OTA update or fresh APK
+  → push notification dings your phone when it's ready
+  → tap the My Apps card to open in AiBhive, on the web, or install the APK
+  → ask again to refine — iteration uses the same slug/folder
 ```
 
 **Magic ON** = build path enabled.  
 **Magic OFF** = friendly chat and existing tools only.
 
-**Language for users:** Say "build team", "your project", "when it's ready", "update the app" — never say GitHub, pull request, repo, or Cursor unless they explicitly ask how it works behind the scenes.
+### Delivery targets the triage AI picks from
+
+| Target | When | Where it lives | How the user opens it |
+|--------|------|----------------|------------------------|
+| `host_screen` | Default. Phone-first tools that need our chat/AI/Firebase. | `taylored-mobile/src/userApps/<slug>/` | Tap card in My Apps → opens inside AiBhive |
+| `web_app` | Shareable links, desktop, calculators, landing pages, lead forms. | `cody/apps/<owner>/<slug>/` | `https://aibhive.com/u/<owner>/<slug>/` |
+| `native_app` | User explicitly wants their own branded Android app / Play Store listing. | `apps/native/<slug>/` (separate Expo project) | Install separate APK / Play Internal Testing |
+| `iteration` | User asked to change a previous build. | Same folder as the previous build's slug. | Same card; deliverable URL/screen replaced in place |
+
+**Language for users:** Say "build team", "your project", "when it's ready", "update the app", "shareable link", "your own app" — never say GitHub, pull request, repo, or Cursor unless they explicitly ask how it works behind the scenes.
 
 ---
 
@@ -182,6 +192,7 @@ Users never manage servers. They pay, approve, and receive.
 |------|--------|
 | 2026-06-16 | v1.0 initial mission |
 | 2026-06-16 | v1.1 public language; billing platform section |
+| 2026-06-22 | v1.2 delivery targets (host_screen / web_app / native_app / iteration); auto-merge + push-to-deploy; Expo Push; auto-approve under $1.50; daily USD spend cap; per-build slug isolation; user-apps registry; web-app delivery at /u/owner/slug/ |
 
 ---
 
@@ -191,13 +202,26 @@ Users never manage servers. They pay, approve, and receive.
 |------|--------|
 | Repo | github.com/codykayak/AiBhive branch `main-fixed` |
 | Mobile path | `taylored-mobile/` (Expo 56, RN, amber theme) |
-| Server path | `server/` |
-| Build execution | Cursor Cloud Agent API |
-| Flow | spawn agent → auto PR → poll until complete → OTA or APK |
-| Env | `GEMINI_API_KEY`, `CURSOR_API_KEY`, Stripe for billing |
-| Task API | POST /api/hive/tasks, approve, GET status, GET account |
+| Server path | `server/` (Express on Cloud Run) |
+| Web-app delivery | `cody/apps/<owner>/<slug>/` (served at `/u/<owner>/<slug>/`) |
+| User-apps registry | `taylored-mobile/src/userApps/index.ts` (append-only) |
+| Build execution | Cursor Cloud Agent API (composer-2.5 only) |
+| Flow | spawn agent → PR on `cursor/hive-<slug>-<short>` → poller auto-merges → push triggers EAS Update + APK rebuild + Firebase .gz mirror + Cloud Run deploy → Expo Push fired |
+| Env | `GEMINI_API_KEY`, `CURSOR_API_KEY`, `HIVE_GITHUB_TOKEN` (for auto-merge), `EXPO_TOKEN` (OTA), Stripe, optional `HIVE_DAILY_USD_CAP` |
+| Limits | 6 concurrent · 40 builds/day · $50 daily USD cap · 8 builds and $15 per user per day (all env-overridable) |
+| Auto-approve | Estimates ≤ `$HIVE_AUTO_APPROVE_USD` (default $1.50) skip the user tap |
+| Task API | `POST /api/hive/tasks`, approve, `GET /api/hive/tasks/:id`, `GET /api/hive/account`, `POST /api/hive/devices` |
+| Push | `POST /api/hive/devices` registers Expo push tokens; server sends on build complete/fail |
 
-Build agents: minimal diff, match existing patterns, reference task ID, open PR when done.
+Build-agent rules (every Cursor run must follow):
+- Use branch name `cursor/hive-<slug>-<short>`. Never push to `main-fixed`.
+- For `host_screen`: write only under `taylored-mobile/src/userApps/<slug>/`, append a registry entry in `taylored-mobile/src/userApps/index.ts`.
+- For `web_app`: write only under `cody/apps/<owner>/<slug>/`, append an entry in `cody/apps/index.json`.
+- For `native_app`: scaffold in `apps/native/<slug>/`, never touch `taylored-mobile/`.
+- For `iteration`: edit the existing slug folder, do not create a parallel one.
+- Do NOT modify `taylored-mobile/app.json` `version` / `versionCode` unless this task is explicitly a native release.
+- Do NOT modify `.github/workflows/` unless this task is explicitly a CI change.
+- Open one PR titled `hive(<target>): <title> [task <taskId>]`. The orchestrator auto-merges on success.
 
 ---
 
