@@ -48,6 +48,17 @@ export interface ProviderKeyInfo {
   hint: string;
 }
 
+export interface DayPromptEntry {
+  prompt: string;
+  provider?: 'default' | 'grok' | 'gemini';
+}
+
+export interface SocialApiKeyFields {
+  accessToken: ProviderKeyInfo;
+  pageId?: string;
+  accountId?: string;
+}
+
 export interface ProviderSettings {
   enabled: boolean;
   textModel: string;
@@ -60,6 +71,11 @@ export interface UserAutoSocialProfile {
   providers: {
     grok: ProviderSettings;
     gemini: ProviderSettings;
+  };
+  dayPrompts?: Record<string, DayPromptEntry>;
+  socialApiKeys?: {
+    facebook: SocialApiKeyFields;
+    instagram: SocialApiKeyFields;
   };
   serverGeminiAvailable?: boolean;
 }
@@ -149,9 +165,9 @@ export const getConfig = (user: User) =>
     query: { action: 'config' },
   });
 
-export const generatePost = (user: User, force = false) =>
+export const generatePost = (user: User, force = false, date?: string) =>
   autoSocialRequest<{ post: SocialPost; skipped?: boolean; reason?: string }>(user, 'POST', {
-    body: { action: 'generate', force },
+    body: { action: 'generate', force, ...(date ? { date } : {}) },
   });
 
 export const approvePost = (user: User, postId: string) =>
@@ -218,5 +234,27 @@ export function formatPostDate(dateStr: string) {
     });
   } catch {
     return dateStr;
+  }
+}
+
+export function nextSevenDateKeys(from = new Date()): string[] {
+  const keys: string[] = [];
+  for (let i = 0; i < 7; i += 1) {
+    const d = new Date(from);
+    d.setDate(from.getDate() + i);
+    keys.push(d.toISOString().slice(0, 10));
+  }
+  return keys;
+}
+
+export function shortDayLabel(dateKey: string) {
+  try {
+    return new Date(`${dateKey}T12:00:00`).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch {
+    return dateKey;
   }
 }
