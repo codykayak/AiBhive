@@ -22,6 +22,7 @@ import { priceEstimate, getPricingConfig } from './hivePricing.js';
 import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
+import { proxySocialPostsRequest } from './socialPostsProxy.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -500,6 +501,19 @@ app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/rag-sources/delete] error:', error);
     return res.status(400).json({ error: error.message || 'Failed to delete source' });
+  }
+});
+
+// --- AutoPoster API (Google admin auth → Firebase socialPosts proxy) ---
+app.all('/api/autoposter', verifyAdmin, async (req, res) => {
+  try {
+    const { status, data } = await proxySocialPostsRequest(req);
+    return res.status(status).json(data);
+  } catch (error) {
+    console.error('[autoposter] proxy error:', error);
+    const message = error.message || 'AutoPoster request failed';
+    const code = message.includes('not configured') ? 503 : 500;
+    return res.status(code).json({ error: message });
   }
 });
 

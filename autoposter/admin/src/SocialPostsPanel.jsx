@@ -9,13 +9,11 @@ import {
   formatPostDate,
   generateSocialPost,
   getSocialConfig,
-  getStoredAdminKey,
   listSocialPosts,
   markSocialPostPosted,
   rejectSocialPost,
   resendSocialNotify,
   sendTestSms,
-  setStoredAdminKey,
   todayKey,
   updateSocialCaptions,
   updateSocialConfig,
@@ -78,7 +76,7 @@ function StatsBar({ stats }) {
   );
 }
 
-function PostCard({ post, isToday, onRefresh, onToast }) {
+function PostCard({ post, user, isToday, onRefresh, onToast }) {
   const [platform, setPlatform] = useState('facebook');
   const [caption, setCaption] = useState(post[platform]?.caption || '');
   const [dirty, setDirty] = useState(false);
@@ -97,7 +95,7 @@ function PostCard({ post, isToday, onRefresh, onToast }) {
   async function saveCaption() {
     setSaving(true);
     try {
-      await updateSocialCaptions(post.id, { [platform]: { caption } });
+      await updateSocialCaptions(user, post.id, { [platform]: { caption } });
       setDirty(false);
       onToast('Caption saved');
       onRefresh();
@@ -111,7 +109,7 @@ function PostCard({ post, isToday, onRefresh, onToast }) {
   async function doAction(fn, msg) {
     setActing(true);
     try {
-      await fn(post.id);
+      await fn(user, post.id);
       onToast(msg);
       onRefresh();
     } catch (e) {
@@ -314,20 +312,19 @@ function PostCard({ post, isToday, onRefresh, onToast }) {
   );
 }
 
-export default function SocialPostsPanel() {
+export default function SocialPostsPanel({ user }) {
   const [posts, setPosts] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
-  const [adminKey, setAdminKey] = useState(getStoredAdminKey());
   const [config, setConfig] = useState(null);
   const [notifyPhone, setNotifyPhone] = useState('');
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
   const [testingSms, setTestingSms] = useState(false);
-  const [showSettings, setShowSettings] = useState(!getStoredAdminKey());
+  const [showSettings, setShowSettings] = useState(false);
   const [filter, setFilter] = useState('all');
 
   const showToast = useCallback((msg) => {
@@ -336,7 +333,7 @@ export default function SocialPostsPanel() {
   }, []);
 
   const refresh = useCallback(async () => {
-    if (!getStoredAdminKey()) {
+    if (!user) {
       setLoading(false);
       return;
     }
@@ -344,8 +341,8 @@ export default function SocialPostsPanel() {
     setError('');
     try {
       const [listRes, configRes] = await Promise.all([
-        listSocialPosts(30),
-        getSocialConfig(),
+        listSocialPosts(user, 30),
+        getSocialConfig(user),
       ]);
       setPosts(listRes.posts || []);
       setStats(listRes.stats || null);
@@ -357,7 +354,7 @@ export default function SocialPostsPanel() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     refresh();
@@ -370,19 +367,12 @@ export default function SocialPostsPanel() {
 
   const today = todayKey();
 
-  function saveKey() {
-    setStoredAdminKey(adminKey.trim());
-    setShowSettings(false);
-    showToast('API key saved');
-    refresh();
-  }
-
   async function handleGenerate(force = false) {
     setGenerating(true);
     setError('');
     showToast(force ? 'Regenerating… this takes 2–4 min' : 'Generating… this takes 2–4 min');
     try {
-      const res = await generateSocialPost(force);
+      const res = await generateSocialPost(user, force);
       if (res.skipped && res.reason === 'already_exists') {
         showToast('Today already exists — use Regenerate to overwrite');
       } else if (res.skipped && res.reason === 'in_progress') {
@@ -402,7 +392,7 @@ export default function SocialPostsPanel() {
   async function handleSaveConfig() {
     setSavingConfig(true);
     try {
-      await updateSocialConfig({ notifyPhone, notifyEnabled });
+      await updateSocialConfig(user, { notifyPhone, notifyEnabled });
       await refresh();
       showToast('Notification settings saved');
     } catch (e) {
@@ -415,7 +405,7 @@ export default function SocialPostsPanel() {
   async function handleTestSms() {
     setTestingSms(true);
     try {
-      await sendTestSms(notifyPhone);
+      await sendTestSms(user, notifyPhone);
       showToast('Test SMS sent — check your phone');
     } catch (e) {
       showToast(e.message);
@@ -447,7 +437,7 @@ export default function SocialPostsPanel() {
           <button
             type="button"
             className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
-            disabled={generating || !adminKey}
+            disabled={generating}
             onClick={() => handleGenerate(true)}
           >
             Regenerate
@@ -455,7 +445,7 @@ export default function SocialPostsPanel() {
           <button
             type="button"
             className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
-            disabled={generating || !adminKey}
+            disabled={generating}
             onClick={() => handleGenerate(false)}
           >
             {generating ? (
@@ -470,22 +460,12 @@ export default function SocialPostsPanel() {
         </div>
       </div>
 
-      {adminKey && stats && <StatsBar stats={stats} />}
+      {stats && <StatsBar stats={stats} />}
 
-      {(showSettings || !adminKey) && (
+      {showSettings && (
         <div className={socialStyles.settingsCard}>
-          <div className={styles.cardTitle}>Connection & notifications</div>
+          <div className={styles.cardTitle}>Notifications</div>
           <div className={socialStyles.settingsGrid}>
-            <div className={styles.field}>
-              <label className={styles.label}>Social Admin API key</label>
-              <input
-                className={styles.input}
-                type="password"
-                placeholder="SOCIAL_ADMIN_API_KEY from Firebase secrets"
-                value={adminKey}
-                onChange={(e) => setAdminKey(e.target.value)}
-              />
-            </div>
             <div className={styles.field}>
               <label className={styles.label}>SMS phone (E.164)</label>
               <input
@@ -508,54 +488,40 @@ export default function SocialPostsPanel() {
             </div>
           </div>
           <div className={socialStyles.socialActions} style={{ marginTop: 14 }}>
-            <button type="button" className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`} onClick={saveKey}>
-              Save API key
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnPrimary} ${styles.btnSm}`}
+              disabled={savingConfig}
+              onClick={handleSaveConfig}
+            >
+              {savingConfig ? 'Saving…' : 'Save notifications'}
             </button>
-            {adminKey && (
-              <>
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
-                  disabled={savingConfig}
-                  onClick={handleSaveConfig}
-                >
-                  {savingConfig ? 'Saving…' : 'Save notifications'}
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
-                  disabled={testingSms || !notifyPhone}
-                  onClick={handleTestSms}
-                >
-                  {testingSms ? 'Sending…' : 'Send test SMS'}
-                </button>
-              </>
-            )}
+            <button
+              type="button"
+              className={`${styles.btn} ${styles.btnGhost} ${styles.btnSm}`}
+              disabled={testingSms || !notifyPhone}
+              onClick={handleTestSms}
+            >
+              {testingSms ? 'Sending…' : 'Send test SMS'}
+            </button>
           </div>
-          <p className={socialStyles.setupNote}>
-            Deploy Firebase functions from <code>autoposter/functions</code>, then set{' '}
-            <code>VITE_SOCIAL_API_URL</code> to your <code>socialPosts</code> endpoint.
-            Use the <code>SOCIAL_ADMIN_API_KEY</code> secret as the key above.
-          </p>
         </div>
       )}
 
       {error && <div className={socialStyles.errorBanner}>{error}</div>}
 
-      {adminKey && (
-        <div className={socialStyles.filterRow}>
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              className={filter === f.id ? socialStyles.filterActive : socialStyles.filterBtn}
-              onClick={() => setFilter(f.id)}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className={socialStyles.filterRow}>
+        {FILTERS.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            className={filter === f.id ? socialStyles.filterActive : socialStyles.filterBtn}
+            onClick={() => setFilter(f.id)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
 
       {loading && (
         <div className={socialStyles.emptyState}>
@@ -564,7 +530,7 @@ export default function SocialPostsPanel() {
         </div>
       )}
 
-      {!loading && !error && filteredPosts.length === 0 && adminKey && (
+      {!loading && !error && filteredPosts.length === 0 && (
         <div className={socialStyles.emptyState}>
           <p>No posts{filter !== 'all' ? ` with status "${filter}"` : ''} yet.</p>
           <p className={styles.hint} style={{ marginTop: 8 }}>
@@ -577,6 +543,7 @@ export default function SocialPostsPanel() {
         && filteredPosts.map((post) => (
           <PostCard
             key={post.id}
+            user={user}
             post={post}
             isToday={post.date === today || post.id === today}
             onRefresh={refresh}
