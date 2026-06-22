@@ -1,7 +1,28 @@
-# Manual fallback — prefer GCP Cloud Build (taylored-mobile/cloudbuild.yaml) to save Actions minutes.
+# Builds the Android APK, uploads a .gz mirror to Firebase Storage, bumps
+# public/mobile-releases.json, and commits the new APK back to main-fixed.
+#
+# Trigger model:
+#   - Auto: every push to main-fixed (so each Hive merge produces a fresh APK).
+#     Doc-only changes can be skipped by including [skip-apk] in the commit
+#     message. Pushes that the workflow itself makes use [skip ci] which
+#     GitHub already respects.
+#   - Manual: workflow_dispatch fallback.
+#
+# Cloud Build (taylored-mobile/cloudbuild.yaml) remains available for slot-saving
+# but the on-push auto trigger here is what makes the Hive's "ding it's ready"
+# experience actually deliver a binary to the user's phone.
 name: Build Android APK
+
 on:
   workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'taylored-mobile/**'
+      - 'public/**'
+      - 'scripts/write-mobile-release.mjs'
+      - 'scripts/publish-apk-firebase.mjs'
+      - '.github/workflows/build-apk.yml'
 
 permissions:
   contents: write
@@ -14,9 +35,16 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    # Skip when the commit message asks us to, or when the push is the
+    # workflow's own deploy commit (covered by [skip ci] in that commit).
+    if: ${{ !contains(github.event.head_commit.message, '[skip-apk]') }}
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use a deploy-friendly token so we can push the rebuilt APK back.
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -55,7 +83,23 @@ jobs:
           ls -lh public/taylored-mobile.apk
           node scripts/write-mobile-release.mjs
 
-      - name: Commit deployed APK
+      - name: Install root deps (Firebase publish script)
+        run: npm ci
+
+      - name: Publish Firebase download mirror (.gz)
+        id: firebase
+        run: |
+          set -euo pipefail
+          OUTPUT_FILE="$(mktemp)"
+          node scripts/publish-apk-firebase.mjs | tee "$OUTPUT_FILE"
+          GZ_URL=$(grep '^FIREBASE_GZ_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          echo "gz_url=$GZ_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh release manifest with .gz mirror
+        if: steps.firebase.outputs.gz_url != ''
+        run: node scripts/write-mobile-release.mjs --firebase-gz-url "${{ steps.firebase.outputs.gz_url }}"
+
+      - name: Commit deployed APK + manifest
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -63,12 +107,16 @@ jobs:
           if git diff --staged --quiet; then
             echo "APK unchanged, skipping commit"
           else
-            git commit -m "chore(mobile): deploy Taylored Mobile APK [skip ci]"
-            git push
+            git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip ci] [skip-apk]"
+            git push origin HEAD:main-fixed
           fi
 
-      - name: Install root deps (Firebase publish script)
-        run: npm ci
-
-      - name: Publish Firebase download mirror
-        run: node scripts/publish-apk-firebase.mjs
+      - name: Print download links
+        if: always()
+        run: |
+          echo ""
+          echo "============================================================"
+          echo "  APK download:   https://aibhive.com/api/download/apk"
+          echo "  .gz mirror:     ${{ steps.firebase.outputs.gz_url }}"
+          echo "  Manifest:       https://aibhive.com/api/mobile/releases"
+          echo "============================================================"

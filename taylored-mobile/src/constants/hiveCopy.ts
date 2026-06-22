@@ -1,7 +1,7 @@
 /** User-facing strings — plain language, no developer jargon. */
 export const HIVE_COPY = {
   welcome:
-    'Welcome to AiBhive. Describe any app, tool, or feature in plain English — I\'ll quote time and cost, you approve once, and we\'ll notify you when it\'s ready. Try: "Build me a habit tracker."',
+    'Welcome to AiBhive. Describe any app, tool, or feature in plain English — I\'ll quote time and cost, tiny tweaks start automatically, and we\'ll ping your phone the moment it ships. Try: "Build me a habit tracker" or "Make me a web app to track my leads."',
   magicOnSubtitle: (provider: string, status?: string) =>
     `Build mode · ${provider}${status ? ` · ${status}` : ''}`,
   magicOffSubtitle: (provider: string) =>

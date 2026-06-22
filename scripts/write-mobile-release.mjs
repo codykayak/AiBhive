@@ -55,8 +55,12 @@ if (!manifest.releaseNotes) {
 const defaultNotes = {
   '1.2.2':
     'v1.2.2 — Epic Hive UI, welcome tutorial, Hive Magic pricing/limits, Play Store prep, in-app update checks.',
+  '1.3.0':
+    'v1.3.0 — AiBhive rebrand, beehive logo + icon, My Apps fix, image attachments, Cursor-based pricing.',
   '1.3.1':
     'v1.3.1 — User Guide (how builds become apps), app detail screen, keyboard dismiss on send.',
+  '1.4.0':
+    'v1.4.0 — Auto-deploy: builds now auto-merge, ship OTA in ~2 min, and rebuild a fresh APK + .gz mirror on each release. Adds per-build folder/branch isolation, Expo push notifications, auto-approve under $1.50, daily USD spend cap, iteration memory, and user-apps registry.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

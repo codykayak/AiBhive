@@ -29,7 +29,7 @@ import {
 import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
 import { loadAiBehavior } from '../lib/aiBehavior';
 import { triageLocally, localTaskToHiveTask } from '../lib/hiveBrain';
-import { dingFeatureReady, ensureNotificationPermission } from '../lib/notifications';
+import { dingFeatureReady, ensureNotificationPermission, registerExpoPushToken } from '../lib/notifications';
 import { AI_PROVIDERS } from '../constants/providers';
 import {
   approveHiveTask,
@@ -39,6 +39,7 @@ import {
   getOrCreateHiveUserId,
   type HiveTask,
 } from '../lib/hiveApi';
+import { getAutoApproveUnderUsd } from '../lib/hivePreferences';
 import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
 import { fetchHiveAccount, ensureCreditsForTask, openAddCredits } from '../lib/hiveAccount';
 import { loadChatHistory, saveChatHistory, clearChatHistory, type StoredChatMessage } from '../lib/chatHistory';
@@ -104,7 +105,9 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
-    void ensureNotificationPermission();
+    void ensureNotificationPermission().then(() => {
+      void registerExpoPushToken();
+    });
     getHiveStatus().then((s) => {
       if (s) setHiveOnline(s.online);
     });
@@ -293,6 +296,14 @@ export default function HomeScreen() {
         setPendingAttachment(null);
         dismissComposer();
         if (task.status === 'building') startPolling(task.id, trimmed);
+
+        if (task.status === 'awaiting_approval' && task.estimate) {
+          const cap = await getAutoApproveUnderUsd();
+          const cost = task.estimate.costUsd ?? 0;
+          if (cap > 0 && cost > 0 && cost <= cap) {
+            void handleApprove(task, trimmed);
+          }
+        }
         return;
       }
       await runLocalChat(userMsg);
