@@ -43,6 +43,46 @@ export interface AutoSocialConfig {
   imageModel?: string;
 }
 
+export interface ProviderKeyInfo {
+  set: boolean;
+  hint: string;
+}
+
+export interface ProviderSettings {
+  enabled: boolean;
+  textModel: string;
+  imageModel: string;
+  apiKey: ProviderKeyInfo;
+}
+
+export interface UserAutoSocialProfile {
+  primaryProvider: 'grok' | 'gemini';
+  providers: {
+    grok: ProviderSettings;
+    gemini: ProviderSettings;
+  };
+  serverGeminiAvailable?: boolean;
+}
+
+export const GROK_TEXT_MODELS = [
+  { id: 'grok-3-mini', label: 'Grok 3 Mini (fast)' },
+  { id: 'grok-3', label: 'Grok 3' },
+  { id: 'grok-4', label: 'Grok 4' },
+];
+
+export const GROK_IMAGE_MODELS = [
+  { id: 'grok-imagine-image-quality', label: 'Grok Imagine (quality)' },
+];
+
+export const GEMINI_TEXT_MODELS = [
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+];
+
+export const GEMINI_IMAGE_MODELS = [
+  { id: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image' },
+];
+
 export interface SocialPost {
   id: string;
   date: string;
@@ -60,7 +100,8 @@ export interface SocialPost {
   x?: { caption?: string; imageUrl?: string; link?: string };
   imagePrompt?: string;
   workflowLog?: WorkflowStep[];
-  modelsUsed?: { text?: string; image?: string };
+  modelsUsed?: { provider?: string; text?: string; image?: string };
+  provider?: string;
   errors?: string[] | null;
   notifyError?: string;
 }
@@ -86,11 +127,22 @@ export const listPosts = (user: User, limit = 30) =>
   });
 
 export const getWorkflow = (user: User) =>
-  autoSocialRequest<{ pipeline: PipelineStep[]; config: AutoSocialConfig; models: { text: string; image: string } }>(
-    user,
-    'GET',
-    { query: { action: 'workflow' } }
-  );
+  autoSocialRequest<{
+    pipeline: PipelineStep[];
+    config: AutoSocialConfig;
+    profile: UserAutoSocialProfile | null;
+    models: { text: string; image: string };
+  }>(user, 'GET', { query: { action: 'workflow' } });
+
+export const getProfile = (user: User) =>
+  autoSocialRequest<{ profile: UserAutoSocialProfile }>(user, 'GET', {
+    query: { action: 'profile' },
+  });
+
+export const updateProfile = (user: User, profile: Record<string, unknown>) =>
+  autoSocialRequest<{ profile: UserAutoSocialProfile }>(user, 'POST', {
+    body: { action: 'updateProfile', ...profile },
+  });
 
 export const getConfig = (user: User) =>
   autoSocialRequest<{ config: AutoSocialConfig; pipeline?: PipelineStep[] }>(user, 'GET', {
