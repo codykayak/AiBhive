@@ -1607,9 +1607,9 @@ app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
 });
 
-app.use('/autoposter', express.static(path.join(__dirname, '../dist/autoposter')));
+// Legacy /autoposter URL → admin Auto Social tab (provider settings live there)
 app.get(['/autoposter', '/autoposter/*'], (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/autoposter/index.html'));
+  res.redirect(302, '/admin?tab=auto-social');
 });
 
 app.use(express.static(path.join(__dirname, '../dist')));

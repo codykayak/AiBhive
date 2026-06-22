@@ -98,7 +98,12 @@ export async function handleSocialPostsRequest(req, authUser) {
 
   if (action === 'generate') {
     const userProfile = authUser?.uid ? await getUserProfile(authUser.uid) : null;
+    const dateStr = req.body?.date;
+    const date = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+      ? new Date(`${dateStr}T12:00:00`)
+      : undefined;
     const result = await generateDailySocialPost({
+      date,
       force: !!force,
       generatedBy: 'manual',
       userProfile,

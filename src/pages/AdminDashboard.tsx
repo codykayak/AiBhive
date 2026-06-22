@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { signInWithPopup, signOut, type User } from 'firebase/auth';
+import { useSearchParams } from 'react-router-dom';
 import { auth, googleProvider } from '../firebase';
 import { SEO } from '../components/SEO';
 import {
@@ -60,9 +61,13 @@ function statusLabel(status: string) {
 }
 
 export default function AdminDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'leads' | 'settings' | 'auto-social'>('leads');
+  const tabParam = searchParams.get('tab');
+  const initialTab =
+    tabParam === 'auto-social' || tabParam === 'settings' ? tabParam : 'leads';
+  const [activeTab, setActiveTab] = useState<'leads' | 'settings' | 'auto-social'>(initialTab);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -114,6 +119,27 @@ export default function AdminDashboard() {
     });
     return () => unsubscribe();
   }, [fetchAdminData]);
+
+  const switchTab = useCallback(
+    (tab: 'leads' | 'settings' | 'auto-social') => {
+      setActiveTab(tab);
+      if (tab === 'leads') {
+        searchParams.delete('tab');
+        setSearchParams(searchParams, { replace: true });
+      } else {
+        setSearchParams({ tab }, { replace: true });
+      }
+    },
+    [searchParams, setSearchParams],
+  );
+
+  useEffect(() => {
+    if (tabParam === 'auto-social' || tabParam === 'settings') {
+      setActiveTab(tabParam);
+    } else if (!tabParam) {
+      setActiveTab('leads');
+    }
+  }, [tabParam]);
 
   const handleLogin = async () => {
     try {
@@ -305,7 +331,7 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap gap-3 mb-6">
         <button
           type="button"
-          onClick={() => setActiveTab('leads')}
+          onClick={() => switchTab('leads')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
             activeTab === 'leads'
@@ -318,7 +344,7 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('auto-social')}
+          onClick={() => switchTab('auto-social')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
             activeTab === 'auto-social'
@@ -331,7 +357,7 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('settings')}
+          onClick={() => switchTab('settings')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
             activeTab === 'settings'

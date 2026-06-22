@@ -16,6 +16,11 @@ const DEFAULT_PROFILE = {
       imageModel: 'gemini-2.5-flash-image',
     },
   },
+  dayPrompts: {},
+  socialApiKeys: {
+    facebook: { accessToken: '', pageId: '' },
+    instagram: { accessToken: '', accountId: '' },
+  },
 };
 
 let firestoreDb = null;
@@ -35,12 +40,38 @@ function maskKey(key) {
   return { set: true, hint: `••••${s.slice(-4)}` };
 }
 
+function mergeDayPrompts(existing = {}, updates = {}) {
+  const merged = { ...existing };
+  for (const [dateKey, entry] of Object.entries(updates)) {
+    if (!entry || !String(entry.prompt || '').trim()) {
+      delete merged[dateKey];
+      continue;
+    }
+    merged[dateKey] = {
+      prompt: String(entry.prompt).trim(),
+      provider: entry.provider || merged[dateKey]?.provider || 'default',
+    };
+  }
+  return merged;
+}
+
 function mergeProfile(data = {}) {
   return {
     primaryProvider: data.primaryProvider || DEFAULT_PROFILE.primaryProvider,
     providers: {
       grok: { ...DEFAULT_PROFILE.providers.grok, ...(data.providers?.grok || {}) },
       gemini: { ...DEFAULT_PROFILE.providers.gemini, ...(data.providers?.gemini || {}) },
+    },
+    dayPrompts: { ...(data.dayPrompts || {}) },
+    socialApiKeys: {
+      facebook: {
+        ...DEFAULT_PROFILE.socialApiKeys.facebook,
+        ...(data.socialApiKeys?.facebook || {}),
+      },
+      instagram: {
+        ...DEFAULT_PROFILE.socialApiKeys.instagram,
+        ...(data.socialApiKeys?.instagram || {}),
+      },
     },
   };
 }
@@ -63,8 +94,25 @@ export function sanitizeUserProfile(profile) {
         apiKey: maskKey(merged.providers.gemini.apiKey),
       },
     },
+    dayPrompts: merged.dayPrompts,
+    socialApiKeys: {
+      facebook: {
+        pageId: merged.socialApiKeys.facebook.pageId || '',
+        accessToken: maskKey(merged.socialApiKeys.facebook.accessToken),
+      },
+      instagram: {
+        accountId: merged.socialApiKeys.instagram.accountId || '',
+        accessToken: maskKey(merged.socialApiKeys.instagram.accessToken),
+      },
+    },
     serverGeminiAvailable: !!process.env.GEMINI_API_KEY,
   };
+}
+
+export function getDayPrompt(profile, dateKey) {
+  const entry = mergeProfile(profile).dayPrompts?.[dateKey];
+  if (!entry?.prompt) return null;
+  return entry;
 }
 
 export async function getUserProfile(uid) {
@@ -72,6 +120,13 @@ export async function getUserProfile(uid) {
   const snap = await db().collection(PROFILES_COLLECTION).doc(uid).get();
   if (!snap.exists) return mergeProfile();
   return mergeProfile(snap.data());
+}
+
+function applySecretField(next, value) {
+  if (value && String(value).trim() && !String(value).includes('••••')) {
+    return String(value).trim();
+  }
+  return next;
 }
 
 export async function saveUserProfile(uid, email, updates = {}) {
@@ -89,9 +144,7 @@ export async function saveUserProfile(uid, email, updates = {}) {
     if (g.enabled !== undefined) next.providers.grok.enabled = !!g.enabled;
     if (g.textModel) next.providers.grok.textModel = String(g.textModel);
     if (g.imageModel) next.providers.grok.imageModel = String(g.imageModel);
-    if (g.apiKey && String(g.apiKey).trim() && !String(g.apiKey).includes('••••')) {
-      next.providers.grok.apiKey = String(g.apiKey).trim();
-    }
+    next.providers.grok.apiKey = applySecretField(next.providers.grok.apiKey, g.apiKey);
   }
 
   if (updates.providers?.gemini) {
@@ -99,9 +152,29 @@ export async function saveUserProfile(uid, email, updates = {}) {
     if (g.enabled !== undefined) next.providers.gemini.enabled = !!g.enabled;
     if (g.textModel) next.providers.gemini.textModel = String(g.textModel);
     if (g.imageModel) next.providers.gemini.imageModel = String(g.imageModel);
-    if (g.apiKey && String(g.apiKey).trim() && !String(g.apiKey).includes('••••')) {
-      next.providers.gemini.apiKey = String(g.apiKey).trim();
-    }
+    next.providers.gemini.apiKey = applySecretField(next.providers.gemini.apiKey, g.apiKey);
+  }
+
+  if (updates.dayPrompts) {
+    next.dayPrompts = mergeDayPrompts(next.dayPrompts, updates.dayPrompts);
+  }
+
+  if (updates.socialApiKeys?.facebook) {
+    const fb = updates.socialApiKeys.facebook;
+    if (fb.pageId !== undefined) next.socialApiKeys.facebook.pageId = String(fb.pageId).trim();
+    next.socialApiKeys.facebook.accessToken = applySecretField(
+      next.socialApiKeys.facebook.accessToken,
+      fb.accessToken,
+    );
+  }
+
+  if (updates.socialApiKeys?.instagram) {
+    const ig = updates.socialApiKeys.instagram;
+    if (ig.accountId !== undefined) next.socialApiKeys.instagram.accountId = String(ig.accountId).trim();
+    next.socialApiKeys.instagram.accessToken = applySecretField(
+      next.socialApiKeys.instagram.accessToken,
+      ig.accessToken,
+    );
   }
 
   await db().collection(PROFILES_COLLECTION).doc(uid).set(
@@ -117,17 +190,23 @@ export async function saveUserProfile(uid, email, updates = {}) {
   return getUserProfile(uid);
 }
 
-export function resolveGenerationProvider(profile) {
+export function resolveGenerationProvider(profile, dateKey) {
   const merged = mergeProfile(profile);
+  const dayEntry = dateKey ? merged.dayPrompts?.[dateKey] : null;
+  const effectivePrimary =
+    dayEntry?.provider && dayEntry.provider !== 'default'
+      ? dayEntry.provider
+      : merged.primaryProvider;
+
   const grokKey = merged.providers.grok.apiKey;
   const geminiKey = merged.providers.gemini.apiKey || process.env.GEMINI_API_KEY;
   const grokOk = merged.providers.grok.enabled && grokKey;
   const geminiOk = merged.providers.gemini.enabled && geminiKey;
 
-  if (merged.primaryProvider === 'grok' && grokOk) {
+  if (effectivePrimary === 'grok' && grokOk) {
     return { provider: 'grok', credentials: { apiKey: grokKey, ...merged.providers.grok } };
   }
-  if (merged.primaryProvider === 'gemini' && geminiOk) {
+  if (effectivePrimary === 'gemini' && geminiOk) {
     return {
       provider: 'gemini',
       credentials: {

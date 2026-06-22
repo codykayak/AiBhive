@@ -11,7 +11,7 @@ import {
   uploadSocialImage,
 } from './store.js';
 import { notifyPostReady } from './notify.js';
-import { resolveGenerationProvider } from './userProfile.js';
+import { resolveGenerationProvider, getDayPrompt } from './userProfile.js';
 import {
   grokResearchArticle,
   grokWriteCaptions,
@@ -247,7 +247,7 @@ export async function generateDailySocialPost(options = {}) {
   let apiKey = process.env.GEMINI_API_KEY;
 
   if (options.userProfile) {
-    const resolved = resolveGenerationProvider(options.userProfile);
+    const resolved = resolveGenerationProvider(options.userProfile, dateKey);
     provider = resolved.provider;
     apiKey = resolved.credentials.apiKey;
     textModel = resolved.credentials.textModel;
@@ -257,6 +257,8 @@ export async function generateDailySocialPost(options = {}) {
       imageModels = [resolved.credentials.imageModel, ...IMAGE_MODELS.filter((m) => m !== resolved.credentials.imageModel)];
     }
   }
+
+  const dayPrompt = options.userProfile ? getDayPrompt(options.userProfile, dateKey) : null;
 
   if (!options.force) {
     const existing = await getPostByDate(dateKey);
@@ -277,13 +279,21 @@ export async function generateDailySocialPost(options = {}) {
     return { post: lock.post, skipped: true, reason: lock.reason };
   }
 
-  const topic = pickTopicForDate(date);
+  const topic = dayPrompt?.prompt
+    ? {
+        slug: `scheduled-${dateKey}`,
+        title: dayPrompt.prompt.slice(0, 80),
+        angle: dayPrompt.prompt,
+        siteLink: process.env.SOCIAL_SITE_URL || BRAND.siteUrl,
+        customPrompt: dayPrompt.prompt,
+      }
+    : pickTopicForDate(date);
   const knowledge = loadKnowledge();
   const errors = [];
 
   logStep(workflowLog, {
     step: 'topic',
-    label: 'Pick topic',
+    label: dayPrompt?.prompt ? 'Scheduled prompt' : 'Pick topic',
     status: 'done',
     output: topic,
   });

@@ -31,7 +31,7 @@ export const SOLUTION_CATEGORIES = [
   },
   {
     name: 'Auto Social',
-    path: '/autoposter',
+    path: '/admin?tab=auto-social',
   },
 ] as const;
 
