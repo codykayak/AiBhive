@@ -1207,6 +1207,11 @@ app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
 });
 
+app.use('/autoposter', express.static(path.join(__dirname, '../dist/autoposter')));
+app.get(['/autoposter', '/autoposter/*'], (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/autoposter/index.html'));
+});
+
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Catch-all route to serve the React index.html for client-side routing

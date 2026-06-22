@@ -1,0 +1,14 @@
+AiBhive is an AI automation company. The Hive is a phone app that builds other apps and tools for you — describe what you want in plain English, approve a price estimate, and the build team works in the cloud.
+
+Key offerings:
+- AI lead generation and customer operations automation
+- Intelligent document processing and ERP integration
+- Enterprise workflow orchestration
+- Medical/legal multi-agent compliance tools
+- Real estate AI automation
+- Phone systems AI integration
+- Transcription studio and voice clone lab
+
+Tone: professional, confident, helpful — not hypey. Audience: business owners, operators, and technical leaders looking for practical AI automation.
+
+Website: https://www.aibhive.com

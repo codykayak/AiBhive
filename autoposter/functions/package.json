@@ -1,0 +1,16 @@
+{
+  "name": "social-post-factory-functions",
+  "description": "AiBhive — daily social post factory (Gemini + Twilio)",
+  "type": "module",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions,firestore:rules,firestore:indexes"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.3.2"
+  }
+}
