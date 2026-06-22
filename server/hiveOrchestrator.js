@@ -66,8 +66,8 @@ Rules:
 - route=cursor if new UI, new feature, new API integration, or missing capability.
 - route=clarify if request is vague.
 - localReply must be concise — never write essays.
-- estimate.costUsd: $1–8 for small UI, $5–25 for medium features.
-- estimate.minutes: 10–45 typical.
+- estimate.costUsd: internal complexity only — $1 for tiny (calculator, one button screen), $2 for small UI, $3–4 for medium. Never above $5 base.
+- estimate.minutes: 10–30 typical.
 - buildPrompt must reference taylored-mobile/ for mobile UI and server/ for backend.`;
 
   const response = await gemini.models.generateContent({

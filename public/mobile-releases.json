@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.2.2",
-  "versionCode": 5,
-  "sourceVersion": "1.2.2",
-  "releaseNotes": "v1.2.2 — Epic Hive UI, welcome tutorial, Hive Magic pricing/limits, Play Store prep, in-app update checks.",
+  "shippedNativeVersion": "1.2.3",
+  "versionCode": 6,
+  "sourceVersion": "1.2.3",
+  "releaseNotes": "v1.2.3 — Friendlier Hive pricing ($4–$5 builds), owner free testing when signed in, AiBhive background + logo.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782115061337%2Ftaylored-mobile.apk.gz?alt=media&token=c55c6e3b-c976-42e5-a9cb-e2a145bd70d0",
-  "publishedAt": "2026-06-22T07:57:42.258Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782117179467%2Ftaylored-mobile.apk.gz?alt=media&token=b20f737e-ccd2-4eec-85dd-accfc7a122dd",
+  "publishedAt": "2026-06-22T08:33:00.354Z",
   "otaChannel": "production"
 }

@@ -17,6 +17,7 @@ import {
   checkBuildCredits,
 } from './hiveBilling.js';
 import { verifyHiveAuth } from './hiveAuth.js';
+import { isHiveFreeBuildEmail } from './hiveAdmin.js';
 import { priceEstimate, getPricingConfig } from './hivePricing.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
@@ -982,6 +983,23 @@ app.post('/api/hive/tasks', async (req, res) => {
     const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
 
+    let priorBuildCount = 0;
+    if (resolvedUserId && resolvedUserId !== 'anonymous') {
+      try {
+        const account = await ensureHiveUser(db, resolvedUserId);
+        priorBuildCount = account.buildCount ?? 0;
+      } catch {
+        // non-fatal for anonymous-style ids
+      }
+    }
+
+    const msgLower = message.trim().toLowerCase();
+    const isIteration =
+      priorBuildCount > 0 ||
+      /\b(change|update|fix|iterate|iteration|again|modify|tweak|adjust|revise|redo)\b/.test(msgLower);
+
+    const freeBuild = Boolean(authUser?.email && isHiveFreeBuildEmail(authUser.email));
+
     let status = 'complete';
     let reply = triage.localReply || triage.summary;
 
@@ -990,12 +1008,20 @@ app.post('/api/hive/tasks', async (req, res) => {
       reply = triage.clarifyingQuestion || triage.summary;
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
-      const priced = priceEstimate(triage.estimate);
+      const priced = priceEstimate(triage.estimate, {
+        free: freeBuild,
+        priorBuildCount,
+        isIteration,
+      });
       const cost = priced.user.costUsd;
       const mins = priced.user.minutes;
-      reply = `I can build that for you.\n\n${triage.summary}\n\nAbout $${cost} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
+      const priceLine = freeBuild
+        ? 'Free for your account (beta testing)'
+        : `About $${cost}${isIteration ? ' (iteration)' : ''}`;
+      reply = `I can build that for you.\n\n${triage.summary}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
       triage.estimate = priced.user;
       triage.estimateBase = priced.base;
+      if (freeBuild) triage.freeBuild = true;
     }
 
     const doc = {
@@ -1007,6 +1033,7 @@ app.post('/api/hive/tasks', async (req, res) => {
       summary: triage.summary,
       estimate: triage.estimate || null,
       estimateBase: triage.estimateBase || null,
+      freeBuild: triage.freeBuild || false,
       buildPrompt: triage.buildPrompt || message.trim(),
       reply,
       createdAt: now,
@@ -1053,7 +1080,8 @@ app.post('/api/hive/tasks/:taskId/approve', async (req, res) => {
     }
 
     const cost = task.estimate?.costUsd ?? 0;
-    if (resolvedUserId && resolvedUserId !== 'anonymous') {
+    const skipCharge = cost === 0 || task.freeBuild;
+    if (resolvedUserId && resolvedUserId !== 'anonymous' && !skipCharge) {
       const reservation = await reserveBuildCredits(db, resolvedUserId, task.id, cost);
       if (!reservation.ok) {
         const session = await createCreditsCheckout(stripe, {
