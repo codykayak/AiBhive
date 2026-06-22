@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Keyboard, Platform, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
+import { useDexLayout } from './useDexLayout';
 
 /** Extra bottom inset when keyboard is open — fixes DeX / tablet input hidden behind keyboard. */
 export function useKeyboardInset(basePadding = 0) {

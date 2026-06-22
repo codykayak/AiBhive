@@ -83,6 +83,17 @@ export const USER_GUIDE_SECTIONS: GuideSection[] = [
     ],
   },
   {
+    id: 'dex',
+    title: '8. Samsung DeX & monitors',
+    body: 'On a wide screen or DeX desktop:',
+    bullets: [
+      'Rotate to landscape or expand the window — navigation moves to a left sidebar.',
+      'Build tab uses a two-column layout: chat on the left, controls on the right.',
+      'Text and cards scale up slightly so more is visible on a monitor.',
+      'Use your physical keyboard — Enter sends after you tap the input once.',
+    ],
+  },
+  {
     id: 'help',
     title: '7. Stuck?',
     body: 'If Ready but you do not see the feature yet, you likely need the latest AiBhive APK. If Building for a long time, try a smaller first version on Build. For billing or sign-in, use Settings → Your account.',

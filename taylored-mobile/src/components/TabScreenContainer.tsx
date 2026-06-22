@@ -7,7 +7,11 @@ const TAB_BAR_BODY_HEIGHT = 58;
 
 export function useTabBarPadding(extra = 16) {
   const insets = useSafeAreaInsets();
+  const { useSideNav } = useDexLayout();
   const bottomInset = Math.max(insets.bottom, 12);
+  if (useSideNav) {
+    return bottomInset + extra;
+  }
   return TAB_BAR_BODY_HEIGHT + bottomInset + extra;
 }
 

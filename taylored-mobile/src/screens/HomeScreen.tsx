@@ -19,6 +19,7 @@ import { HiveLogo } from '../components/HiveLogo';
 import { QuickPrompts } from '../components/QuickPrompts';
 import { GlassCard, PrimaryButton, StatusPill } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
+import { useDexLayout } from '../hooks/useDexLayout';
 import { useToast } from '../contexts/ToastContext';
 import {
   dexInputBarStyle,
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const { showToast } = useToast();
   const tabBarPadding = useTabBarPadding(12);
   const { bottomPad: keyboardPad, isWide, keyboardHeight } = useKeyboardInset(0);
+  const { isDesktop, isDex } = useDexLayout();
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -317,197 +319,273 @@ export default function HomeScreen() {
     showToast(HIVE_COPY.chatCleared);
   };
 
-  return (
-    <ScreenLayout contentStyle={styles.screenContent} compactBadge>
-      <View style={styles.heroBlock}>
-        <View style={styles.heroLeft}>
-          <HiveLogo size={48} glow animate={magicMode} />
-          <View style={styles.heroText}>
-            <View style={styles.titleRow}>
-              <Text style={styles.heroTitle}>Hive Magic</Text>
-              {hiveOnline && (
-                <View style={styles.livePill}>
-                  <Zap color={colors.success} size={10} />
-                  <Text style={styles.liveText}>Live</Text>
-                </View>
-              )}
-            </View>
-            <Text style={styles.heroSubtitle} numberOfLines={2}>
-              {magicMode
-                ? HIVE_COPY.magicOnSubtitle(activeLabel)
-                : HIVE_COPY.magicOffSubtitle(activeLabel)}
-            </Text>
+  const heroBlock = (
+    <View style={[styles.heroBlock, isDex && !isDesktop && styles.heroBlockCompact, isDesktop && styles.heroBlockSide]}>
+      <View style={styles.heroLeft}>
+        {!isDesktop && <HiveLogo size={isDex ? 40 : 48} glow animate={magicMode} />}
+        <View style={styles.heroText}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.heroTitle, isDex && styles.heroTitleDex]}>Hive Magic</Text>
+            {hiveOnline && (
+              <View style={styles.livePill}>
+                <Zap color={colors.success} size={10} />
+                <Text style={styles.liveText}>Live</Text>
+              </View>
+            )}
           </View>
-        </View>
-        <View style={styles.heroActions}>
-          <TouchableOpacity
-            style={[styles.magicToggle, magicMode && styles.magicToggleOn]}
-            onPress={() => setMagicMode((v) => !v)}
-          >
-            <Wand2 color={magicMode ? colors.black : colors.amberLight} size={16} />
-            <Text style={[styles.magicToggleText, magicMode && styles.magicToggleTextOn]}>
-              {magicMode ? 'ON' : 'OFF'}
+          {!isDesktop && (
+            <Text style={styles.heroSubtitle} numberOfLines={isDex ? 1 : 2}>
+              {magicMode ? HIVE_COPY.magicOnSubtitle(activeLabel) : HIVE_COPY.magicOffSubtitle(activeLabel)}
             </Text>
-          </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      <View style={styles.heroActions}>
+        <TouchableOpacity
+          style={[styles.magicToggle, magicMode && styles.magicToggleOn]}
+          onPress={() => setMagicMode((v) => !v)}
+        >
+          <Wand2 color={magicMode ? colors.black : colors.amberLight} size={16} />
+          <Text style={[styles.magicToggleText, magicMode && styles.magicToggleTextOn]}>
+            {magicMode ? 'ON' : 'OFF'}
+          </Text>
+        </TouchableOpacity>
+        {!isDesktop && (
           <TouchableOpacity onPress={() => void handleClearChat()} style={styles.iconBtn}>
             <Trash2 color={colors.textDim} size={18} />
           </TouchableOpacity>
-        </View>
+        )}
       </View>
+    </View>
+  );
 
-      {creditBalance !== null && (
-        <TouchableOpacity onPress={() => void openAddCredits()} style={styles.creditCard} activeOpacity={0.9}>
-          <Text style={styles.creditText}>{HIVE_COPY.balanceLabel(creditBalance)}</Text>
-          <Text style={styles.creditAdd}>+ Add credits</Text>
-        </TouchableOpacity>
-      )}
+  const creditBlock =
+    creditBalance !== null ? (
+      <TouchableOpacity onPress={() => void openAddCredits()} style={styles.creditCard} activeOpacity={0.9}>
+        <Text style={styles.creditText}>{HIVE_COPY.balanceLabel(creditBalance)}</Text>
+        <Text style={styles.creditAdd}>+ Add credits</Text>
+      </TouchableOpacity>
+    ) : null;
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={keyboardAvoidBehavior()}
-        keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
-      >
-        <ScrollView
-          ref={scrollRef}
-          style={styles.chatContainer}
-          contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(tabBarPadding, 24) }]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          onContentSizeChange={scrollToEnd}
-        >
-          {messages.map((msg) => (
-            <View key={msg.id} style={styles.msgWrap}>
-              {msg.role === 'ai' && msg.id !== 'welcome' && (
-                <View style={styles.aiAvatar}>
-                  <Sparkles color={colors.amber} size={12} />
-                </View>
-              )}
-              <View
-                style={[
-                  styles.messageBubble,
-                  msg.role === 'user' ? styles.userBubble : styles.aiBubble,
-                  msg.id === 'welcome' && styles.welcomeBubble,
-                ]}
-              >
-                <Text style={[styles.messageText, msg.role === 'user' && styles.userText]}>{msg.content}</Text>
-              </View>
-
-              {msg.task?.status === 'awaiting_approval' && msg.task.estimate && (
-                <GlassCard style={styles.approvalCard} glow>
-                  <Text style={styles.approvalTitle}>{HIVE_COPY.approveTitle}</Text>
-                  <Text style={styles.approvalMeta}>
-                    {formatEstimateCard(msg.task.estimate.costUsd, msg.task.estimate.minutes)}
-                  </Text>
-                  <PrimaryButton
-                    label={HIVE_COPY.approveButton}
-                    onPress={() => handleApprove(msg.task!, msg.task?.message)}
-                    disabled={isLoading}
-                    icon={Wand2}
-                  />
-                </GlassCard>
-              )}
-
-              {msg.task?.status === 'building' && (
-                <View style={styles.buildingCard}>
-                  <ActivityIndicator color={colors.amberLight} size="small" />
-                  <Text style={styles.buildingText}>{HIVE_COPY.building}</Text>
-                  <StatusPill label="In progress" tone="amber" />
-                </View>
-              )}
-
-              {msg.task?.status === 'complete' && (
-                <GlassCard style={styles.doneCard} glow>
-                  <Text style={styles.doneText}>{HIVE_COPY.done}</Text>
-                  <PrimaryButton
-                    label="Open My Apps"
-                    variant="secondary"
-                    icon={Grid}
-                    onPress={() => navigation.navigate('Apps')}
-                    style={styles.doneBtn}
-                  />
-                </GlassCard>
-              )}
-
-              {msg.task?.status === 'failed' && (
-                <View style={styles.failedCard}>
-                  <Text style={styles.failedText}>{msg.task.reply || HIVE_COPY.buildFailed}</Text>
-                </View>
-              )}
-            </View>
-          ))}
-
-          {isLoading && (
-            <View style={[styles.messageBubble, styles.aiBubble, styles.loadingBubble]}>
-              <ActivityIndicator color={colors.amberLight} />
-              <Text style={styles.typingText}>Thinking…</Text>
-            </View>
-          )}
-        </ScrollView>
-
-        <View style={styles.composer}>
-          {magicMode && !isLoading && (
-            <QuickPrompts
-              prompts={HIVE_COPY.quickPrompts}
-              onSelect={(p) => void sendMessage(p)}
-              disabled={isLoading}
-            />
-          )}
-          {pendingAttachment && (
-            <View style={styles.attachPreview}>
-              <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
-              <Text style={styles.attachLabel}>Reference image attached</Text>
-              <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
-                <X color={colors.textDim} size={18} />
-              </TouchableOpacity>
+  const chatScroll = (
+    <ScrollView
+      ref={scrollRef}
+      style={styles.chatContainer}
+      contentContainerStyle={[styles.chatContent, { paddingBottom: isDesktop ? 16 : Math.max(tabBarPadding, 24) }]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      onContentSizeChange={scrollToEnd}
+    >
+      {messages.map((msg) => (
+        <View key={msg.id} style={styles.msgWrap}>
+          {msg.role === 'ai' && msg.id !== 'welcome' && (
+            <View style={styles.aiAvatar}>
+              <Sparkles color={colors.amber} size={12} />
             </View>
           )}
           <View
             style={[
-              styles.inputContainer,
-              dexInputBarStyle(keyboardHeight > 0),
-              { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 },
+              styles.messageBubble,
+              msg.role === 'user' ? styles.userBubble : styles.aiBubble,
+              msg.id === 'welcome' && styles.welcomeBubble,
+              isDesktop && styles.messageBubbleDesktop,
             ]}
           >
-            {magicMode && (
-              <TouchableOpacity
-                style={styles.attachBtn}
-                onPress={() => void pickHiveReferenceImage().then((a) => a && setPendingAttachment(a))}
+            <Text style={[styles.messageText, isDex && styles.messageTextDex, msg.role === 'user' && styles.userText]}>
+              {msg.content}
+            </Text>
+          </View>
+
+          {msg.task?.status === 'awaiting_approval' && msg.task.estimate && (
+            <GlassCard style={styles.approvalCard} glow>
+              <Text style={styles.approvalTitle}>{HIVE_COPY.approveTitle}</Text>
+              <Text style={styles.approvalMeta}>
+                {formatEstimateCard(msg.task.estimate.costUsd, msg.task.estimate.minutes)}
+              </Text>
+              <PrimaryButton
+                label={HIVE_COPY.approveButton}
+                onPress={() => handleApprove(msg.task!, msg.task?.message)}
                 disabled={isLoading}
-                accessibilityLabel={HIVE_COPY.attachImage}
-              >
-                <ImagePlus color={colors.amberLight} size={22} />
-              </TouchableOpacity>
+                icon={Wand2}
+              />
+            </GlassCard>
+          )}
+
+          {msg.task?.status === 'building' && (
+            <View style={styles.buildingCard}>
+              <ActivityIndicator color={colors.amberLight} size="small" />
+              <Text style={styles.buildingText}>{HIVE_COPY.building}</Text>
+              <StatusPill label="In progress" tone="amber" />
+            </View>
+          )}
+
+          {msg.task?.status === 'complete' && (
+            <GlassCard style={styles.doneCard} glow>
+              <Text style={styles.doneText}>{HIVE_COPY.done}</Text>
+              <PrimaryButton
+                label="Open My Apps"
+                variant="secondary"
+                icon={Grid}
+                onPress={() => navigation.navigate('Apps')}
+                style={styles.doneBtn}
+              />
+            </GlassCard>
+          )}
+
+          {msg.task?.status === 'failed' && (
+            <View style={styles.failedCard}>
+              <Text style={styles.failedText}>{msg.task.reply || HIVE_COPY.buildFailed}</Text>
+            </View>
+          )}
+        </View>
+      ))}
+
+      {isLoading && (
+        <View style={[styles.messageBubble, styles.aiBubble, styles.loadingBubble]}>
+          <ActivityIndicator color={colors.amberLight} />
+          <Text style={styles.typingText}>Thinking…</Text>
+        </View>
+      )}
+    </ScrollView>
+  );
+
+  const composer = (
+    <View style={styles.composer}>
+      {magicMode && !isLoading && !isDesktop && (
+        <QuickPrompts
+          prompts={HIVE_COPY.quickPrompts}
+          onSelect={(p) => void sendMessage(p)}
+          disabled={isLoading}
+        />
+      )}
+      {pendingAttachment && (
+        <View style={styles.attachPreview}>
+          <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
+          <Text style={styles.attachLabel}>Reference image attached</Text>
+          <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
+            <X color={colors.textDim} size={18} />
+          </TouchableOpacity>
+        </View>
+      )}
+      <View
+        style={[
+          styles.inputContainer,
+          dexInputBarStyle(keyboardHeight > 0),
+          { paddingBottom: keyboardHeight > 0 ? keyboardPad : isDesktop ? 8 : 12 },
+        ]}
+      >
+        {magicMode && (
+          <TouchableOpacity
+            style={styles.attachBtn}
+            onPress={() => void pickHiveReferenceImage().then((a) => a && setPendingAttachment(a))}
+            disabled={isLoading}
+            accessibilityLabel={HIVE_COPY.attachImage}
+          >
+            <ImagePlus color={colors.amberLight} size={22} />
+          </TouchableOpacity>
+        )}
+        <TextInput
+          ref={inputRef}
+          style={[styles.input, (isWide || isDex) && styles.inputWide]}
+          placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
+          placeholderTextColor={colors.textDim}
+          value={inputText}
+          onChangeText={setInputText}
+          multiline
+          blurOnSubmit
+          onSubmitEditing={() => {
+            if (inputText.trim()) void sendMessage(inputText);
+          }}
+        />
+        <TouchableOpacity
+          style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendDisabled]}
+          onPress={() => void sendMessage(inputText)}
+          disabled={isLoading || !inputText.trim()}
+        >
+          <Send color={colors.black} size={20} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <ScreenLayout compactDex contentStyle={styles.screenContent} compactBadge showBrand={!isDesktop}>
+      {isDesktop ? (
+        <View style={styles.desktopRow}>
+          <KeyboardAvoidingView
+            style={styles.chatColumn}
+            behavior={keyboardAvoidBehavior()}
+            keyboardVerticalOffset={keyboardVerticalOffset(true)}
+          >
+            {chatScroll}
+            {composer}
+          </KeyboardAvoidingView>
+          <View style={styles.desktopSide}>
+            {heroBlock}
+            {isDesktop && (
+              <Text style={styles.sideHint}>
+                {magicMode ? HIVE_COPY.magicOnSubtitle(activeLabel) : HIVE_COPY.magicOffSubtitle(activeLabel)}
+              </Text>
             )}
-            <TextInput
-              ref={inputRef}
-              style={[styles.input, isWide && styles.inputWide]}
-              placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
-              placeholderTextColor={colors.textDim}
-              value={inputText}
-              onChangeText={setInputText}
-              multiline
-              blurOnSubmit
-              onSubmitEditing={() => {
-                if (inputText.trim()) void sendMessage(inputText);
-              }}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendDisabled]}
-              onPress={() => void sendMessage(inputText)}
-              disabled={isLoading || !inputText.trim()}
-            >
-              <Send color={colors.black} size={20} />
+            {creditBlock}
+            {magicMode && !isLoading && (
+              <QuickPrompts
+                prompts={HIVE_COPY.quickPrompts}
+                onSelect={(p) => void sendMessage(p)}
+                disabled={isLoading}
+              />
+            )}
+            <TouchableOpacity onPress={() => void handleClearChat()} style={styles.clearLink}>
+              <Text style={styles.clearLinkText}>Clear chat</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      ) : (
+        <>
+          {heroBlock}
+          {creditBlock}
+          <KeyboardAvoidingView
+            style={styles.flex}
+            behavior={keyboardAvoidBehavior()}
+            keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
+          >
+            {chatScroll}
+            {composer}
+          </KeyboardAvoidingView>
+        </>
+      )}
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { paddingHorizontal: spacing.md },
-  flex: { flex: 1 },
+  screenContent: { paddingHorizontal: spacing.md, flex: 1, minHeight: 0 },
+  flex: { flex: 1, minHeight: 0 },
+  desktopRow: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 20,
+    minHeight: 0,
+  },
+  chatColumn: {
+    flex: 1.65,
+    minWidth: 0,
+    minHeight: 0,
+  },
+  desktopSide: {
+    flex: 1,
+    maxWidth: 340,
+    minWidth: 260,
+    paddingTop: 4,
+  },
+  sideHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
+  },
+  clearLink: { marginTop: spacing.md, paddingVertical: 8 },
+  clearLinkText: { color: colors.textDim, fontWeight: '700', fontSize: 13 },
   heroBlock: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -516,10 +594,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     gap: 8,
   },
+  heroBlockCompact: {
+    marginBottom: 6,
+  },
+  heroBlockSide: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    marginBottom: spacing.sm,
+  },
   heroLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
   heroText: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   heroTitle: { ...typography.h2, color: colors.amberLight },
+  heroTitleDex: { fontSize: 18 },
   livePill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -560,7 +647,7 @@ const styles = StyleSheet.create({
   },
   creditText: { color: colors.amberLight, fontWeight: '800', fontSize: 14 },
   creditAdd: { color: colors.textMuted, fontWeight: '700', fontSize: 13 },
-  chatContainer: { flex: 1 },
+  chatContainer: { flex: 1, minHeight: 0 },
   chatContent: { paddingTop: spacing.xs },
   msgWrap: { marginBottom: 14 },
   aiAvatar: {
@@ -577,6 +664,9 @@ const styles = StyleSheet.create({
     maxWidth: '90%',
     padding: 14,
     borderRadius: radii.lg,
+  },
+  messageBubbleDesktop: {
+    maxWidth: '85%',
   },
   welcomeBubble: {
     borderWidth: 1,
@@ -606,6 +696,7 @@ const styles = StyleSheet.create({
   },
   typingText: { color: colors.textMuted, fontSize: 14 },
   messageText: { color: colors.text, fontSize: 16, lineHeight: 24 },
+  messageTextDex: { fontSize: 17, lineHeight: 26 },
   userText: { color: colors.black, fontWeight: '600' },
   approvalCard: { marginTop: 8, maxWidth: '92%', alignSelf: 'flex-start', gap: 8 },
   approvalTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 16 },

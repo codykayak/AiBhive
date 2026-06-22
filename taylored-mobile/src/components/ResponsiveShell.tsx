@@ -1,28 +1,27 @@
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { colors } from '../theme/colors';
-
-const MAX_CONTENT_WIDTH = 1100;
+import { useDexLayout } from '../hooks/useDexLayout';
 
 type ResponsiveShellProps = {
   children: React.ReactNode;
 };
 
-/** Centers and scales content on Samsung DeX / tablets / desktop mode. */
+/** Full-width shell on Samsung DeX — no skinny phone column on a monitor. */
 export function ResponsiveShell({ children }: ResponsiveShellProps) {
-  const { width, height } = useWindowDimensions();
-  const isWide = width >= 600;
-  const isDesktop = width >= 900;
+  const { height } = useWindowDimensions();
+  const { isDex, isDesktop, contentMaxWidth, contentPadding } = useDexLayout();
 
   return (
-    <View style={[styles.root, isWide && styles.rootWide]}>
+    <View style={[styles.root, isDex && styles.rootDex]}>
       <View
         style={[
           styles.inner,
-          isWide && {
-            maxWidth: isDesktop ? MAX_CONTENT_WIDTH : 920,
+          isDex && {
             width: '100%',
+            maxWidth: contentMaxWidth,
             minHeight: height,
+            paddingHorizontal: isDesktop ? contentPadding : 0,
           },
         ]}
       >
@@ -38,8 +37,8 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: colors.bg,
   },
-  rootWide: {
-    alignItems: 'center',
+  rootDex: {
+    alignItems: 'stretch',
   },
   inner: {
     flex: 1,
@@ -48,10 +47,5 @@ const styles = StyleSheet.create({
 });
 
 export function useResponsiveLayout() {
-  const { width } = useWindowDimensions();
-  return {
-    isWide: width >= 600,
-    isDesktop: width >= 900,
-    contentMaxWidth: width >= 600 ? MAX_CONTENT_WIDTH : width,
-  };
+  return useDexLayout();
 }

@@ -55,8 +55,8 @@ if (!manifest.releaseNotes) {
 const defaultNotes = {
   '1.2.2':
     'v1.2.2 — Epic Hive UI, welcome tutorial, Hive Magic pricing/limits, Play Store prep, in-app update checks.',
-  '1.3.1':
-    'v1.3.1 — User Guide (how builds become apps), app detail screen, keyboard dismiss on send.',
+  '1.3.2':
+    'v1.3.2 — Samsung DeX layout: side nav, two-column Build, lighter overlays, full-width monitor.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

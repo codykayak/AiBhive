@@ -14,6 +14,7 @@ import {
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
 import { listHiveApps, pruneNonBuildApps, type HiveAppRecord } from '../lib/hiveApps';
+import { useDexLayout } from '../hooks/useDexLayout';
 import { colors, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -56,6 +57,7 @@ function hiveStatusLabel(status: HiveAppRecord['status']) {
 export default function AppsScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
+  const { isDesktop, isDex } = useDexLayout();
   const [hiveApps, setHiveApps] = useState<HiveAppRecord[]>([]);
 
   const load = useCallback(async () => {
@@ -135,9 +137,10 @@ export default function AppsScreen() {
             }
           />
         ) : (
-          hiveApps.map((app) => (
+          <View style={[styles.appGrid, isDesktop && styles.appGridDesktop]}>
+          {hiveApps.map((app) => (
+            <View key={app.id} style={isDesktop ? styles.appGridItem : undefined}>
             <AppLauncherCard
-              key={app.id}
               title={app.title}
               desc={
                 app.status === 'complete'
@@ -151,14 +154,17 @@ export default function AppsScreen() {
               accent={app.status === 'complete' ? 'amber' : 'info'}
               onPress={() => navigation.navigate('HiveAppDetail', { app })}
             />
-          ))
+            </View>
+          ))}
+          </View>
         )}
 
         <SectionLabel>{HIVE_COPY.appsBuiltIn}</SectionLabel>
 
+        <View style={[styles.appGrid, isDesktop && styles.appGridDesktop]}>
         {BUILT_IN_APPS.map((app) => (
+          <View key={app.id} style={isDesktop ? styles.appGridItem : undefined}>
           <AppLauncherCard
-            key={app.id}
             title={app.title}
             desc={app.desc}
             tag={app.tag}
@@ -166,7 +172,9 @@ export default function AppsScreen() {
             accent={app.accent}
             onPress={() => navigation.navigate(app.route)}
           />
+          </View>
         ))}
+        </View>
 
         <GlassCard style={styles.tipCard}>
           <View style={styles.tipHeader}>
@@ -215,6 +223,17 @@ const styles = StyleSheet.create({
   buildTitle: { color: colors.amberLight, fontWeight: '800', fontSize: 17 },
   buildText: { color: colors.textMuted, lineHeight: 21, fontSize: 14, marginBottom: spacing.md },
   buildBtn: { alignSelf: 'flex-start', paddingHorizontal: 24 },
+  appGrid: { gap: 0 },
+  appGridDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  appGridItem: {
+    width: '48%',
+    flexGrow: 1,
+    minWidth: 280,
+  },
   tipCard: { marginTop: spacing.sm, marginBottom: spacing.md },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   tipTitle: { color: colors.amberLight, fontWeight: '800' },

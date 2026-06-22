@@ -9,6 +9,8 @@ import AppsScreen from '../screens/AppsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { colors, radii } from '../theme/colors';
 import { countBuildingApps } from '../lib/hiveApps';
+import { AdaptiveTabBar } from '../components/AdaptiveTabBar';
+import { useDexLayout } from '../hooks/useDexLayout';
 
 const Tab = createBottomTabNavigator();
 const TAB_BAR_BODY_HEIGHT = 60;
@@ -16,6 +18,7 @@ const TAB_BAR_BODY_HEIGHT = 60;
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 10);
+  const { useSideNav, sideRailWidth } = useDexLayout();
   const [buildingCount, setBuildingCount] = useState(0);
 
   useEffect(() => {
@@ -27,27 +30,43 @@ export default function TabNavigator() {
 
   return (
     <Tab.Navigator
-      safeAreaInsets={{ bottom: bottomInset }}
+      tabBar={(props) => <AdaptiveTabBar {...props} />}
+      safeAreaInsets={{ bottom: useSideNav ? 0 : bottomInset, left: useSideNav ? 0 : insets.left }}
       screenOptions={{
         headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarStyle: {
-          backgroundColor: 'rgba(15, 23, 42, 0.98)',
-          borderTopWidth: 0,
-          height: TAB_BAR_BODY_HEIGHT + bottomInset,
-          paddingTop: 6,
-          paddingBottom: bottomInset,
-          paddingHorizontal: 12,
-          ...Platform.select({
-            android: { elevation: 24 },
-            ios: {
-              shadowColor: colors.amber,
-              shadowOpacity: 0.15,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: -4 },
+        tabBarHideOnKeyboard: !useSideNav,
+        sceneStyle: useSideNav
+          ? { paddingLeft: sideRailWidth + insets.left, backgroundColor: colors.bg }
+          : { backgroundColor: colors.bg },
+        tabBarStyle: useSideNav
+          ? {
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: sideRailWidth + insets.left,
+              height: '100%',
+              borderTopWidth: 0,
+              backgroundColor: 'transparent',
+              elevation: 0,
+            }
+          : {
+              backgroundColor: 'rgba(15, 23, 42, 0.98)',
+              borderTopWidth: 0,
+              height: TAB_BAR_BODY_HEIGHT + bottomInset,
+              paddingTop: 6,
+              paddingBottom: bottomInset,
+              paddingHorizontal: 12,
+              ...Platform.select({
+                android: { elevation: 24 },
+                ios: {
+                  shadowColor: colors.amber,
+                  shadowOpacity: 0.15,
+                  shadowRadius: 12,
+                  shadowOffset: { width: 0, height: -4 },
+                },
+              }),
             },
-          }),
-        },
         tabBarBackground: () => (
           <View style={styles.tabBarBg}>
             <View style={styles.tabBarGlow} />
