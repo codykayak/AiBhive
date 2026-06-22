@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import { BookOpen } from 'lucide-react-native';
 import {
   View,
   Text,
@@ -64,6 +66,7 @@ const EMPTY_KEYS: Record<ProviderId, string> = {
 };
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
@@ -282,6 +285,21 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </>
           )}
+        </GlassCard>
+
+        <Text style={styles.sectionTitle}>User Guide</Text>
+        <GlassCard style={styles.providerCard}>
+          <Text style={styles.providerName}>How builds become apps</Text>
+          <Text style={styles.hint}>
+            What My Apps means, how to open finished builds, and options for web apps or standalone APKs on your domain.
+          </Text>
+          <TouchableOpacity
+            style={[styles.useBtn, styles.guideBtn]}
+            onPress={() => navigation.navigate('UserGuide')}
+          >
+            <BookOpen color={colors.amberLight} size={18} />
+            <Text style={styles.useBtnText}>Open User Guide</Text>
+          </TouchableOpacity>
         </GlassCard>
 
         <Text style={styles.sectionTitle}>AI providers</Text>
@@ -524,6 +542,17 @@ const styles = StyleSheet.create({
   useBtn: {
     marginTop: spacing.sm,
     alignSelf: 'flex-start',
+  },
+  guideBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radii.md,
+    backgroundColor: colors.amberSoft,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   useBtnText: {
     color: colors.amberLight,

@@ -9,6 +9,8 @@ import AutoBotResumeResultScreen from '../screens/AutoBotResumeResultScreen';
 import DeeperScreen from '../screens/DeeperScreen';
 import JobTrackerScreen from '../screens/JobTrackerScreen';
 import JobDetailScreen from '../screens/JobDetailScreen';
+import UserGuideScreen from '../screens/UserGuideScreen';
+import HiveAppDetailScreen from '../screens/HiveAppDetailScreen';
 import { colors } from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
@@ -47,6 +49,8 @@ export default function AppNavigator() {
         <Stack.Screen name="Deeper" component={DeeperScreen} options={{ title: 'Company Intel' }} />
         <Stack.Screen name="JobTracker" component={JobTrackerScreen} options={{ title: 'Job Tracker' }} />
         <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Profile' }} />
+        <Stack.Screen name="UserGuide" component={UserGuideScreen} options={{ title: 'User Guide' }} />
+        <Stack.Screen name="HiveAppDetail" component={HiveAppDetailScreen} options={{ title: 'Your App' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

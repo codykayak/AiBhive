@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Vibration,
   Image,
+  Keyboard,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Send, Sparkles, Wand2, Grid, Zap, Trash2, ImagePlus, X } from 'lucide-react-native';
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const tabBarPadding = useTabBarPadding(12);
   const { bottomPad: keyboardPad, isWide, keyboardHeight } = useKeyboardInset(0);
   const scrollRef = useRef<ScrollView>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
@@ -76,6 +78,12 @@ export default function HomeScreen() {
 
   const scrollToEnd = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 280);
+  }, []);
+
+  const dismissComposer = useCallback(() => {
+    inputRef.current?.blur();
+    Keyboard.dismiss();
   }, []);
 
   const persistMessages = useCallback(async (next: Message[]) => {
@@ -245,6 +253,7 @@ export default function HomeScreen() {
     };
     setMessagesAndSave((prev) => [...prev, userMsg]);
     setInputText('');
+    dismissComposer();
     setIsLoading(true);
 
     try {
@@ -282,6 +291,7 @@ export default function HomeScreen() {
         };
         setMessagesAndSave((prev) => [...prev, aiMsg]);
         setPendingAttachment(null);
+        dismissComposer();
         if (task.status === 'building') startPolling(task.id, trimmed);
         return;
       }
@@ -362,6 +372,7 @@ export default function HomeScreen() {
           style={styles.chatContainer}
           contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(tabBarPadding, 24) }]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           onContentSizeChange={scrollToEnd}
         >
           {messages.map((msg) => (
@@ -468,12 +479,17 @@ export default function HomeScreen() {
               </TouchableOpacity>
             )}
             <TextInput
+              ref={inputRef}
               style={[styles.input, isWide && styles.inputWide]}
               placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
               placeholderTextColor={colors.textDim}
               value={inputText}
               onChangeText={setInputText}
               multiline
+              blurOnSubmit
+              onSubmitEditing={() => {
+                if (inputText.trim()) void sendMessage(inputText);
+              }}
             />
             <TouchableOpacity
               style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendDisabled]}

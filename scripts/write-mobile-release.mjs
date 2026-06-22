@@ -55,8 +55,8 @@ if (!manifest.releaseNotes) {
 const defaultNotes = {
   '1.2.2':
     'v1.2.2 — Epic Hive UI, welcome tutorial, Hive Magic pricing/limits, Play Store prep, in-app update checks.',
-  '1.3.0':
-    'v1.3.0 — AiBhive rebrand, beehive logo + icon, My Apps fix, image attachments, Cursor-based pricing.',
+  '1.3.1':
+    'v1.3.1 — User Guide (how builds become apps), app detail screen, keyboard dismiss on send.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
