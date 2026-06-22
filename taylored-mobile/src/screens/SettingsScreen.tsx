@@ -140,7 +140,7 @@ export default function SettingsScreen() {
   const onApplyOtaRestart = async () => {
     const applied = await applyPendingOtaRestart();
     if (!applied) {
-      Alert.alert('Update', 'Close Taylored completely and open it again to apply the update.');
+      Alert.alert('Update', 'Close AiBhive completely and open it again to apply the update.');
     }
   };
 

@@ -19,6 +19,7 @@ import {
 import { verifyHiveAuth } from './hiveAuth.js';
 import { isHiveFreeBuildEmail } from './hiveAdmin.js';
 import { priceEstimate, getPricingConfig } from './hivePricing.js';
+import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import multer from 'multer';
@@ -969,7 +970,8 @@ app.post('/api/hive/tasks/:taskId/prepare-pay', async (req, res) => {
 
 app.post('/api/hive/tasks', async (req, res) => {
   try {
-    const { message, userId } = req.body || {};
+    const { message, userId, attachmentBase64, attachmentMime, attachmentWidth, attachmentHeight } =
+      req.body || {};
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId || 'anonymous';
     if (!message || typeof message !== 'string' || !message.trim()) {
@@ -983,44 +985,45 @@ app.post('/api/hive/tasks', async (req, res) => {
     const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
 
-    let priorBuildCount = 0;
-    if (resolvedUserId && resolvedUserId !== 'anonymous') {
-      try {
-        const account = await ensureHiveUser(db, resolvedUserId);
-        priorBuildCount = account.buildCount ?? 0;
-      } catch {
-        // non-fatal for anonymous-style ids
-      }
-    }
-
-    const msgLower = message.trim().toLowerCase();
-    const isIteration =
-      priorBuildCount > 0 ||
-      /\b(change|update|fix|iterate|iteration|again|modify|tweak|adjust|revise|redo)\b/.test(msgLower);
-
     const freeBuild = Boolean(authUser?.email && isHiveFreeBuildEmail(authUser.email));
+
+    let buildPrompt = triage.buildPrompt || message.trim();
+    if (attachmentBase64 && typeof attachmentBase64 === 'string') {
+      if (attachmentBase64.length > 900_000) {
+        return res.status(400).json({ error: 'Image attachment is too large. Try a smaller screenshot.' });
+      }
+      buildPrompt += `\n\nUser attached a reference image (${attachmentWidth || '?'}x${attachmentHeight || '?'}). Match layout, colors, and icon style where it helps.`;
+    }
 
     let status = 'complete';
     let reply = triage.localReply || triage.summary;
+    let estimateBase = null;
+    let estimate = triage.estimate || null;
+    let cursorEstimateMeta = null;
 
     if (triage.route === 'clarify') {
       status = 'clarify';
       reply = triage.clarifyingQuestion || triage.summary;
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
-      const priced = priceEstimate(triage.estimate, {
-        free: freeBuild,
-        priorBuildCount,
-        isIteration,
+      const cursorEst = await estimateCursorBuildCost({
+        message: message.trim(),
+        buildPrompt,
+        summary: triage.summary,
       });
+      cursorEstimateMeta = cursorEst;
+      const priced = priceEstimate(
+        { costUsd: cursorEst.costUsd, minutes: cursorEst.minutes },
+        { free: freeBuild }
+      );
       const cost = priced.user.costUsd;
       const mins = priced.user.minutes;
       const priceLine = freeBuild
         ? 'Free for your account (beta testing)'
-        : `About $${cost}${isIteration ? ' (iteration)' : ''}`;
+        : `About $${cost}`;
       reply = `I can build that for you.\n\n${triage.summary}\n\n${priceLine} · about ${mins} minutes\n\nTap Approve & Build when you're ready.`;
-      triage.estimate = priced.user;
-      triage.estimateBase = priced.base;
+      estimate = priced.user;
+      estimateBase = priced.base;
       if (freeBuild) triage.freeBuild = true;
     }
 
@@ -1031,10 +1034,20 @@ app.post('/api/hive/tasks', async (req, res) => {
       route: triage.route,
       status,
       summary: triage.summary,
-      estimate: triage.estimate || null,
-      estimateBase: triage.estimateBase || null,
+      estimate: estimate || null,
+      estimateBase: estimateBase || null,
+      cursorEstimate: cursorEstimateMeta,
       freeBuild: triage.freeBuild || false,
-      buildPrompt: triage.buildPrompt || message.trim(),
+      buildPrompt,
+      attachment:
+        attachmentBase64 && typeof attachmentBase64 === 'string'
+          ? {
+              mime: attachmentMime || 'image/jpeg',
+              width: attachmentWidth || null,
+              height: attachmentHeight || null,
+              base64: attachmentBase64,
+            }
+          : null,
       reply,
       createdAt: now,
       updatedAt: now,

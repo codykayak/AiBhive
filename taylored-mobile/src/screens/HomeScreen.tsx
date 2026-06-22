@@ -9,9 +9,10 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Vibration,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Send, Sparkles, Wand2, Grid, Zap, Trash2 } from 'lucide-react-native';
+import { Send, Sparkles, Wand2, Grid, Zap, Trash2, ImagePlus, X } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { HiveLogo } from '../components/HiveLogo';
 import { QuickPrompts } from '../components/QuickPrompts';
@@ -40,7 +41,8 @@ import {
 import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
 import { fetchHiveAccount, ensureCreditsForTask, openAddCredits } from '../lib/hiveAccount';
 import { loadChatHistory, saveChatHistory, clearChatHistory, type StoredChatMessage } from '../lib/chatHistory';
-import { upsertHiveAppFromTask } from '../lib/hiveApps';
+import { upsertHiveAppFromTask, pruneNonBuildApps } from '../lib/hiveApps';
+import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { shadows } from '../theme/shadows';
@@ -68,6 +70,7 @@ export default function HomeScreen() {
   const [magicMode, setMagicMode] = useState(true);
   const [hiveOnline, setHiveOnline] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<HiveAttachment | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hydrated = useRef(false);
 
@@ -100,6 +103,7 @@ export default function HomeScreen() {
     fetchHiveAccount().then((a) => {
       if (a) setCreditBalance(a.creditBalanceUsd);
     });
+    void pruneNonBuildApps();
     loadChatHistory().then((saved) => {
       if (saved?.length) setMessages([WELCOME, ...saved]);
       hydrated.current = true;
@@ -190,7 +194,6 @@ export default function HomeScreen() {
       const approved = await approveHiveTask(taskId, userId);
       const merged = { ...approved, id: taskId, source: 'server' as const };
       updateMessageTask(task.id, merged, prompt);
-      void upsertHiveAppFromTask(merged, prompt);
       startPolling(taskId, prompt);
       fetchHiveAccount().then((a) => {
         if (a) setCreditBalance(a.creditBalanceUsd);
@@ -249,7 +252,21 @@ export default function HomeScreen() {
         const userId = await getOrCreateHiveUserId();
         let task: HiveTask;
         try {
-          task = { ...(await createHiveTask(trimmed, userId)), source: 'server' };
+          task = {
+            ...(await createHiveTask(
+              trimmed,
+              userId,
+              pendingAttachment
+                ? {
+                    base64: pendingAttachment.base64,
+                    mimeType: pendingAttachment.mimeType,
+                    width: pendingAttachment.width,
+                    height: pendingAttachment.height,
+                  }
+                : undefined
+            )),
+            source: 'server',
+          };
         } catch {
           const config = await getActiveLlmConfig();
           if (!config) throw new Error('No API key');
@@ -264,7 +281,7 @@ export default function HomeScreen() {
           at: new Date().toISOString(),
         };
         setMessagesAndSave((prev) => [...prev, aiMsg]);
-        void upsertHiveAppFromTask(task, trimmed);
+        setPendingAttachment(null);
         if (task.status === 'building') startPolling(task.id, trimmed);
         return;
       }
@@ -291,7 +308,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScreenLayout showBrand={false} contentStyle={styles.screenContent} compactBadge>
+    <ScreenLayout contentStyle={styles.screenContent} compactBadge>
       <View style={styles.heroBlock}>
         <View style={styles.heroLeft}>
           <HiveLogo size={48} glow animate={magicMode} />
@@ -424,6 +441,15 @@ export default function HomeScreen() {
               disabled={isLoading}
             />
           )}
+          {pendingAttachment && (
+            <View style={styles.attachPreview}>
+              <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
+              <Text style={styles.attachLabel}>Reference image attached</Text>
+              <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
+                <X color={colors.textDim} size={18} />
+              </TouchableOpacity>
+            </View>
+          )}
           <View
             style={[
               styles.inputContainer,
@@ -431,6 +457,16 @@ export default function HomeScreen() {
               { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 },
             ]}
           >
+            {magicMode && (
+              <TouchableOpacity
+                style={styles.attachBtn}
+                onPress={() => void pickHiveReferenceImage().then((a) => a && setPendingAttachment(a))}
+                disabled={isLoading}
+                accessibilityLabel={HIVE_COPY.attachImage}
+              >
+                <ImagePlus color={colors.amberLight} size={22} />
+              </TouchableOpacity>
+            )}
             <TextInput
               style={[styles.input, isWide && styles.inputWide]}
               placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
@@ -581,6 +617,20 @@ const styles = StyleSheet.create({
   },
   failedText: { color: colors.danger, fontSize: 14, lineHeight: 20 },
   composer: { paddingTop: 4 },
+  attachPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+    padding: 8,
+    borderRadius: radii.md,
+    backgroundColor: colors.bgCard,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+  },
+  attachThumb: { width: 44, height: 44, borderRadius: 8 },
+  attachLabel: { flex: 1, color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+  attachBtn: { paddingHorizontal: 4, paddingVertical: 8, justifyContent: 'center' },
   inputContainer: {
     flexDirection: 'row',
     paddingTop: 8,

@@ -13,7 +13,7 @@ import {
   SectionLabel,
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
-import { listHiveApps, type HiveAppRecord } from '../lib/hiveApps';
+import { listHiveApps, pruneNonBuildApps, type HiveAppRecord } from '../lib/hiveApps';
 import { colors, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -59,6 +59,7 @@ export default function AppsScreen() {
   const [hiveApps, setHiveApps] = useState<HiveAppRecord[]>([]);
 
   const load = useCallback(async () => {
+    await pruneNonBuildApps();
     setHiveApps(await listHiveApps());
   }, []);
 

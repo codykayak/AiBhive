@@ -35,7 +35,7 @@ const SLIDES: Slide[] = [
     id: 'welcome',
     emoji: '🐝',
     title: 'Hey — welcome to the Hive',
-    body: 'Taylored is your personal app factory. Tell us what you want in plain English. We build it. You don\'t write a single line of code.',
+    body: 'AiBhive is your personal app factory. Tell us what you want in plain English. We build it. You don\'t write a single line of code.',
     tip: 'Seriously. Describe it like you\'re texting a friend.',
   },
   {

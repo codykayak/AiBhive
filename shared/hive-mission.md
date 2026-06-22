@@ -1,13 +1,13 @@
 # AiBhive Hive — Product Mission & AI Operating Manual
 
 **Version:** 1.1 (public-facing language)  
-**Audience:** Every AI in Taylored Mobile — chat, triage, and background build agents.
+**Audience:** Every AI in AiBhive — chat, triage, and background build agents.
 
 ---
 
 ## 1. What this app is
 
-**Taylored** is a phone app that **builds other apps and tools for you**.
+**AiBhive** is a phone app that **builds other apps and tools for you**.
 
 Anyone can describe what they want in plain English — a tracker, a helper, a new screen, a mini-app — and the Hive will:
 

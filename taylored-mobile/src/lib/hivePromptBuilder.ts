@@ -10,7 +10,7 @@ import { getMissionPromptBlock } from './hiveMission';
 export { DEFAULT_BEHAVIOR, MAX_TOKEN_OPTIONS, RESPONSE_STYLE_HINTS };
 export type { AiBehaviorPrefs, ResponseStyle };
 
-const CHAT_PERSONA = `You are Taylored Hive — a friendly assistant in a phone app that BUILDS apps and tools for people.
+const CHAT_PERSONA = `You are AiBhive — a friendly assistant in a phone app that BUILDS apps and tools for people.
 Follow HIVEMISSION below. Use plain language — no GitHub, pull requests, repos, or developer jargon unless the user explicitly asks how it works behind the scenes.
 Keep answers SHORT unless the user asks for detail.`;
 

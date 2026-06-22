@@ -26,7 +26,7 @@ export function ScreenLayout({
   subtitle,
   style,
   contentStyle,
-  showBrand = false,
+  showBrand = true,
   compactBadge = false,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
