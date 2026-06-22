@@ -12,7 +12,15 @@ import {
 } from './store.js';
 import { notifyPostReady } from './notify.js';
 
-const TEXT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+function getTextModel() {
+  return process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+}
+
+function getImageModels(config) {
+  const primary = config?.imageModel || process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+  const fallbacks = IMAGE_MODELS.filter((m) => m !== primary);
+  return [primary, ...fallbacks];
+}
 
 function getGenAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -30,6 +38,18 @@ function extractJson(text) {
     return JSON.parse(candidate.slice(start, end + 1));
   }
   return JSON.parse(candidate);
+}
+
+function logStep(workflowLog, entry) {
+  const idx = workflowLog.findIndex((s) => s.step === entry.step);
+  const row = { at: new Date().toISOString(), ...entry };
+  if (idx >= 0) workflowLog[idx] = { ...workflowLog[idx], ...row };
+  else workflowLog.push(row);
+  return workflowLog;
+}
+
+async function persistProgress(dateKey, patch) {
+  await savePost(dateKey, { ...patch, updatedAt: Timestamp.now() });
 }
 
 async function validateArticleUrl(url) {
@@ -57,10 +77,10 @@ function trimXCaption(caption, link) {
   return `${text.slice(0, Math.max(0, budget)).trim()}…${suffix}`.trim();
 }
 
-async function researchArticle(topic) {
+async function researchArticle(topic, textModel) {
   const genAI = getGenAI();
   const model = genAI.getGenerativeModel({
-    model: TEXT_MODEL,
+    model: textModel,
     tools: [{ googleSearch: {} }],
   });
 
@@ -96,12 +116,12 @@ Rules:
   if (!urlOk) {
     throw new Error(`Article URL could not be verified: ${article.url}`);
   }
-  return article;
+  return { article, raw: text };
 }
 
-async function writeCaptions(topic, article, knowledge) {
+async function writeCaptions(topic, article, knowledge, textModel) {
   const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({ model: TEXT_MODEL });
+  const model = genAI.getGenerativeModel({ model: textModel });
 
   const prompt = `You are the social media manager for ${BRAND.name} (${BRAND.siteUrl}).
 
@@ -130,7 +150,7 @@ Return ONLY valid JSON:
   const result = await model.generateContent(prompt);
   const text = result?.response?.text?.();
   if (!text) throw new Error('Empty caption response from Gemini.');
-  return extractJson(text);
+  return { captions: extractJson(text), raw: text };
 }
 
 async function generateImageWithModel(genAI, modelName, prompt, aspectHint) {
@@ -159,13 +179,13 @@ Professional social media marketing graphic for ${BRAND.name}.`;
   throw new Error(`No image from ${modelName}`);
 }
 
-async function generateImage(prompt, aspectHint) {
+async function generateImage(prompt, aspectHint, imageModels) {
   const genAI = getGenAI();
   let lastError;
 
-  for (const modelName of IMAGE_MODELS) {
+  for (const modelName of imageModels) {
     try {
-      return await generateImageWithModel(genAI, modelName, prompt, aspectHint);
+      return { buffer: await generateImageWithModel(genAI, modelName, prompt, aspectHint), model: modelName };
     } catch (e) {
       lastError = e;
       console.warn(`[socialPostGenerator] image model ${modelName} failed:`, e.message);
@@ -175,16 +195,19 @@ async function generateImage(prompt, aspectHint) {
   throw lastError || new Error('All image models failed.');
 }
 
-async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint) {
+async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint, imageModels) {
   try {
-    const buffer = await generateImage(imagePrompt, aspectHint);
-    return await uploadSocialImage(dateKey, key, buffer);
+    const { buffer, model } = await generateImage(imagePrompt, aspectHint, imageModels);
+    const url = await uploadSocialImage(dateKey, key, buffer);
+    return { url, model, error: null };
   } catch (e) {
-    const buffer = await generateImage(
+    const { buffer, model } = await generateImage(
       `${imagePrompt}. Simpler composition, bold typography, minimal elements.`,
       aspectHint,
+      imageModels,
     );
-    return await uploadSocialImage(dateKey, key, buffer);
+    const url = await uploadSocialImage(dateKey, key, buffer);
+    return { url, model, error: e.message };
   }
 }
 
@@ -209,6 +232,9 @@ export async function generateDailySocialPost(options = {}) {
   const date = options.date || new Date();
   const dateKey = todayDateKey(date);
   const config = await getConfig();
+  const textModel = config.textModel || getTextModel();
+  const imageModels = getImageModels(config);
+  const workflowLog = [];
 
   if (!options.force) {
     const existing = await getPostByDate(dateKey);
@@ -233,10 +259,40 @@ export async function generateDailySocialPost(options = {}) {
   const knowledge = loadKnowledge();
   const errors = [];
 
+  logStep(workflowLog, {
+    step: 'topic',
+    label: 'Pick topic',
+    status: 'done',
+    output: topic,
+  });
+
+  await persistProgress(dateKey, {
+    status: 'generating',
+    workflowLog,
+    modelsUsed: { text: textModel, image: imageModels[0] },
+  });
+
   try {
     let article;
+    let researchRaw = '';
+    logStep(workflowLog, {
+      step: 'research',
+      label: 'Research news',
+      status: 'running',
+      model: textModel,
+    });
+    await persistProgress(dateKey, { workflowLog });
+
     try {
-      article = await researchArticle(topic);
+      const researched = await researchArticle(topic, textModel);
+      article = researched.article;
+      researchRaw = researched.raw;
+      logStep(workflowLog, {
+        step: 'research',
+        status: 'done',
+        raw: researchRaw,
+        output: article,
+      });
     } catch (e) {
       console.error('[socialPostGenerator] research failed', e);
       article = {
@@ -247,31 +303,75 @@ export async function generateDailySocialPost(options = {}) {
         summary: topic.angle,
         whyRelevant: 'Industry commentary on practical AI automation for businesses.',
       };
+      researchRaw = e.message;
+      logStep(workflowLog, {
+        step: 'research',
+        status: 'fallback',
+        raw: researchRaw,
+        output: article,
+        error: e.message,
+      });
       errors.push(`research: ${e.message}`);
     }
+    await persistProgress(dateKey, { workflowLog, sourceArticle: article });
 
-    const captions = await writeCaptions(topic, article, knowledge);
+    let captions;
+    let captionsRaw = '';
+    logStep(workflowLog, {
+      step: 'captions',
+      label: 'Write captions',
+      status: 'running',
+      model: textModel,
+    });
+    await persistProgress(dateKey, { workflowLog });
+
+    const captionResult = await writeCaptions(topic, article, knowledge, textModel);
+    captions = captionResult.captions;
+    captionsRaw = captionResult.raw;
+    logStep(workflowLog, {
+      step: 'captions',
+      status: 'done',
+      raw: captionsRaw,
+      output: captions,
+    });
+    await persistProgress(dateKey, { workflowLog });
+
     const imagePrompt = captions.imagePrompt
       || `Professional graphic for ${topic.title}. ${BRAND.imageStyle}`;
+
+    logStep(workflowLog, {
+      step: 'images',
+      label: 'Generate images',
+      status: 'running',
+      model: imageModels[0],
+      output: { imagePrompt },
+    });
+    await persistProgress(dateKey, { workflowLog, imagePrompt });
 
     const platformKeys = Object.keys(PLATFORM_SPECS);
     const imageResults = await Promise.all(
       platformKeys.map(async (key) => {
         const spec = PLATFORM_SPECS[key];
         try {
-          const url = await generatePlatformImage(dateKey, key, imagePrompt, spec.aspectHint);
-          return { key, url, error: null };
+          const result = await generatePlatformImage(dateKey, key, imagePrompt, spec.aspectHint, imageModels);
+          return { key, url: result.url, model: result.model, error: result.error };
         } catch (e) {
-          return { key, url: null, error: e.message };
+          return { key, url: null, model: null, error: e.message };
         }
       }),
     );
 
     const images = {};
-    for (const { key, url, error } of imageResults) {
+    for (const { key, url, model, error } of imageResults) {
       images[key] = url;
       if (error) errors.push(`image_${key}: ${error}`);
     }
+
+    logStep(workflowLog, {
+      step: 'images',
+      status: imageResults.every((r) => r.url) ? 'done' : 'partial',
+      output: imageResults,
+    });
 
     const xCaption = trimXCaption(captions.x?.caption || '', topic.siteLink);
 
@@ -301,6 +401,8 @@ export async function generateDailySocialPost(options = {}) {
         link: topic.siteLink,
       },
       imagePrompt,
+      workflowLog,
+      modelsUsed: { text: textModel, image: imageResults.find((r) => r.model)?.model || imageModels[0] },
       status: 'pending_review',
       generatedBy: options.generatedBy || 'scheduler',
       createdAt: Timestamp.now(),
@@ -308,6 +410,13 @@ export async function generateDailySocialPost(options = {}) {
       adminBaseUrl: config.adminBaseUrl,
       generationStartedAt: null,
     };
+
+    logStep(workflowLog, {
+      step: 'review',
+      label: 'Ready for review',
+      status: 'done',
+      output: { status: 'pending_review' },
+    });
 
     const saved = await savePost(dateKey, post);
 
@@ -318,9 +427,16 @@ export async function generateDailySocialPost(options = {}) {
     return { post: saved, skipped: false };
   } catch (e) {
     console.error('[socialPostGenerator] fatal', e);
+    logStep(workflowLog, {
+      step: 'error',
+      label: 'Generation failed',
+      status: 'failed',
+      raw: e.message,
+    });
     await savePost(dateKey, {
       status: 'failed',
       errors: [e.message],
+      workflowLog,
       generationStartedAt: null,
       failedAt: Timestamp.now(),
     });

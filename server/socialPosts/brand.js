@@ -34,6 +34,6 @@ export const PLATFORM_SPECS = {
 };
 
 export const IMAGE_MODELS = [
-  process.env.GEMINI_IMAGE_MODEL || 'gemini-2.0-flash-preview-image-generation',
-  'gemini-2.0-flash-exp',
+  process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+  'gemini-2.0-flash-preview-image-generation',
 ];

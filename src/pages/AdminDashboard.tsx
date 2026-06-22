@@ -12,6 +12,7 @@ import {
   FileText,
   CheckCircle2,
   XCircle,
+  Megaphone,
   RefreshCw,
   Search,
   Copy,
@@ -21,6 +22,7 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { adminJson } from '../lib/adminApi';
 import RagSourcesPanel from '../components/admin/RagSourcesPanel';
+import AutoSocialPanel from '../components/admin/AutoSocialPanel';
 
 interface Lead {
   id: string;
@@ -60,7 +62,7 @@ function statusLabel(status: string) {
 export default function AdminDashboard() {
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
-  const [activeTab, setActiveTab] = useState<'leads' | 'settings'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'settings' | 'auto-social'>('leads');
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -316,6 +318,19 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('auto-social')}
+          className={cn(
+            'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
+            activeTab === 'auto-social'
+              ? 'bg-bee-amber text-bee-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+          )}
+        >
+          <Megaphone className="w-5 h-5 mr-2" />
+          Auto Social
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('settings')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
@@ -501,6 +516,8 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {activeTab === 'auto-social' && <AutoSocialPanel user={user} />}
 
           {activeTab === 'settings' && (
             <div className="p-8 max-w-2xl">

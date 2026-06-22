@@ -29,6 +29,13 @@ export async function getConfig() {
       data.adminBaseUrl
       || process.env.SOCIAL_ADMIN_BASE_URL
       || 'https://www.aibhive.com/autoposter',
+    socialLinks: {
+      facebook: data.socialLinks?.facebook || '',
+      instagram: data.socialLinks?.instagram || '',
+      x: data.socialLinks?.x || '',
+    },
+    textModel: data.textModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    imageModel: data.imageModel || process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
   };
 }
 
