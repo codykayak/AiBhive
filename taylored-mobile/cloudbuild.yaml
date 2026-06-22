@@ -1,0 +1,69 @@
+# Google Cloud Build — Android release APK (saves GitHub Actions minutes)
+#
+# Trigger from repo root:
+#   gcloud builds submit --config taylored-mobile/cloudbuild.yaml .
+#
+# Optional: larger machine for faster Gradle
+#   gcloud builds submit --config taylored-mobile/cloudbuild.yaml . --machine-type=e2-highcpu-8
+#
+# Note: Cloud Run hosts the API/site; use Cloud Build for 30–45 min Gradle jobs.
+
+timeout: 3600s
+
+options:
+  machineType: E2_HIGHCPU_8
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _APK_GCS_BUCKET: ''
+  _APK_GCS_OBJECT: taylored-mobile/releases/app-release.apk
+
+steps:
+  - name: node:20-bookworm
+    id: build-apk
+    entrypoint: bash
+    env:
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        apt-get update -qq
+        apt-get install -y -qq openjdk-17-jdk wget unzip > /dev/null
+
+        export PATH="$$JAVA_HOME/bin:$$PATH"
+        mkdir -p "$$ANDROID_HOME/cmdline-tools"
+        if [ ! -d "$$ANDROID_HOME/cmdline-tools/latest" ]; then
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$$ANDROID_HOME/cmdline-tools"
+          mv "$$ANDROID_HOME/cmdline-tools/cmdline-tools" "$$ANDROID_HOME/cmdline-tools/latest"
+        fi
+        export PATH="$$ANDROID_HOME/cmdline-tools/latest/bin:$$ANDROID_HOME/platform-tools:$$PATH"
+        yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+        cd taylored-mobile
+        npm ci
+        bash scripts/ci-android-build.sh
+
+        cp android/app/build/outputs/apk/release/app-release.apk /workspace/app-release.apk
+        ls -lh /workspace/app-release.apk
+
+  - name: gcr.io/cloud-builders/gsutil
+    id: upload-apk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        if [ -z "${_APK_GCS_BUCKET}" ]; then
+          echo "No _APK_GCS_BUCKET set — APK built in step 1 only."
+          echo "Download from Cloud Build artifacts or set _APK_GCS_BUCKET=my-bucket"
+          exit 0
+        fi
+        ts=$(date -u +%Y%m%dT%H%M%SZ)
+        dest="gs://${_APK_GCS_BUCKET}/${_APK_GCS_OBJECT%.apk}-${ts}.apk"
+        gsutil cp /workspace/app-release.apk "$$dest"
+        echo "Uploaded: $$dest"

@@ -1151,7 +1151,16 @@ app.get('/taylored-mobile.apk', (req, res) => {
   return res.sendFile(apkPath);
 });
 
-// Serve the standalone Cody website at /cody (static assets + fallback to cody/index.html)
+app.get('/privacy-policy.html', (_req, res) => {
+  const policyPath = path.join(__dirname, '../public/privacy-policy.html');
+  if (!fs.existsSync(policyPath)) {
+    return res.status(404).send('Privacy policy not found.');
+  }
+  return res.sendFile(policyPath);
+});
+
+app.get('/privacy', (_req, res) => res.redirect(301, '/privacy-policy.html'));
+
 app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
 app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));

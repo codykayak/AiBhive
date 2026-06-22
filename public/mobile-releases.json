@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.1.0",
-  "versionCode": 2,
-  "sourceVersion": "1.1.0",
-  "releaseNotes": "v1.1.0 — AI behavior settings, job research tabs, DeX keyboard fixes, in-app update checks, Hive billing scaffold.",
+  "shippedNativeVersion": "1.2.2",
+  "versionCode": 5,
+  "sourceVersion": "1.2.2",
+  "releaseNotes": "v1.2.2 — Epic Hive UI, welcome tutorial, Hive Magic pricing/limits, Play Store prep, in-app update checks.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1781908722111%2Ftaylored-mobile.apk.gz?alt=media&token=371398da-90f5-40fc-8198-f5d2e25e22ce",
-  "publishedAt": "2026-06-19T22:38:43.005Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782115061337%2Ftaylored-mobile.apk.gz?alt=media&token=c55c6e3b-c976-42e5-a9cb-e2a145bd70d0",
+  "publishedAt": "2026-06-22T07:57:42.258Z",
   "otaChannel": "production"
 }
