@@ -1,7 +1,7 @@
 /** User-facing strings — plain language, no developer jargon. */
 export const HIVE_COPY = {
   welcome:
-    'Welcome to Taylored. Describe any app, tool, or feature in plain English — I\'ll quote time and cost, you approve once, and we\'ll notify you when it\'s ready. Try: "Build me a habit tracker."',
+    'Welcome to AiBhive. Describe any app, tool, or feature in plain English — I\'ll quote time and cost, you approve once, and we\'ll notify you when it\'s ready. Try: "Build me a habit tracker."',
   magicOnSubtitle: (provider: string, status?: string) =>
     `Build mode · ${provider}${status ? ` · ${status}` : ''}`,
   magicOffSubtitle: (provider: string) =>
@@ -21,13 +21,15 @@ export const HIVE_COPY = {
   iterateHint: 'Want changes? Describe them here — we\'ll quote the next update.',
   updateCurrent: (version: string) => `You are on the latest version (v${version}).`,
   updateNativeAvailable: (version: string) => `Version v${version} is ready. Download and install the new app package.`,
-  updateOtaPending: 'A small update downloaded. Close and reopen Taylored to apply it.',
+  updateOtaPending: 'A small update downloaded. Close and reopen AiBhive to apply it.',
   updateOffline: (version: string) => `Could not reach the update server. You are on v${version}.`,
   updateCheck: 'Check for updates',
   updateDownloading: 'Checking…',
   updateInstall: 'Download update',
   updateRestart: 'Restart to apply',
   updateSectionHint: 'Small UI fixes arrive automatically after the next app install. Full installs are only needed occasionally.',
+  attachImage: 'Attach reference image',
+  attachImageHint: 'Screenshot or mockup — we\'ll resize it for your build',
   quickPrompts: [
     'Build me a habit tracker',
     'Add expense tracker',

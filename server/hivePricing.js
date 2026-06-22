@@ -1,24 +1,20 @@
 /**
- * Hive user-facing prices vs internal cost estimates.
- *
- * Consumer-friendly tiers: most first builds $4–$4.50, iterations slightly higher,
- * capped under $5 for beta. Owner/admin accounts can be flagged free at quote time.
+ * User-facing Hive build prices = Cursor internal estimate + markup (default 30%).
  */
 
-const MAX_CHARGE_USD = Number(process.env.HIVE_MAX_CHARGE_USD ?? 5);
-const FIRST_SIMPLE_USD = Number(process.env.HIVE_FIRST_SIMPLE_USD ?? 4);
-const FIRST_STANDARD_USD = Number(process.env.HIVE_FIRST_STANDARD_USD ?? 4.5);
-const ITERATION_SIMPLE_USD = Number(process.env.HIVE_ITERATION_SIMPLE_USD ?? 4.5);
-const ITERATION_STANDARD_USD = Number(process.env.HIVE_ITERATION_STANDARD_USD ?? 5);
+const MARKUP = Number(process.env.HIVE_MARKUP_MULTIPLIER ?? 1.3);
+const MIN_CHARGE_USD = Number(process.env.HIVE_MIN_CHARGE_USD ?? 2);
+const MAX_CHARGE_USD = Number(process.env.HIVE_MAX_CHARGE_USD ?? 12);
+const ROUND_TO = Number(process.env.HIVE_PRICE_ROUND_USD ?? 0.5);
 
-function roundUsd(n) {
-  return Math.round(n * 100) / 100;
+function roundUpUsd(n) {
+  const step = ROUND_TO > 0 ? ROUND_TO : 0.5;
+  return Math.ceil(n / step) * step;
 }
 
 /**
- * Map Gemini "base" complexity to a flat user price (not multiplicative markup).
- * @param {{ costUsd?: number, minutes?: number } | null | undefined} raw
- * @param {{ free?: boolean, priorBuildCount?: number, isIteration?: boolean }} [opts]
+ * @param {{ costUsd?: number, minutes?: number } | null | undefined} raw Cursor base estimate
+ * @param {{ free?: boolean }} [opts]
  */
 export function priceEstimate(raw, opts = {}) {
   const baseCost = Math.max(0, Number(raw?.costUsd) || 0);
@@ -32,20 +28,15 @@ export function priceEstimate(raw, opts = {}) {
     };
   }
 
-  const iteration =
-    Boolean(opts.isIteration) || (Number(opts.priorBuildCount) || 0) > 0;
-
-  // Simple = tiny UI / calculator / single screen; standard = everything else in beta band.
-  const simple = baseCost <= 3 || baseMinutes <= 20;
-
-  let userCost;
-  if (iteration) {
-    userCost = simple ? ITERATION_SIMPLE_USD : ITERATION_STANDARD_USD;
-  } else {
-    userCost = simple ? FIRST_SIMPLE_USD : FIRST_STANDARD_USD;
+  if (baseCost === 0) {
+    return {
+      base: { costUsd: 0, minutes: baseMinutes },
+      user: { costUsd: 0, minutes: baseMinutes },
+    };
   }
 
-  userCost = Math.min(MAX_CHARGE_USD, roundUsd(userCost));
+  const marked = baseCost * (MARKUP > 0 ? MARKUP : 1);
+  const userCost = Math.min(MAX_CHARGE_USD, Math.max(MIN_CHARGE_USD, roundUpUsd(marked)));
 
   return {
     base: { costUsd: baseCost, minutes: baseMinutes },
@@ -55,12 +46,11 @@ export function priceEstimate(raw, opts = {}) {
 
 export function getPricingConfig() {
   return {
+    markupMultiplier: MARKUP,
+    minChargeUsd: MIN_CHARGE_USD,
     maxChargeUsd: MAX_CHARGE_USD,
-    firstSimpleUsd: FIRST_SIMPLE_USD,
-    firstStandardUsd: FIRST_STANDARD_USD,
-    iterationSimpleUsd: ITERATION_SIMPLE_USD,
-    iterationStandardUsd: ITERATION_STANDARD_USD,
-    welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 5),
-    freeBuildEmailsConfigured: true,
+    roundUsd: ROUND_TO,
+    welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 15),
+    estimateSource: 'cursor_model_via_gemini',
   };
 }

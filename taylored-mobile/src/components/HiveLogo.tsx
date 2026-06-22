@@ -13,7 +13,7 @@ type Props = {
   animate?: boolean;
 };
 
-/** AiBhive beehive mark — use in headers, onboarding, empty states. */
+/** AiBhive beehive mark — app icon, top bar, onboarding. */
 export function HiveLogo({ size = 48, glow = false, style, animate = false }: Props) {
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -32,8 +32,14 @@ export function HiveLogo({ size = 48, glow = false, style, animate = false }: Pr
   const img = (
     <Image
       source={LOGO}
-      style={{ width: size, height: size, borderRadius: size * 0.22 }}
-      resizeMode="contain"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size * 0.18,
+        borderWidth: size >= 40 ? 1 : 0,
+        borderColor: 'rgba(251, 191, 36, 0.45)',
+      }}
+      resizeMode="cover"
       accessibilityLabel="AiBhive logo"
     />
   );

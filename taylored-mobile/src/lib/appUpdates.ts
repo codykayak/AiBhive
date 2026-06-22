@@ -95,7 +95,7 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
   if (ota.pendingRestart) {
     return {
       status: 'ota-pending',
-      message: 'A small update downloaded. Close and reopen Taylored to apply it.',
+      message: 'A small update downloaded. Close and reopen AiBhive to apply it.',
     };
   }
 
@@ -127,7 +127,7 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
         await AsyncStorage.setItem(OTA_PENDING_KEY, 'true');
         return {
           status: 'ota-pending',
-          message: 'Update downloaded. Close and reopen Taylored to apply it.',
+          message: 'Update downloaded. Close and reopen AiBhive to apply it.',
         };
       }
     } catch {

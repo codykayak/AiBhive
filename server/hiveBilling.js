@@ -130,7 +130,7 @@ export async function createCreditsCheckout(stripe, { userId, amountUsd, taskId,
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Taylored Hive Credits',
+            name: 'AiBhive Credits',
             description: taskId
               ? `Credits for your build (${taskId})`
               : 'Add credits to build apps and modules',

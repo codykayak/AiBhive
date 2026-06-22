@@ -22,6 +22,12 @@ function titleFromTask(task: HiveTask, fallback: string): string {
   return `${trimmed.slice(0, 45)}…`;
 }
 
+/** Only real Cursor builds belong in My Apps — not chat Q&A or quotes awaiting approval. */
+export function shouldTrackHiveApp(task: HiveTask): boolean {
+  if (task.route !== 'cursor') return false;
+  return task.status === 'building' || task.status === 'complete' || task.status === 'failed';
+}
+
 export async function listHiveApps(): Promise<HiveAppRecord[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -37,11 +43,13 @@ async function saveAll(apps: HiveAppRecord[]): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
 }
 
-export async function upsertHiveAppFromTask(task: HiveTask, prompt?: string): Promise<HiveAppRecord> {
+export async function upsertHiveAppFromTask(task: HiveTask, prompt?: string): Promise<HiveAppRecord | null> {
+  if (!shouldTrackHiveApp(task)) return null;
+
   const apps = await listHiveApps();
   const now = new Date().toISOString();
   const existingIdx = apps.findIndex((a) => a.taskId === task.id || a.id === task.id);
-  const status =
+  const status: HiveAppRecord['status'] =
     task.status === 'complete' ? 'complete' : task.status === 'failed' ? 'failed' : 'building';
 
   const record: HiveAppRecord = {
@@ -66,4 +74,11 @@ export async function upsertHiveAppFromTask(task: HiveTask, prompt?: string): Pr
 export async function countBuildingApps(): Promise<number> {
   const apps = await listHiveApps();
   return apps.filter((a) => a.status === 'building').length;
+}
+
+/** Remove chat-only entries saved before the filter existed. */
+export async function pruneNonBuildApps(): Promise<void> {
+  const apps = await listHiveApps();
+  const kept = apps.filter((a) => a.taskId?.startsWith('hive_'));
+  if (kept.length !== apps.length) await saveAll(kept);
 }

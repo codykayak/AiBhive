@@ -66,12 +66,28 @@ export async function registerHiveUserWithAuth(
   }
 }
 
-export async function createHiveTask(message: string, userId: string): Promise<HiveTask> {
+export async function createHiveTask(
+  message: string,
+  userId: string,
+  attachment?: {
+    base64: string;
+    mimeType: string;
+    width: number;
+    height: number;
+  }
+): Promise<HiveTask> {
   const headers = await authHeaders();
   const res = await fetch(`${HIVE_API_BASE}/api/hive/tasks`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ message, userId }),
+    body: JSON.stringify({
+      message,
+      userId,
+      attachmentBase64: attachment?.base64,
+      attachmentMime: attachment?.mimeType,
+      attachmentWidth: attachment?.width,
+      attachmentHeight: attachment?.height,
+    }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Hive request failed');
