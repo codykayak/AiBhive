@@ -14,6 +14,7 @@ import HiveAppDetailScreen from '../screens/HiveAppDetailScreen';
 import UserAppHostScreen from '../screens/UserAppHostScreen';
 import DynamicAppHost from '../dynamicApps/DynamicAppHost';
 import HiveExportOptionsScreen from '../screens/HiveExportOptionsScreen';
+import IntelCaseScreen from '../screens/IntelCaseScreen';
 import { HIVE_USER_APPS } from '../userApps';
 import { colors } from '../theme/colors';
 
@@ -26,10 +27,12 @@ const linking = {
       Main: {
         screens: {
           Build: 'build',
+          Intel: 'intel',
           Apps: 'apps',
           Settings: 'settings',
         },
       },
+      IntelCase: 'intel/case/:caseId',
       UserApp: 'userApps/:slug',
       DynamicApp: 'app/:appId',
       HiveExportOptions: 'app/:appId/export',
@@ -82,6 +85,7 @@ export default function AppNavigator() {
           component={HiveExportOptionsScreen}
           options={{ title: 'Export' }}
         />
+        <Stack.Screen name="IntelCase" component={IntelCaseScreen} options={{ title: 'Intel Case' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

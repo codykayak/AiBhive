@@ -20,9 +20,11 @@ import {
   DEFAULT_PREFS,
   getFirecrawlApiKey,
   getProviderApiKey,
+  getSerpApiKey,
   loadAiPrefs,
   saveFirecrawlApiKey,
   saveProviderApiKey,
+  saveSerpApiKey,
   setActiveProvider,
   setCustomModel,
   setProviderEnabled,
@@ -77,6 +79,7 @@ export default function SettingsScreen() {
   const [keys, setKeys] = useState(EMPTY_KEYS);
   const [keysLoading, setKeysLoading] = useState(true);
   const [firecrawlKey, setFirecrawlKey] = useState('');
+  const [serpapiKey, setSerpapiKey] = useState('');
   const [behavior, setBehavior] = useState<AiBehaviorPrefs>(() => ({ ...DEFAULT_BEHAVIOR }));
   const [saveStatus, setSaveStatus] = useState('');
   const [updateStatus, setUpdateStatus] = useState<UpdateCheckResult | null>(null);
@@ -107,6 +110,8 @@ export default function SettingsScreen() {
     try {
       const fc = (await getFirecrawlApiKey()) || '';
       setFirecrawlKey(fc);
+      const serp = (await getSerpApiKey()) || '';
+      setSerpapiKey(serp);
       const keyMap = { ...EMPTY_KEYS };
       await Promise.all(
         AI_PROVIDERS.map(async (p) => {
@@ -193,6 +198,19 @@ export default function SettingsScreen() {
         flashSaved('Firecrawl key');
       } catch {
         Alert.alert('Save failed', 'Could not store Firecrawl key.');
+      }
+    }, 400);
+  };
+
+  const persistSerpapi = (value: string) => {
+    setSerpapiKey(value);
+    if (saveTimers.current.serpapi) clearTimeout(saveTimers.current.serpapi);
+    saveTimers.current.serpapi = setTimeout(async () => {
+      try {
+        await saveSerpApiKey(value);
+        flashSaved('SerpAPI key');
+      } catch {
+        Alert.alert('Save failed', 'Could not store SerpAPI key.');
       }
     }, 400);
   };
@@ -475,13 +493,25 @@ export default function SettingsScreen() {
         </GlassCard>
 
         <Text style={styles.sectionTitle}>Firecrawl</Text>
-        <Text style={styles.hint}>Job URL scraping and company research.</Text>
+        <Text style={styles.hint}>Deep web scrape and search for Intel Agent research.</Text>
         <TextInput
           style={styles.input}
           placeholder="Firecrawl API key"
           placeholderTextColor={colors.textDim}
           value={firecrawlKey}
           onChangeText={persistFirecrawl}
+          secureTextEntry
+          autoCapitalize="none"
+        />
+
+        <Text style={styles.sectionTitle}>SerpAPI</Text>
+        <Text style={styles.hint}>Optional Google/Bing search results without scraping Google directly.</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="SerpAPI key"
+          placeholderTextColor={colors.textDim}
+          value={serpapiKey}
+          onChangeText={persistSerpapi}
           secureTextEntry
           autoCapitalize="none"
         />

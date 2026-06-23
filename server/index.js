@@ -43,6 +43,7 @@ import {
   runScheduledSocialPost,
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
+import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -430,6 +431,41 @@ app.post('/api/intel-gathering/firecrawl', express.json(), async (req, res) => {
   } catch (error) {
     console.error('Error calling Firecrawl:', error);
     res.status(500).json({ error: 'Failed to scrape URL' });
+  }
+});
+
+/** Hive Cloud Intel — SerpAPI / Firecrawl via server keys (never hits google.com directly). */
+app.get('/api/intel-gathering/cloud-tools', (_req, res) => {
+  res.json({
+    tools: INTEL_CLOUD_TOOL_IDS,
+    costsUsd: Object.fromEntries(INTEL_CLOUD_TOOL_IDS.map((id) => [id, intelToolCostUsd(id)])),
+  });
+});
+
+app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => {
+  try {
+    const { userId, toolId, params } = req.body ?? {};
+    if (!userId || !toolId) {
+      return res.status(400).json({ error: 'userId and toolId are required' });
+    }
+    if (!INTEL_CLOUD_TOOL_IDS.includes(toolId)) {
+      return res.status(400).json({ error: 'Unsupported cloud tool' });
+    }
+    const result = await runIntelCloudTool(db, { checkBuildCredits, reserveBuildCredits }, {
+      userId,
+      toolId,
+      params: params ?? {},
+    });
+    if (!result.ok && result.needPayment) {
+      return res.status(402).json(result);
+    }
+    if (!result.ok) {
+      return res.status(500).json({ error: result.error ?? 'Cloud tool failed' });
+    }
+    res.json(result);
+  } catch (error) {
+    console.error('[intel/cloud-tool]', error);
+    res.status(500).json({ error: 'Intel cloud tool failed' });
   }
 });
 
