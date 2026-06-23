@@ -363,38 +363,73 @@ async function verifyAdmin(req, res, next) {
 app.get('/api/intel-gathering/dbpr', async (req, res) => {
   try {
     const limit = 100;
-    // In local dev, standard firebase admin initializes to the (default) DB for the emulator / tests.
-    // However, this server explicitly queries the named DB `FIRESTORE_DATABASE_ID` due to `getFirestore(app, FIRESTORE_DATABASE_ID)`.
-    // To bridge the gap safely without refactoring the whole server startup script to use (default) everywhere,
-    // we query the default db for this specific operation if the primary db returns 0 results or fails.
-
     let snapshot;
     try {
       snapshot = await db.collection('intel_dbpr_records').limit(limit).get();
-    } catch (e) {
-      console.warn('intel_dbpr_records query failed on specific db, falling back to default db');
-    }
-
-    // Fallback to default database instance if specific DB is empty or errored (usually local emu scenario)
-    // We instantiate a fresh un-project-id restricted getFirestore call for the local emu
-    // since the server's initializeApp strictly sets it to the config ID which diverges from ADC.
-    if (!snapshot || snapshot.empty) {
-      console.warn('intel_dbpr_records specific db was empty, falling back to default ADC db');
+    } catch (dbError) {
+      console.error('Initial DB fetch failed (possibly missing ADC credentials):', dbError.message);
+      // Fallback for local testing or credential issues
       const fallbackApp = admin.apps.find(a => a.name === 'fallback_adc') || admin.initializeApp({}, 'fallback_adc');
       const defaultDb = getFirestore(fallbackApp);
-      snapshot = await defaultDb.collection('intel_dbpr_records').limit(limit).get();
+      try {
+        snapshot = await defaultDb.collection('intel_dbpr_records').limit(limit).get();
+      } catch (fallbackError) {
+        console.error('Fallback DB fetch failed:', fallbackError.message);
+        // If both fail, return empty records instead of 500 to avoid breaking the UI
+        return res.json({ records: [] });
+      }
+    }
+
+    if (!snapshot) {
+      return res.json({ records: [] });
     }
 
     const records = [];
-
     snapshot.forEach(doc => {
       records.push({ id: doc.id, ...doc.data() });
     });
 
     res.json({ records });
   } catch (error) {
-    console.error('Error fetching DBPR records:', error);
+    console.error('Error in DBPR records endpoint:', error);
     res.status(500).json({ error: 'Failed to fetch DBPR records' });
+  }
+});
+
+app.post('/api/intel-gathering/firecrawl', express.json(), async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    const apiKey = process.env.FIRECRAWL_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Firecrawl API key is not configured' });
+    }
+
+    const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        url: url,
+        formats: ['markdown']
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(`Firecrawl API error: ${response.status} ${response.statusText}`, { cause: errorData });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Error calling Firecrawl:', error);
+    res.status(500).json({ error: 'Failed to scrape URL' });
   }
 });
 

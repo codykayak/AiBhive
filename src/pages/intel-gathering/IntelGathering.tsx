@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, Activity, Search, MapPin, Building2, Filter } from 'lucide-react';
+import { ShieldAlert, Activity, Search, MapPin, Building2, Filter, Globe, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface DBPRRecord {
@@ -20,6 +20,42 @@ export default function IntelGathering() {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+
+  // Firecrawl states
+  const [targetUrl, setTargetUrl] = useState('');
+  const [isCrawling, setIsCrawling] = useState(false);
+  const [crawlResult, setCrawlResult] = useState<string | null>(null);
+  const [crawlError, setCrawlError] = useState<string | null>(null);
+
+  const handleFirecrawl = async () => {
+    if (!targetUrl) return;
+    setIsCrawling(true);
+    setCrawlError(null);
+    setCrawlResult(null);
+
+    try {
+      const response = await fetch('/api/intel-gathering/firecrawl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: targetUrl }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to scrape the URL');
+      }
+
+      const data = await response.json();
+      setCrawlResult(data.data?.markdown || 'No markdown data extracted.');
+    } catch (err) {
+      if (err instanceof Error) {
+        setCrawlError(err.message);
+      } else {
+        setCrawlError('An unknown error occurred during scanning.');
+      }
+    } finally {
+      setIsCrawling(false);
+    }
+  };
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -63,6 +99,77 @@ export default function IntelGathering() {
       </div>
 
       <div className="bg-bee-black/40 border border-white/5 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+        <div className="mb-6 border-b border-white/5 pb-4">
+          <h2 className="text-lg font-medium text-white flex items-center">
+            <Globe className="w-5 h-5 mr-2 text-bee-amber" />
+            Deep Scan (Firecrawl)
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Extract comprehensive intelligence from any business website URL.
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-4 mb-4">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Globe className="h-5 w-5 text-slate-500" />
+            </div>
+            <input
+              type="url"
+              className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-bee-black/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-bee-amber focus:border-bee-amber sm:text-sm transition-colors"
+              placeholder="https://example-business.com"
+              value={targetUrl}
+              onChange={(e) => setTargetUrl(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleFirecrawl()}
+            />
+          </div>
+          <button
+            onClick={handleFirecrawl}
+            disabled={isCrawling || !targetUrl}
+            className="h-[46px] px-8 bg-bee-amber text-bee-black font-semibold rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            {isCrawling ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              <>
+                <Activity className="w-5 h-5 mr-2" />
+                Deep Scan
+              </>
+            )}
+          </button>
+        </div>
+
+        {crawlError && (
+          <div className="text-red-400 py-3 px-4 bg-red-400/10 rounded-lg border border-red-400/20 text-sm mb-4">
+            {crawlError}
+          </div>
+        )}
+
+        {crawlResult && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-4"
+          >
+            <label className="block text-sm font-medium text-slate-400 mb-2">Extracted Intelligence</label>
+            <div className="bg-bee-black/60 border border-white/5 rounded-xl p-4 max-h-[400px] overflow-y-auto">
+              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                {crawlResult}
+              </pre>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      <div className="bg-bee-black/40 border border-white/5 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+        <div className="mb-6 border-b border-white/5 pb-4">
+          <h2 className="text-lg font-medium text-white flex items-center">
+            <Filter className="w-5 h-5 mr-2 text-bee-amber" />
+            DBPR License Search Filters
+          </h2>
+        </div>
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
             <label htmlFor="search" className="block text-sm font-medium text-slate-400 mb-2">
