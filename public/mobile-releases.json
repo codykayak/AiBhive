@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.3.1",
-  "versionCode": 8,
-  "sourceVersion": "1.3.1",
-  "releaseNotes": "v1.3.1 — User Guide (how builds become apps), app detail screen, keyboard dismiss on send.",
+  "shippedNativeVersion": "1.5.1",
+  "versionCode": 14,
+  "sourceVersion": "1.5.1",
+  "releaseNotes": "v1.5.1 — Hive plans: Free, Starter ($5), Pro ($20/mo), Unlimited ($50/mo) with usage tracking and 20% token markup.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782129368162%2Ftaylored-mobile.apk.gz?alt=media&token=a60bc30a-fd7f-499f-af0f-7d522797b7e5",
-  "publishedAt": "2026-06-22T11:56:08.998Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782257104247%2Ftaylored-mobile.apk.gz?alt=media&token=fc22dd89-bf38-4a2a-9a4b-aeea8f402c92",
+  "publishedAt": "2026-06-23T23:25:05.225Z",
   "otaChannel": "production"
 }
