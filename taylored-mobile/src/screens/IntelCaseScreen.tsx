@@ -23,10 +23,13 @@ import {
 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton } from '../components/ui';
+import { HiveOrb } from '../components/HiveOrb';
+import { IntelDorkLinks } from '../components/IntelDorkLinks';
 import { colors, radii, spacing } from '../theme/colors';
 import { getIntelCase } from '../osint/cases';
 import { runIntelAgent } from '../osint/agent';
 import { buildJsonExport, buildRawDump, buildShareSummary } from '../osint/export';
+import { shareIntelPdf } from '../osint/pdfExport';
 import { getToolDef } from '../osint/tools/registry';
 import type { AgentProgressEvent, IntelCase, ToolRunResult } from '../osint/types';
 
@@ -116,6 +119,17 @@ export default function IntelCaseScreen() {
     await Share.share({ message: buildShareSummary(intelCase) });
   };
 
+  const exportPdf = async () => {
+    if (!intelCase) return;
+    try {
+      await shareIntelPdf(intelCase);
+    } catch (err) {
+      Alert.alert('PDF export failed', err instanceof Error ? err.message : 'Could not create PDF');
+    }
+  };
+
+  const dorkResult = intelCase?.toolResults.find((r) => r.toolId === 'google_dorks' && r.status === 'done');
+
   if (!intelCase) {
     return (
       <View style={styles.center}>
@@ -128,8 +142,14 @@ export default function IntelCaseScreen() {
   const resultsByTool = new Map(intelCase.toolResults.map((r) => [r.toolId, r]));
 
   return (
-    <ScreenLayout title={intelCase.target.label} subtitle="Intel case" showBrand={false} compactBadge>
+    <ScreenLayout title={intelCase.target.label} subtitle="AiBhive Intel case" compactBadge>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        {running && (
+          <View style={styles.orbWrap}>
+            <HiveOrb size={72} active />
+          </View>
+        )}
+
         <View style={styles.statusRow}>
           <Text style={styles.statusBadge}>{intelCase.status.toUpperCase()}</Text>
           {intelCase.agentProvider && (
@@ -163,7 +183,11 @@ export default function IntelCaseScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.exportBtn} onPress={() => void exportTxt()}>
                 <FileText color={colors.black} size={16} />
-                <Text style={styles.exportBtnText}>Export TXT</Text>
+                <Text style={styles.exportBtnText}>TXT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.exportBtn} onPress={() => void exportPdf()}>
+                <FileText color={colors.black} size={16} />
+                <Text style={styles.exportBtnText}>PDF</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.exportBtn, styles.exportBtnAlt]} onPress={() => void exportJson()}>
                 <FileText color={colors.amberLight} size={16} />
@@ -209,6 +233,8 @@ export default function IntelCaseScreen() {
           </>
         )}
 
+        {dorkResult?.data && <IntelDorkLinks data={dorkResult.data} />}
+
         {intelCase.rawDump && (
           <>
             <TouchableOpacity style={styles.rawToggle} onPress={() => setShowRaw(!showRaw)}>
@@ -238,6 +264,7 @@ export default function IntelCaseScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+  orbWrap: { alignItems: 'center', marginBottom: spacing.md },
   scroll: { paddingBottom: spacing.xl },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.md, flexWrap: 'wrap' },
   statusBadge: {

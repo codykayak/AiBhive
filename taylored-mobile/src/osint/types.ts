@@ -26,7 +26,9 @@ export type OsintToolId =
   | 'google_dorks'
   | 'firecrawl_search'
   | 'firecrawl_scrape'
-  | 'serp_search';
+  | 'serp_search'
+  | 'username_probe'
+  | 'wayback_snapshot';
 
 export type OsintToolDef = {
   id: OsintToolId;

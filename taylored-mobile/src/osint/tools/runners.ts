@@ -1,12 +1,16 @@
 import { buildDorkPack } from '../dorks';
+import { runIntelCloudTool } from '../../lib/intelCloud';
+import { safeFetch, safeFetchText } from '../safeFetch';
 import type { OsintToolId } from '../types';
 
 export type RunContext = {
   domain: string;
   company: string;
+  username?: string;
   userIntent?: string;
   firecrawlKey?: string | null;
   serpapiKey?: string | null;
+  useHiveCloud?: boolean;
 };
 
 const COMMON_SUBDOMAINS = [
@@ -67,26 +71,31 @@ function formatDnsAnswer(data: unknown, type: string): string {
   return d.Answer.map((a) => `${a.name} → ${a.data}`).join('\n');
 }
 
-async function fetchText(url: string, timeoutMs = 15000): Promise<{ text: string; headers: Record<string, string> }> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        Accept: 'text/html,application/xhtml+xml,text/plain,*/*',
-        'User-Agent': 'AiBhiveIntelAgent/1.0 (research; +https://aibhive.com)',
-      },
-    });
-    const headers: Record<string, string> = {};
-    res.headers.forEach((v, k) => {
-      headers[k.toLowerCase()] = v;
-    });
-    const text = await res.text();
-    return { text, headers };
-  } finally {
-    clearTimeout(timer);
-  }
+const USERNAME_SITES: { name: string; url: (u: string) => string; ok: (status: number) => boolean }[] = [
+  { name: 'GitHub', url: (u) => `https://github.com/${u}`, ok: (s) => s === 200 },
+  { name: 'Reddit', url: (u) => `https://www.reddit.com/user/${u}`, ok: (s) => s === 200 },
+  { name: 'Medium', url: (u) => `https://medium.com/@${u}`, ok: (s) => s === 200 },
+  { name: 'Dev.to', url: (u) => `https://dev.to/${u}`, ok: (s) => s === 200 },
+  { name: 'Keybase', url: (u) => `https://keybase.io/${u}`, ok: (s) => s === 200 },
+  { name: 'Hacker News', url: (u) => `https://news.ycombinator.com/user?id=${u}`, ok: (s) => s === 200 },
+  { name: 'GitLab', url: (u) => `https://gitlab.com/${u}`, ok: (s) => s === 200 },
+  { name: 'Pastebin', url: (u) => `https://pastebin.com/u/${u}`, ok: (s) => s === 200 },
+];
+
+async function fetchText(url: string, timeoutMs = 15000) {
+  return safeFetchText(url, timeoutMs);
+}
+
+async function runCloudOrThrow(
+  toolId: OsintToolId,
+  ctx: RunContext,
+  params: Record<string, string>
+): Promise<{ summary: string; data: string }> {
+  if (!ctx.useHiveCloud) throw new Error('API key not set — add in Settings or enable Hive Cloud');
+  const cloud = await runIntelCloudTool(toolId, params);
+  if (cloud.ok) return { summary: cloud.summary, data: cloud.data };
+  if (cloud.needPayment) throw new Error('Insufficient Hive credits — add credits in Settings');
+  throw new Error(cloud.error ?? 'Hive Cloud tool failed');
 }
 
 function stripHtml(html: string): string {
@@ -155,7 +164,7 @@ export async function runOsintTool(
 
     case 'cert_transparency': {
       const url = `https://crt.sh/?q=${encodeURIComponent(`%.${domain}`)}&output=json`;
-      const res = await fetch(url);
+      const res = await safeFetch(url);
       if (!res.ok) throw new Error(`crt.sh returned ${res.status}`);
       const rows = (await res.json()) as Array<{ name_value?: string }>;
       const names = new Set<string>();
@@ -192,7 +201,7 @@ export async function runOsintTool(
 
     case 'rdap_domain': {
       const url = `https://rdap.org/domain/${encodeURIComponent(domain)}`;
-      const res = await fetch(url, { headers: { Accept: 'application/rdap+json' } });
+      const res = await safeFetch(url, { headers: { Accept: 'application/rdap+json' } });
       if (!res.ok) throw new Error(`RDAP lookup failed (${res.status})`);
       const json = await res.json();
       const lines: string[] = [];
@@ -282,78 +291,128 @@ export async function runOsintTool(
 
     case 'google_dorks': {
       const pack = buildDorkPack({ domain, company });
-      const lines = pack.map((d, i) => `${i + 1}. ${d.label}\n   Query: ${d.query}\n   URL: ${d.googleUrl}`);
+      const lines = pack.map(
+        (d, i) =>
+          `${i + 1}. ${d.label}\n   Query: ${d.query}\n   Open in browser: ${d.googleUrl}\n   (AiBhive never scrapes Google — tap links in case view)`
+      );
       return {
-        summary: `${pack.length} dork queries generated`,
-        data: lines.join('\n\n'),
+        summary: `${pack.length} dork queries — use browser or SerpAPI`,
+        data: ['SAFE MODE: Dorks are not fetched automatically.', '', ...lines].join('\n\n'),
       };
+    }
+
+    case 'username_probe': {
+      const username = (ctx.username || company)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '');
+      if (!username) throw new Error('No username to probe');
+      const lines: string[] = [`Username: ${username}`, ''];
+      let found = 0;
+      for (const site of USERNAME_SITES) {
+        const url = site.url(username);
+        try {
+          const res = await safeFetch(url, { method: 'HEAD', timeoutMs: 8000 });
+          const hit = site.ok(res.status);
+          if (hit) found += 1;
+          lines.push(`${hit ? '✓' : '✗'} ${site.name}: ${url} (${res.status})`);
+        } catch {
+          lines.push(`? ${site.name}: ${url} (blocked or timeout)`);
+        }
+      }
+      return { summary: `${found} platforms may match`, data: lines.join('\n') };
+    }
+
+    case 'wayback_snapshot': {
+      const wbUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(baseUrl)}`;
+      const res = await safeFetch(wbUrl);
+      if (!res.ok) throw new Error(`Wayback API failed (${res.status})`);
+      const json = await res.json();
+      const closest = json?.archived_snapshots?.closest;
+      if (!closest?.available) {
+        return { summary: 'No Wayback snapshots', data: 'No archived snapshots found for this URL.' };
+      }
+      const data = [
+        `Snapshot URL: ${closest.url}`,
+        `Timestamp: ${closest.timestamp}`,
+        `Status: ${closest.status}`,
+      ].join('\n');
+      return { summary: 'Wayback snapshot found', data };
     }
 
     case 'firecrawl_search': {
-      if (!ctx.firecrawlKey) throw new Error('Firecrawl API key required — add in Settings');
-      const query = ctx.userIntent?.trim()
-        ? `${company} ${domain} ${ctx.userIntent}`
-        : `${company} ${domain} leadership contact technology news`;
-      const res = await fetch('https://api.firecrawl.dev/v1/search', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ctx.firecrawlKey}`,
-        },
-        body: JSON.stringify({
-          query,
-          limit: 8,
-          scrapeOptions: { formats: ['markdown'] },
-        }),
-      });
-      if (!res.ok) throw new Error(`Firecrawl search failed (${res.status})`);
-      const json = await res.json();
-      const chunks = (json.data ?? []).map(
-        (item: { title?: string; url?: string; markdown?: string; description?: string }, i: number) => {
-          const body = item.markdown || item.description || '';
-          return `[${i + 1}] ${item.title ?? 'Result'}\nURL: ${item.url ?? 'n/a'}\n${body.slice(0, 2500)}`;
-        }
-      );
-      return {
-        summary: `${chunks.length} Firecrawl search results`,
-        data: chunks.join('\n\n---\n\n').slice(0, 14000),
-      };
+      const cloudParams = { company, domain, userIntent: ctx.userIntent ?? '' };
+      if (ctx.firecrawlKey) {
+        const query = ctx.userIntent?.trim()
+          ? `${company} ${domain} ${ctx.userIntent}`
+          : `${company} ${domain} leadership contact technology news`;
+        const res = await fetch('https://api.firecrawl.dev/v1/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${ctx.firecrawlKey}`,
+          },
+          body: JSON.stringify({
+            query,
+            limit: 8,
+            scrapeOptions: { formats: ['markdown'] },
+          }),
+        });
+        if (!res.ok) throw new Error(`Firecrawl search failed (${res.status})`);
+        const json = await res.json();
+        const chunks = (json.data ?? []).map(
+          (item: { title?: string; url?: string; markdown?: string; description?: string }, i: number) => {
+            const body = item.markdown || item.description || '';
+            return `[${i + 1}] ${item.title ?? 'Result'}\nURL: ${item.url ?? 'n/a'}\n${body.slice(0, 2500)}`;
+          }
+        );
+        return {
+          summary: `${chunks.length} Firecrawl search results`,
+          data: chunks.join('\n\n---\n\n').slice(0, 14000),
+        };
+      }
+      return runCloudOrThrow('firecrawl_search', ctx, cloudParams);
     }
 
     case 'firecrawl_scrape': {
-      if (!ctx.firecrawlKey) throw new Error('Firecrawl API key required — add in Settings');
-      const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ctx.firecrawlKey}`,
-        },
-        body: JSON.stringify({ url: baseUrl, formats: ['markdown'] }),
-      });
-      if (!res.ok) throw new Error(`Firecrawl scrape failed (${res.status})`);
-      const json = await res.json();
-      const md = json?.data?.markdown ?? json?.markdown ?? '';
-      return {
-        summary: 'Homepage scraped via Firecrawl',
-        data: (typeof md === 'string' ? md : JSON.stringify(md)).slice(0, 14000),
-      };
+      if (ctx.firecrawlKey) {
+        const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${ctx.firecrawlKey}`,
+          },
+          body: JSON.stringify({ url: baseUrl, formats: ['markdown'] }),
+        });
+        if (!res.ok) throw new Error(`Firecrawl scrape failed (${res.status})`);
+        const json = await res.json();
+        const md = json?.data?.markdown ?? json?.markdown ?? '';
+        return {
+          summary: 'Homepage scraped via Firecrawl',
+          data: (typeof md === 'string' ? md : JSON.stringify(md)).slice(0, 14000),
+        };
+      }
+      return runCloudOrThrow('firecrawl_scrape', ctx, { url: baseUrl, domain, company });
     }
 
     case 'serp_search': {
-      if (!ctx.serpapiKey) throw new Error('SerpAPI key required — add in Settings');
-      const q = ctx.userIntent?.trim()
-        ? `${company} ${ctx.userIntent}`
-        : `${company} ${domain} company information`;
-      const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(q)}&api_key=${ctx.serpapiKey}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`SerpAPI failed (${res.status})`);
-      const json = await res.json();
-      const organic = (json.organic_results ?? []) as Array<{ title?: string; link?: string; snippet?: string }>;
-      const lines = organic.slice(0, 10).map((r, i) => `[${i + 1}] ${r.title}\n${r.link}\n${r.snippet ?? ''}`);
-      return {
-        summary: `${lines.length} SerpAPI results`,
-        data: lines.join('\n\n') || 'No organic results.',
-      };
+      const cloudParams = { company, domain, userIntent: ctx.userIntent ?? '' };
+      if (ctx.serpapiKey) {
+        const q = ctx.userIntent?.trim()
+          ? `${company} ${ctx.userIntent}`
+          : `${company} ${domain} company information`;
+        const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(q)}&api_key=${ctx.serpapiKey}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`SerpAPI failed (${res.status})`);
+        const json = await res.json();
+        const organic = (json.organic_results ?? []) as Array<{ title?: string; link?: string; snippet?: string }>;
+        const lines = organic.slice(0, 10).map((r, i) => `[${i + 1}] ${r.title}\n${r.link}\n${r.snippet ?? ''}`);
+        return {
+          summary: `${lines.length} SerpAPI results`,
+          data: lines.join('\n\n') || 'No organic results.',
+        };
+      }
+      return runCloudOrThrow('serp_search', ctx, cloudParams);
     }
 
     default:
@@ -366,12 +425,16 @@ export function canRunTool(
   ctx: RunContext
 ): { ok: true } | { ok: false; reason: string } {
   if (toolId === 'firecrawl_search' || toolId === 'firecrawl_scrape') {
-    if (!ctx.firecrawlKey) return { ok: false, reason: 'Firecrawl API key not set' };
+    if (!ctx.firecrawlKey && !ctx.useHiveCloud) {
+      return { ok: false, reason: 'Firecrawl key or Hive Cloud required' };
+    }
   }
   if (toolId === 'serp_search') {
-    if (!ctx.serpapiKey) return { ok: false, reason: 'SerpAPI key not set' };
+    if (!ctx.serpapiKey && !ctx.useHiveCloud) {
+      return { ok: false, reason: 'SerpAPI key or Hive Cloud required' };
+    }
   }
-  if (!ctx.domain && toolId !== 'google_dorks') {
+  if (!ctx.domain && toolId !== 'google_dorks' && toolId !== 'username_probe') {
     return { ok: false, reason: 'Domain could not be resolved from target' };
   }
   return { ok: true };

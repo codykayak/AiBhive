@@ -2,6 +2,8 @@ import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/
 import { getSerpApiKey } from '../lib/settings';
 import { resolveDomainFromTarget, updateIntelCase } from './cases';
 import { buildRawDump } from './export';
+import { loadUseHiveCloudIntel } from './preferences';
+import { toolDelay } from './safeFetch';
 import { OSINT_TOOLS, getToolDef } from './tools/registry';
 import { canRunTool, runOsintTool } from './tools/runners';
 import type {
@@ -57,12 +59,19 @@ function defaultPlan(enabledTools: OsintToolId[]): AgentPlan {
   };
 }
 
-async function buildPlannerPrompt(intelCase: IntelCase, firecrawlAvailable: boolean, serpAvailable: boolean): Promise<string> {
+async function buildPlannerPrompt(
+  intelCase: IntelCase,
+  firecrawlAvailable: boolean,
+  serpAvailable: boolean,
+  hiveCloud: boolean
+): Promise<string> {
   const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain);
   const toolList = OSINT_TOOLS.map((t) => {
     let status = 'available';
-    if (t.apiKeyField === 'firecrawl' && !firecrawlAvailable) status = 'NO API KEY — skip';
-    if (t.apiKeyField === 'serpapi' && !serpAvailable) status = 'NO API KEY — skip';
+    if (t.apiKeyField === 'firecrawl' && !firecrawlAvailable && !hiveCloud) status = 'NO KEY — skip unless Hive Cloud';
+    if (t.apiKeyField === 'serpapi' && !serpAvailable && !hiveCloud) status = 'NO KEY — skip unless Hive Cloud';
+    if (t.apiKeyField === 'firecrawl' && !firecrawlAvailable && hiveCloud) status = 'Hive Cloud available';
+    if (t.apiKeyField === 'serpapi' && !serpAvailable && hiveCloud) status = 'Hive Cloud available';
     if (!intelCase.enabledTools.includes(t.id)) status = 'disabled by user — skip';
     return `- ${t.id}: ${t.name} — ${t.description} [${status}]`;
   }).join('\n');
@@ -86,13 +95,14 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpKey = await getSerpApiKey();
+  const hiveCloud = await loadUseHiveCloudIntel();
 
   if (!llm) {
     return defaultPlan(intelCase.enabledTools);
   }
 
   try {
-    const prompt = await buildPlannerPrompt(intelCase, !!firecrawlKey, !!serpKey);
+    const prompt = await buildPlannerPrompt(intelCase, !!firecrawlKey, !!serpKey, hiveCloud);
     const raw = await sendChatMessage(
       llm,
       [],
@@ -159,8 +169,13 @@ export async function runIntelAgent(
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpapiKey = await getSerpApiKey();
+  const useHiveCloud = await loadUseHiveCloudIntel();
   const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain);
   const company = intelCase.target.label;
+  const username =
+    intelCase.target.type === 'person'
+      ? intelCase.target.label.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '')
+      : undefined;
 
   emit({ type: 'status', status: 'planning', message: 'AI agent is planning research…' });
 
@@ -179,14 +194,17 @@ export async function runIntelAgent(
   const ctx = {
     domain,
     company,
+    username,
     userIntent: intelCase.target.userIntent,
     firecrawlKey,
     serpapiKey,
+    useHiveCloud,
   };
 
   const results: ToolRunResult[] = [];
 
   for (const step of plan.steps) {
+    await toolDelay(350);
     const startedAt = new Date().toISOString();
     emit({ type: 'tool_start', toolId: step.toolId });
 

@@ -1,5 +1,9 @@
 import type { IntelCase } from './types';
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function section(title: string, body: string): string {
   if (!body.trim()) return '';
   return `\n${'='.repeat(60)}\n${title}\n${'='.repeat(60)}\n\n${body.trim()}\n`;
@@ -63,4 +67,25 @@ export function buildShareSummary(intelCase: IntelCase): string {
     `Full export available in app.`,
   ];
   return lines.filter(Boolean).join('\n');
+}
+
+export function buildPdfHtml(intelCase: IntelCase): string {
+  const brief = escapeHtml(intelCase.aiBrief ?? '');
+  const dump = escapeHtml(buildRawDump(intelCase).slice(0, 40000));
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/>
+<style>
+  body { font-family: system-ui, sans-serif; padding: 24px; color: #0f172a; }
+  h1 { color: #d97706; font-size: 22px; }
+  h2 { color: #b45309; font-size: 16px; margin-top: 20px; }
+  pre { white-space: pre-wrap; font-size: 10px; background: #f1f5f9; padding: 12px; border-radius: 8px; }
+  .meta { color: #64748b; font-size: 12px; }
+</style></head><body>
+  <h1>AiBhive Intel Report</h1>
+  <p class="meta">Target: ${escapeHtml(intelCase.target.label)} · ${escapeHtml(intelCase.updatedAt)}</p>
+  <h2>AI Intelligence Brief</h2>
+  <pre>${brief}</pre>
+  <h2>Full Data Dump</h2>
+  <pre>${dump}</pre>
+</body></html>`;
 }

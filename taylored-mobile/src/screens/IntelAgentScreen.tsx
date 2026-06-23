@@ -16,6 +16,7 @@ import { GlassCard, PrimaryButton } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/ai';
+import { loadUseHiveCloudIntel, saveUseHiveCloudIntel } from '../osint/preferences';
 import { OSINT_TOOLS, defaultEnabledToolIds } from '../osint/tools/registry';
 import { createIntelCase, estimateRunSeconds, listIntelCases, resolveDomainFromTarget } from '../osint/cases';
 import type { IntelCase, IntelTargetType, OsintToolId } from '../osint/types';
@@ -39,11 +40,17 @@ export default function IntelAgentScreen() {
   const [recentCases, setRecentCases] = useState<IntelCase[]>([]);
   const [agentReady, setAgentReady] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [useHiveCloud, setUseHiveCloud] = useState(true);
 
   const refresh = useCallback(async () => {
-    const [cases, llm] = await Promise.all([listIntelCases(), getActiveLlmConfig()]);
+    const [cases, llm, hiveCloud] = await Promise.all([
+      listIntelCases(),
+      getActiveLlmConfig(),
+      loadUseHiveCloudIntel(),
+    ]);
     setRecentCases(cases.slice(0, 5));
     setAgentReady(!!llm);
+    setUseHiveCloud(hiveCloud);
   }, []);
 
   useEffect(() => {
@@ -92,6 +99,11 @@ export default function IntelAgentScreen() {
 
   const estSeconds = estimateRunSeconds(enabledTools);
 
+  const onHiveCloudToggle = (value: boolean) => {
+    setUseHiveCloud(value);
+    void saveUseHiveCloudIntel(value);
+  };
+
   return (
     <ScreenLayout
       title="Intel Agent"
@@ -125,6 +137,26 @@ export default function IntelAgentScreen() {
               <Text style={styles.warnText}>Add an AI API key in Settings to activate the agent</Text>
             </TouchableOpacity>
           )}
+          <View style={styles.cloudRow}>
+            <Text style={styles.cloudLabel}>Use Hive Cloud for Firecrawl/SerpAPI</Text>
+            <Switch
+              value={useHiveCloud}
+              onValueChange={onHiveCloudToggle}
+              trackColor={{ false: colors.borderMuted, true: colors.amber }}
+              thumbColor={useHiveCloud ? colors.amberLight : colors.textDim}
+            />
+          </View>
+          <Text style={styles.cloudHint}>
+            Uses AiBhive credits when you lack your own API keys. Never scrapes Google directly.
+          </Text>
+        </GlassCard>
+
+        <GlassCard style={styles.disclaimerCard}>
+          <Text style={styles.disclaimerTitle}>Authorized research only</Text>
+          <Text style={styles.disclaimerBody}>
+            AiBhive Intel gathers publicly available data for legitimate business, security, and journalistic
+            research. Google dorks open in your browser — we never automate Google searches from the app.
+          </Text>
         </GlassCard>
 
         <Text style={styles.sectionLabel}>Target</Text>
@@ -256,6 +288,20 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
   },
   warnText: { color: colors.amberLight, fontSize: 13, flex: 1, fontWeight: '600' },
+  cloudRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderMuted,
+  },
+  cloudLabel: { color: colors.text, fontWeight: '700', fontSize: 13, flex: 1, marginRight: 8 },
+  cloudHint: { color: colors.textDim, fontSize: 11, marginTop: 6, lineHeight: 16 },
+  disclaimerCard: { padding: spacing.md, marginBottom: spacing.md },
+  disclaimerTitle: { color: colors.text, fontWeight: '800', fontSize: 13, marginBottom: 6 },
+  disclaimerBody: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
   sectionLabel: {
     color: colors.amberLight,
     fontWeight: '800',
