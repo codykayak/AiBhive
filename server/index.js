@@ -369,9 +369,9 @@ app.get('/api/intel-gathering/dbpr', async (req, res) => {
     } catch (dbError) {
       console.error('Initial DB fetch failed (possibly missing ADC credentials):', dbError.message);
       // Fallback for local testing or credential issues
-      const fallbackApp = admin.apps.find(a => a.name === 'fallback_adc') || admin.initializeApp({}, 'fallback_adc');
-      const defaultDb = getFirestore(fallbackApp);
       try {
+        const fallbackApp = admin.apps.find(a => a.name === 'fallback_adc') || admin.initializeApp({}, 'fallback_adc');
+        const defaultDb = fallbackApp.firestore();
         snapshot = await defaultDb.collection('intel_dbpr_records').limit(limit).get();
       } catch (fallbackError) {
         console.error('Fallback DB fetch failed:', fallbackError.message);

@@ -33,19 +33,24 @@ def fetch_dbpr_data():
             board_name = opt.text.strip()
             if board_name:
                 status = "Null and Void" if i % 2 == 0 else "Inactive"
+                # Mock expiration year based on index to simulate some being > 2 years expired (current year 2024 -> 2021 or older)
+                expiration_year = 2024 - (i % 5) # Distributes expiration years from 2020 to 2024
+
                 records.append({
                     "license_number": f"DBPR-BRD-{i}",
                     "name": board_name,
-                    "status": status
+                    "status": status,
+                    "expiration_date": f"{expiration_year}-01-01"
                 })
 
     except requests.RequestException as e:
         print(f"Failed to fetch {url}: {e}. Falling back to mock data.")
         records = [
-            {"license_number": "123", "name": "John Doe", "status": "Null and Void"},
-            {"license_number": "456", "name": "Jane Smith", "status": "Active"},
-            {"license_number": "789", "name": "Acme Corp", "status": "Inactive"},
-            {"license_number": "101", "name": "Bob Builder", "status": "Active"},
+            {"license_number": "123", "name": "John Doe", "status": "Null and Void", "expiration_date": "2020-05-10"},
+            {"license_number": "456", "name": "Jane Smith", "status": "Active", "expiration_date": "2025-10-12"},
+            {"license_number": "789", "name": "Acme Corp", "status": "Inactive", "expiration_date": "2023-01-01"},
+            {"license_number": "101", "name": "Bob Builder", "status": "Active", "expiration_date": "2026-08-01"},
+            {"license_number": "102", "name": "Alice Wonderland", "status": "Null and Void", "expiration_date": "2019-12-31"},
         ]
 
     return records

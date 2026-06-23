@@ -20,6 +20,23 @@ export default function IntelGathering() {
   const [searchTerm, setSearchTerm] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [expiredFilter, setExpiredFilter] = useState(false);
+
+  const [appliedFilters, setAppliedFilters] = useState({
+    search: '',
+    location: '',
+    type: '',
+    expiredOverTwoYears: false
+  });
+
+  const handleApplyFilters = () => {
+    setAppliedFilters({
+      search: searchTerm,
+      location: locationFilter,
+      type: typeFilter,
+      expiredOverTwoYears: expiredFilter
+    });
+  };
 
   // Firecrawl states
   const [targetUrl, setTargetUrl] = useState('');
@@ -227,8 +244,38 @@ export default function IntelGathering() {
               />
             </div>
           </div>
+        </div>
 
-          <button className="h-[42px] px-6 bg-bee-amber text-bee-black font-semibold rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mt-6 pt-6 border-t border-white/5 gap-4">
+          <label className="flex items-center space-x-3 cursor-pointer group">
+            <div className="relative flex items-center">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={expiredFilter}
+                onChange={(e) => setExpiredFilter(e.target.checked)}
+              />
+              <div className="w-6 h-6 border-2 border-slate-500 rounded bg-bee-black/50 peer-checked:bg-bee-amber peer-checked:border-bee-amber transition-all flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-bee-black opacity-0 peer-checked:opacity-100 transition-opacity"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+              Only show licenses expired &gt; 2 years
+            </span>
+          </label>
+
+          <button
+            onClick={handleApplyFilters}
+            className="h-[42px] px-6 bg-bee-amber text-bee-black font-semibold rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center"
+          >
             <Filter className="w-5 h-5 mr-2" />
             Apply Filters
           </button>
@@ -258,20 +305,32 @@ export default function IntelGathering() {
             </div>
           ) : (() => {
             const filteredRecords = records.filter(record => {
-              const matchesSearch = searchTerm === '' ||
-                record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                record.license_number.toLowerCase().includes(searchTerm.toLowerCase());
+              const matchesSearch = appliedFilters.search === '' ||
+                record.name.toLowerCase().includes(appliedFilters.search.toLowerCase()) ||
+                record.license_number.toLowerCase().includes(appliedFilters.search.toLowerCase());
 
               // Mock logic for location/type until backend supports it
               const recordLocation = record.location || '';
-              const matchesLocation = locationFilter === '' ||
-                recordLocation.toLowerCase().includes(locationFilter.toLowerCase());
+              const matchesLocation = appliedFilters.location === '' ||
+                recordLocation.toLowerCase().includes(appliedFilters.location.toLowerCase());
 
               const recordType = record.type || record.name; // Fallback to name for type in our demo
-              const matchesType = typeFilter === '' ||
-                recordType.toLowerCase().includes(typeFilter.toLowerCase());
+              const matchesType = appliedFilters.type === '' ||
+                recordType.toLowerCase().includes(appliedFilters.type.toLowerCase());
 
-              return matchesSearch && matchesLocation && matchesType;
+              let matchesExpiration = true;
+              if (appliedFilters.expiredOverTwoYears) {
+                if (!record.expiration_date) {
+                  matchesExpiration = false; // Exclude if it doesn't have an expiration date
+                } else {
+                  const expDate = new Date(record.expiration_date);
+                  const twoYearsAgo = new Date();
+                  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+                  matchesExpiration = expDate < twoYearsAgo;
+                }
+              }
+
+              return matchesSearch && matchesLocation && matchesType && matchesExpiration;
             });
 
             if (filteredRecords.length === 0) {
@@ -290,6 +349,7 @@ export default function IntelGathering() {
                       <th className="pb-4 text-sm font-medium text-slate-400 px-4">License Number</th>
                       <th className="pb-4 text-sm font-medium text-slate-400 px-4">Name / Type</th>
                       <th className="pb-4 text-sm font-medium text-slate-400 px-4">Location</th>
+                      <th className="pb-4 text-sm font-medium text-slate-400 px-4">Expiration</th>
                       <th className="pb-4 text-sm font-medium text-slate-400 px-4">Status</th>
                     </tr>
                   </thead>
@@ -304,6 +364,7 @@ export default function IntelGathering() {
                         <td className="py-4 px-4 text-white font-mono text-sm">{record.license_number}</td>
                         <td className="py-4 px-4 text-slate-300">{record.name}</td>
                         <td className="py-4 px-4 text-slate-400 text-sm">{record.location || 'N/A'}</td>
+                        <td className="py-4 px-4 text-slate-400 text-sm">{record.expiration_date || 'N/A'}</td>
                         <td className="py-4 px-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                             record.status === 'Inactive'
