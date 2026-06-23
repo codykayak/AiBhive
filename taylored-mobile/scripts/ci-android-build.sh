@@ -49,9 +49,8 @@ yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
 cp ../credentials/android-release.keystore my-release-key.keystore
 
-echo "==> Gradle assembleRelease (arm phones only, lint skipped)"
+echo "==> Gradle assembleRelease (arm phones only, lint disabled)"
 ./gradlew :app:assembleRelease --no-daemon --max-workers=1 \
-  -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
   -PreactNativeArchitectures=armeabi-v7a,arm64-v8a \
   -Pandroid.injected.signing.store.file="$(pwd)/my-release-key.keystore" \
   -Pandroid.injected.signing.store.password=taylored2026 \
