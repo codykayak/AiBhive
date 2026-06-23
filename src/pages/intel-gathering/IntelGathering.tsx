@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ShieldAlert, Activity, Search } from 'lucide-react';
+import { ShieldAlert, Activity, Search, MapPin, Building2, Filter } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface DBPRRecord {
@@ -7,12 +7,19 @@ interface DBPRRecord {
   license_number: string;
   name: string;
   status: string;
+  location?: string;
+  type?: string;
 }
 
 export default function IntelGathering() {
   const [records, setRecords] = useState<DBPRRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -55,6 +62,72 @@ export default function IntelGathering() {
         </p>
       </div>
 
+      <div className="bg-bee-black/40 border border-white/5 rounded-2xl p-6 mb-8 backdrop-blur-sm">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="flex-1">
+            <label htmlFor="search" className="block text-sm font-medium text-slate-400 mb-2">
+              Business Name or License Number
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-slate-500" />
+              </div>
+              <input
+                type="text"
+                id="search"
+                className="block w-full pl-10 pr-3 py-2.5 border border-white/10 rounded-xl leading-5 bg-bee-black/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-bee-amber focus:border-bee-amber sm:text-sm transition-colors"
+                placeholder="Search anything..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <label htmlFor="location" className="block text-sm font-medium text-slate-400 mb-2">
+              Location
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-slate-500" />
+              </div>
+              <input
+                type="text"
+                id="location"
+                className="block w-full pl-10 pr-3 py-2.5 border border-white/10 rounded-xl leading-5 bg-bee-black/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-bee-amber focus:border-bee-amber sm:text-sm transition-colors"
+                placeholder="City, State, or Zip"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <label htmlFor="type" className="block text-sm font-medium text-slate-400 mb-2">
+              Business Type
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Building2 className="h-5 w-5 text-slate-500" />
+              </div>
+              <input
+                type="text"
+                id="type"
+                className="block w-full pl-10 pr-3 py-2.5 border border-white/10 rounded-xl leading-5 bg-bee-black/50 text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-bee-amber focus:border-bee-amber sm:text-sm transition-colors"
+                placeholder="e.g. Real Estate, Contractor"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <button className="h-[42px] px-6 bg-bee-amber text-bee-black font-semibold rounded-xl hover:bg-yellow-400 transition-colors flex items-center justify-center">
+            <Filter className="w-5 h-5 mr-2" />
+            Apply Filters
+          </button>
+        </div>
+      </div>
+
       <div className="bg-bee-black/40 border border-white/5 rounded-2xl overflow-hidden backdrop-blur-sm">
         <div className="p-6 border-b border-white/5">
           <h2 className="text-lg font-medium text-white flex items-center">
@@ -76,37 +149,70 @@ export default function IntelGathering() {
             <div className="text-slate-400 py-12 text-center">
               No records found.
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-white/5">
-                    <th className="pb-4 text-sm font-medium text-slate-400 px-4">License Number</th>
-                    <th className="pb-4 text-sm font-medium text-slate-400 px-4">Name</th>
-                    <th className="pb-4 text-sm font-medium text-slate-400 px-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {records.map((record) => (
-                    <motion.tr
-                      key={record.id || record.license_number}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="py-4 px-4 text-white font-mono text-sm">{record.license_number}</td>
-                      <td className="py-4 px-4 text-slate-300">{record.name}</td>
-                      <td className="py-4 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-400/10 text-red-400 border border-red-400/20">
-                          {record.status}
-                        </span>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          ) : (() => {
+            const filteredRecords = records.filter(record => {
+              const matchesSearch = searchTerm === '' ||
+                record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                record.license_number.toLowerCase().includes(searchTerm.toLowerCase());
+
+              // Mock logic for location/type until backend supports it
+              const recordLocation = record.location || '';
+              const matchesLocation = locationFilter === '' ||
+                recordLocation.toLowerCase().includes(locationFilter.toLowerCase());
+
+              const recordType = record.type || record.name; // Fallback to name for type in our demo
+              const matchesType = typeFilter === '' ||
+                recordType.toLowerCase().includes(typeFilter.toLowerCase());
+
+              return matchesSearch && matchesLocation && matchesType;
+            });
+
+            if (filteredRecords.length === 0) {
+              return (
+                <div className="text-slate-400 py-12 text-center">
+                  No records match your filters.
+                </div>
+              );
+            }
+
+            return (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/5">
+                      <th className="pb-4 text-sm font-medium text-slate-400 px-4">License Number</th>
+                      <th className="pb-4 text-sm font-medium text-slate-400 px-4">Name / Type</th>
+                      <th className="pb-4 text-sm font-medium text-slate-400 px-4">Location</th>
+                      <th className="pb-4 text-sm font-medium text-slate-400 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredRecords.map((record) => (
+                      <motion.tr
+                        key={record.id || record.license_number}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="hover:bg-white/[0.02] transition-colors"
+                      >
+                        <td className="py-4 px-4 text-white font-mono text-sm">{record.license_number}</td>
+                        <td className="py-4 px-4 text-slate-300">{record.name}</td>
+                        <td className="py-4 px-4 text-slate-400 text-sm">{record.location || 'N/A'}</td>
+                        <td className="py-4 px-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                            record.status === 'Inactive'
+                              ? 'bg-orange-400/10 text-orange-400 border-orange-400/20'
+                              : 'bg-red-400/10 text-red-400 border-red-400/20'
+                          }`}>
+                            {record.status}
+                          </span>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
