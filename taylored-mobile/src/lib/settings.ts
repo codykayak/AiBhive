@@ -138,6 +138,14 @@ export async function saveFirecrawlApiKey(apiKey: string): Promise<void> {
   await secureSet('api_key_firecrawl', apiKey);
 }
 
+export async function getSerpApiKey(): Promise<string | null> {
+  return secureGet('api_key_serpapi');
+}
+
+export async function saveSerpApiKey(apiKey: string): Promise<void> {
+  await secureSet('api_key_serpapi', apiKey);
+}
+
 export async function setProviderEnabled(id: ProviderId, enabled: boolean): Promise<AiPrefs> {
   const prefs = await loadAiPrefs();
   prefs.providers[id] = { ...prefs.providers[id], enabled };

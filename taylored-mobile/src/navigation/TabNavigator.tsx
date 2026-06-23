@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Wand2, LayoutGrid, Settings } from 'lucide-react-native';
+import { Wand2, LayoutGrid, Settings, Radar } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
+import IntelAgentScreen from '../screens/IntelAgentScreen';
 import AppsScreen from '../screens/AppsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { colors, radii } from '../theme/colors';
@@ -72,6 +73,18 @@ export default function TabNavigator() {
           tabBarIcon: ({ color, size, focused }) => (
             <View style={[styles.iconWrap, focused && styles.iconWrapOn]}>
               <Wand2 color={color} size={size} />
+            </View>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Intel"
+        component={IntelAgentScreen}
+        options={{
+          tabBarLabel: 'Intel',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[styles.iconWrap, focused && styles.iconWrapOn]}>
+              <Radar color={color} size={size} />
             </View>
           ),
         }}
