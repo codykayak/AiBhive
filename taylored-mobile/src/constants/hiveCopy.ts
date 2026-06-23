@@ -13,7 +13,17 @@ export const HIVE_COPY = {
   needCredits: (amount: number) =>
     `This build needs about $${amount.toFixed(0)} in Hive credit. Add credits to continue.`,
   addCredits: 'Add credits',
-  balanceLabel: (bal: number) => `Hive credit: $${bal.toFixed(2)}`,
+  balanceLabel: (bal: number) => `Credit balance: $${bal.toFixed(2)}`,
+  planLabel: (name: string) => `Plan: ${name}`,
+  usageRemaining: (usd: number) => `$${usd.toFixed(2)} remaining`,
+  usageThisMonth: (used: number, allowance: number) =>
+    `$${used.toFixed(2)} used of $${allowance.toFixed(2)} this month`,
+  tokenMarkupNote: (markup: number) => {
+    const pct = Math.round((markup - 1) * 100);
+    return `Hive AI & cloud tools billed at API cost + ${pct}%`;
+  },
+  freeWithoutTokens:
+    'Free forever: job tools, on-device research, and BYOK AI — no Hive token charges.',
   serverOffline:
     'Our build service is reconnecting. I can still chat, and you can use My Apps. Try again in a moment.',
   buildStarted: 'Build started. We\'ll notify you when it\'s ready.',

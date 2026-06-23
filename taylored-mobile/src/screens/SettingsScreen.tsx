@@ -15,6 +15,7 @@ import {
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard } from '../components/ui';
+import { PlansPanel } from '../components/PlansPanel';
 import { AI_PROVIDERS, type ProviderId } from '../constants/providers';
 import {
   DEFAULT_PREFS,
@@ -72,6 +73,8 @@ export default function SettingsScreen() {
   const tabBarPadding = useTabBarPadding(24);
   const { user, loading: authLoading, signInWithGoogle, signOut } = useAuth();
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
+  const [planId, setPlanId] = useState('free');
+  const [usage, setUsage] = useState<import('../lib/hiveAccount').UsageBudget | null>(null);
   const [prefs, setPrefs] = useState<AiPrefs>(() => ({
     activeProviderId: DEFAULT_PREFS.activeProviderId,
     providers: { ...DEFAULT_PREFS.providers },
@@ -87,6 +90,15 @@ export default function SettingsScreen() {
   const [otaPending, setOtaPending] = useState(false);
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const instructionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const refreshAccount = useCallback(async () => {
+    const a = await fetchHiveAccount();
+    if (a) {
+      setCreditBalance(a.creditBalanceUsd);
+      setPlanId(a.planId ?? a.usage?.planId ?? 'free');
+      setUsage(a.usage ?? null);
+    }
+  }, []);
 
   const boot = useCallback(async () => {
     setKeysLoading(true);
@@ -124,7 +136,9 @@ export default function SettingsScreen() {
     } finally {
       setKeysLoading(false);
     }
-  }, []);
+
+    await refreshAccount();
+  }, [refreshAccount]);
 
   useEffect(() => {
     boot();
@@ -163,13 +177,13 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (user) {
-      fetchHiveAccount().then((a) => {
-        if (a) setCreditBalance(a.creditBalanceUsd);
-      });
+      void refreshAccount();
     } else {
       setCreditBalance(null);
+      setUsage(null);
+      setPlanId('free');
     }
-  }, [user]);
+  }, [user, refreshAccount]);
 
   const flashSaved = (label: string) => {
     setSaveStatus(`${label} saved`);
@@ -268,6 +282,9 @@ export default function SettingsScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: tabBarPadding }}>
         {!!saveStatus && <Text style={styles.saved}>{saveStatus}</Text>}
 
+        <Text style={styles.sectionTitle}>Plans & usage</Text>
+        <PlansPanel usage={usage} currentPlanId={planId} onRefresh={() => void refreshAccount()} />
+
         <Text style={styles.sectionTitle}>Your account</Text>
         <GlassCard style={styles.providerCard}>
           {!GOOGLE_AUTH_ENABLED ? (
@@ -296,7 +313,7 @@ export default function SettingsScreen() {
           ) : (
             <>
               <Text style={styles.hint}>
-                Sign in with Google to save your resume, jobs, and $5 welcome Hive credits across devices.
+                Sign in with Google to sync jobs, usage, and plans across devices.
               </Text>
               <TouchableOpacity style={styles.googleBtn} onPress={() => void signInWithGoogle()}>
                 <Text style={styles.googleBtnText}>Continue with Google</Text>

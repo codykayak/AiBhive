@@ -18,7 +18,7 @@
  * iteration floor instead of the base-tier floor.
  */
 
-const MARKUP = Number(process.env.HIVE_MARKUP_MULTIPLIER ?? 1.3);
+const MARKUP = Number(process.env.HIVE_MARKUP_MULTIPLIER ?? 1.2);
 const MAX_CHARGE_USD = Number(process.env.HIVE_MAX_CHARGE_USD ?? 60);
 const ROUND_TO = Number(process.env.HIVE_PRICE_ROUND_USD ?? 0.25);
 const ITERATION_DISCOUNT = Number(process.env.HIVE_ITERATION_DISCOUNT ?? 0.5);
@@ -121,7 +121,8 @@ export function getPricingConfig() {
       play_store: { floorUsd: BASE_FLOOR_USD.play_store, minutes: BASE_MINUTES.play_store },
     },
     autoApproveUsd: AUTO_APPROVE_USD_DEFAULT,
-    welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 15),
+    welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 0),
+    tokenMarkupMultiplier: Number(process.env.HIVE_TOKEN_MARKUP ?? 1.2),
     estimateSource: 'tiered_base_plus_token_addon',
   };
 }

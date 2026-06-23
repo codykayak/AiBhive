@@ -30,7 +30,10 @@ import {
   createCreditsCheckout,
   applyCreditPurchase,
   checkBuildCredits,
+  createPlanCheckout,
 } from './hiveBilling.js';
+import { getPlan, listPlansForClient, TOKEN_MARKUP } from './hivePlans.js';
+import { ensureUsagePeriod, setUserPlan, recordTokenUsage, checkTokenBudget } from './hiveUsage.js';
 import { verifyHiveAuth } from './hiveAuth.js';
 import { isHiveFreeBuildEmail } from './hiveAdmin.js';
 import { priceEstimate, getPricingConfig, getAutoApproveDefaultUsd } from './hivePricing.js';
@@ -197,6 +200,33 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       return res.json({ received: true });
     }
 
+    if (session.metadata?.purpose === 'hive_plan' && session.metadata?.hiveUserId) {
+      try {
+        const planId = session.metadata.planId || 'starter';
+        const plan = getPlan(planId);
+        await setUserPlan(db, session.metadata.hiveUserId, planId, {
+          applyStarterCredit: plan.interval === 'once',
+          stripeCustomerId: session.customer ?? null,
+          stripeSubscriptionId: session.subscription ?? null,
+        });
+        if (plan.interval === 'once') {
+          await db.collection('hive_ledger').doc().set({
+            userId: session.metadata.hiveUserId,
+            type: 'plan_purchase',
+            planId,
+            amountUsd: plan.priceUsd,
+            summary: `AiBhive ${plan.name} plan`,
+            stripeSessionId: session.id,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        console.log(`[hive] plan ${planId} activated for ${session.metadata.hiveUserId}`);
+      } catch (err) {
+        console.error('[hive] plan purchase failed:', err);
+      }
+      return res.json({ received: true });
+    }
+
     const leadId = session.client_reference_id;
 
     console.log(`Payment successful for lead: ${leadId}`);
@@ -313,6 +343,19 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   }
 
   // Return a 200 response to acknowledge receipt of the event
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object;
+    const userId = sub.metadata?.hiveUserId;
+    if (userId) {
+      try {
+        await setUserPlan(db, userId, 'free', { stripeSubscriptionId: null });
+        console.log(`[hive] subscription ended — ${userId} on free plan`);
+      } catch (err) {
+        console.error('[hive] subscription downgrade failed:', err);
+      }
+    }
+  }
+
   res.send();
 });
 
@@ -451,12 +494,12 @@ app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => 
     if (!INTEL_CLOUD_TOOL_IDS.includes(toolId)) {
       return res.status(400).json({ error: 'Unsupported cloud tool' });
     }
-    const result = await runIntelCloudTool(db, { checkBuildCredits, reserveBuildCredits }, {
+    const result = await runIntelCloudTool(db, { checkTokenBudget, recordTokenUsage }, {
       userId,
       toolId,
       params: params ?? {},
     });
-    if (!result.ok && result.needPayment) {
+    if (!result.ok && (result.needPayment || result.needUpgrade)) {
       return res.status(402).json(result);
     }
     if (!result.ok) {
@@ -1029,6 +1072,8 @@ app.get('/api/hive/status', async (_req, res) => {
     triageModel: process.env.HIVE_TRIAGE_MODEL || 'gemini-2.5-flash',
     buildModel: process.env.HIVE_CURSOR_MODEL || 'composer-2.5',
     pricing: getPricingConfig(),
+    plans: listPlansForClient(),
+    tokenMarkup: TOKEN_MARKUP,
     autoApproveDefaultUsd: getAutoApproveDefaultUsd(),
     buildUsage: usage,
     message: !geminiConfigured
@@ -1073,12 +1118,44 @@ app.post('/api/hive/auth/register', async (req, res) => {
       account: {
         userId: uid,
         creditBalanceUsd: account.creditBalanceUsd,
-        welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 5),
+        welcomeCreditUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 0),
       },
     });
   } catch (err) {
     console.error('[hive/auth/register]', err);
     return res.status(500).json({ error: err.message || 'Registration failed.' });
+  }
+});
+
+app.get('/api/hive/plans', (_req, res) => {
+  res.json({
+    plans: listPlansForClient(),
+    tokenMarkup: TOKEN_MARKUP,
+    freeFeatures: [
+      'On-device OSINT (no tokens)',
+      'Job tracker & resume tools',
+      'Build & chat with your own API keys',
+    ],
+  });
+});
+
+app.post('/api/hive/account/:userId/plan-checkout', async (req, res) => {
+  try {
+    const { planId, successUrl, cancelUrl } = req.body || {};
+    if (!planId || planId === 'free') {
+      return res.status(400).json({ error: 'planId required (starter, pro, unlimited).' });
+    }
+    await ensureHiveUser(db, req.params.userId);
+    const session = await createPlanCheckout(stripe, {
+      userId: req.params.userId,
+      planId,
+      successUrl,
+      cancelUrl,
+    });
+    return res.json({ checkoutUrl: session.url, planId });
+  } catch (err) {
+    console.error('[hive/plan-checkout]', err);
+    return res.status(500).json({ error: err.message || 'Plan checkout failed.' });
   }
 });
 

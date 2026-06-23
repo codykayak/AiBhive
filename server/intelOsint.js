@@ -2,22 +2,29 @@
  * Server-side Intel OSINT cloud tools — uses AiBhive env API keys.
  * Never proxies requests to google.com; SerpAPI/Firecrawl only.
  */
+import { applyTokenMarkup } from './hivePlans.js';
 
-const SERP_COST_USD = 0.02;
-const FIRECRAWL_SEARCH_COST_USD = 0.03;
-const FIRECRAWL_SCRAPE_COST_USD = 0.02;
+/** Raw API cost (before 20% markup). */
+const SERP_RAW_USD = 0.02;
+const FIRECRAWL_SEARCH_RAW_USD = 0.03;
+const FIRECRAWL_SCRAPE_RAW_USD = 0.02;
 
-export function intelToolCostUsd(toolId) {
+export function intelToolRawCostUsd(toolId) {
   switch (toolId) {
     case 'firecrawl_search':
-      return FIRECRAWL_SEARCH_COST_USD;
+      return FIRECRAWL_SEARCH_RAW_USD;
     case 'firecrawl_scrape':
-      return FIRECRAWL_SCRAPE_COST_USD;
+      return FIRECRAWL_SCRAPE_RAW_USD;
     case 'serp_search':
-      return SERP_COST_USD;
+      return SERP_RAW_USD;
     default:
       return 0.02;
   }
+}
+
+/** @deprecated use intelToolRawCostUsd + applyTokenMarkup */
+export function intelToolCostUsd(toolId) {
+  return applyTokenMarkup(intelToolRawCostUsd(toolId));
 }
 
 async function firecrawlSearch(apiKey, query) {
@@ -78,20 +85,24 @@ async function serpSearch(apiKey, query) {
 
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
- * @param {{ userId: string, toolId: string, params: Record<string, string> }} opts
+ * @param {{ checkTokenBudget: Function, recordTokenUsage: Function }} usage
  */
-export async function runIntelCloudTool(db, billing, opts) {
+export async function runIntelCloudTool(db, usage, opts) {
   const { userId, toolId, params = {} } = opts;
-  const cost = intelToolCostUsd(toolId);
-  const check = await billing.checkBuildCredits(db, userId, cost);
-  if (!check.ok) {
-    return { ok: false, needPayment: true, amountUsd: cost };
-  }
+  const rawCost = intelToolRawCostUsd(toolId);
+  const markedUp = applyTokenMarkup(rawCost);
 
-  const taskId = `intel-${toolId}-${Date.now()}`;
-  const reserve = await billing.reserveBuildCredits(db, userId, taskId, cost);
-  if (!reserve.ok) {
-    return { ok: false, needPayment: true, amountUsd: cost };
+  const check = await usage.checkTokenBudget(db, userId, markedUp, 'hive_cloud_intel');
+  if (!check.ok) {
+    return {
+      ok: false,
+      needPayment: true,
+      needUpgrade: true,
+      amountUsd: markedUp,
+      rawCostUsd: rawCost,
+      suggestedPlan: check.suggestedPlan ?? 'starter',
+      budget: check.budget,
+    };
   }
 
   const company = params.company || '';
@@ -135,10 +146,22 @@ export async function runIntelCloudTool(db, billing, opts) {
     };
   }
 
+  const charge = await usage.recordTokenUsage(db, userId, {
+    rawCostUsd: rawCost,
+    feature: 'hive_cloud_intel',
+    summary: `Intel cloud: ${toolId}`,
+    taskId: `intel-${toolId}-${Date.now()}`,
+  });
+
+  if (!charge.ok) {
+    return { ok: false, needPayment: true, needUpgrade: true, amountUsd: markedUp };
+  }
+
   return {
     ok: true,
-    costUsd: cost,
-    creditBalanceUsd: check.creditBalanceUsd - cost,
+    rawCostUsd: rawCost,
+    chargedUsd: charge.chargedUsd,
+    budget: charge.budget,
     ...result,
   };
 }

@@ -2,6 +2,8 @@
  * Hive platform billing — pay-for-what-you-use accounts.
  * Each mobile install gets a hive_user_id; balance stored in Firestore.
  */
+import { computeUsageBudget, getPlan } from './hivePlans.js';
+import { ensureUsagePeriod } from './hiveUsage.js';
 const HIVE_USERS = 'hive_users';
 const HIVE_LEDGER = 'hive_ledger';
 
@@ -15,9 +17,22 @@ export async function ensureHiveUser(db, userId) {
   if (snap.exists) return snap.data();
 
   const now = new Date().toISOString();
+  const { periodStart, periodEnd } = (() => {
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59, 999);
+    return { periodStart: start.toISOString(), periodEnd: end.toISOString() };
+  })();
   const doc = {
     userId,
-    creditBalanceUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 15),
+    planId: 'free',
+    creditBalanceUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 0),
+    monthlyAllowanceUsd: 0,
+    monthlyUsageUsd: 0,
+    lifetimeUsageUsd: 0,
+    periodStart,
+    periodEnd,
     totalSpentUsd: 0,
     buildCount: 0,
     createdAt: now,
@@ -30,6 +45,8 @@ export async function ensureHiveUser(db, userId) {
 /** @param {import('firebase-admin/firestore').Firestore} db */
 export async function getHiveAccount(db, userId) {
   const user = await ensureHiveUser(db, userId);
+  await ensureUsagePeriod(db, userId);
+  const fresh = (await db.collection(HIVE_USERS).doc(userId).get()).data() ?? user;
   const ledgerSnap = await db
     .collection(HIVE_LEDGER)
     .where('userId', '==', userId)
@@ -51,11 +68,19 @@ export async function getHiveAccount(db, userId) {
     }) ?? [];
 
   return {
-    userId: user.userId,
-    creditBalanceUsd: user.creditBalanceUsd ?? 0,
-    totalSpentUsd: user.totalSpentUsd ?? 0,
-    buildCount: user.buildCount ?? 0,
+    userId: fresh.userId,
+    planId: fresh.planId ?? 'free',
+    creditBalanceUsd: fresh.creditBalanceUsd ?? 0,
+    totalSpentUsd: fresh.totalSpentUsd ?? 0,
+    buildCount: fresh.buildCount ?? 0,
+    monthlyUsageUsd: fresh.monthlyUsageUsd ?? 0,
+    monthlyAllowanceUsd: fresh.monthlyAllowanceUsd ?? 0,
+    lifetimeUsageUsd: fresh.lifetimeUsageUsd ?? 0,
+    periodStart: fresh.periodStart ?? null,
+    periodEnd: fresh.periodEnd ?? null,
+    stripeSubscriptionId: fresh.stripeSubscriptionId ?? null,
     recentActivity,
+    usage: computeUsageBudget(fresh),
   };
 }
 
@@ -136,6 +161,74 @@ export async function createCreditsCheckout(stripe, { userId, amountUsd, taskId,
               : 'Add credits to build apps and modules',
           },
           unit_amount: dollars * 100,
+        },
+        quantity: 1,
+      },
+    ],
+  });
+  return session;
+}
+
+/**
+ * Stripe Checkout for AiBhive plans: starter ($5 once), pro ($20/mo), unlimited ($50/mo).
+ * @param {import('stripe').Stripe} stripe
+ */
+export async function createPlanCheckout(stripe, { userId, planId, successUrl, cancelUrl }) {
+  const plan = getPlan(planId);
+  if (!plan || plan.id === 'free') {
+    throw new Error('Invalid plan.');
+  }
+
+  const baseMetadata = {
+    hiveUserId: userId,
+    purpose: 'hive_plan',
+    planId: plan.id,
+  };
+
+  if (plan.interval === 'once') {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      success_url: successUrl || 'https://aibhive.com/hive/plan/success',
+      cancel_url: cancelUrl || 'https://aibhive.com/hive/plan/cancel',
+      metadata: {
+        ...baseMetadata,
+        creditAmountUsd: String(plan.creditOnPurchaseUsd || plan.priceUsd),
+      },
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `AiBhive ${plan.name}`,
+              description: plan.tagline,
+            },
+            unit_amount: Math.round(plan.priceUsd * 100),
+          },
+          quantity: 1,
+        },
+      ],
+    });
+    return session;
+  }
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'subscription',
+    success_url: successUrl || 'https://aibhive.com/hive/plan/success',
+    cancel_url: cancelUrl || 'https://aibhive.com/hive/plan/cancel',
+    metadata: baseMetadata,
+    subscription_data: {
+      metadata: baseMetadata,
+    },
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `AiBhive ${plan.name}`,
+            description: plan.tagline,
+          },
+          unit_amount: Math.round(plan.priceUsd * 100),
+          recurring: { interval: 'month' },
         },
         quantity: 1,
       },

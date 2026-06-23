@@ -3,11 +3,30 @@ import { getOrCreateHiveUserId } from './hiveApi';
 
 const HIVE_API_BASE = 'https://aibhive.com';
 
+export type UsageBudget = {
+  planId: string;
+  planName: string;
+  monthlyAllowanceUsd: number;
+  monthlyUsageUsd: number;
+  allowanceRemainingUsd: number;
+  creditBalanceUsd: number;
+  totalRemainingUsd: number;
+  softCapUsd: number;
+  lifetimeUsageUsd: number;
+  periodStart: string | null;
+  periodEnd: string | null;
+};
+
 export type HiveAccount = {
   userId: string;
+  planId?: string;
   creditBalanceUsd: number;
   totalSpentUsd: number;
   buildCount: number;
+  monthlyUsageUsd?: number;
+  monthlyAllowanceUsd?: number;
+  lifetimeUsageUsd?: number;
+  usage?: UsageBudget;
   recentActivity: Array<{
     id: string;
     type: string;
