@@ -63,6 +63,14 @@ const defaultNotes = {
     'v1.4.0 — Auto-deploy: builds now auto-merge, ship OTA in ~2 min, and rebuild a fresh APK + .gz mirror on each release. Adds per-build folder/branch isolation, Expo push notifications, auto-approve under $1.50, daily USD spend cap, iteration memory, and user-apps registry.',
   '1.4.1':
     'v1.4.1 — Instant operational apps: every build now appears in seconds inside AiBhive (no Play Store update needed). Five page types (list, tracker, note, calculator, info), six themes, eighteen icons. New Export Options screen with three paid upgrade paths: Web link (~$5), Android app (~$18), Play Store ready (~$35) — each with plain-English steps. Pricing tiers redesigned so quotes are meaningful, not all $0.50.',
+  '1.4.2':
+    'v1.4.2 — Intel Agent preview: AI-directed OSINT research with Google-safe tools.',
+  '1.4.3':
+    'v1.4.3 — Intel Agent expanded: Hive Cloud tools, PDF export, username/Wayback probes.',
+  '1.5.0':
+    'v1.5.0 — Simple Home hub: Do (jobs), Build (Hive Magic), Research (Intel Agent). Cleaner three-tab layout.',
+  '1.5.1':
+    'v1.5.1 — Hive plans: Free, Starter ($5), Pro ($20/mo), Unlimited ($50/mo) with usage tracking and 20% token markup.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

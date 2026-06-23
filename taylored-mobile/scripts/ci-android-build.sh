@@ -30,8 +30,17 @@ if grep -q '^org.gradle.jvmargs=' "$GRADLE_PROPS"; then
 else
   printf '\norg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m\n' >> "$GRADLE_PROPS"
 fi
-if ! grep -q '^android.lint.checkReleaseBuilds=' "$GRADLE_PROPS"; then
+# Lint vital tasks fail on CI when sibling lint report tasks are skipped — disable entirely.
+if grep -q '^android.lint.checkReleaseBuilds=' "$GRADLE_PROPS"; then
+  sed -i 's/^android.lint.checkReleaseBuilds=.*/android.lint.checkReleaseBuilds=false/' "$GRADLE_PROPS"
+else
   printf '\nandroid.lint.checkReleaseBuilds=false\n' >> "$GRADLE_PROPS"
+fi
+
+APP_BUILD_GRADLE=android/app/build.gradle
+if [[ -f "$APP_BUILD_GRADLE" ]] && ! grep -q 'checkReleaseBuilds false' "$APP_BUILD_GRADLE"; then
+  # Insert a lint block inside `android {` so release APK builds never block on lint.
+  sed -i '/^android {/a\    lint {\n        checkReleaseBuilds false\n        abortOnError false\n    }' "$APP_BUILD_GRADLE"
 fi
 
 cd android
@@ -41,8 +50,8 @@ yes | sdkmanager --licenses >/dev/null 2>&1 || true
 cp ../credentials/android-release.keystore my-release-key.keystore
 
 echo "==> Gradle assembleRelease (arm phones only, lint skipped)"
-./gradlew assembleRelease --no-daemon --max-workers=1 \
-  -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
+./gradlew :app:assembleRelease --no-daemon --max-workers=1 \
+  -x lintVitalRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease \
   -PreactNativeArchitectures=armeabi-v7a,arm64-v8a \
   -Pandroid.injected.signing.store.file="$(pwd)/my-release-key.keystore" \
   -Pandroid.injected.signing.store.password=taylored2026 \
