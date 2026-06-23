@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Wand2, LayoutGrid, Settings, Radar } from 'lucide-react-native';
+import { Home, LayoutGrid, Settings } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/HomeScreen';
-import IntelAgentScreen from '../screens/IntelAgentScreen';
 import AppsScreen from '../screens/AppsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { colors, radii } from '../theme/colors';
@@ -66,25 +65,13 @@ export default function TabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Build"
+        name="Home"
         component={HomeScreen}
         options={{
-          tabBarLabel: 'Build',
+          tabBarLabel: 'Home',
           tabBarIcon: ({ color, size, focused }) => (
             <View style={[styles.iconWrap, focused && styles.iconWrapOn]}>
-              <Wand2 color={color} size={size} />
-            </View>
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Intel"
-        component={IntelAgentScreen}
-        options={{
-          tabBarLabel: 'Intel',
-          tabBarIcon: ({ color, size, focused }) => (
-            <View style={[styles.iconWrap, focused && styles.iconWrapOn]}>
-              <Radar color={color} size={size} />
+              <Home color={color} size={size} />
             </View>
           ),
         }}
@@ -93,7 +80,7 @@ export default function TabNavigator() {
         name="Apps"
         component={AppsScreen}
         options={{
-          tabBarLabel: 'My Apps',
+          tabBarLabel: 'Toolkit',
           tabBarBadge: buildingCount > 0 ? buildingCount : undefined,
           tabBarBadgeStyle: styles.badge,
           tabBarIcon: ({ color, size, focused }) => (

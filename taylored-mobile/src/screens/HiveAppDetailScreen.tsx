@@ -126,7 +126,7 @@ export default function HiveAppDetailScreen() {
             </Text>
             <PrimaryButton
               label="Go to Build"
-              onPress={() => navigation.navigate('Main', { screen: 'Build' })}
+              onPress={() => navigation.navigate('HiveBuild')}
               style={styles.btn}
             />
           </GlassCard>

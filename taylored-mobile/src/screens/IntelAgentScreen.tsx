@@ -9,7 +9,7 @@ import {
   Switch,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Radar, Sparkles, ChevronRight, Clock, Shield } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { GlassCard, PrimaryButton } from '../components/ui';
@@ -29,12 +29,15 @@ const TARGET_TYPES: { id: IntelTargetType; label: string }[] = [
 
 export default function IntelAgentScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const prefillIntent = route.params?.prefillIntent as string | undefined;
   const tabBarPadding = useTabBarPadding(24);
   const [targetType, setTargetType] = useState<IntelTargetType>('company');
   const [targetLabel, setTargetLabel] = useState('');
   const [domainOverride, setDomainOverride] = useState('');
   const [userIntent, setUserIntent] = useState(
-    'I want to know everything there is to know about this target — leadership, tech stack, public contacts, infrastructure, and reputation.'
+    prefillIntent ||
+      'I want to know everything there is to know about this target — leadership, tech stack, public contacts, infrastructure, and reputation.'
   );
   const [enabledTools, setEnabledTools] = useState<OsintToolId[]>(() => defaultEnabledToolIds());
   const [recentCases, setRecentCases] = useState<IntelCase[]>([]);
@@ -106,8 +109,8 @@ export default function IntelAgentScreen() {
 
   return (
     <ScreenLayout
-      title="Intel Agent"
-      subtitle="Turn on your AI agent. It learns what you want to know, then directs AiBhive research modules to gather and synthesize intelligence."
+      title="Research"
+      subtitle="AI Intel Agent — tell it what to learn, it directs the search."
       compactBadge
     >
       <ScrollView

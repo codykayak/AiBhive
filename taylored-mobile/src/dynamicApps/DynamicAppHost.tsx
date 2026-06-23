@@ -178,7 +178,7 @@ export default function DynamicAppHost() {
             The Hive updates this exact app — your data stays. Tiny tweaks cost ~$0.50.
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('Main', { screen: 'Build' })}
+            onPress={() => navigation.navigate('HiveBuild')}
             style={[styles.iterBtn, { backgroundColor: brand.primary }]}
           >
             <Text style={[styles.iterBtnText, { color: brand.contrastText }]}>Go to Build</Text>

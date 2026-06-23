@@ -143,7 +143,7 @@ export default function HiveExportOptionsScreen() {
               } catch {
                 // 402 needs-payment OR auth — Build tab will surface the next step.
               }
-              navigation.navigate('Main', { screen: 'Build' });
+              navigation.navigate('HiveBuild');
               Alert.alert(
                 'Build started',
                 `We are working on your ${def.title.toLowerCase()}. You will get a notification when it is ready (~${def.estimate.split('·')[1]?.trim() || 'a few minutes'}). You can track progress on the Build tab.`

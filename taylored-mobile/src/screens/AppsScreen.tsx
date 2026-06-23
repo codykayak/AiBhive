@@ -116,7 +116,7 @@ export default function AppsScreen() {
           </Text>
           <PrimaryButton
             label="Go to Build"
-            onPress={() => navigation.navigate('Build')}
+            onPress={() => navigation.navigate('HiveBuild')}
             style={styles.buildBtn}
             icon={Sparkles}
           />
@@ -137,7 +137,7 @@ export default function AppsScreen() {
               <PrimaryButton
                 label="Start building"
                 variant="secondary"
-                onPress={() => navigation.navigate('Build')}
+                onPress={() => navigation.navigate('HiveBuild')}
                 style={{ marginTop: 12 }}
               />
             }

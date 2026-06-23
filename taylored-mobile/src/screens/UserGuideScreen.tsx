@@ -60,7 +60,7 @@ export default function UserGuideScreen() {
           </Text>
           <PrimaryButton
             label="Go to Build"
-            onPress={() => navigation.navigate('Main', { screen: 'Build' })}
+            onPress={() => navigation.navigate('Main', { screen: 'Home' })}
             style={styles.tipBtn}
           />
         </GlassCard>
