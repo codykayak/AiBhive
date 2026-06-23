@@ -1675,7 +1675,10 @@ app.post('/api/hive/apps/:appId/export', async (req, res) => {
 
 // --- Mobile release manifest (APK + OTA metadata) ---
 
-function loadMobileReleaseManifest() {
+const MOBILE_RELEASE_CACHE_MS = 30_000;
+let mobileReleaseCache = { at: 0, manifest: null };
+
+function loadMobileReleaseManifestFromDisk() {
   const manifestPath = path.join(__dirname, '../public/mobile-releases.json');
   if (!fs.existsSync(manifestPath)) return null;
   try {
@@ -1685,8 +1688,64 @@ function loadMobileReleaseManifest() {
   }
 }
 
-app.get('/api/mobile/releases', (_req, res) => {
-  const manifest = loadMobileReleaseManifest();
+function parseVersionParts(version) {
+  return String(version || '0')
+    .split('.')
+    .map((part) => parseInt(part, 10) || 0);
+}
+
+function isManifestNewer(a, b) {
+  if (!a) return false;
+  if (!b) return true;
+  const codeA = a.versionCode ?? 0;
+  const codeB = b.versionCode ?? 0;
+  if (codeA !== codeB) return codeA > codeB;
+  const partsA = parseVersionParts(a.shippedNativeVersion);
+  const partsB = parseVersionParts(b.shippedNativeVersion);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i += 1) {
+    const diff = (partsA[i] || 0) - (partsB[i] || 0);
+    if (diff !== 0) return diff > 0;
+  }
+  return false;
+}
+
+function pickNewerMobileReleaseManifest(remote, disk) {
+  if (isManifestNewer(remote, disk)) return remote;
+  if (isManifestNewer(disk, remote)) return disk;
+  return remote || disk;
+}
+
+async function fetchMobileReleaseFromRemote() {
+  const bucket = firebaseConfig.storageBucket;
+  if (!bucket) return null;
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/mobile%2Fmobile-releases.json?alt=media`;
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('[mobile/releases] remote manifest fetch failed:', err.message);
+    return null;
+  }
+}
+
+async function getMobileReleaseManifest() {
+  const now = Date.now();
+  if (mobileReleaseCache.manifest && now - mobileReleaseCache.at < MOBILE_RELEASE_CACHE_MS) {
+    return mobileReleaseCache.manifest;
+  }
+
+  const [remote, disk] = await Promise.all([
+    fetchMobileReleaseFromRemote(),
+    Promise.resolve(loadMobileReleaseManifestFromDisk()),
+  ]);
+  const manifest = pickNewerMobileReleaseManifest(remote, disk);
+  mobileReleaseCache = { at: now, manifest };
+  return manifest;
+}
+
+app.get('/api/mobile/releases', async (_req, res) => {
+  const manifest = await getMobileReleaseManifest();
   if (!manifest) {
     return res.status(404).json({ error: 'Release manifest not available.' });
   }
@@ -1751,9 +1810,17 @@ function resolveApkPath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
-app.get('/api/download/apk', (req, res) => {
+app.get('/api/download/apk', async (req, res) => {
+  const manifest = await getMobileReleaseManifest();
+  if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {
+    return res.redirect(302, manifest.firebaseGzUrl);
+  }
+
   const apkPath = resolveApkPath();
   if (!apkPath) {
+    if (manifest?.firebaseGzUrl) {
+      return res.redirect(302, manifest.firebaseGzUrl);
+    }
     return res.status(404).json({ error: 'APK not available yet. Try again after the mobile build finishes.' });
   }
 

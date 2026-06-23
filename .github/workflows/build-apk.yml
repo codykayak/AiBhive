@@ -99,6 +99,9 @@ jobs:
         if: steps.firebase.outputs.gz_url != ''
         run: node scripts/write-mobile-release.mjs --firebase-gz-url "${{ steps.firebase.outputs.gz_url }}"
 
+      - name: Publish release manifest to Firebase Storage
+        run: node scripts/publish-mobile-manifest-storage.mjs
+
       - name: Commit deployed APK + manifest
         run: |
           git config user.name "github-actions[bot]"
