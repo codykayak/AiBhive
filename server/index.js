@@ -360,6 +360,44 @@ async function verifyAdmin(req, res, next) {
   }
 }
 
+app.get('/api/intel-gathering/dbpr', async (req, res) => {
+  try {
+    const limit = 100;
+    // In local dev, standard firebase admin initializes to the (default) DB for the emulator / tests.
+    // However, this server explicitly queries the named DB `FIRESTORE_DATABASE_ID` due to `getFirestore(app, FIRESTORE_DATABASE_ID)`.
+    // To bridge the gap safely without refactoring the whole server startup script to use (default) everywhere,
+    // we query the default db for this specific operation if the primary db returns 0 results or fails.
+
+    let snapshot;
+    try {
+      snapshot = await db.collection('intel_dbpr_records').limit(limit).get();
+    } catch (e) {
+      console.warn('intel_dbpr_records query failed on specific db, falling back to default db');
+    }
+
+    // Fallback to default database instance if specific DB is empty or errored (usually local emu scenario)
+    // We instantiate a fresh un-project-id restricted getFirestore call for the local emu
+    // since the server's initializeApp strictly sets it to the config ID which diverges from ADC.
+    if (!snapshot || snapshot.empty) {
+      console.warn('intel_dbpr_records specific db was empty, falling back to default ADC db');
+      const fallbackApp = admin.apps.find(a => a.name === 'fallback_adc') || admin.initializeApp({}, 'fallback_adc');
+      const defaultDb = getFirestore(fallbackApp);
+      snapshot = await defaultDb.collection('intel_dbpr_records').limit(limit).get();
+    }
+
+    const records = [];
+
+    snapshot.forEach(doc => {
+      records.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.json({ records });
+  } catch (error) {
+    console.error('Error fetching DBPR records:', error);
+    res.status(500).json({ error: 'Failed to fetch DBPR records' });
+  }
+});
+
 app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);

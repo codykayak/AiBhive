@@ -23,6 +23,7 @@ import MedicalLegalMultiAgent from './pages/solutions/MedicalLegalMultiAgent';
 import RealEstateSolutions from './pages/solutions/RealEstateSolutions';
 import PhoneSystemsIntegration from './pages/solutions/PhoneSystemsIntegration';
 import BookConsultation from './pages/BookConsultation';
+import IntelGathering from './pages/intel-gathering/IntelGathering';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -59,6 +60,7 @@ function AnimatedRoutes() {
           <Route path="/solutions/real-estate-ai-automation" element={<RealEstateSolutions />} />
           <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
           <Route path="/book-consultation" element={<BookConsultation />} />
+          <Route path="/intel-gathering" element={<IntelGathering />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
