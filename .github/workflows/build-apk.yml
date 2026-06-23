@@ -107,7 +107,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "APK unchanged, skipping commit"
           else
-            git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip ci] [skip-apk]"
+            git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip-apk]"
             git push origin HEAD:main-fixed
           fi
 
