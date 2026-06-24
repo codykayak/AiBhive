@@ -21,6 +21,12 @@ import {
   saveUserApp,
   deleteUserApp,
   normalizeAppSpec,
+  searchCommunityToolkit,
+  listCommunityToolkit,
+  shareAppToCommunity,
+  installCommunityApp,
+  findToolkitMatch,
+  getCommunityApp,
 } from './hiveAppsApi.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
@@ -1294,6 +1300,25 @@ app.post('/api/hive/tasks', async (req, res) => {
       status = 'clarify';
       reply = triage.clarifyingQuestion || triage.summary;
     } else if (isSpecBuild) {
+      if (!isIteration) {
+      const toolkitHit = await findToolkitMatch(db, message.trim());
+      if (toolkitHit && resolvedUserId && resolvedUserId !== 'anonymous') {
+        const installed = await installCommunityApp(db, resolvedUserId, toolkitHit.id);
+        if (installed.ok) {
+          appId = installed.app.id;
+          appSpec = installed.app;
+          status = 'complete';
+          estimate = { costUsd: 0, minutes: 0 };
+          reply =
+            `Great news — the community already built something close!\n\n` +
+            `"${toolkitHit.title}" is now in My Apps (free install from the AiBhive toolkit).\n\n` +
+            `${toolkitHit.summary || toolkitHit.tagline || ''}\n\n` +
+            `Open it, use it, or ask me to tweak it if you want changes.`;
+        }
+      }
+      }
+
+      if (!appSpec) {
       // INSTANT path — no Cursor, no Play Store update.
       // Charge a small fixed fee (the "spec" tier) and write a HiveAppSpec
       // doc that the mobile app renders dynamically.
@@ -1344,6 +1369,11 @@ app.post('/api/hive/tasks', async (req, res) => {
         try {
           const saved = await saveUserApp(db, appSpec.ownerId, appSpec);
           appId = saved.id;
+          try {
+            await shareAppToCommunity(db, resolvedUserId, saved.id);
+          } catch (shareErr) {
+            console.warn('[hive/tasks] toolkit share skipped:', shareErr.message);
+          }
         } catch (err) {
           console.error('[hive/tasks] saving spec failed:', err.message);
           appSpec = null;
@@ -1359,6 +1389,7 @@ app.post('/api/hive/tasks', async (req, res) => {
         // routing through Cursor (which would charge much more).
         status = 'clarify';
         reply = 'I had trouble drafting that one. Try describing it as a list, tracker, note, calculator, or info page — or add a screenshot.';
+      }
       }
     } else if (triage.route === 'cursor') {
       status = 'awaiting_approval';
@@ -1619,6 +1650,44 @@ app.delete('/api/hive/apps/:appId', async (req, res) => {
   } catch (err) {
     console.error('[hive/apps] delete error:', err);
     return res.status(500).json({ error: 'Could not delete app.' });
+  }
+});
+
+app.post('/api/hive/apps/:appId/share', express.json(), async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const result = await shareAppToCommunity(db, ownerId, req.params.appId);
+    if (!result.ok) return res.status(404).json({ error: result.error || 'Could not share app.' });
+    return res.json({ ok: true, app: result.app });
+  } catch (err) {
+    console.error('[hive/apps] share error:', err);
+    return res.status(500).json({ error: 'Could not share app.' });
+  }
+});
+
+app.get('/api/hive/toolkit', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const apps = q ? await searchCommunityToolkit(db, q, 12) : await listCommunityToolkit(db, 24);
+    return res.json({ apps, query: q || null });
+  } catch (err) {
+    console.error('[hive/toolkit] list error:', err);
+    return res.status(500).json({ error: 'Could not load toolkit.' });
+  }
+});
+
+app.post('/api/hive/toolkit/:appId/install', express.json(), async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    await ensureHiveUser(db, ownerId);
+    const result = await installCommunityApp(db, ownerId, req.params.appId);
+    if (!result.ok) return res.status(404).json({ error: result.error || 'Install failed.' });
+    return res.json({ ok: true, app: result.app, sourceAppId: result.sourceAppId });
+  } catch (err) {
+    console.error('[hive/toolkit] install error:', err);
+    return res.status(500).json({ error: 'Could not install app.' });
   }
 });
 

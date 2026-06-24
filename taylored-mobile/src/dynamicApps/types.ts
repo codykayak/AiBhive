@@ -71,7 +71,17 @@ export interface HiveAppSpec {
   storage: 'local' | 'cloud';
   pages: HiveAppPage[];
   sourceTaskId?: string | null;
+  sourceCommunityAppId?: string | null;
+  visibility?: 'private' | 'community';
+  toolkitKeywords?: string[];
+  installCount?: number;
+  sharedAt?: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
 }
+
+export type CommunityToolkitApp = Pick<
+  HiveAppSpec,
+  'id' | 'title' | 'tagline' | 'summary' | 'theme' | 'icon' | 'pages' | 'installCount' | 'sharedAt'
+>;

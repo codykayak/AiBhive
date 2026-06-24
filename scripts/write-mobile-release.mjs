@@ -73,6 +73,8 @@ const defaultNotes = {
     'v1.5.1 — Hive plans: Free, Starter ($5), Pro ($20/mo), Unlimited ($50/mo) with usage tracking and 20% token markup.',
   '1.6.0':
     'v1.6.0 — Grok 4 home assistant: AI search bar orchestrates jobs, research & builds. RAG knowledge base, web search via AiBhive Tokens (30% markup), build onboarding flow.',
+  '1.6.1':
+    'v1.6.1 — Community Toolkit: user apps save to cloud and auto-share. Anyone can install existing tools free before building duplicates.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

@@ -15,9 +15,9 @@ import {
   SectionLabel,
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
-import { fetchUserApps } from '../lib/hiveUserApps';
+import { fetchUserApps, fetchCommunityToolkit, installToolkitApp } from '../lib/hiveUserApps';
+import type { HiveAppSpec, CommunityToolkitApp } from '../dynamicApps/types';
 import { brandFor, iconFor } from '../dynamicApps/branding';
-import type { HiveAppSpec } from '../dynamicApps/types';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -55,17 +55,27 @@ export default function AppsScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
   const [userApps, setUserApps] = useState<HiveAppSpec[]>([]);
+  const [toolkitApps, setToolkitApps] = useState<CommunityToolkitApp[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const apps = await fetchUserApps();
+      const [apps, toolkit] = await Promise.all([fetchUserApps(), fetchCommunityToolkit()]);
       setUserApps(apps);
+      setToolkitApps(toolkit);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const onInstallToolkit = async (app: CommunityToolkitApp) => {
+    const installed = await installToolkitApp(app.id);
+    if (installed) {
+      await load();
+      navigation.navigate('DynamicApp', { appId: installed.id, app: installed });
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -161,6 +171,39 @@ export default function AppsScreen() {
           })
         )}
 
+        <SectionLabel>{HIVE_COPY.toolkitTitle}</SectionLabel>
+        <Text style={styles.toolkitIntro}>{HIVE_COPY.toolkitBody}</Text>
+        {toolkitApps.length === 0 ? (
+          <GlassCard style={styles.toolkitEmpty}>
+            <Text style={styles.toolkitEmptyText}>
+              Be the first — build an app on Home or Build and it joins the shared toolkit automatically.
+            </Text>
+          </GlassCard>
+        ) : (
+          toolkitApps.map((app) => {
+            const brand = brandFor(app.theme);
+            const Icon = iconFor(app.icon);
+            const ownedApp = userApps.find((u) => u.sourceCommunityAppId === app.id);
+            const owned = !!ownedApp;
+            return (
+              <AppLauncherCard
+                key={`toolkit-${app.id}`}
+                title={app.title}
+                desc={app.tagline || app.summary || `${app.pages?.length || 0} page(s)`}
+                tag={owned ? 'Installed' : `${app.installCount || 0} users`}
+                icon={Icon}
+                accent="purple"
+                onPress={() =>
+                  owned && ownedApp
+                    ? navigation.navigate('DynamicApp', { appId: ownedApp.id, app: ownedApp })
+                    : void onInstallToolkit(app)
+                }
+                style={{ borderLeftWidth: 4, borderLeftColor: brand.primary }}
+              />
+            );
+          })
+        )}
+
         <SectionLabel>{HIVE_COPY.appsBuiltIn}</SectionLabel>
         {BUILT_IN_APPS.map((app) => (
           <AppLauncherCard
@@ -221,6 +264,15 @@ const styles = StyleSheet.create({
   buildText: { color: colors.textMuted, lineHeight: 21, fontSize: 14, marginBottom: spacing.md },
   buildBtn: { alignSelf: 'flex-start', paddingHorizontal: 24 },
   loaderRow: { paddingVertical: spacing.lg, alignItems: 'center' },
+  toolkitIntro: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 2,
+  },
+  toolkitEmpty: { marginBottom: spacing.md, padding: spacing.md },
+  toolkitEmptyText: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
   tipCard: { marginTop: spacing.sm, marginBottom: spacing.md },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   tipTitle: { color: colors.amberLight, fontWeight: '800' },

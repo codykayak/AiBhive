@@ -2,7 +2,7 @@ import { sendChatMessage, type ChatTurn } from './llm';
 import type { ActiveLlmConfig } from './settings';
 import { loadHomeAssistantKnowledge } from './homeAssistantKnowledge';
 import { getMissionPromptBlock } from './hiveMission';
-import { fetchUserApps } from './hiveUserApps';
+import { fetchUserApps, fetchCommunityToolkit } from './hiveUserApps';
 import { createHiveTask, getOrCreateHiveUserId, type HiveTask } from './hiveApi';
 
 const HIVE_API_BASE = 'https://aibhive.com';
@@ -52,8 +52,12 @@ function parseJsonBlock(text: string): HomeAssistantAction {
   };
 }
 
-async function buildSystemPrompt(): Promise<string> {
-  const [knowledge, apps] = await Promise.all([loadHomeAssistantKnowledge(), fetchUserApps()]);
+async function buildSystemPrompt(userMessage?: string): Promise<string> {
+  const [knowledge, apps, toolkit] = await Promise.all([
+    loadHomeAssistantKnowledge(),
+    fetchUserApps(),
+    userMessage?.trim() ? fetchCommunityToolkit(userMessage.trim()) : fetchCommunityToolkit(),
+  ]);
   const appList =
     apps.length > 0
       ? apps
@@ -62,6 +66,14 @@ async function buildSystemPrompt(): Promise<string> {
           .join('\n')
       : '(none yet — user can build their first app)';
 
+  const toolkitList =
+    toolkit.length > 0
+      ? toolkit
+          .slice(0, 10)
+          .map((a) => `- ${a.title} (${a.installCount || 0} installs): ${a.summary || a.tagline || ''}`)
+          .join('\n')
+      : '(empty — new builds are auto-shared to grow the hive)';
+
   return [
     'You are Grok on the AiBhive home screen — the user\'s smart operator for the whole app.',
     getMissionPromptBlock('general'),
@@ -69,6 +81,9 @@ async function buildSystemPrompt(): Promise<string> {
     knowledge,
     '--- USER CLOUD TOOLS ---',
     appList,
+    '--- COMMUNITY TOOLKIT (shared by all users — suggest before building duplicates) ---',
+    toolkitList,
+    'If the user wants something already in the community toolkit, suggest installing it (free) instead of building from scratch.',
     'Respond ONLY with valid JSON as specified in the knowledge doc. No markdown fences.',
   ].join('\n\n');
 }
@@ -103,7 +118,7 @@ export async function sendHomeAssistantTurn(
   userMessage: string,
   options: { webSearchContext?: string } = {}
 ): Promise<HomeAssistantTurnResult> {
-  const systemInstruction = await buildSystemPrompt();
+  const systemInstruction = await buildSystemPrompt(userMessage);
   const enrichedMessage = options.webSearchContext
     ? `${userMessage}\n\n[WEB SEARCH RESULTS — use these to answer, then suggest next steps]\n${options.webSearchContext}`
     : userMessage;

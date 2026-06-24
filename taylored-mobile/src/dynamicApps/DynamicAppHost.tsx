@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Download, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, Download, Sparkles, Share2 } from 'lucide-react-native';
 import { brandFor, iconFor } from './branding';
 import ListPage from './pageTypes/ListPage';
 import TrackerPage from './pageTypes/TrackerPage';
@@ -14,8 +14,9 @@ import type {
   CalculatorConfig, HiveAppPage, HiveAppSpec, InfoConfig, ListConfig, NoteConfig, TrackerConfig,
 } from './types';
 import {
-  fetchUserApp, deleteUserApp as deleteUserAppRemote,
+  fetchUserApp, deleteUserApp as deleteUserAppRemote, shareAppToToolkit,
 } from '../lib/hiveUserApps';
+import { HIVE_COPY } from '../constants/hiveCopy';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -87,6 +88,16 @@ export default function DynamicAppHost() {
         },
       ]
     );
+  };
+
+  const onShareToolkit = async () => {
+    const updated = await shareAppToToolkit(app.id);
+    if (updated) {
+      setApp(updated);
+      Alert.alert('Shared!', HIVE_COPY.toolkitShared);
+    } else {
+      Alert.alert('Could not share', 'Try again when you are online.');
+    }
   };
 
   return (
@@ -187,6 +198,15 @@ export default function DynamicAppHost() {
           <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
             <Text style={styles.deleteText}>Delete this app</Text>
           </TouchableOpacity>
+
+          {app.visibility !== 'community' && !app.sourceCommunityAppId ? (
+            <TouchableOpacity onPress={() => void onShareToolkit()} style={styles.shareBtn}>
+              <Share2 color={brand.primary} size={16} />
+              <Text style={[styles.shareText, { color: brand.primary }]}>{HIVE_COPY.shareToToolkit}</Text>
+            </TouchableOpacity>
+          ) : app.visibility === 'community' ? (
+            <Text style={styles.sharedBadge}>{HIVE_COPY.toolkitShared}</Text>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -282,4 +302,13 @@ const styles = StyleSheet.create({
   iterBtnText: { fontWeight: '800', fontSize: 14 },
   deleteBtn: { marginTop: spacing.md, alignSelf: 'flex-start' },
   deleteText: { color: colors.textDim, fontSize: 12, fontWeight: '700' },
+  shareBtn: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+  },
+  shareText: { fontSize: 13, fontWeight: '800' },
+  sharedBadge: { marginTop: spacing.sm, color: colors.textMuted, fontSize: 12, fontWeight: '700' },
 });
