@@ -331,8 +331,9 @@ type Props = {
 
 export default function DynamicAppRunner({ app, compact, className = '' }: Props) {
   const brand = brandFor(app.theme);
+  const pages = Array.isArray(app.pages) ? app.pages : [];
   const [activeIdx, setActiveIdx] = useState(0);
-  const page = app.pages[activeIdx] || app.pages[0];
+  const page = pages[activeIdx] || pages[0];
   const previewId = `preview-${app.id}`;
 
   return (
@@ -349,9 +350,9 @@ export default function DynamicAppRunner({ app, compact, className = '' }: Props
         </div>
       </div>
 
-      {app.pages.length > 1 && (
+      {pages.length > 1 && (
         <div className="flex gap-2 px-3 py-2 overflow-x-auto border-b border-white/5">
-          {app.pages.map((p, idx) => (
+          {pages.map((p, idx) => (
             <button
               key={p.id}
               type="button"

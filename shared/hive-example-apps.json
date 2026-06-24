@@ -1,0 +1,180 @@
+[
+  {
+    "id": "example-job-tracker",
+    "title": "Job Tracker",
+    "tagline": "Applications, status, and follow-ups",
+    "summary": "Track every application, interview stage, and follow-up in one place. Try it in your browser — install the mobile app for AI resume tools and cloud sync.",
+    "theme": "blue",
+    "icon": "target",
+    "category": "lists",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "applications",
+        "title": "Applications",
+        "type": "list",
+        "config": {
+          "addPlaceholder": "Company — role (e.g. Acme — PM)",
+          "emptyMessage": "No applications yet. Tap + to add your first.",
+          "seed": [
+            "Stripe — Product Manager",
+            "Notion — Growth Lead",
+            "Figma — Design Engineer"
+          ],
+          "showCheckbox": true
+        }
+      },
+      {
+        "id": "follow-ups",
+        "title": "Follow-ups",
+        "type": "list",
+        "config": {
+          "addPlaceholder": "Follow up with…",
+          "emptyMessage": "Nothing scheduled — add a reminder.",
+          "seed": [
+            "Email recruiter at Stripe",
+            "Send thank-you after Notion screen"
+          ],
+          "showCheckbox": true
+        }
+      },
+      {
+        "id": "tips",
+        "title": "Tips",
+        "type": "info",
+        "config": {
+          "body": "This is a live browser demo of a Hive spec app. Check items off, add your own rows — data stays in this browser.",
+          "bullets": [
+            "Full mobile version syncs across devices",
+            "Auto-Bot Resume tailors materials per job",
+            "Research tab runs OSINT on companies"
+          ],
+          "links": [
+            { "label": "Get the mobile app", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-resume-bot",
+    "title": "Auto-Bot Resume",
+    "tagline": "Tailored resume & cover letter",
+    "summary": "Paste a job description, draft a resume, and iterate. This browser demo uses notes — the mobile app adds AI rewriting and export.",
+    "theme": "amber",
+    "icon": "sparkles",
+    "category": "notes",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "job-description",
+        "title": "Job description",
+        "type": "note",
+        "config": {
+          "placeholder": "Paste the job posting here…",
+          "seedText": "Senior Product Manager\n\nWe're looking for someone who ships fast, talks to customers weekly, and can turn fuzzy goals into roadmaps…"
+        }
+      },
+      {
+        "id": "resume-draft",
+        "title": "Resume draft",
+        "type": "note",
+        "config": {
+          "placeholder": "Your tailored resume bullets…",
+          "seedText": "• Led 0→1 feature that grew weekly active users 34%\n• Ran 40+ customer interviews per quarter\n• Shipped cross-platform release in 6-week cycles"
+        }
+      },
+      {
+        "id": "cover-letter",
+        "title": "Cover letter",
+        "type": "note",
+        "config": {
+          "placeholder": "Draft your cover letter…",
+          "seedText": ""
+        }
+      },
+      {
+        "id": "about",
+        "title": "Full version",
+        "type": "info",
+        "config": {
+          "body": "In the AiBhive mobile app, Auto-Bot Resume uses AI to rewrite bullets, match keywords, and export PDFs.",
+          "bullets": [
+            "One-tap tailor per saved job",
+            "Cover letter from the same job description",
+            "Export and share when you're happy"
+          ],
+          "links": [
+            { "label": "Download AiBhive", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-research",
+    "title": "Research",
+    "tagline": "Intel on companies and people",
+    "summary": "Plan OSINT research targets and track findings. The mobile Intel Agent automates Google-safe searches, PDF export, and more.",
+    "theme": "purple",
+    "icon": "compass",
+    "category": "guides",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "target",
+        "title": "Target",
+        "type": "note",
+        "config": {
+          "placeholder": "Company, domain, or person to research…",
+          "seedText": "Target: Northwind Labs\nDomain: northwind.example\nFocus: leadership, funding, recent news"
+        }
+      },
+      {
+        "id": "checklist",
+        "title": "Checklist",
+        "type": "list",
+        "config": {
+          "addPlaceholder": "Research task…",
+          "emptyMessage": "Add research steps to track.",
+          "seed": [
+            "Company site & about page",
+            "LinkedIn leadership profiles",
+            "Recent press and filings",
+            "Domain WHOIS / tech stack"
+          ],
+          "showCheckbox": true
+        }
+      },
+      {
+        "id": "findings",
+        "title": "Findings",
+        "type": "note",
+        "config": {
+          "placeholder": "Capture notes as you research…",
+          "seedText": ""
+        }
+      },
+      {
+        "id": "intel-agent",
+        "title": "Intel Agent",
+        "type": "info",
+        "config": {
+          "body": "AiBhive Intel Agent runs AI-directed OSINT with Google-safe tools, Hive Cloud probes, and PDF export.",
+          "bullets": [
+            "Username and domain lookups",
+            "Wayback and public-source checks",
+            "Structured report you can share"
+          ],
+          "links": [
+            { "label": "Intel gathering overview", "url": "https://aibhive.com/intel-gathering" },
+            { "label": "Get mobile app", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  }
+]

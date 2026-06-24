@@ -73,6 +73,7 @@ export interface HiveAppSpec {
   category?: HiveAppCategory;
   pageCount?: number;
   version?: number;
+  isExample?: boolean;
 }
 
 export interface PublishedWebApp {
@@ -88,6 +89,7 @@ export interface PublishedWebApp {
 
 export interface StoreCatalog {
   apps: HiveAppSpec[];
+  examples?: HiveAppSpec[];
   featured: HiveAppSpec[];
   webApps: PublishedWebApp[];
   total: number;

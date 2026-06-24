@@ -1,4 +1,5 @@
 import type { HiveAppSpec, PublishedWebApp, StoreCatalog } from './hiveAppTypes';
+import { getLocalExampleApp, listLocalExampleApps } from './hiveExampleApps';
 
 async function parseJson<T>(res: Response): Promise<T | null> {
   if (!res.ok) return null;
@@ -20,23 +21,35 @@ export async function fetchStoreCatalog(params?: {
   if (params?.limit) sp.set('limit', String(params.limit));
   const qs = sp.toString();
   const data = await parseJson<StoreCatalog>(await fetch(`/api/hive/store${qs ? `?${qs}` : ''}`));
-  return (
-    data || {
+  const fallbackExamples = listLocalExampleApps();
+  if (!data) {
+    return {
       apps: [],
-      featured: [],
+      examples: fallbackExamples,
+      featured: fallbackExamples,
       webApps: [],
-      total: 0,
+      total: fallbackExamples.length,
       totalInstalls: 0,
       categories: {},
       query: null,
       category: null,
-    }
-  );
+    };
+  }
+  const examples = data.examples?.length ? data.examples : fallbackExamples;
+  return {
+    ...data,
+    examples,
+    featured: data.featured?.length ? data.featured : examples,
+    total: data.total || examples.length,
+  };
 }
 
 export async function fetchToolkitApp(appId: string): Promise<HiveAppSpec | null> {
-  const data = await parseJson<{ app: HiveAppSpec }>(await fetch(`/api/hive/toolkit/${encodeURIComponent(appId)}`));
-  return data?.app || null;
+  const res = await fetch(`/api/hive/toolkit/${encodeURIComponent(appId)}`);
+  const data = await parseJson<{ app: HiveAppSpec }>(res);
+  if (data?.app) return data.app;
+  if (res.status === 404) return getLocalExampleApp(appId);
+  return getLocalExampleApp(appId);
 }
 
 export async function fetchWebApps(): Promise<PublishedWebApp[]> {
