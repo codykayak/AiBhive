@@ -25,6 +25,7 @@ import terminologyImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
+import HomeHivePlatform from '../components/HomeHivePlatform';
 
 const CATEGORIES = [
   {
@@ -136,9 +137,9 @@ export default function Home() {
   return (
     <main className="relative">
       <SEO
-        title="AiBHive — Custom Agentic AI Workflows for Enterprise Operations"
-        description="AiBHive deploys custom, autonomous agentic workflows that integrate into your tech stack for lead generation, customer operations, and data processing—no supervision required."
-        keywords="agentic AI, B2B automation, autonomous workflows, enterprise AI agents, AiBHive, custom AI applications"
+        title="AiBHive — AI App Factory, Community Apps & Enterprise Agentic AI"
+        description="Build your first app for $1–$5 in plain English. Browse the Hive Apps community pool, or deploy custom agentic workflows for enterprise operations."
+        keywords="AiBhive, Hive Apps, AI app builder, community apps, agentic AI, B2B automation, autonomous workflows, enterprise AI agents"
         type="WebSite"
       />
 
@@ -206,6 +207,8 @@ export default function Home() {
           </motion.div>
         </motion.div>
       </section>
+
+      <HomeHivePlatform />
 
       <SectionDivider />
 
