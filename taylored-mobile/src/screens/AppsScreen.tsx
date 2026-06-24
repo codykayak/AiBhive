@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Text, StyleSheet, ScrollView, View, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
-  Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes,
+  Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Radar,
 } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -21,14 +21,14 @@ import { brandFor, iconFor } from '../dynamicApps/branding';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 
-const BUILT_IN_APPS = [
+const EXAMPLE_TOOLS = [
   {
     id: 'tracker',
     title: 'Job Tracker',
-    desc: 'Pipeline for every application — materials, status, company research.',
+    desc: 'Pipeline for every application — status, materials, and follow-ups.',
     icon: FolderKanban,
     route: 'JobTracker',
-    tag: 'Core',
+    tag: 'Jobs',
     accent: 'amber' as const,
   },
   {
@@ -40,6 +40,18 @@ const BUILT_IN_APPS = [
     tag: 'Apply',
     accent: 'info' as const,
   },
+  {
+    id: 'research',
+    title: 'Research',
+    desc: 'AI-directed intel on companies, domains, and people.',
+    icon: Radar,
+    route: 'IntelAgent',
+    tag: 'Intel',
+    accent: 'purple' as const,
+  },
+];
+
+const MORE_TOOLS = [
   {
     id: 'enterprise',
     title: 'AiBhive Enterprise',
@@ -122,20 +134,19 @@ export default function AppsScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statNum}>3</Text>
-            <Text style={styles.statLabel}>Starter tools</Text>
+            <Text style={styles.statNum}>{EXAMPLE_TOOLS.length}</Text>
+            <Text style={styles.statLabel}>Example tools</Text>
           </View>
         </GlassCard>
 
         <GlassCard style={styles.buildCard} glow>
           <View style={styles.buildHeader}>
             <Wand2 color={colors.amberLight} size={22} />
-            <Text style={styles.buildTitle}>Make a new app — instantly</Text>
+            <Text style={styles.buildTitle}>Your first app: $1–$5</Text>
           </View>
           <Text style={styles.buildText}>
-            Describe it on the Build tab. Most apps appear here in under a minute — no Play Store
-            update needed. When you love it, tap Export to publish as a web app, an installable APK,
-            or a real Play Store listing.
+            Describe any tool on the Build tab — most apps appear here in under a minute. Install from
+            the community free, tweak for ~$0.50, or full customize from ~$4.
           </Text>
           <PrimaryButton
             label="Go to Build"
@@ -217,8 +228,21 @@ export default function AppsScreen() {
           })
         )}
 
-        <SectionLabel>{HIVE_COPY.appsBuiltIn}</SectionLabel>
-        {BUILT_IN_APPS.map((app) => (
+        <SectionLabel>Example tools</SectionLabel>
+        {EXAMPLE_TOOLS.map((app) => (
+          <AppLauncherCard
+            key={app.id}
+            title={app.title}
+            desc={app.desc}
+            tag={app.tag}
+            icon={app.icon}
+            accent={app.accent}
+            onPress={() => navigation.navigate(app.route)}
+          />
+        ))}
+
+        <SectionLabel>More</SectionLabel>
+        {MORE_TOOLS.map((app) => (
           <AppLauncherCard
             key={app.id}
             title={app.title}

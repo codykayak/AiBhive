@@ -51,7 +51,7 @@ export const HIVE_COPY = {
   appsHeroBody:
     'Everything the Hive builds for you appears here instantly — open it, use it, change it, export it.',
   appsRecent: 'Your Hive apps',
-  appsBuiltIn: 'Starter tools',
+  appsBuiltIn: 'Example tools',
   appsEmptyBuilds:
     'No apps yet — describe one on Build or install from the Community Toolkit below.',
   toolkitTitle: 'Community Toolkit',
