@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.1",
-  "versionCode": 16,
-  "sourceVersion": "1.6.1",
-  "releaseNotes": "v1.6.1 — Community Toolkit: user apps save to cloud and auto-share. Anyone can install existing tools free before building duplicates.",
+  "shippedNativeVersion": "1.6.3",
+  "versionCode": 18,
+  "sourceVersion": "1.6.3",
+  "releaseNotes": "v1.6.3 — Blocky home & store refresh, Example tools (Job Tracker, Resume, Research), $1–$5 first-app pricing, Research tab fixes.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782262909537%2Ftaylored-mobile.apk.gz?alt=media&token=9d500515-e825-43dc-b63b-06c327da19fe",
-  "publishedAt": "2026-06-24T01:01:50.486Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782300642108%2Ftaylored-mobile.apk.gz?alt=media&token=303b591d-494b-4666-9ea6-b0015950dbce",
+  "publishedAt": "2026-06-24T11:30:43.033Z",
   "otaChannel": "production"
 }
