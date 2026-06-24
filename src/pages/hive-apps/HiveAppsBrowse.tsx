@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Download, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
+import { Play, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
+import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
 import type { HiveAppSpec, PublishedWebApp, StoreCatalog } from '../../lib/hiveAppTypes';
 import { CATEGORY_LABELS } from '../../lib/hiveAppBranding';
 
 const EMPTY: StoreCatalog = {
   apps: [],
+  examples: [],
   featured: [],
   webApps: [],
   total: 0,
@@ -118,27 +120,24 @@ export default function HiveAppsBrowse() {
           </div>
         )}
 
-        {/* Example tools */}
+        {/* Example tools — runnable in browser */}
         {tab !== 'web' && !q && (
           <div className="mb-8">
             <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
+            <p className="text-slate-500 text-sm mb-3 px-1">Tap to try live in your browser — no install required.</p>
             <div className="space-y-3">
-              {[
-                { title: 'Job Tracker', sub: 'Applications, status, materials', href: 'https://aibhive.com/api/download/apk' },
-                { title: 'Auto-Bot Resume', sub: 'Tailored resume & cover letter', href: 'https://aibhive.com/api/download/apk' },
-                { title: 'Research', sub: 'Intel on companies and people', href: 'https://aibhive.com/api/download/apk' },
-              ].map((tool) => (
-                <a
-                  key={tool.title}
-                  href={tool.href}
+              {EXAMPLE_TOOLS.map((tool) => (
+                <Link
+                  key={tool.id}
+                  to={`/hive-apps/run/${tool.id}`}
                   className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-bee-amber/30 transition-colors"
                 >
                   <div>
                     <p className="text-white font-bold">{tool.title}</p>
                     <p className="text-slate-400 text-sm">{tool.sub}</p>
                   </div>
-                  <Download className="w-5 h-5 text-bee-amber shrink-0" />
-                </a>
+                  <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />
+                </Link>
               ))}
             </div>
           </div>
@@ -198,16 +197,37 @@ export default function HiveAppsBrowse() {
               ))}
             </div>
           )
-        ) : catalog.apps.length === 0 ? (
+        ) : catalog.apps.length === 0 && (catalog.examples?.length ?? 0) === 0 ? (
           <EmptyBlock
             title={q ? 'No matches' : 'Store is warming up'}
             body="Build an app, love it, then share to the community."
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {catalog.apps.map((app) => (
-              <HiveAppCard key={app.id} app={app} variant="mobile" />
-            ))}
+          <div className="space-y-6">
+            {(catalog.examples?.length ?? 0) > 0 && !q ? (
+              <div>
+                <h3 className="text-white font-bold text-sm mb-3 px-1">Try in browser</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {catalog.examples!.map((app) => (
+                    <HiveAppCard key={app.id} app={app} variant="mobile" runDirect />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {catalog.apps.length > 0 ? (
+              <div>
+                {(catalog.examples?.length ?? 0) > 0 && !q ? (
+                  <h3 className="text-white font-bold text-sm mb-3 px-1">Community shared</h3>
+                ) : null}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {catalog.apps.map((app) => (
+                    <HiveAppCard key={app.id} app={app} variant="mobile" />
+                  ))}
+                </div>
+              </div>
+            ) : q ? (
+              <EmptyBlock title="No community matches" body="Try the example tools above or build your own." />
+            ) : null}
           </div>
         )}
       </div>

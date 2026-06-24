@@ -31,6 +31,7 @@ import {
   getStoreCatalog,
 } from './hiveAppsApi.js';
 import { listPublishedWebApps } from './hiveWebAppsRegistry.js';
+import { getExampleApp, installExampleApp, listExampleApps } from './hiveExampleApps.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
   ensureHiveUser,
@@ -1831,7 +1832,7 @@ app.get('/api/hive/toolkit', async (req, res) => {
 
 app.get('/api/hive/toolkit/:appId', async (req, res) => {
   try {
-    const app = await getPublicToolkitApp(db, req.params.appId);
+    const app = (await getPublicToolkitApp(db, req.params.appId)) || getExampleApp(req.params.appId);
     if (!app) return res.status(404).json({ error: 'App not found in community toolkit.' });
     return res.json({ app });
   } catch (err) {
@@ -1869,6 +1870,12 @@ app.post('/api/hive/toolkit/:appId/install', express.json(), async (req, res) =>
     if (!ownerId) return res.status(400).json({ error: 'userId required.' });
     await ensureHiveUser(db, ownerId);
     const result = await installCommunityApp(db, ownerId, req.params.appId);
+    if (!result.ok && getExampleApp(req.params.appId)) {
+      const exampleResult = await installExampleApp(db, ownerId, req.params.appId);
+      if (exampleResult.ok) {
+        return res.json({ ok: true, app: exampleResult.app, sourceAppId: exampleResult.sourceAppId });
+      }
+    }
     if (!result.ok) return res.status(404).json({ error: result.error || 'Install failed.' });
     return res.json({ ok: true, app: result.app, sourceAppId: result.sourceAppId });
   } catch (err) {

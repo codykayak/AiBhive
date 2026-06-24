@@ -8,12 +8,19 @@ type Props = {
   app: HiveAppSpec;
   variant?: 'mobile' | 'web';
   webApp?: PublishedWebApp;
+  /** Open full-screen runner instead of store detail page. */
+  runDirect?: boolean;
 };
 
-const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp }) => {
+const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp, runDirect }) => {
   const brand = brandFor(app.theme);
   const Icon = iconFor(app.icon);
-  const href = variant === 'web' && webApp ? webApp.url : `/hive-apps/app/${app.id}`;
+  const href =
+    variant === 'web' && webApp
+      ? webApp.url
+      : runDirect || app.isExample
+        ? `/hive-apps/run/${app.id}`
+        : `/hive-apps/app/${app.id}`;
   const isExternal = variant === 'web';
 
   const inner = (
@@ -54,7 +61,7 @@ const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp }) => {
         {variant === 'mobile' ? (
           <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
             <Smartphone className="w-3 h-3" />
-            Free install
+            {app.isExample ? 'Try free' : 'Free install'}
           </span>
         ) : null}
       </div>

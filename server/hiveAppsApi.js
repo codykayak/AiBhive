@@ -353,6 +353,8 @@ export async function listCommunityToolkit(db, limit = 24) {
 
 /** Store catalog payload for the web app store. */
 export async function getStoreCatalog(db, { query = '', category = '', limit = 48 } = {}) {
+  const { listExampleApps } = await import('./hiveExampleApps.js');
+  const examples = listExampleApps();
   const all = await listCommunityToolkitRaw(db, 120);
   const q = String(query || '').trim().toLowerCase();
   const cat = String(category || '').trim().toLowerCase();
@@ -370,17 +372,18 @@ export async function getStoreCatalog(db, { query = '', category = '', limit = 4
   }
 
   const apps = filtered.slice(0, Math.min(limit, 48)).map((app) => toPublicToolkitApp(app));
-  const featured = all.slice(0, 6).map((app) => toPublicToolkitApp(app));
+  const featured = [...examples, ...all.slice(0, 6).map((app) => toPublicToolkitApp(app))].slice(0, 6);
   const categories = {};
-  for (const app of all) {
+  for (const app of [...examples, ...all]) {
     const c = inferAppCategory(app);
     categories[c] = (categories[c] || 0) + 1;
   }
 
   return {
     apps,
+    examples,
     featured,
-    total: all.length,
+    total: all.length + examples.length,
     totalInstalls: all.reduce((n, a) => n + (a.installCount || 0), 0),
     categories,
     query: q || null,

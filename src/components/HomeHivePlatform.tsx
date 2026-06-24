@@ -12,6 +12,7 @@ import {
   LayoutGrid,
 } from 'lucide-react';
 import { fetchStoreCatalog } from '../lib/hiveStoreApi';
+import { EXAMPLE_TOOLS, EXAMPLE_APP_IDS } from '../lib/hiveExampleApps';
 import type { HiveAppSpec } from '../lib/hiveAppTypes';
 import HiveAppCard, { HiveAppCardSkeleton } from './hive-apps/HiveAppCard';
 
@@ -21,16 +22,16 @@ const COMMUNITY_STEPS = [
   { n: '3', title: 'Share back', body: 'Opt in when you love it. The hive grows smarter for everyone.' },
 ];
 
-const EXAMPLE_TOOLS = [
-  { title: 'Job Tracker', sub: 'Applications, status, and follow-ups', icon: Briefcase },
-  { title: 'Auto-Bot Resume', sub: 'Tailored resume & cover letter in one tap', icon: Sparkles },
-  { title: 'Research', sub: 'Intel on companies, domains, and people', icon: Radar },
-];
+const EXAMPLE_TOOL_ICONS = {
+  [EXAMPLE_APP_IDS.jobTracker]: Briefcase,
+  [EXAMPLE_APP_IDS.resumeBot]: Sparkles,
+  [EXAMPLE_APP_IDS.research]: Radar,
+} as const;
 
 const PILLARS = [
-  { title: 'Do', sub: 'Jobs, applications, Auto-Bot Resume', icon: Briefcase, href: 'https://aibhive.com/api/download/apk' },
+  { title: 'Do', sub: 'Jobs, applications, Auto-Bot Resume', icon: Briefcase, href: `/hive-apps/run/${EXAMPLE_APP_IDS.jobTracker}` },
   { title: 'Build', sub: 'Hive Magic — apps from plain English', icon: Wand2, href: '/hive-apps/build' },
-  { title: 'Research', sub: 'AI-directed OSINT on any target', icon: Radar, href: 'https://aibhive.com/api/download/apk' },
+  { title: 'Research', sub: 'AI-directed OSINT on any target', icon: Radar, href: `/hive-apps/run/${EXAMPLE_APP_IDS.research}` },
 ];
 
 export default function HomeHivePlatform() {
@@ -41,8 +42,11 @@ export default function HomeHivePlatform() {
   useEffect(() => {
     fetchStoreCatalog({ limit: 6 })
       .then((catalog) => {
-        setAppCount(catalog.total);
-        setFeatured(catalog.featured.slice(0, 3));
+        const examples = catalog.examples || [];
+        setAppCount(catalog.total || examples.length);
+        setFeatured(
+          (catalog.featured.length ? catalog.featured : examples).slice(0, 3)
+        );
       })
       .finally(() => setLoading(false));
   }, []);
@@ -173,11 +177,11 @@ export default function HomeHivePlatform() {
           <h3 className="text-white font-bold text-lg md:text-xl mb-4 px-1">Example tools</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {EXAMPLE_TOOLS.map((tool) => {
-              const Icon = tool.icon;
+              const Icon = EXAMPLE_TOOL_ICONS[tool.id];
               return (
-                <a
-                  key={tool.title}
-                  href="https://aibhive.com/api/download/apk"
+                <Link
+                  key={tool.id}
+                  to={`/hive-apps/run/${tool.id}`}
                   className="w-full flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 hover:border-bee-amber/30 transition-colors"
                 >
                   <div className="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
@@ -187,8 +191,8 @@ export default function HomeHivePlatform() {
                     <p className="text-white font-bold">{tool.title}</p>
                     <p className="text-slate-400 text-sm mt-0.5">{tool.sub}</p>
                   </div>
-                  <Download className="w-5 h-5 text-bee-amber shrink-0" />
-                </a>
+                  <ArrowRight className="w-5 h-5 text-bee-amber shrink-0" />
+                </Link>
               );
             })}
           </div>
@@ -225,7 +229,7 @@ export default function HomeHivePlatform() {
           ) : featured.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {featured.map((app) => (
-                <HiveAppCard key={app.id} app={app} variant="mobile" />
+                <HiveAppCard key={app.id} app={app} variant="mobile" runDirect={app.isExample} />
               ))}
             </div>
           ) : (

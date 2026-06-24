@@ -100,12 +100,20 @@ export default function HiveAppDetailPage() {
                       {CATEGORY_LABELS[app.category] || app.category}
                     </span>
                   ) : null}
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
-                    Free install
-                  </span>
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-bee-amber/10 text-bee-amber">
-                    {(app.installCount || 0).toLocaleString()} installs
-                  </span>
+                  {app.isExample ? (
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-sky-500/10 text-sky-400">
+                      Browser demo
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400">
+                      Free install
+                    </span>
+                  )}
+                  {!app.isExample ? (
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-bee-amber/10 text-bee-amber">
+                      {(app.installCount || 0).toLocaleString()} installs
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>
