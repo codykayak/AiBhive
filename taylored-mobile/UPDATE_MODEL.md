@@ -23,12 +23,14 @@ Badge check: top-right version should match `public/mobile-releases.json` → `s
 
 Run **only when batched and ready**:
 
-1. **GCP Cloud Build** (preferred): `gcloud builds submit --config taylored-mobile/cloudbuild.yaml .`
-2. Or GitHub → Actions → **Build Android APK** (manual)
+1. **GCP Cloud Build** (preferred when GitHub Actions billing is blocked): `gcloud builds submit --config taylored-mobile/cloudbuild.yaml .`
+2. Or GitHub → Actions → **Build Android APK** (auto on `main-fixed` pushes to `taylored-mobile/**`, or manual dispatch)
 3. Or local: `taylored-mobile/scripts/ci-android-build.sh`
 4. ~30 min (arm-only build)
-5. Publish: `public/taylored-mobile.apk` + `scripts/write-mobile-release.mjs` + optional Firebase mirror
+5. Publish: `public/taylored-mobile.apk` + `node scripts/write-mobile-release.mjs` + `node scripts/publish-apk-firebase.mjs` + `node scripts/publish-mobile-manifest-storage.mjs`
 6. Share `https://aibhive.com/download.html`
+
+**Important:** Bumping `taylored-mobile/app.json` alone does **not** change what users see in **Check for updates**. The release manifest (`public/mobile-releases.json` + Firebase mirror) only updates after a new APK is built and published. If the manifest still shows v1.6.1 while `app.json` is v1.6.3, the APK workflow did not complete — check GitHub Actions billing or use GCP Cloud Build.
 
 ### 3. Release manifest
 

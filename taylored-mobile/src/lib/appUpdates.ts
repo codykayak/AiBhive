@@ -1,8 +1,16 @@
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking } from 'react-native';
-import { APP_VERSION } from '../constants/version';
+import { APP_VERSION, APP_VERSION_CODE } from '../constants/version';
 import { isNewerVersion } from './semver';
+
+function isNativeUpdateAvailable(manifest: MobileReleaseManifest): boolean {
+  const latestCode = manifest.versionCode;
+  if (typeof latestCode === 'number' && typeof APP_VERSION_CODE === 'number') {
+    if (latestCode !== APP_VERSION_CODE) return latestCode > APP_VERSION_CODE;
+  }
+  return isNewerVersion(manifest.shippedNativeVersion, APP_VERSION);
+}
 
 const HIVE_API_BASE = 'https://aibhive.com';
 const OTA_PENDING_KEY = 'hive_ota_pending_v1';
@@ -108,7 +116,7 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
   }
 
   const latestNative = manifest.shippedNativeVersion;
-  if (isNewerVersion(latestNative, APP_VERSION)) {
+  if (isNativeUpdateAvailable(manifest)) {
     const url = manifest.firebaseGzUrl || manifest.downloadUrl;
     return {
       status: 'native-available',

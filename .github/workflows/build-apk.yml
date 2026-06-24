@@ -8,9 +8,8 @@
 #     GitHub already respects.
 #   - Manual: workflow_dispatch fallback.
 #
-# Cloud Build (taylored-mobile/cloudbuild.yaml) remains available for slot-saving
-# but the on-push auto trigger here is what makes the Hive's "ding it's ready"
-# experience actually deliver a binary to the user's phone.
+# Cloud Build (taylored-mobile/cloudbuild.yaml) remains available when GitHub Actions
+# billing blocks the runner (job fails immediately with a billing message).
 name: Build Android APK
 
 on:

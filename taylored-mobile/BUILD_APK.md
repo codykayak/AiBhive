@@ -1,6 +1,6 @@
 # Emergency rollback: install `public/taylored-mobile.apk` — last verified build.
 
-**Badge to verify:** top-right should show the version in `mobile-releases.json` (currently **v1.2.2**).
+**Badge to verify:** top-right should show the version in `mobile-releases.json` (check `GET /api/mobile/releases` for the live shipped version).
 
 See **UPDATE_MODEL.md** for the full dev/update workflow (native vs OTA, when to build).
 

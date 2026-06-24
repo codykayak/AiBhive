@@ -75,6 +75,10 @@ const defaultNotes = {
     'v1.6.0 — Grok 4 home assistant: AI search bar orchestrates jobs, research & builds. RAG knowledge base, web search via AiBhive Tokens (30% markup), build onboarding flow.',
   '1.6.1':
     'v1.6.1 — Community Toolkit: user apps save to cloud and auto-share. Anyone can install existing tools free before building duplicates.',
+  '1.6.2':
+    'v1.6.2 — Tweak & Customize: change existing apps without rebuilding from scratch. Sharing is opt-in (no auto-share). Hive Apps web store preview.',
+  '1.6.3':
+    'v1.6.3 — Blocky home & store refresh, Example tools (Job Tracker, Resume, Research), $1–$5 first-app pricing, Research tab fixes.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
