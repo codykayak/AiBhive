@@ -5,15 +5,15 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Keyboard,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Briefcase, Wand2, Radar, ChevronRight, Sparkles } from 'lucide-react-native';
+import { Briefcase, Wand2, Radar, ChevronRight } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { HiveOrb } from '../components/HiveOrb';
+import { HomeAssistantChat } from '../components/HomeAssistantChat';
 import { GlassCard } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
+import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { listIntelCases } from '../osint/cases';
@@ -52,23 +52,17 @@ const CARDS: HubCard[] = [
   },
 ];
 
-function routeFromAsk(text: string): 'do' | 'build' | 'research' {
-  const q = text.toLowerCase();
-  if (/(research|intel|company|due diligence|investigate|osint|domain|competitor)/.test(q)) {
-    return 'research';
-  }
-  if (/(job|resume|apply|application|interview|career|hiring|cover letter)/.test(q)) {
-    return 'do';
-  }
-  return 'build';
-}
-
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
-  const [ask, setAsk] = useState('');
+  const [assistantExpanded, setAssistantExpanded] = useState(false);
+  const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
+
+  useEffect(() => {
+    preloadHomeAssistantKnowledge();
+  }, []);
 
   const refresh = useCallback(async () => {
     const [cases, building] = await Promise.all([listIntelCases(), countBuildingApps()]);
@@ -81,25 +75,16 @@ export default function HomeScreen() {
   }, [refresh]);
 
   const openDo = () => navigation.navigate('JobTracker');
-  const openBuild = (prefill?: string) =>
-    navigation.navigate('HiveBuild', prefill ? { prefill } : undefined);
-  const openResearch = () => navigation.navigate('IntelAgent');
 
   const onCard = (id: HubCard['id']) => {
     if (id === 'do') openDo();
-    else if (id === 'build') openBuild();
-    else openResearch();
-  };
-
-  const onAskSubmit = () => {
-    const trimmed = ask.trim();
-    if (!trimmed) return;
-    Keyboard.dismiss();
-    const route = routeFromAsk(trimmed);
-    if (route === 'do') openDo();
-    else if (route === 'research') navigation.navigate('IntelAgent', { prefillIntent: trimmed });
-    else openBuild(trimmed);
-    setAsk('');
+    else if (id === 'build') {
+      setAssistantExpanded(true);
+      setPendingAsk('I want to build a custom tool');
+    } else {
+      setAssistantExpanded(true);
+      setPendingAsk('I need to research a company or target');
+    }
   };
 
   return (
@@ -113,22 +98,16 @@ export default function HomeScreen() {
           <HiveOrb size={64} active />
           <Text style={styles.tagline}>Do · Build · Research</Text>
           <Text style={styles.heroBody}>
-            One workspace for any job. Work your pipeline, research targets, or build custom tools.
+            Ask Grok on the home bar — jobs, research, or build anything. Your toolkit grows with every app you create.
           </Text>
         </View>
 
-        <View style={styles.askWrap}>
-          <Sparkles color={colors.amber} size={18} style={styles.askIcon} />
-          <TextInput
-            style={styles.askInput}
-            placeholder="What do you need help with?"
-            placeholderTextColor={colors.textDim}
-            value={ask}
-            onChangeText={setAsk}
-            returnKeyType="go"
-            onSubmitEditing={onAskSubmit}
-          />
-        </View>
+        <HomeAssistantChat
+          expanded={assistantExpanded}
+          onExpandChange={setAssistantExpanded}
+          initialQuery={pendingAsk}
+          onInitialQueryConsumed={() => setPendingAsk(undefined)}
+        />
 
         <View style={styles.cards}>
           {CARDS.map((card) => {
@@ -205,24 +184,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     paddingHorizontal: spacing.sm,
-  },
-  askWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgInput,
-    borderRadius: radii.pill,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: 16,
-    marginBottom: spacing.lg,
-    minHeight: 52,
-  },
-  askIcon: { marginRight: 10 },
-  askInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    paddingVertical: 12,
   },
   cards: { gap: spacing.sm },
   card: {

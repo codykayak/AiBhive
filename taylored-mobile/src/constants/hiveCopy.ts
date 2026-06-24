@@ -20,8 +20,9 @@ export const HIVE_COPY = {
     `$${used.toFixed(2)} used of $${allowance.toFixed(2)} this month`,
   tokenMarkupNote: (markup: number) => {
     const pct = Math.round((markup - 1) * 100);
-    return `Hive AI & cloud tools billed at API cost + ${pct}%`;
+    return `AiBhive Tokens billed at API cost + ${pct}%`;
   },
+  tokensCurrency: 'AiBhive Tokens',
   freeWithoutTokens:
     'Free forever: job tools, on-device research, and BYOK AI — no Hive token charges.',
   serverOffline:

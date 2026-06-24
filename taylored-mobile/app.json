@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive",
     "slug": "aibhive-mobile",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
         "backgroundColor": "#020617"
       },
       "package": "com.tayloredmobile.app",
-      "versionCode": 14,
+      "versionCode": 15,
       "resizeableActivity": true,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
