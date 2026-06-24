@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,13 @@ export default function JobDetailScreen() {
   const [job, setJob] = useState<JobApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>(initialTab);
+
+  useEffect(() => {
+    const next = route.params?.tab as TabId | undefined;
+    if (next === 'overview' || next === 'application' || next === 'research') {
+      setTab(next);
+    }
+  }, [route.params?.tab, jobId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -141,7 +148,11 @@ export default function JobDetailScreen() {
         </ScrollView>
       )}
 
-      {tab === 'research' && <CompanyResearchPanel job={job} onUpdated={setJob} />}
+      {tab === 'research' && (
+        <View style={styles.researchPane}>
+          <CompanyResearchPanel job={job} onUpdated={setJob} />
+        </View>
+      )}
     </ScreenLayout>
   );
 }
@@ -225,4 +236,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   linkText: { color: colors.amberLight, fontWeight: '700', flex: 1 },
+  researchPane: { flex: 1, minHeight: 320 },
 });

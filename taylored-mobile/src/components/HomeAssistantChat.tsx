@@ -193,7 +193,7 @@ export function HomeAssistantChat({
   const quickActions = [
     { label: 'Better job', icon: Briefcase, onPress: () => void submit('I want a better job — help me with applications and resume') },
     { label: 'Build a tool', icon: Wand2, onPress: () => void submit('I want to build a custom tool') },
-    { label: 'Research', icon: Radar, onPress: () => void submit('I need to research a company or person') },
+    { label: 'Research', icon: Radar, onPress: () => navigation.navigate('IntelAgent') },
   ];
 
   return (

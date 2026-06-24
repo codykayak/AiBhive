@@ -7,11 +7,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Briefcase, Wand2, Radar, ChevronRight } from 'lucide-react-native';
+import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2, Sparkles } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
-import { HiveOrb } from '../components/HiveOrb';
 import { HomeAssistantChat } from '../components/HomeAssistantChat';
-import { GlassCard } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
 import { colors, radii, spacing } from '../theme/colors';
@@ -20,36 +18,10 @@ import { listIntelCases } from '../osint/cases';
 import { countBuildingApps } from '../lib/hiveApps';
 import type { IntelCase } from '../osint/types';
 
-type HubCard = {
-  id: 'do' | 'build' | 'research';
-  title: string;
-  subtitle: string;
-  icon: typeof Briefcase;
-  accent: string;
-};
-
-const CARDS: HubCard[] = [
-  {
-    id: 'do',
-    title: 'Do',
-    subtitle: 'Track jobs, apply faster, manage your work pipeline.',
-    icon: Briefcase,
-    accent: colors.info,
-  },
-  {
-    id: 'build',
-    title: 'Build',
-    subtitle: 'Describe any tool — AiBhive creates apps for your workflow.',
-    icon: Wand2,
-    accent: colors.amber,
-  },
-  {
-    id: 'research',
-    title: 'Research',
-    subtitle: 'AI-directed intel on companies, domains, and people.',
-    icon: Radar,
-    accent: colors.purple,
-  },
+const COMMUNITY_STEPS = [
+  { n: '1', title: 'Install free', body: 'Browse the community toolkit — grab any shared app instantly.' },
+  { n: '2', title: 'Tweak it', body: 'Quick edits in seconds (~$0.50). Your data stays on your phone.' },
+  { n: '3', title: 'Share back', body: 'Love it? Opt in to share — the hive grows smarter for everyone.' },
 ];
 
 export default function HomeScreen() {
@@ -74,19 +46,6 @@ export default function HomeScreen() {
     void refresh();
   }, [refresh]);
 
-  const openDo = () => navigation.navigate('JobTracker');
-
-  const onCard = (id: HubCard['id']) => {
-    if (id === 'do') openDo();
-    else if (id === 'build') {
-      setAssistantExpanded(true);
-      setPendingAsk('I want to build a custom tool');
-    } else {
-      setAssistantExpanded(true);
-      setPendingAsk('I need to research a company or target');
-    }
-  };
-
   return (
     <ScreenLayout compactBadge contentStyle={styles.screenContent}>
       <ScrollView
@@ -94,13 +53,46 @@ export default function HomeScreen() {
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.hero}>
-          <HiveOrb size={64} active />
-          <Text style={styles.tagline}>Do · Build · Research</Text>
-          <Text style={styles.heroBody}>
-            Ask Grok on the home bar — jobs, research, or build anything. Your toolkit grows with every app you create.
+        {/* $1–$5 hero sell */}
+        <TouchableOpacity
+          style={styles.priceBlock}
+          activeOpacity={0.92}
+          onPress={() => navigation.navigate('HiveBuild')}
+        >
+          <Text style={styles.priceEyebrow}>Your first app</Text>
+          <Text style={styles.priceHeadline}>$1 to $5</Text>
+          <Text style={styles.priceSub}>
+            Describe any tool in plain English — live on your phone in under a minute. No Play Store update needed.
           </Text>
+          <View style={styles.priceCta}>
+            <Sparkles color={colors.black} size={18} />
+            <Text style={styles.priceCtaText}>Build now</Text>
+            <ChevronRight color={colors.black} size={18} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Community 1-2-3 */}
+        <View style={styles.sectionHead}>
+          <Share2 color={colors.amberLight} size={18} />
+          <Text style={styles.sectionTitle}>Community app pool</Text>
         </View>
+        {COMMUNITY_STEPS.map((step) => (
+          <TouchableOpacity
+            key={step.n}
+            style={styles.stepBlock}
+            activeOpacity={0.9}
+            onPress={() => navigation.navigate('Apps')}
+          >
+            <View style={styles.stepNumWrap}>
+              <Text style={styles.stepNum}>{step.n}</Text>
+            </View>
+            <View style={styles.stepCopy}>
+              <Text style={styles.stepTitle}>{step.title}</Text>
+              <Text style={styles.stepBody}>{step.body}</Text>
+            </View>
+            <ChevronRight color={colors.textDim} size={20} />
+          </TouchableOpacity>
+        ))}
 
         <HomeAssistantChat
           expanded={assistantExpanded}
@@ -109,25 +101,39 @@ export default function HomeScreen() {
           onInitialQueryConsumed={() => setPendingAsk(undefined)}
         />
 
-        <View style={styles.cards}>
-          {CARDS.map((card) => {
-            const Icon = card.icon;
-            return (
-              <TouchableOpacity key={card.id} activeOpacity={0.88} onPress={() => onCard(card.id)}>
-                <GlassCard style={styles.card} glow={card.id === 'build'}>
-                  <View style={[styles.iconCircle, { backgroundColor: `${card.accent}22` }]}>
-                    <Icon color={card.accent} size={28} />
-                  </View>
-                  <View style={styles.cardText}>
-                    <Text style={styles.cardTitle}>{card.title}</Text>
-                    <Text style={styles.cardSubtitle}>{card.subtitle}</Text>
-                  </View>
-                  <ChevronRight color={colors.textDim} size={22} />
-                </GlassCard>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Full-width action blocks */}
+        <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('JobTracker')}>
+          <Briefcase color={colors.info} size={26} />
+          <View style={styles.actionCopy}>
+            <Text style={styles.actionTitle}>Do</Text>
+            <Text style={styles.actionSub}>Jobs, applications, Auto-Bot Resume</Text>
+          </View>
+          <ChevronRight color={colors.textDim} size={22} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBlock}
+          onPress={() => {
+            setAssistantExpanded(true);
+            setPendingAsk('I want to build a custom tool');
+          }}
+        >
+          <Wand2 color={colors.amber} size={26} />
+          <View style={styles.actionCopy}>
+            <Text style={styles.actionTitle}>Build</Text>
+            <Text style={styles.actionSub}>Hive Magic — apps from plain English</Text>
+          </View>
+          <ChevronRight color={colors.textDim} size={22} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
+          <Radar color={colors.purple} size={26} />
+          <View style={styles.actionCopy}>
+            <Text style={styles.actionTitle}>Research</Text>
+            <Text style={styles.actionSub}>Intel on companies, domains, and people</Text>
+          </View>
+          <ChevronRight color={colors.textDim} size={22} />
+        </TouchableOpacity>
 
         {(buildingCount > 0 || recentIntel.length > 0) && (
           <View style={styles.activity}>
@@ -157,8 +163,9 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <TouchableOpacity style={styles.toolkitLink} onPress={() => navigation.navigate('Apps')}>
-          <Text style={styles.toolkitText}>Open toolkit — jobs, apps & more</Text>
+        <TouchableOpacity style={styles.toolkitBlock} onPress={() => navigation.navigate('Apps')}>
+          <Download color={colors.amberLight} size={20} />
+          <Text style={styles.toolkitText}>Open toolkit & community store</Text>
           <ChevronRight color={colors.amberLight} size={18} />
         </TouchableOpacity>
       </ScrollView>
@@ -169,40 +176,94 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: spacing.md },
   scroll: { paddingTop: spacing.xs },
-  hero: { alignItems: 'center', marginBottom: spacing.lg, paddingTop: spacing.sm },
-  tagline: {
-    ...typography.h1,
-    color: colors.amberLight,
-    marginTop: spacing.md,
-    textAlign: 'center',
-    letterSpacing: 0.5,
+  priceBlock: {
+    width: '100%',
+    backgroundColor: colors.amber,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
   },
-  heroBody: {
-    color: colors.textMuted,
+  priceEyebrow: {
+    color: colors.black,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    opacity: 0.75,
+  },
+  priceHeadline: {
+    color: colors.black,
+    fontSize: 42,
+    fontWeight: '900',
+    marginTop: 4,
+    letterSpacing: -1,
+  },
+  priceSub: {
+    color: colors.black,
     fontSize: 15,
     lineHeight: 22,
-    textAlign: 'center',
     marginTop: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    opacity: 0.85,
   },
-  cards: { gap: spacing.sm },
-  card: {
+  priceCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
+    gap: 6,
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.pill,
   },
-  iconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: radii.md,
+  priceCtaText: { color: colors.black, fontWeight: '900', fontSize: 15 },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: spacing.sm,
+  },
+  sectionTitle: { color: colors.amberLight, fontWeight: '900', fontSize: 17 },
+  stepBlock: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  stepNumWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.amberSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardText: { flex: 1 },
-  cardTitle: { color: colors.text, fontWeight: '900', fontSize: 20, marginBottom: 4 },
-  cardSubtitle: { color: colors.textMuted, fontSize: 13, lineHeight: 18 },
-  activity: { marginTop: spacing.lg },
+  stepNum: { color: colors.amberLight, fontWeight: '900', fontSize: 16 },
+  stepCopy: { flex: 1 },
+  stepTitle: { color: colors.text, fontWeight: '800', fontSize: 16 },
+  stepBody: { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 2 },
+  actionBlock: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  actionCopy: { flex: 1 },
+  actionTitle: { color: colors.text, fontWeight: '900', fontSize: 18 },
+  actionSub: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  activity: { marginTop: spacing.md },
   activityTitle: {
     color: colors.textDim,
     fontWeight: '800',
@@ -220,13 +281,18 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderMuted,
   },
   activityText: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '600' },
-  toolkitLink: {
+  toolkitBlock: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginTop: spacing.xl,
+    gap: 8,
+    marginTop: spacing.lg,
     paddingVertical: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.amber + '44',
+    backgroundColor: colors.amberSoft,
   },
-  toolkitText: { color: colors.amberLight, fontWeight: '700', fontSize: 14 },
+  toolkitText: { color: colors.amberLight, fontWeight: '800', fontSize: 15 },
 });

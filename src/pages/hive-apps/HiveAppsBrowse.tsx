@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { TrendingUp, Star, ArrowRight } from 'lucide-react';
+import { Download, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
@@ -18,6 +17,12 @@ const EMPTY: StoreCatalog = {
   query: null,
   category: null,
 };
+
+const STEPS = [
+  { n: '1', title: 'Install free', body: 'Pick any community app — one tap adds it to My Apps.' },
+  { n: '2', title: 'Tweak it', body: 'Quick spec edits in seconds. About $0.50. Your data stays.' },
+  { n: '3', title: 'Share back', body: 'Opt in when you love it. The pool grows for everyone.' },
+];
 
 function webAppAsCard(w: PublishedWebApp): HiveAppSpec {
   return {
@@ -66,160 +71,161 @@ export default function HiveAppsBrowse() {
     <>
       <SEO
         title="Hive Apps Store — Install, Try & Build | AiBhive"
-        description="Browse community mobile and web apps. Install free, try in your browser, tweak or build from scratch."
-        keywords="Hive Apps store, community apps, install free, web app store AiBhive"
+        description="Your first app $1–$5. Browse the community pool — install free, tweak, share."
       />
 
-      {/* Featured hero */}
-      {tab === 'mobile' && !q && catalog.featured.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
-          <div className="flex items-center gap-2 mb-4">
-            <Star className="w-5 h-5 text-bee-amber fill-bee-amber" />
-            <h2 className="text-white font-bold text-lg">Featured</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {catalog.featured.slice(0, 3).map((app, i) => (
-              <motion.div
-                key={app.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
+        {/* $1–$5 sell block */}
+        {tab !== 'web' && !q && (
+          <Link
+            to="/hive-apps/build"
+            className="block w-full mt-6 mb-4 rounded-2xl bg-bee-amber p-6 sm:p-8 hover:bg-bee-yellow transition-colors"
+          >
+            <p className="text-bee-black/70 text-xs font-bold uppercase tracking-widest">Your first app</p>
+            <p className="text-bee-black text-4xl sm:text-5xl font-black mt-1">$1 to $5</p>
+            <p className="text-bee-black/85 text-base sm:text-lg mt-3 max-w-xl leading-relaxed">
+              Describe any tool in plain English — live on your phone in under a minute. No app store wait.
+            </p>
+            <span className="inline-flex items-center gap-2 mt-5 text-bee-black font-extrabold text-sm bg-black/10 px-4 py-2.5 rounded-xl">
+              <Sparkles className="w-4 h-4" />
+              Build from scratch
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </Link>
+        )}
+
+        {/* Community 1-2-3 */}
+        {tab !== 'web' && !q && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3 px-1">
+              <Share2 className="w-5 h-5 text-bee-amber" />
+              <h2 className="text-white font-bold text-lg">Community app pool</h2>
+            </div>
+            {STEPS.map((step) => (
+              <div
+                key={step.n}
+                className="w-full flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-3"
               >
-                <Link
-                  to={`/hive-apps/app/${app.id}`}
-                  className="block p-5 rounded-2xl border border-bee-amber/20 bg-gradient-to-br from-bee-amber/10 to-transparent hover:border-bee-amber/40 transition-all group"
-                >
-                  <p className="text-bee-amber text-xs font-bold uppercase tracking-wider mb-2">Featured</p>
-                  <h3 className="text-white font-extrabold text-xl group-hover:text-bee-amber transition-colors">{app.title}</h3>
-                  <p className="text-slate-400 text-sm mt-2 line-clamp-2">{app.tagline || app.summary}</p>
-                  <p className="text-bee-amber text-sm font-bold mt-4 flex items-center gap-1">
-                    View app <ArrowRight className="w-4 h-4" />
-                  </p>
-                </Link>
-              </motion.div>
+                <div className="w-10 h-10 rounded-xl bg-bee-amber/15 flex items-center justify-center shrink-0">
+                  <span className="text-bee-amber font-black text-lg">{step.n}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-white font-bold">{step.title}</p>
+                  <p className="text-slate-400 text-sm mt-0.5">{step.body}</p>
+                </div>
+              </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar categories — store style */}
-          {tab === 'mobile' && (
-            <aside className="lg:w-52 shrink-0">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Categories</p>
-              <nav className="flex lg:flex-col gap-2 overflow-x-auto pb-2 lg:pb-0">
-                {categories.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setCategory(c.id)}
-                    className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap text-left transition-colors ${
-                      category === c.id
-                        ? 'bg-bee-amber text-bee-black'
-                        : 'bg-white/5 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {CATEGORY_LABELS[c.id] || c.id}{' '}
-                    <span className="opacity-70">({c.count})</span>
-                  </button>
-                ))}
-              </nav>
-
-              <div className="hidden lg:block mt-8 p-4 rounded-2xl border border-white/5 bg-white/[0.02]">
-                <TrendingUp className="w-5 h-5 text-bee-amber mb-2" />
-                <p className="text-white font-bold text-sm">{catalog.totalInstalls.toLocaleString()}</p>
-                <p className="text-slate-500 text-xs">Total installs</p>
-                <p className="text-white font-bold text-sm mt-3">{catalog.total}</p>
-                <p className="text-slate-500 text-xs">Shared apps</p>
-              </div>
-            </aside>
-          )}
-
-          {/* Main grid */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-end justify-between mb-5 gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-white">
-                  {tab === 'web' ? 'Web apps' : q ? `Results for “${q}”` : 'Browse apps'}
-                </h1>
-                <p className="text-slate-400 text-sm mt-1">
-                  {tab === 'web'
-                    ? `${catalog.webApps.length} exported web apps`
-                    : loading
-                      ? 'Loading…'
-                      : `${catalog.apps.length} app${catalog.apps.length === 1 ? '' : 's'}`}
-                </p>
-              </div>
-              <Link
-                to="/hive-apps/build"
-                className="text-sm font-bold text-bee-amber hover:underline shrink-0"
-              >
-                Build from scratch →
-              </Link>
+        {/* Example tools */}
+        {tab !== 'web' && !q && (
+          <div className="mb-8">
+            <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
+            <div className="space-y-3">
+              {[
+                { title: 'Job Tracker', sub: 'Applications, status, materials', href: 'https://aibhive.com/api/download/apk' },
+                { title: 'Auto-Bot Resume', sub: 'Tailored resume & cover letter', href: 'https://aibhive.com/api/download/apk' },
+                { title: 'Research', sub: 'Intel on companies and people', href: 'https://aibhive.com/api/download/apk' },
+              ].map((tool) => (
+                <a
+                  key={tool.title}
+                  href={tool.href}
+                  className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-bee-amber/30 transition-colors"
+                >
+                  <div>
+                    <p className="text-white font-bold">{tool.title}</p>
+                    <p className="text-slate-400 text-sm">{tool.sub}</p>
+                  </div>
+                  <Download className="w-5 h-5 text-bee-amber shrink-0" />
+                </a>
+              ))}
             </div>
-
-            {loading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <HiveAppCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : tab === 'web' ? (
-              catalog.webApps.length === 0 ? (
-                <EmptyState
-                  title="No web apps yet"
-                  body="When someone exports a Hive app as a web link, it appears here. Build on mobile, then export as a web app."
-                />
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {catalog.webApps.map((w) => (
-                    <HiveAppCard key={w.id} app={webAppAsCard(w)} variant="web" webApp={w} />
-                  ))}
-                </div>
-              )
-            ) : catalog.apps.length === 0 ? (
-              <EmptyState
-                title={q ? 'No matches' : 'Store is warming up'}
-                body={
-                  q
-                    ? 'Try a different search or build exactly what you need.'
-                    : 'Be the first — build an app in AiBhive, use it until you love it, then share to the community.'
-                }
-              />
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                {catalog.apps.map((app) => (
-                  <HiveAppCard key={app.id} app={app} variant="mobile" />
-                ))}
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Catalog header */}
+        <div className="flex items-end justify-between mb-4 px-1">
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              {tab === 'web' ? 'Web apps' : q ? `Results for “${q}”` : 'Community apps'}
+            </h2>
+            <p className="text-slate-500 text-sm mt-0.5">
+              {tab === 'web'
+                ? `${catalog.webApps.length} published`
+                : loading
+                  ? 'Loading…'
+                  : `${catalog.apps.length} apps · ${catalog.totalInstalls.toLocaleString()} installs`}
+            </p>
+          </div>
+          <Link to="/hive-apps/build" className="text-bee-amber font-bold text-sm flex items-center gap-1">
+            <Wrench className="w-4 h-4" />
+            Build
+          </Link>
         </div>
-      </section>
+
+        {/* Categories — horizontal chips only when browsing mobile */}
+        {tab === 'mobile' && categories.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-2">
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCategory(c.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
+                  category === c.id ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400'
+                }`}
+              >
+                {CATEGORY_LABELS[c.id] || c.id} ({c.count})
+              </button>
+            ))}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <HiveAppCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : tab === 'web' ? (
+          catalog.webApps.length === 0 ? (
+            <EmptyBlock title="No web apps yet" body="Export a Hive app as a web link and it appears here." />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {catalog.webApps.map((w) => (
+                <HiveAppCard key={w.id} app={webAppAsCard(w)} variant="web" webApp={w} />
+              ))}
+            </div>
+          )
+        ) : catalog.apps.length === 0 ? (
+          <EmptyBlock
+            title={q ? 'No matches' : 'Store is warming up'}
+            body="Build an app, love it, then share to the community."
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {catalog.apps.map((app) => (
+              <HiveAppCard key={app.id} app={app} variant="mobile" />
+            ))}
+          </div>
+        )}
+      </div>
     </>
   );
 }
 
-function EmptyState({ title, body }: { title: string; body: string }) {
+function EmptyBlock({ title, body }: { title: string; body: string }) {
   return (
-    <div className="text-center py-16 px-6 rounded-2xl border border-dashed border-white/10">
-      <p className="text-white font-bold text-lg mb-2">{title}</p>
-      <p className="text-slate-400 text-sm max-w-md mx-auto mb-6">{body}</p>
-      <div className="flex flex-wrap gap-3 justify-center">
-        <Link
-          to="/hive-apps/build"
-          className="px-6 py-2.5 rounded-full bg-bee-amber text-bee-black font-bold text-sm"
-        >
-          Build new app
-        </Link>
-        <a
-          href="https://aibhive.com/api/download/apk"
-          className="px-6 py-2.5 rounded-full border border-white/20 text-white font-bold text-sm"
-        >
-          Download AiBhive
-        </a>
-      </div>
+    <div className="w-full rounded-2xl border border-dashed border-white/10 p-12 text-center">
+      <p className="text-white font-bold text-lg">{title}</p>
+      <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">{body}</p>
+      <Link
+        to="/hive-apps/build"
+        className="inline-block mt-6 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-bold text-sm"
+      >
+        Build your first app
+      </Link>
     </div>
   );
 }
