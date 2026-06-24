@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Text, StyleSheet, ScrollView, View, ActivityIndicator } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes,
@@ -73,7 +73,20 @@ export default function AppsScreen() {
     const installed = await installToolkitApp(app.id);
     if (installed) {
       await load();
-      navigation.navigate('DynamicApp', { appId: installed.id, app: installed });
+      Alert.alert(
+        'Added to My Apps',
+        `"${installed.title}" is ready. Tweak it for free or customize with Cursor.`,
+        [
+          {
+            text: 'Tweak or Customize',
+            onPress: () => navigation.navigate('AppCustomize', { appId: installed.id }),
+          },
+          {
+            text: 'Open app',
+            onPress: () => navigation.navigate('DynamicApp', { appId: installed.id, app: installed }),
+          },
+        ]
+      );
     }
   };
 
@@ -176,7 +189,7 @@ export default function AppsScreen() {
         {toolkitApps.length === 0 ? (
           <GlassCard style={styles.toolkitEmpty}>
             <Text style={styles.toolkitEmptyText}>
-              Be the first — build an app on Home or Build and it joins the shared toolkit automatically.
+              Be the first — build an app, use it until you love it, then tap Share to add it here.
             </Text>
           </GlassCard>
         ) : (

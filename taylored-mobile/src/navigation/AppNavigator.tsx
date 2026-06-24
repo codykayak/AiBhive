@@ -14,6 +14,7 @@ import HiveAppDetailScreen from '../screens/HiveAppDetailScreen';
 import UserAppHostScreen from '../screens/UserAppHostScreen';
 import DynamicAppHost from '../dynamicApps/DynamicAppHost';
 import HiveExportOptionsScreen from '../screens/HiveExportOptionsScreen';
+import AppCustomizeScreen from '../screens/AppCustomizeScreen';
 import IntelCaseScreen from '../screens/IntelCaseScreen';
 import IntelAgentScreen from '../screens/IntelAgentScreen';
 import BuildScreen from '../screens/BuildScreen';
@@ -39,6 +40,7 @@ const linking = {
       UserApp: 'userApps/:slug',
       DynamicApp: 'app/:appId',
       HiveExportOptions: 'app/:appId/export',
+      AppCustomize: 'app/:appId/customize',
       HiveAppDetail: 'apps/detail',
       UserGuide: 'guide',
     },
@@ -87,6 +89,11 @@ export default function AppNavigator() {
           name="HiveExportOptions"
           component={HiveExportOptionsScreen}
           options={{ title: 'Export' }}
+        />
+        <Stack.Screen
+          name="AppCustomize"
+          component={AppCustomizeScreen}
+          options={{ title: 'Tweak or Customize' }}
         />
         <Stack.Screen name="HiveBuild" component={BuildScreen} options={{ title: 'Build' }} />
         <Stack.Screen name="IntelAgent" component={IntelAgentScreen} options={{ title: 'Research' }} />

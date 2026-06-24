@@ -115,6 +115,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aibhive.com/hive-apps</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
     <loc>https://aibhive.com/autoposter</loc>
     <lastmod>2026-06-22</lastmod>
     <changefreq>weekly</changefreq>

@@ -89,6 +89,57 @@ export async function requestExport(appId: string, target: ExportTarget): Promis
   }
 }
 
+export type TweakResponse = {
+  app: HiveAppSpec;
+  estimateUsd: number;
+};
+
+export async function requestTweak(appId: string, message: string): Promise<TweakResponse | null> {
+  try {
+    const userId = await getOrCreateHiveUserId();
+    const headers = await authHeaders();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/apps/${encodeURIComponent(appId)}/tweak`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId, message }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.app) return null;
+    return {
+      app: data.app,
+      estimateUsd: data.estimate?.costUsd ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function requestCustomize(
+  appId: string,
+  message: string
+): Promise<ExportTaskResponse | null> {
+  try {
+    const userId = await getOrCreateHiveUserId();
+    const headers = await authHeaders();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/apps/${encodeURIComponent(appId)}/customize`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId, message }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.task) return null;
+    return {
+      taskId: data.task.id,
+      estimateUsd: data.task.estimate?.costUsd ?? 0,
+      estimateMinutes: data.task.estimate?.minutes ?? 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function shareAppToToolkit(appId: string): Promise<HiveAppSpec | null> {
   try {
     const userId = await getOrCreateHiveUserId();

@@ -14,7 +14,7 @@ AiBhive is a phone app that **does work, builds tools, and researches targets** 
 | **Build** | Hive Magic — describe an app in plain English; AiBhive builds it (instant spec apps in seconds, or Cursor cloud builds for complex apps) | User wants a calculator, tracker, custom tool, workflow app, anything that doesn't exist yet |
 | **Research** | Intel Agent — AI-directed OSINT on companies, domains, people, licenses, competitors | User wants due diligence, find contractors, expired licenses, company intel, web investigation |
 
-The app **grows over time**: every custom app a user builds is saved to their cloud toolkit and can be reused. As more users build tools, AiBhive becomes able to do nearly anything.
+The app **grows over time**: every custom app a user builds is saved to their cloud library. When they opt in, it joins the **Community Toolkit** so others can install and remix it.
 
 ---
 
@@ -83,16 +83,26 @@ Then summarize and ask for confirmation before starting the build.
 
 ## Community Toolkit (shared cloud apps)
 
-Every app a user builds is **saved to the cloud** (`hive_apps` in Firestore) and **auto-shared** to the **Community Toolkit** so the hive grows smarter over time.
+Apps you build are **saved to the cloud** (`hive_apps` in Firestore). They stay **private by default**.
+
+**Sharing is opt-in only** — we never auto-publish half-built drafts. Users share when they tap **Share to Community Toolkit** after the app is ready, or from **Tweak or Customize**.
+
+**Three tiers when someone wants an app:**
+
+| Tier | What happens | Cost |
+|------|----------------|------|
+| **Install** | Clone a community app into My Apps | Free |
+| **Quick Tweak** | Spec iteration — pages, theme, copy (same dynamic app) | ~$0.50 |
+| **Full Customize** | Cursor writes real code — branding, custom UX | ~$4+ |
 
 **Before building something new:**
 1. Check the COMMUNITY TOOLKIT list in context.
 2. If a close match exists, tell the user: *"Someone already built this — want me to add **[Title]** to your apps for free?"*
-3. Use `intent: "tool"` and explain they can open Toolkit → Community to install.
-
-**When user builds something new:** it becomes available to everyone after the build completes. They can still tap **Share to Community Toolkit** on any private app.
+3. Use `intent: "tool"` and explain they can open Apps → Community Toolkit to install, then **Tweak or Customize**.
 
 **Install vs build:** Community installs are **free and instant** — no ~$1 build charge.
+
+**After install:** Suggest **Tweak or Customize** if they want changes — quick tweak for small edits, full customize for branding or advanced behavior.
 
 ---
 

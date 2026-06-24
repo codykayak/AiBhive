@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, Alert,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Download, Sparkles, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Download, Sparkles, Share2, SlidersHorizontal } from 'lucide-react-native';
 import { brandFor, iconFor } from './branding';
 import ListPage from './pageTypes/ListPage';
 import TrackerPage from './pageTypes/TrackerPage';
@@ -182,17 +182,18 @@ export default function DynamicAppHost() {
         <View style={[styles.iterCard, { borderColor: brand.primarySoft }]}>
           <View style={styles.iterRow}>
             <Sparkles color={brand.primary} size={18} />
-            <Text style={styles.iterTitle}>Tweak this app</Text>
+            <Text style={styles.iterTitle}>Make it yours</Text>
           </View>
           <Text style={styles.iterBody}>
-            Open the Build tab and say things like "add a notes page" or "change the theme to blue".
-            The Hive updates this exact app — your data stays. Tiny tweaks cost ~$0.50.
+            Quick tweaks update this app in seconds (~$0.50). Full Cursor customize adds real branding
+            and custom behavior (~$4+).
           </Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('HiveBuild')}
+            onPress={() => navigation.navigate('AppCustomize', { appId: app.id })}
             style={[styles.iterBtn, { backgroundColor: brand.primary }]}
           >
-            <Text style={[styles.iterBtnText, { color: brand.contrastText }]}>Go to Build</Text>
+            <SlidersHorizontal color={brand.contrastText} size={16} />
+            <Text style={[styles.iterBtnText, { color: brand.contrastText }]}>Tweak or Customize</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
@@ -298,6 +299,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: radii.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   iterBtnText: { fontWeight: '800', fontSize: 14 },
   deleteBtn: { marginTop: spacing.md, alignSelf: 'flex-start' },
