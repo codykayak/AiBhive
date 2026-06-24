@@ -1,6 +1,6 @@
 import { auth } from '../firebaseConfig';
 import { getOrCreateHiveUserId } from './hiveApi';
-import type { HiveAppSpec } from '../dynamicApps/types';
+import type { HiveAppSpec, CommunityToolkitApp } from '../dynamicApps/types';
 
 const HIVE_API_BASE = 'https://aibhive.com';
 
@@ -84,6 +84,52 @@ export async function requestExport(appId: string, target: ExportTarget): Promis
       estimateUsd: data.task.estimate?.costUsd ?? 0,
       estimateMinutes: data.task.estimate?.minutes ?? 0,
     };
+  } catch {
+    return null;
+  }
+}
+
+export async function shareAppToToolkit(appId: string): Promise<HiveAppSpec | null> {
+  try {
+    const userId = await getOrCreateHiveUserId();
+    const headers = await authHeaders();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/apps/${encodeURIComponent(appId)}/share`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.app || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchCommunityToolkit(query?: string): Promise<CommunityToolkitApp[]> {
+  try {
+    const q = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/toolkit${q}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.apps) ? data.apps : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function installToolkitApp(communityAppId: string): Promise<HiveAppSpec | null> {
+  try {
+    const userId = await getOrCreateHiveUserId();
+    const headers = await authHeaders();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/toolkit/${encodeURIComponent(communityAppId)}/install`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.app || null;
   } catch {
     return null;
   }

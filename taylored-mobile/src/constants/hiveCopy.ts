@@ -53,7 +53,14 @@ export const HIVE_COPY = {
   appsRecent: 'Your Hive apps',
   appsBuiltIn: 'Starter tools',
   appsEmptyBuilds:
-    'No apps yet — describe one on Build. Most ready in under a minute, ~$1 each. No Play Store update needed.',
+    'No apps yet — describe one on Build or install from the Community Toolkit below.',
+  toolkitTitle: 'Community Toolkit',
+  toolkitBody:
+    'Apps built by the hive, shared for everyone. Install free — no rebuild needed. New builds are added automatically.',
+  toolkitInstall: 'Add to My Apps',
+  toolkitInstalled: 'Added to My Apps',
+  toolkitShared: 'Shared with the community',
+  shareToToolkit: 'Share to Community Toolkit',
   chatCleared: 'Chat cleared',
   copied: 'Copied to clipboard',
 };

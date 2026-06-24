@@ -81,14 +81,36 @@ export function normalizeAppSpec(raw, ctx) {
     summary,
     theme,
     icon,
-    storage,
+    storage: 'cloud',
     pages: normalizedPages,
     sourceTaskId: ctx.sourceTaskId || null,
+    sourceCommunityAppId: ctx.sourceCommunityAppId || raw.sourceCommunityAppId || null,
+    visibility: raw.visibility === 'community' ? 'community' : 'private',
+    toolkitKeywords: normalizeKeywords(raw.toolkitKeywords, title, tagline, summary),
+    installCount: Number.isFinite(raw.installCount) ? Math.max(0, Number(raw.installCount)) : 0,
+    sharedAt: raw.sharedAt || null,
     version: Number.isFinite(raw.version) ? Number(raw.version) : 1,
     updatedAt: now,
     createdAt: raw.createdAt || now,
   };
 }
+
+function normalizeKeywords(explicit, title, tagline, summary) {
+  const fromExplicit = Array.isArray(explicit)
+    ? explicit.filter((k) => typeof k === 'string').map((k) => k.trim().toLowerCase()).slice(0, 24)
+    : [];
+  const blob = `${title} ${tagline} ${summary}`.toLowerCase();
+  const tokens = blob
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+  const merged = [...new Set([...fromExplicit, ...tokens])].slice(0, 24);
+  return merged;
+}
+
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'your', 'app', 'tool', 'that', 'this', 'from', 'have', 'are', 'was',
+]);
 
 function normalizePage(page, idx) {
   const id = clampString(page.id, 48, `page-${idx + 1}`);
@@ -208,6 +230,160 @@ export async function saveUserApp(db, ownerId, spec) {
   delete normalized.id;
   await db.collection(COLLECTION).doc(id).set(normalized, { merge: true });
   return { id, ...normalized };
+}
+
+/** @param {import('firebase-admin/firestore').Firestore} db */
+export async function getCommunityApp(db, appId) {
+  if (!appId) return null;
+  const snap = await db.collection(COLLECTION).doc(appId).get();
+  if (!snap.exists) return null;
+  const data = snap.data();
+  if (data.visibility !== 'community') return null;
+  return { id: snap.id, ...data };
+}
+
+/** Score how well a community app matches a natural-language query. */
+function scoreToolkitMatch(app, query) {
+  const q = String(query || '').toLowerCase();
+  const tokens = q
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+  if (!tokens.length) return 0;
+
+  const hay = [
+    app.title,
+    app.tagline,
+    app.summary,
+    ...(Array.isArray(app.toolkitKeywords) ? app.toolkitKeywords : []),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  let score = 0;
+  for (const t of tokens) {
+    if (hay.includes(t)) score += 2;
+  }
+  if (hay.includes(q.slice(0, 48))) score += 5;
+  return score + Math.min(3, (app.installCount || 0) / 10);
+}
+
+/**
+ * Search the shared AiBhive community toolkit.
+ * @param {import('firebase-admin/firestore').Firestore} db
+ */
+export async function searchCommunityToolkit(db, query, limit = 8) {
+  const snap = await db
+    .collection(COLLECTION)
+    .where('visibility', '==', 'community')
+    .limit(120)
+    .get()
+    .catch(() => null);
+  if (!snap) return [];
+
+  const scored = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .map((app) => ({ app, score: scoreToolkitMatch(app, query) }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return scored.map(({ app }) => ({
+    id: app.id,
+    title: app.title,
+    tagline: app.tagline,
+    summary: app.summary,
+    theme: app.theme,
+    icon: app.icon,
+    pages: app.pages,
+    installCount: app.installCount || 0,
+    ownerId: app.ownerId,
+    sharedAt: app.sharedAt,
+  }));
+}
+
+/** @param {import('firebase-admin/firestore').Firestore} db */
+export async function listCommunityToolkit(db, limit = 24) {
+  const snap = await db
+    .collection(COLLECTION)
+    .where('visibility', '==', 'community')
+    .limit(Math.min(limit * 3, 120))
+    .get()
+    .catch(() => null);
+  if (!snap) return [];
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.installCount || 0) - (a.installCount || 0) || String(b.updatedAt).localeCompare(String(a.updatedAt)))
+    .slice(0, limit)
+    .map((app) => ({
+      id: app.id,
+      title: app.title,
+      tagline: app.tagline,
+      summary: app.summary,
+      theme: app.theme,
+      icon: app.icon,
+      pages: app.pages,
+      installCount: app.installCount || 0,
+      sharedAt: app.sharedAt,
+    }));
+}
+
+/** @param {import('firebase-admin/firestore').Firestore} db */
+export async function shareAppToCommunity(db, ownerId, appId) {
+  const existing = await getUserApp(db, ownerId, appId);
+  if (!existing) return { ok: false, error: 'App not found.' };
+  const now = new Date().toISOString();
+  await db.collection(COLLECTION).doc(appId).set(
+    {
+      visibility: 'community',
+      sharedAt: now,
+      updatedAt: now,
+      storage: 'cloud',
+    },
+    { merge: true }
+  );
+  const updated = await getUserApp(db, ownerId, appId);
+  return { ok: true, app: updated };
+}
+
+/** Clone a community app into the user's library (free — no build charge). */
+export async function installCommunityApp(db, userId, communityAppId) {
+  const source = await getCommunityApp(db, communityAppId);
+  if (!source) return { ok: false, error: 'Community app not found or not shared.' };
+
+  const cloneSpec = normalizeAppSpec(
+    {
+      title: source.title,
+      tagline: source.tagline,
+      summary: source.summary,
+      theme: source.theme,
+      icon: source.icon,
+      pages: source.pages,
+      slug: `${source.slug || 'tool'}-copy`,
+      sourceCommunityAppId: communityAppId,
+      visibility: 'private',
+    },
+    { ownerId: userId, sourceCommunityAppId: communityAppId }
+  );
+
+  const saved = await saveUserApp(db, userId, cloneSpec);
+
+  await db.collection(COLLECTION).doc(communityAppId).set(
+    { installCount: (source.installCount || 0) + 1, updatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+
+  return { ok: true, app: saved, sourceAppId: communityAppId };
+}
+
+/** Best single match for triage / home assistant — score threshold 4+. */
+export async function findToolkitMatch(db, query) {
+  const matches = await searchCommunityToolkit(db, query, 3);
+  if (!matches.length) return null;
+  const top = matches[0];
+  const rescore = scoreToolkitMatch(top, query);
+  if (rescore < 4) return null;
+  return top;
 }
 
 /** @param {import('firebase-admin/firestore').Firestore} db */
