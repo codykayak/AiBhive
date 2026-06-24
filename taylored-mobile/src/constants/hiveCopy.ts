@@ -56,11 +56,13 @@ export const HIVE_COPY = {
     'No apps yet — describe one on Build or install from the Community Toolkit below.',
   toolkitTitle: 'Community Toolkit',
   toolkitBody:
-    'Apps built by the hive, shared for everyone. Install free — no rebuild needed. New builds are added automatically.',
+    'Apps shared by the hive — install free, then tweak or customize your copy. Sharing is opt-in only.',
   toolkitInstall: 'Add to My Apps',
   toolkitInstalled: 'Added to My Apps',
   toolkitShared: 'Shared with the community',
   shareToToolkit: 'Share to Community Toolkit',
+  tweakOrCustomize: 'Tweak or Customize',
+  tweakOrCustomizeHint: 'Quick spec edits (~$0.50) or full Cursor customize (~$4+).',
   chatCleared: 'Chat cleared',
   copied: 'Copied to clipboard',
 };

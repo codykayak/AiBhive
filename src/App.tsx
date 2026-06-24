@@ -24,6 +24,7 @@ import RealEstateSolutions from './pages/solutions/RealEstateSolutions';
 import PhoneSystemsIntegration from './pages/solutions/PhoneSystemsIntegration';
 import BookConsultation from './pages/BookConsultation';
 import IntelGathering from './pages/intel-gathering/IntelGathering';
+import HiveApps from './pages/HiveApps';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -61,6 +62,7 @@ function AnimatedRoutes() {
           <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
           <Route path="/book-consultation" element={<BookConsultation />} />
           <Route path="/intel-gathering" element={<IntelGathering />} />
+          <Route path="/hive-apps" element={<HiveApps />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

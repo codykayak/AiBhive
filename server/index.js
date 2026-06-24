@@ -1369,11 +1369,6 @@ app.post('/api/hive/tasks', async (req, res) => {
         try {
           const saved = await saveUserApp(db, appSpec.ownerId, appSpec);
           appId = saved.id;
-          try {
-            await shareAppToCommunity(db, resolvedUserId, saved.id);
-          } catch (shareErr) {
-            console.warn('[hive/tasks] toolkit share skipped:', shareErr.message);
-          }
         } catch (err) {
           console.error('[hive/tasks] saving spec failed:', err.message);
           appSpec = null;
@@ -1650,6 +1645,159 @@ app.delete('/api/hive/apps/:appId', async (req, res) => {
   } catch (err) {
     console.error('[hive/apps] delete error:', err);
     return res.status(500).json({ error: 'Could not delete app.' });
+  }
+});
+
+app.post('/api/hive/apps/:appId/tweak', express.json(), async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const message = String(req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ error: 'message is required.' });
+    if (message.length > 2000) return res.status(400).json({ error: 'Message is too long.' });
+
+    const existing = await getUserApp(db, ownerId, req.params.appId);
+    if (!existing) return res.status(404).json({ error: 'App not found.' });
+
+    const authUser = await verifyHiveAuth(req);
+    const freeBuild = Boolean(authUser?.email && isHiveFreeBuildEmail(authUser.email));
+    const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const priced = priceEstimate(
+      { costUsd: 0, minutes: 0 },
+      { free: freeBuild, iteration: true, target: 'host_screen', buildMethod: 'spec' }
+    );
+    const cost = priced.user.costUsd;
+
+    if (ownerId && ownerId !== 'anonymous' && !freeBuild && cost > 0) {
+      try {
+        await reserveBuildCredits(db, ownerId, taskId, cost);
+      } catch {
+        // Soft-fail — welcome credit may cover small tweaks.
+      }
+    }
+
+    let appSpec;
+    try {
+      appSpec = await generateAppSpec({
+        message,
+        ownerId,
+        slug: existing.slug,
+        title: existing.title,
+        previous: existing,
+        sourceTaskId: taskId,
+      });
+    } catch (err) {
+      console.error('[hive/apps] tweak spec failed:', err.message);
+      return res.status(500).json({ error: 'Could not apply tweak. Try a simpler change.' });
+    }
+
+    const saved = await saveUserApp(db, ownerId, {
+      ...appSpec,
+      id: req.params.appId,
+      visibility: existing.visibility,
+      sourceCommunityAppId: existing.sourceCommunityAppId || null,
+      sharedAt: existing.sharedAt || null,
+      installCount: existing.installCount || 0,
+    });
+
+    const now = new Date().toISOString();
+    await db.collection(HIVE_TASKS).doc(taskId).set({
+      id: taskId,
+      message,
+      userId: ownerId,
+      route: 'spec',
+      target: 'host_screen',
+      buildMethod: 'spec',
+      slug: existing.slug,
+      title: existing.title,
+      appId: req.params.appId,
+      previousTaskId: existing.sourceTaskId || null,
+      status: 'complete',
+      summary: `Tweak "${existing.title}"`,
+      estimate: priced.user,
+      estimateBase: priced.base,
+      reply: `Updated "${saved.title}" — your data stays on this device.`,
+      deliverable: {
+        kind: 'spec_app',
+        appId: req.params.appId,
+        slug: saved.slug,
+        title: saved.title,
+        label: 'Open your app',
+      },
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    return res.json({ ok: true, app: saved, estimate: priced.user });
+  } catch (err) {
+    console.error('[hive/apps] tweak error:', err);
+    return res.status(500).json({ error: err.message || 'Could not tweak app.' });
+  }
+});
+
+app.post('/api/hive/apps/:appId/customize', express.json(), async (req, res) => {
+  try {
+    const ownerId = await resolveOwnerForApps(req);
+    if (!ownerId) return res.status(400).json({ error: 'userId required.' });
+    const message = String(req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ error: 'message is required.' });
+    if (message.length > 2000) return res.status(400).json({ error: 'Message is too long.' });
+
+    const app = await getUserApp(db, ownerId, req.params.appId);
+    if (!app) return res.status(404).json({ error: 'App not found.' });
+
+    const buildPrompt = [
+      `Hive customize build: upgrade the user's spec app to custom in-app code (host_screen).`,
+      `User customization request: ${message}`,
+      `Current HiveAppSpec (JSON — preserve data model and page intent):`,
+      '```json',
+      JSON.stringify(app, null, 2),
+      '```',
+      `Implement as a polished React Native feature under cody/apps/${ownerId}/${app.slug}/.`,
+      'Match the spec title, tagline, theme colors, and icon. Add any branding or UX the user asked for.',
+      'Wire it into the AiBhive mobile app shell if needed, or enhance the dynamic page types.',
+    ].join('\n');
+
+    const cursorEst = await estimateCursorBuildCost({
+      message: `Customize ${app.title}: ${message}`,
+      buildPrompt,
+      summary: `Full Cursor customize "${app.title}"`,
+    });
+    const priced = priceEstimate(
+      { costUsd: cursorEst.costUsd, minutes: cursorEst.minutes },
+      { target: 'host_screen', buildMethod: 'cursor' }
+    );
+
+    const taskId = `hive_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const doc = {
+      id: taskId,
+      message: `Customize ${app.title}: ${message}`,
+      userId: ownerId,
+      route: 'cursor',
+      target: 'host_screen',
+      buildMethod: 'cursor',
+      slug: app.slug,
+      title: app.title,
+      appId: req.params.appId,
+      previousTaskId: app.sourceTaskId || null,
+      status: 'awaiting_approval',
+      summary: `Full customize "${app.title}" — branding, layout, and behavior beyond spec pages.`,
+      estimate: priced.user,
+      estimateBase: priced.base,
+      cursorEstimate: cursorEst,
+      buildPrompt,
+      reply:
+        `Custom upgrade ready.\n\n${message}\n\nAbout $${priced.user.costUsd} · ~${priced.user.minutes} min\n\nTap Approve & Build when you're ready.`,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await db.collection(HIVE_TASKS).doc(taskId).set(doc);
+    return res.json({ task: doc });
+  } catch (err) {
+    console.error('[hive/apps] customize error:', err);
+    return res.status(500).json({ error: err.message || 'Could not start customize build.' });
   }
 });
 
