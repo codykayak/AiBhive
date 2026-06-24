@@ -8,6 +8,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { checkForOtaUpdate } from './src/lib/appUpdates';
 import { preloadHiveMission } from './src/lib/hiveMission';
+import { preloadHomeAssistantKnowledge } from './src/lib/homeAssistantKnowledge';
 import { isOnboardingDone, markOnboardingDone } from './src/lib/onboarding';
 import { colors } from './src/theme/colors';
 
@@ -16,6 +17,7 @@ export default function App() {
 
   useEffect(() => {
     void preloadHiveMission();
+    void preloadHomeAssistantKnowledge();
     void checkForOtaUpdate();
     isOnboardingDone().then((done) => {
       if (!done) setShowOnboarding(true);

@@ -21,11 +21,11 @@ export type AiPrefs = {
 };
 
 export const DEFAULT_PREFS: AiPrefs = {
-  activeProviderId: 'gemini',
+  activeProviderId: 'grok',
   providers: {
     gemini: { enabled: true, model: 'gemini-2.5-flash' },
     kimi: { enabled: false, model: 'kimi-k2.6' },
-    grok: { enabled: false, model: 'grok-3-mini' },
+    grok: { enabled: true, model: 'grok-4-0709' },
     claude: { enabled: false, model: 'claude-sonnet-4-20250514' },
     custom: { enabled: false, model: 'gpt-4o-mini', customModel: 'gpt-4o-mini' },
   },

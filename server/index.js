@@ -47,6 +47,7 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
+import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch } from './homeOrchestrator.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -1131,12 +1132,43 @@ app.get('/api/hive/plans', (_req, res) => {
   res.json({
     plans: listPlansForClient(),
     tokenMarkup: TOKEN_MARKUP,
+    currencyName: 'AiBhive Tokens',
     freeFeatures: [
       'On-device OSINT (no tokens)',
       'Job tracker & resume tools',
       'Build & chat with your own API keys',
     ],
   });
+});
+
+app.get('/api/hive/home-assist/knowledge', (_req, res) => {
+  try {
+    const markdown = getHomeAssistantKnowledgeMarkdown();
+    return res.json({ markdown, updatedAt: new Date().toISOString() });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || 'Knowledge unavailable.' });
+  }
+});
+
+app.post('/api/hive/home-assist/web-search', express.json(), async (req, res) => {
+  try {
+    const { userId, query } = req.body || {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || !query?.trim()) {
+      return res.status(400).json({ error: 'userId and query required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runHomeAssistantWebSearch(db, resolvedUserId, query.trim());
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 502;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/home-assist/web-search]', err);
+    return res.status(500).json({ error: err.message || 'Web search failed.' });
+  }
 });
 
 app.post('/api/hive/account/:userId/plan-checkout', async (req, res) => {

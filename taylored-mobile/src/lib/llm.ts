@@ -7,6 +7,8 @@ export type ChatTurn = { role: 'user' | 'ai'; content: string };
 export type ChatOptions = {
   behavior?: AiBehaviorPrefs;
   magicMode?: boolean;
+  /** When set, replaces the default HIVEMISSION chat system prompt. */
+  systemInstructionOverride?: string;
 };
 
 async function chatOpenAiCompatible(
@@ -119,7 +121,8 @@ export async function sendChatMessage(
     responseStyle: 'concise' as const,
     maxOutputTokens: 512,
   };
-  const systemInstruction = buildSystemInstruction(behavior, !!options.magicMode);
+  const systemInstruction =
+    options.systemInstructionOverride ?? buildSystemInstruction(behavior, !!options.magicMode);
   const maxTokens = behavior.maxOutputTokens;
 
   switch (config.providerId) {

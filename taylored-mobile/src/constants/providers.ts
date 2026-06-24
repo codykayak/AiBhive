@@ -41,9 +41,11 @@ export const AI_PROVIDERS: ProviderDefinition[] = [
     id: 'grok',
     label: 'Grok',
     keyHint: 'xAI API key from console.x.ai',
-    defaultModel: 'grok-3-mini',
+    defaultModel: 'grok-4-0709',
     models: [
-      { id: 'grok-3-mini', label: 'Grok 3 Mini' },
+      { id: 'grok-4-0709', label: 'Grok 4 (recommended)' },
+      { id: 'grok-4-fast-reasoning', label: 'Grok 4 Fast (reasoning)' },
+      { id: 'grok-3-mini', label: 'Grok 3 Mini (budget)' },
       { id: 'grok-3', label: 'Grok 3' },
     ],
   },
