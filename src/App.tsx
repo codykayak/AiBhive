@@ -24,7 +24,11 @@ import RealEstateSolutions from './pages/solutions/RealEstateSolutions';
 import PhoneSystemsIntegration from './pages/solutions/PhoneSystemsIntegration';
 import BookConsultation from './pages/BookConsultation';
 import IntelGathering from './pages/intel-gathering/IntelGathering';
-import HiveApps from './pages/HiveApps';
+import HiveAppsLayout from './pages/hive-apps/HiveAppsLayout';
+import HiveAppsBrowse from './pages/hive-apps/HiveAppsBrowse';
+import HiveAppDetailPage from './pages/hive-apps/HiveAppDetailPage';
+import HiveAppRunPage from './pages/hive-apps/HiveAppRunPage';
+import HiveAppsBuildPage from './pages/hive-apps/HiveAppsBuildPage';
 import { SEO } from './components/SEO';
 import FAQChatbot from './components/FAQChatbot';
 
@@ -62,7 +66,12 @@ function AnimatedRoutes() {
           <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
           <Route path="/book-consultation" element={<BookConsultation />} />
           <Route path="/intel-gathering" element={<IntelGathering />} />
-          <Route path="/hive-apps" element={<HiveApps />} />
+          <Route path="/hive-apps" element={<HiveAppsLayout />}>
+            <Route index element={<HiveAppsBrowse />} />
+            <Route path="app/:appId" element={<HiveAppDetailPage />} />
+            <Route path="run/:appId" element={<HiveAppRunPage />} />
+            <Route path="build" element={<HiveAppsBuildPage />} />
+          </Route>
         </Routes>
       </motion.div>
     </AnimatePresence>

@@ -232,6 +232,35 @@ export async function saveUserApp(db, ownerId, spec) {
   return { id, ...normalized };
 }
 
+export function inferAppCategory(app) {
+  const types = new Set((app.pages || []).map((p) => p.type));
+  if (types.has('tracker')) return 'trackers';
+  if (types.has('calculator')) return 'calculators';
+  if (types.has('list')) return 'lists';
+  if (types.has('note')) return 'notes';
+  if (types.has('info')) return 'guides';
+  return 'other';
+}
+
+function toPublicToolkitApp(app, includeOwner = false) {
+  const row = {
+    id: app.id,
+    title: app.title,
+    tagline: app.tagline,
+    summary: app.summary,
+    theme: app.theme,
+    icon: app.icon,
+    pages: app.pages,
+    pageCount: Array.isArray(app.pages) ? app.pages.length : 0,
+    installCount: app.installCount || 0,
+    sharedAt: app.sharedAt,
+    category: inferAppCategory(app),
+    slug: app.slug || null,
+  };
+  if (includeOwner) row.ownerId = app.ownerId || null;
+  return row;
+}
+
 /** @param {import('firebase-admin/firestore').Firestore} db */
 export async function getCommunityApp(db, appId) {
   if (!appId) return null;
@@ -240,6 +269,31 @@ export async function getCommunityApp(db, appId) {
   const data = snap.data();
   if (data.visibility !== 'community') return null;
   return { id: snap.id, ...data };
+}
+
+/** Public read for store detail pages. */
+export async function getPublicToolkitApp(db, appId) {
+  const app = await getCommunityApp(db, appId);
+  if (!app) return null;
+  return toPublicToolkitApp(app, true);
+}
+
+/** @param {import('firebase-admin/firestore').Firestore} db */
+export async function listCommunityToolkitRaw(db, limit = 120) {
+  const snap = await db
+    .collection(COLLECTION)
+    .where('visibility', '==', 'community')
+    .limit(Math.min(limit, 120))
+    .get()
+    .catch(() => null);
+  if (!snap) return [];
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort(
+      (a, b) =>
+        (b.installCount || 0) - (a.installCount || 0) ||
+        String(b.updatedAt).localeCompare(String(a.updatedAt))
+    );
 }
 
 /** Score how well a community app matches a natural-language query. */
@@ -288,44 +342,50 @@ export async function searchCommunityToolkit(db, query, limit = 8) {
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
-  return scored.map(({ app }) => ({
-    id: app.id,
-    title: app.title,
-    tagline: app.tagline,
-    summary: app.summary,
-    theme: app.theme,
-    icon: app.icon,
-    pages: app.pages,
-    installCount: app.installCount || 0,
-    ownerId: app.ownerId,
-    sharedAt: app.sharedAt,
-  }));
+  return scored.map(({ app }) => toPublicToolkitApp(app, true));
 }
 
 /** @param {import('firebase-admin/firestore').Firestore} db */
 export async function listCommunityToolkit(db, limit = 24) {
-  const snap = await db
-    .collection(COLLECTION)
-    .where('visibility', '==', 'community')
-    .limit(Math.min(limit * 3, 120))
-    .get()
-    .catch(() => null);
-  if (!snap) return [];
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (b.installCount || 0) - (a.installCount || 0) || String(b.updatedAt).localeCompare(String(a.updatedAt)))
-    .slice(0, limit)
-    .map((app) => ({
-      id: app.id,
-      title: app.title,
-      tagline: app.tagline,
-      summary: app.summary,
-      theme: app.theme,
-      icon: app.icon,
-      pages: app.pages,
-      installCount: app.installCount || 0,
-      sharedAt: app.sharedAt,
-    }));
+  const rows = await listCommunityToolkitRaw(db, Math.min(limit * 3, 120));
+  return rows.slice(0, limit).map((app) => toPublicToolkitApp(app));
+}
+
+/** Store catalog payload for the web app store. */
+export async function getStoreCatalog(db, { query = '', category = '', limit = 48 } = {}) {
+  const all = await listCommunityToolkitRaw(db, 120);
+  const q = String(query || '').trim().toLowerCase();
+  const cat = String(category || '').trim().toLowerCase();
+
+  let filtered = all;
+  if (cat && cat !== 'all') {
+    filtered = filtered.filter((app) => inferAppCategory(app) === cat);
+  }
+  if (q) {
+    filtered = filtered
+      .map((app) => ({ app, score: scoreToolkitMatch(app, q) }))
+      .filter((row) => row.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ app }) => app);
+  }
+
+  const apps = filtered.slice(0, Math.min(limit, 48)).map((app) => toPublicToolkitApp(app));
+  const featured = all.slice(0, 6).map((app) => toPublicToolkitApp(app));
+  const categories = {};
+  for (const app of all) {
+    const c = inferAppCategory(app);
+    categories[c] = (categories[c] || 0) + 1;
+  }
+
+  return {
+    apps,
+    featured,
+    total: all.length,
+    totalInstalls: all.reduce((n, a) => n + (a.installCount || 0), 0),
+    categories,
+    query: q || null,
+    category: cat || null,
+  };
 }
 
 /** @param {import('firebase-admin/firestore').Firestore} db */

@@ -27,7 +27,10 @@ import {
   installCommunityApp,
   findToolkitMatch,
   getCommunityApp,
+  getPublicToolkitApp,
+  getStoreCatalog,
 } from './hiveAppsApi.js';
+import { listPublishedWebApps } from './hiveWebAppsRegistry.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
   ensureHiveUser,
@@ -1817,11 +1820,46 @@ app.post('/api/hive/apps/:appId/share', express.json(), async (req, res) => {
 app.get('/api/hive/toolkit', async (req, res) => {
   try {
     const q = String(req.query.q || '').trim();
-    const apps = q ? await searchCommunityToolkit(db, q, 12) : await listCommunityToolkit(db, 24);
+    const limit = Math.min(Number(req.query.limit) || 24, 48);
+    const apps = q ? await searchCommunityToolkit(db, q, limit) : await listCommunityToolkit(db, limit);
     return res.json({ apps, query: q || null });
   } catch (err) {
     console.error('[hive/toolkit] list error:', err);
     return res.status(500).json({ error: 'Could not load toolkit.' });
+  }
+});
+
+app.get('/api/hive/toolkit/:appId', async (req, res) => {
+  try {
+    const app = await getPublicToolkitApp(db, req.params.appId);
+    if (!app) return res.status(404).json({ error: 'App not found in community toolkit.' });
+    return res.json({ app });
+  } catch (err) {
+    console.error('[hive/toolkit] detail error:', err);
+    return res.status(500).json({ error: 'Could not load app.' });
+  }
+});
+
+app.get('/api/hive/store', async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const category = String(req.query.category || '').trim();
+    const limit = Math.min(Number(req.query.limit) || 48, 48);
+    const catalog = await getStoreCatalog(db, { query: q, category, limit });
+    const webApps = listPublishedWebApps();
+    return res.json({ ...catalog, webApps });
+  } catch (err) {
+    console.error('[hive/store] catalog error:', err);
+    return res.status(500).json({ error: 'Could not load store.' });
+  }
+});
+
+app.get('/api/hive/web-apps', async (_req, res) => {
+  try {
+    return res.json({ apps: listPublishedWebApps() });
+  } catch (err) {
+    console.error('[hive/web-apps] list error:', err);
+    return res.status(500).json({ error: 'Could not load web apps.' });
   }
 });
 
