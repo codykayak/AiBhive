@@ -51,7 +51,7 @@ import { GOOGLE_AUTH_ENABLED } from '../constants/features';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchHiveAccount, openAddCredits } from '../lib/hiveAccount';
 import { HIVE_COPY } from '../constants/hiveCopy';
-import { APP_VERSION } from '../constants/version';
+import { APP_VERSION, APP_VERSION_CODE } from '../constants/version';
 import {
   applyPendingOtaRestart,
   checkForAppUpdate,
@@ -478,7 +478,10 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>App updates</Text>
         <GlassCard style={styles.providerCard}>
-          <Text style={styles.providerName}>Installed: v{APP_VERSION}</Text>
+          <Text style={styles.providerName}>
+            Installed: v{APP_VERSION}
+            {typeof APP_VERSION_CODE === 'number' ? ` (build ${APP_VERSION_CODE})` : ''}
+          </Text>
           <Text style={styles.hint}>{HIVE_COPY.updateSectionHint}</Text>
           {updateStatus && <Text style={styles.updateMessage}>{updateStatus.message}</Text>}
           {updateStatus?.status === 'native-available' && updateStatus.releaseNotes ? (
