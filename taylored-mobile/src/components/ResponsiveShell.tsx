@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, useWindowDimensions, Platform, Dimensions } from 'react-native';
 import { colors } from '../theme/colors';
 
 const MAX_CONTENT_WIDTH = 1400;
@@ -13,11 +13,20 @@ type ResponsiveShellProps = {
 /** Fills Samsung DeX / tablet / desktop windows — content centers on very wide screens. */
 export function ResponsiveShell({ children }: ResponsiveShellProps) {
   const { width } = useWindowDimensions();
+  const [layoutEpoch, setLayoutEpoch] = useState(0);
   const isWide = width >= WIDE_BREAKPOINT;
   const isDesktop = width >= DESKTOP_BREAKPOINT;
 
+  // DeX window resize may not propagate until DisplayMetrics refresh — force relayout.
+  useEffect(() => {
+    const sub = Dimensions.addEventListener('change', () => {
+      setLayoutEpoch((n) => n + 1);
+    });
+    return () => sub.remove();
+  }, []);
+
   return (
-    <View style={styles.root}>
+    <View style={styles.root} key={`dex-shell-${layoutEpoch}`}>
       <View
         style={[
           styles.inner,
@@ -60,4 +69,4 @@ export function useResponsiveLayout() {
     height,
     contentMaxWidth: isWide ? Math.min(width, MAX_CONTENT_WIDTH) : width,
   };
-}
+};
