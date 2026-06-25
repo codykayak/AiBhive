@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import { randomUUID } from 'crypto';
 
 const POSTS_COLLECTION = 'socialPosts';
 const CONFIG_DOC = 'socialConfig/settings';
@@ -126,21 +127,21 @@ export async function uploadSocialImage(postId, platform, buffer, contentType = 
   if (!mediaBucket) throw new Error('Media bucket not configured.');
   const path = `social-posts/${postId}/${platform}.png`;
   const file = mediaBucket.file(path);
+  const downloadToken = randomUUID();
+
   await file.save(buffer, {
-    metadata: { contentType, cacheControl: 'public, max-age=31536000' },
+    metadata: {
+      contentType,
+      cacheControl: 'public, max-age=31536000',
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+      },
+    },
     resumable: false,
   });
-  try {
-    await file.makePublic();
-  } catch (e) {
-    console.warn('[socialPostStore] makePublic failed, using signed URL', e.message);
-    const [signedUrl] = await file.getSignedUrl({
-      action: 'read',
-      expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
-    });
-    return signedUrl;
-  }
-  return `https://storage.googleapis.com/${mediaBucket.name}/${path}`;
+
+  const encoded = encodeURIComponent(path);
+  return `https://firebasestorage.googleapis.com/v0/b/${mediaBucket.name}/o/${encoded}?alt=media&token=${downloadToken}`;
 }
 
 export function serializePost(post) {

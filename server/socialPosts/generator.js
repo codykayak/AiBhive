@@ -83,6 +83,29 @@ function trimXCaption(caption, link) {
   return `${text.slice(0, Math.max(0, budget)).trim()}…${suffix}`.trim();
 }
 
+function extractImageHeadline(captions, platform) {
+  if (captions.imageHeadline) return String(captions.imageHeadline).trim().slice(0, 80);
+  const caption = captions[platform]?.caption || '';
+  const firstLine = caption.split('\n').find((line) => line.trim()) || '';
+  if (firstLine) return firstLine.trim().slice(0, 80);
+  return String(captions.imagePrompt || 'AI Automation').split('.')[0].slice(0, 80);
+}
+
+function buildPlatformImagePrompt(captions, platform, aspectHint) {
+  const headline = extractImageHeadline(captions, platform);
+  const scene = captions.imageScene || captions.imagePrompt || 'Modern professional tech marketing visual';
+  return `Social media marketing graphic for ${BRAND.name}.
+
+MANDATORY TEXT ON IMAGE — render this EXACT headline in large, bold, highly readable typography. Spell every word exactly, no paraphrasing:
+"${headline}"
+
+Visual scene (support the headline, do not add other headline text):
+${scene}
+
+Aspect ratio: ${aspectHint}.
+${BRAND.imageStyle}`;
+}
+
 async function researchArticle(topic, textModel, apiKey) {
   const genAI = getGenAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -150,7 +173,9 @@ Return ONLY valid JSON:
   "facebook": { "caption": "${PLATFORM_SPECS.facebook.captionGuide}" },
   "instagram": { "caption": "${PLATFORM_SPECS.instagram.captionGuide}", "hashtags": ["#AI", "#automation", "..."] },
   "x": { "caption": "${PLATFORM_SPECS.x.captionGuide}" },
-  "imagePrompt": "Short headline text for overlay + visual scene description. ${BRAND.imageStyle}"
+  "imageHeadline": "5-10 word punchy headline to render ON the image (must match post theme)",
+  "imageScene": "Visual scene description only — no text in this field",
+  "imagePrompt": "Legacy combined field — same as imageScene"
 }`;
 
   const result = await model.generateContent(prompt);
@@ -167,14 +192,7 @@ async function generateImageWithModel(genAI, modelName, prompt, aspectHint) {
     },
   });
 
-  const fullPrompt = `${prompt}
-
-${BRAND.imageStyle}
-Aspect ratio: ${aspectHint}.
-Include a short, readable text headline related to the topic.
-Professional social media marketing graphic for ${BRAND.name}.`;
-
-  const result = await model.generateContent(fullPrompt);
+  const result = await model.generateContent(prompt);
   const parts = result?.response?.candidates?.[0]?.content?.parts || [];
 
   for (const part of parts) {
@@ -201,20 +219,22 @@ async function generateImage(prompt, aspectHint, imageModels, apiKey) {
   throw lastError || new Error('All image models failed.');
 }
 
-async function generatePlatformImage(dateKey, key, imagePrompt, aspectHint, imageModels, apiKey) {
+async function generatePlatformImage(dateKey, key, captions, aspectHint, imageModels, apiKey) {
+  const imagePrompt = buildPlatformImagePrompt(captions, key, aspectHint);
   try {
     const { buffer, model } = await generateImage(imagePrompt, aspectHint, imageModels, apiKey);
     const url = await uploadSocialImage(dateKey, key, buffer);
-    return { url, model, error: null };
+    return { url, model, error: null, imagePrompt };
   } catch (e) {
+    const fallbackPrompt = `${imagePrompt}\nSimpler composition, bold typography, minimal elements.`;
     const { buffer, model } = await generateImage(
-      `${imagePrompt}. Simpler composition, bold typography, minimal elements.`,
+      fallbackPrompt,
       aspectHint,
       imageModels,
       apiKey,
     );
     const url = await uploadSocialImage(dateKey, key, buffer);
-    return { url, model, error: e.message };
+    return { url, model, error: e.message, imagePrompt: fallbackPrompt };
   }
 }
 
@@ -380,7 +400,8 @@ export async function generateDailySocialPost(options = {}) {
     });
     await persistProgress(dateKey, { workflowLog });
 
-    const imagePrompt = captions.imagePrompt
+    const imageHeadline = extractImageHeadline(captions, 'facebook');
+    const imagePrompt = captions.imageScene || captions.imagePrompt
       || `Professional graphic for ${topic.title}. ${BRAND.imageStyle}`;
 
     logStep(workflowLog, {
@@ -388,9 +409,9 @@ export async function generateDailySocialPost(options = {}) {
       label: provider === 'grok' ? 'Grok — generate images' : 'Gemini — generate images',
       status: 'running',
       model: imageModels[0],
-      output: { imagePrompt },
+      output: { imageHeadline, imagePrompt },
     });
-    await persistProgress(dateKey, { workflowLog, imagePrompt });
+    await persistProgress(dateKey, { workflowLog, imagePrompt, imageHeadline });
 
     const platformKeys = Object.keys(PLATFORM_SPECS);
     const imageResults = await Promise.all(
@@ -398,25 +419,26 @@ export async function generateDailySocialPost(options = {}) {
         const spec = PLATFORM_SPECS[key];
         try {
           if (provider === 'grok') {
+            const platformPrompt = buildPlatformImagePrompt(captions, key, spec.aspectHint);
             const result = await grokGeneratePlatformImage(
               apiKey,
               imageModels[0],
-              imagePrompt,
+              platformPrompt,
               BRAND,
               spec.aspectHint,
             );
             const url = await uploadSocialImage(dateKey, key, result.buffer);
-            return { key, url, model: result.model, error: null };
+            return { key, url, model: result.model, error: null, imagePrompt: platformPrompt };
           }
           const result = await generatePlatformImage(
             dateKey,
             key,
-            imagePrompt,
+            captions,
             spec.aspectHint,
             imageModels,
             apiKey,
           );
-          return { key, url: result.url, model: result.model, error: result.error };
+          return { key, url: result.url, model: result.model, error: result.error, imagePrompt: result.imagePrompt };
         } catch (e) {
           return { key, url: null, model: null, error: e.message };
         }
@@ -463,6 +485,7 @@ export async function generateDailySocialPost(options = {}) {
         link: topic.siteLink,
       },
       imagePrompt,
+      imageHeadline,
       workflowLog,
       provider,
       modelsUsed: {
