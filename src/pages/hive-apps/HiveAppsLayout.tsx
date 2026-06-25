@@ -44,7 +44,7 @@ export default function HiveAppsLayout() {
   return (
     <div className="min-h-[calc(100vh-5rem)] bg-[#070a0f]">
       <div className="sticky top-20 z-40 border-b border-white/5 bg-[#070a0f]/95 backdrop-blur-xl">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3 mb-4">
             <Link to="/hive-apps" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-bee-amber flex items-center justify-center">

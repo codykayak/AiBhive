@@ -79,6 +79,8 @@ const defaultNotes = {
     'v1.6.2 — Tweak & Customize: change existing apps without rebuilding from scratch. Sharing is opt-in (no auto-share). Hive Apps web store preview.',
   '1.6.3':
     'v1.6.3 — Blocky home & store refresh, Example tools (Job Tracker, Resume, Research), $1–$5 first-app pricing, Research tab fixes.',
+  '1.6.4':
+    'v1.6.4 — Samsung DeX / large-screen layout fills the monitor. Web Hive Apps run in-browser with live split-pane store on desktop.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

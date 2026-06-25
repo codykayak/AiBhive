@@ -1,29 +1,26 @@
 import React from 'react';
-import { View, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { colors } from '../theme/colors';
 
-const MAX_CONTENT_WIDTH = 1100;
+const MAX_CONTENT_WIDTH = 1200;
 
 type ResponsiveShellProps = {
   children: React.ReactNode;
 };
 
-/** Centers and scales content on Samsung DeX / tablets / desktop mode. */
+/** Fills Samsung DeX / tablet / desktop windows — content centers on very wide screens. */
 export function ResponsiveShell({ children }: ResponsiveShellProps) {
   const { width, height } = useWindowDimensions();
   const isWide = width >= 600;
   const isDesktop = width >= 900;
 
   return (
-    <View style={[styles.root, isWide && styles.rootWide]}>
+    <View style={[styles.root, { width, height, minHeight: height }]}>
       <View
         style={[
           styles.inner,
-          isWide && {
-            maxWidth: isDesktop ? MAX_CONTENT_WIDTH : 920,
-            width: '100%',
-            minHeight: height,
-          },
+          isWide && styles.innerWide,
+          isDesktop && { maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' as const },
         ]}
       >
         {children}
@@ -35,23 +32,26 @@ export function ResponsiveShell({ children }: ResponsiveShellProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    width: '100%',
     backgroundColor: colors.bg,
-  },
-  rootWide: {
-    alignItems: 'center',
+    ...(Platform.OS === 'android' ? { alignSelf: 'stretch' as const } : {}),
   },
   inner: {
     flex: 1,
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  innerWide: {
     width: '100%',
   },
 });
 
 export function useResponsiveLayout() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   return {
     isWide: width >= 600,
     isDesktop: width >= 900,
-    contentMaxWidth: width >= 600 ? MAX_CONTENT_WIDTH : width,
+    width,
+    height,
+    contentMaxWidth: width >= 600 ? Math.min(width, MAX_CONTENT_WIDTH) : width,
   };
 }
