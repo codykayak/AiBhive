@@ -14,9 +14,9 @@ Pick one — **do not run both** for the same release:
 gcloud builds submit --config taylored-mobile/cloudbuild.yaml .
 ```
 
-**Cloud Build only compiles the APK.** It does **not** update what users see in **Check for updates** until you publish:
+**Cloud Build compiles the APK and publishes to Firebase** (manifest + .gz mirror), so **Check for updates** should show the new version when the build finishes. For redundancy, also commit the APK to git:
 
-1. Download `app-release.apk` from the Cloud Build run (Artifacts / logs).
+1. Download `app-release.apk` from the Cloud Build run if needed, or copy from `public/taylored-mobile.apk` after a local publish.
 2. From repo root:
 
 ```bash
