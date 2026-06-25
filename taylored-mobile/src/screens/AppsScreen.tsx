@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { Text, StyleSheet, ScrollView, View, ActivityIndicator, Alert } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
-  Bot, AppWindow, FolderKanban, Wand2, Sparkles, Boxes, Radar,
+  Bot, AppWindow, Wand2, Sparkles, Boxes,
 } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HiveLogo } from '../components/HiveLogo';
 import {
   AppLauncherCard,
@@ -15,41 +15,12 @@ import {
   SectionLabel,
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
+import { BUILT_IN_HIVE_APPS } from '../constants/builtInHiveApps';
 import { fetchUserApps, fetchCommunityToolkit, installToolkitApp } from '../lib/hiveUserApps';
 import type { HiveAppSpec, CommunityToolkitApp } from '../dynamicApps/types';
 import { brandFor, iconFor } from '../dynamicApps/branding';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
-
-const EXAMPLE_TOOLS = [
-  {
-    id: 'tracker',
-    title: 'Job Tracker',
-    desc: 'Pipeline for every application — status, materials, and follow-ups.',
-    icon: FolderKanban,
-    route: 'JobTracker',
-    tag: 'Jobs',
-    accent: 'amber' as const,
-  },
-  {
-    id: 'resume',
-    title: 'Auto-Bot Resume',
-    desc: 'Tailored resume, cover letter, and cold email in one tap.',
-    icon: Bot,
-    route: 'AutoBotResume',
-    tag: 'Apply',
-    accent: 'info' as const,
-  },
-  {
-    id: 'research',
-    title: 'Research',
-    desc: 'AI-directed intel on companies, domains, and people.',
-    icon: Radar,
-    route: 'IntelAgent',
-    tag: 'Intel',
-    accent: 'purple' as const,
-  },
-];
 
 const MORE_TOOLS = [
   {
@@ -87,7 +58,7 @@ export default function AppsScreen() {
       await load();
       Alert.alert(
         'Added to My Apps',
-        `"${installed.title}" is ready. Tweak it for free or customize with Cursor.`,
+        `"${installed.title}" is ready. Tweak it for free or customize from the app menu.`,
         [
           {
             text: 'Tweak or Customize',
@@ -110,7 +81,7 @@ export default function AppsScreen() {
 
   return (
     <ScreenLayout showBrand contentStyle={styles.content}>
-      <ScrollView
+      <ScreenScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: tabBarPadding }}
       >
@@ -134,8 +105,8 @@ export default function AppsScreen() {
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
-            <Text style={styles.statNum}>{EXAMPLE_TOOLS.length}</Text>
-            <Text style={styles.statLabel}>Example tools</Text>
+            <Text style={styles.statNum}>{BUILT_IN_HIVE_APPS.length + userApps.length}</Text>
+            <Text style={styles.statLabel}>Apps</Text>
           </View>
         </GlassCard>
 
@@ -158,25 +129,27 @@ export default function AppsScreen() {
 
         <SectionLabel>Your Hive apps</SectionLabel>
 
+        {BUILT_IN_HIVE_APPS.map((app) => {
+          const Icon = app.icon;
+          return (
+            <AppLauncherCard
+              key={app.id}
+              title={app.title}
+              desc={`by ${app.creator} · ${app.tagline}`}
+              tag="Community"
+              icon={Icon}
+              accent="amber"
+              onPress={() => navigation.navigate(app.route)}
+              style={{ borderLeftWidth: 4, borderLeftColor: app.primary, backgroundColor: app.surface + '88' }}
+            />
+          );
+        })}
+
         {loading ? (
           <View style={styles.loaderRow}>
             <ActivityIndicator color={colors.amberLight} />
           </View>
-        ) : userApps.length === 0 ? (
-          <EmptyState
-            icon={Boxes}
-            title="Your factory is warming up"
-            body='No apps yet. Try: "Build me a habit tracker" or "Make a tip calculator" on the Build tab.'
-            action={
-              <PrimaryButton
-                label="Start building"
-                variant="secondary"
-                onPress={() => navigation.navigate('HiveBuild')}
-                style={{ marginTop: 12 }}
-              />
-            }
-          />
-        ) : (
+        ) : userApps.length === 0 ? null : (
           userApps.map((app) => {
             const brand = brandFor(app.theme);
             const Icon = iconFor(app.icon);
@@ -228,19 +201,6 @@ export default function AppsScreen() {
           })
         )}
 
-        <SectionLabel>Example tools</SectionLabel>
-        {EXAMPLE_TOOLS.map((app) => (
-          <AppLauncherCard
-            key={app.id}
-            title={app.title}
-            desc={app.desc}
-            tag={app.tag}
-            icon={app.icon}
-            accent={app.accent}
-            onPress={() => navigation.navigate(app.route)}
-          />
-        ))}
-
         <SectionLabel>More</SectionLabel>
         {MORE_TOOLS.map((app) => (
           <AppLauncherCard
@@ -267,7 +227,7 @@ export default function AppsScreen() {
             style={{ marginTop: 12, alignSelf: 'flex-start' }}
           />
         </GlassCard>
-      </ScrollView>
+      </ScreenScrollView>
     </ScreenLayout>
   );
 }

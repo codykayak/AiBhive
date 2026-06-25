@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2, Sparkles } from 'lucide-react-native';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HomeAssistantChat } from '../components/HomeAssistantChat';
 import { useTabBarPadding } from '../components/TabScreenContainer';
+import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -27,6 +27,7 @@ const COMMUNITY_STEPS = [
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const tabBarPadding = useTabBarPadding(24);
+  const { isDesktop } = useResponsiveLayout();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
@@ -48,30 +49,72 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout compactBadge contentStyle={styles.screenContent}>
-      <ScrollView
+      <HomeAssistantChat
+        expanded={assistantExpanded}
+        onExpandChange={setAssistantExpanded}
+        initialQuery={pendingAsk}
+        onInitialQueryConsumed={() => setPendingAsk(undefined)}
+      />
+
+      <ScreenScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* $1–$5 hero sell */}
-        <TouchableOpacity
-          style={styles.priceBlock}
-          activeOpacity={0.92}
-          onPress={() => navigation.navigate('HiveBuild')}
-        >
-          <Text style={styles.priceEyebrow}>Your first app</Text>
-          <Text style={styles.priceHeadline}>$1 to $5</Text>
-          <Text style={styles.priceSub}>
-            Describe any tool in plain English — live on your phone in under a minute. No Play Store update needed.
-          </Text>
-          <View style={styles.priceCta}>
-            <Sparkles color={colors.black} size={18} />
-            <Text style={styles.priceCtaText}>Build now</Text>
-            <ChevronRight color={colors.black} size={18} />
-          </View>
-        </TouchableOpacity>
+        <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+          <TouchableOpacity
+            style={[styles.priceBlock, isDesktop && styles.gridItem]}
+            activeOpacity={0.92}
+            onPress={() => navigation.navigate('HiveBuild')}
+          >
+            <Text style={styles.priceEyebrow}>Your first app</Text>
+            <Text style={styles.priceHeadline}>$1 to $5</Text>
+            <Text style={styles.priceSub}>
+              Describe any tool in plain English — live on your phone in under a minute.
+            </Text>
+            <View style={styles.priceCta}>
+              <Sparkles color={colors.black} size={18} />
+              <Text style={styles.priceCtaText}>Build now</Text>
+              <ChevronRight color={colors.black} size={18} />
+            </View>
+          </TouchableOpacity>
 
-        {/* Community 1-2-3 */}
+          <View style={[styles.sideColumn, isDesktop && styles.gridItem]}>
+            <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('JobTracker')}>
+              <Briefcase color={colors.info} size={24} />
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>Do</Text>
+                <Text style={styles.actionSub}>Jobs & Auto-Bot Resume</Text>
+              </View>
+              <ChevronRight color={colors.textDim} size={20} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionBlock}
+              onPress={() => {
+                setAssistantExpanded(true);
+                setPendingAsk('I want to build a custom tool');
+              }}
+            >
+              <Wand2 color={colors.amber} size={24} />
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>Build</Text>
+                <Text style={styles.actionSub}>Hive Magic — apps from plain English</Text>
+              </View>
+              <ChevronRight color={colors.textDim} size={20} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
+              <Radar color={colors.purple} size={24} />
+              <View style={styles.actionCopy}>
+                <Text style={styles.actionTitle}>Research</Text>
+                <Text style={styles.actionSub}>Intel on companies, sites & people</Text>
+              </View>
+              <ChevronRight color={colors.textDim} size={20} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <View style={styles.sectionHead}>
           <Share2 color={colors.amberLight} size={18} />
           <Text style={styles.sectionTitle}>Community app pool</Text>
@@ -93,47 +136,6 @@ export default function HomeScreen() {
             <ChevronRight color={colors.textDim} size={20} />
           </TouchableOpacity>
         ))}
-
-        <HomeAssistantChat
-          expanded={assistantExpanded}
-          onExpandChange={setAssistantExpanded}
-          initialQuery={pendingAsk}
-          onInitialQueryConsumed={() => setPendingAsk(undefined)}
-        />
-
-        {/* Full-width action blocks */}
-        <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('JobTracker')}>
-          <Briefcase color={colors.info} size={26} />
-          <View style={styles.actionCopy}>
-            <Text style={styles.actionTitle}>Do</Text>
-            <Text style={styles.actionSub}>Jobs, applications, Auto-Bot Resume</Text>
-          </View>
-          <ChevronRight color={colors.textDim} size={22} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionBlock}
-          onPress={() => {
-            setAssistantExpanded(true);
-            setPendingAsk('I want to build a custom tool');
-          }}
-        >
-          <Wand2 color={colors.amber} size={26} />
-          <View style={styles.actionCopy}>
-            <Text style={styles.actionTitle}>Build</Text>
-            <Text style={styles.actionSub}>Hive Magic — apps from plain English</Text>
-          </View>
-          <ChevronRight color={colors.textDim} size={22} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
-          <Radar color={colors.purple} size={26} />
-          <View style={styles.actionCopy}>
-            <Text style={styles.actionTitle}>Research</Text>
-            <Text style={styles.actionSub}>Intel on companies, domains, and people</Text>
-          </View>
-          <ChevronRight color={colors.textDim} size={22} />
-        </TouchableOpacity>
 
         {(buildingCount > 0 || recentIntel.length > 0) && (
           <View style={styles.activity}>
@@ -168,7 +170,7 @@ export default function HomeScreen() {
           <Text style={styles.toolkitText}>Open toolkit & community store</Text>
           <ChevronRight color={colors.amberLight} size={18} />
         </TouchableOpacity>
-      </ScrollView>
+      </ScreenScrollView>
     </ScreenLayout>
   );
 }
@@ -176,12 +178,20 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: spacing.md },
   scroll: { paddingTop: spacing.xs },
+  grid: { marginBottom: spacing.lg },
+  gridDesktop: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'stretch',
+  },
+  gridItem: { flex: 1 },
+  sideColumn: { gap: spacing.sm },
   priceBlock: {
     width: '100%',
     backgroundColor: colors.amber,
     borderRadius: radii.lg,
     padding: spacing.lg,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   priceEyebrow: {
     color: colors.black,
@@ -258,10 +268,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderMuted,
     padding: spacing.md,
-    marginBottom: spacing.sm,
   },
   actionCopy: { flex: 1 },
-  actionTitle: { color: colors.text, fontWeight: '900', fontSize: 18 },
+  actionTitle: { color: colors.text, fontWeight: '900', fontSize: 17 },
   actionSub: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
   activity: { marginTop: spacing.md },
   activityTitle: {

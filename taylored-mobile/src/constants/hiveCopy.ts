@@ -20,11 +20,13 @@ export const HIVE_COPY = {
     `$${used.toFixed(2)} used of $${allowance.toFixed(2)} this month`,
   tokenMarkupNote: (markup: number) => {
     const pct = Math.round((markup - 1) * 100);
-    return `AiBhive Tokens billed at API cost + ${pct}%`;
+    return `Hive credits billed at API cost + ${pct}%`;
   },
-  tokensCurrency: 'AiBhive Tokens',
+  tokensCurrency: 'Hive credits',
   freeWithoutTokens:
-    'Free forever: job tools, on-device research, and BYOK AI — no Hive token charges.',
+    'Job tools and on-device research are free. AiBhive assistant & cloud search use Hive credits.',
+  hiveAssistantHint: 'AiBhive assistant — uses Hive credits. Tap to open full chat.',
+  hiveCreditsFooter: 'Uses Hive credits per message. BYOK optional in Settings → AI providers.',
   serverOffline:
     'Our build service is reconnecting. I can still chat, and you can use My Apps. Try again in a moment.',
   buildStarted: 'Build started. We\'ll notify you when it\'s ready.',
@@ -62,7 +64,7 @@ export const HIVE_COPY = {
   toolkitShared: 'Shared with the community',
   shareToToolkit: 'Share to Community Toolkit',
   tweakOrCustomize: 'Tweak or Customize',
-  tweakOrCustomizeHint: 'Quick spec edits (~$0.50) or full Cursor customize (~$4+).',
+  tweakOrCustomizeHint: 'Quick spec edits (~$0.50) or full cloud customize (~$4+).',
   chatCleared: 'Chat cleared',
   copied: 'Copied to clipboard',
 };

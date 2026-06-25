@@ -77,7 +77,7 @@ export default function AppCustomizeScreen() {
     }
     Alert.alert(
       'Full customize',
-      'This sends your app to Cursor for real code — custom branding, layouts, and behavior. About $4+ · ~18 min.\n\nApprove the quote on the Build tab after we start.',
+      'This sends your app to the AiBhive cloud build team for real code — custom branding, layouts, and behavior. About $4+ · ~18 min.\n\nApprove the quote on the Build tab after we start.',
       [
         { text: 'Not yet', style: 'cancel' },
         {
@@ -99,7 +99,7 @@ export default function AppCustomizeScreen() {
               navigation.navigate('HiveBuild');
               Alert.alert(
                 'Build started',
-                'Cursor is customizing your app. You will get a notification when it is ready.'
+                'AiBhive is customizing your app. You will get a notification when it is ready.'
               );
             } finally {
               setBusy(null);
@@ -206,7 +206,7 @@ export default function AppCustomizeScreen() {
               <Code2 color={brand.primaryText} size={20} />
             </View>
             <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Full Cursor Customize</Text>
+              <Text style={styles.cardTitle}>Full Customize</Text>
               <Text style={styles.cardOne}>Real code — your branding, custom UX, advanced behavior.</Text>
             </View>
           </View>

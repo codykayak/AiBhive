@@ -81,7 +81,7 @@ async function buildSystemPrompt(userMessage?: string): Promise<string> {
       : '(empty — new builds are auto-shared to grow the hive)';
 
   return [
-    'You are Grok on the AiBhive home screen — the user\'s smart operator for the whole app.',
+    'You are the AiBhive home assistant — the user\'s smart operator for the whole app. You run on Hive credits by default.',
     getMissionPromptBlock('general'),
     '--- HOME ASSISTANT KNOWLEDGE (RAG) ---',
     knowledge,
@@ -118,37 +118,59 @@ export async function runHomeAssistantWebSearch(query: string): Promise<
   }
 }
 
-export async function sendHomeAssistantTurn(
-  config: ActiveLlmConfig,
+export async function sendHomeAssistantTurnViaHiveCloud(
   history: ChatTurn[],
   userMessage: string,
   options: { webSearchContext?: string } = {}
-): Promise<HomeAssistantTurnResult> {
-  const systemInstruction = await buildSystemPrompt(userMessage);
-  const enrichedMessage = options.webSearchContext
-    ? `${userMessage}\n\n[WEB SEARCH RESULTS — use these to answer, then suggest next steps]\n${options.webSearchContext}`
-    : userMessage;
-
-  const raw = await sendChatMessage(config, history, enrichedMessage, {
-    systemInstructionOverride: systemInstruction,
-    behavior: {
-      customInstructions: '',
-      responseStyle: 'balanced',
-      maxOutputTokens: 1200,
-    },
-  });
-
-  let action: HomeAssistantAction;
+): Promise<{ ok: true; raw: string } | { ok: false; needPayment?: boolean; amountUsd?: number; error?: string }> {
   try {
-    action = parseJsonBlock(raw);
+    const userId = await getOrCreateHiveUserId();
+    const systemInstruction = await buildSystemPrompt(userMessage);
+    const enrichedMessage = options.webSearchContext
+      ? `${userMessage}\n\n[WEB SEARCH RESULTS — use these to answer, then suggest next steps]\n${options.webSearchContext}`
+      : userMessage;
+
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/home-assist/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        history: history.map((t) => ({ role: t.role, content: t.content })),
+        message: enrichedMessage,
+        systemInstruction,
+      }),
+    });
+    const data = await res.json();
+    if (res.status === 402) {
+      return { ok: false, needPayment: true, amountUsd: data.amountUsd };
+    }
+    if (!res.ok) {
+      return { ok: false, error: data.error || `Hive chat failed (${res.status})` };
+    }
+    return { ok: true, raw: String(data.text || '') };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Hive chat unavailable' };
+  }
+}
+
+async function parseAssistantRaw(raw: string): Promise<HomeAssistantAction> {
+  try {
+    return parseJsonBlock(raw);
   } catch {
-    action = {
+    return {
       reply: raw.replace(/```[\s\S]*?```/g, '').trim() || 'I\'m here to help — try asking about jobs, research, or building a tool.',
       intent: 'chat',
       buildStage: 'none',
     };
   }
+}
 
+async function finalizeHomeAssistantTurn(
+  action: HomeAssistantAction,
+  history: ChatTurn[],
+  userMessage: string,
+  config: ActiveLlmConfig | null
+): Promise<HomeAssistantTurnResult> {
   if (action.needsWebSearch && action.webSearchQuery?.trim()) {
     const search = await runHomeAssistantWebSearch(action.webSearchQuery.trim());
     if (!search.ok) {
@@ -158,7 +180,7 @@ export async function sendHomeAssistantTurn(
           reply:
             action.reply +
             (search.needPayment
-              ? `\n\nThis needs **AiBhive Tokens** for web search (~$${(search.amountUsd ?? 0.03).toFixed(2)}). Open Settings → Plans to add tokens.`
+              ? `\n\nThis needs **Hive credits** for web search (~$${(search.amountUsd ?? 0.03).toFixed(2)}). Open Settings → Add Hive credits.`
               : `\n\n(Web search unavailable: ${search.error})`),
           needsWebSearch: false,
           offerTokens: search.needPayment,
@@ -166,9 +188,7 @@ export async function sendHomeAssistantTurn(
       };
     }
     const context = `${search.summary}\n\n${search.data}`.slice(0, 12000);
-    return sendHomeAssistantTurn(config, [...history, { role: 'user', content: userMessage }], userMessage, {
-      webSearchContext: context,
-    });
+    return sendHomeAssistantTurn(history, userMessage, { webSearchContext: context }, config);
   }
 
   let buildTask: HiveTask | undefined;
@@ -188,4 +208,62 @@ export async function sendHomeAssistantTurn(
   }
 
   return { action, buildTask };
+}
+
+export async function sendHomeAssistantTurn(
+  history: ChatTurn[],
+  userMessage: string,
+  options: { webSearchContext?: string } = {},
+  byokConfig?: ActiveLlmConfig | null
+): Promise<HomeAssistantTurnResult> {
+  let raw = '';
+
+  if (!options.webSearchContext) {
+    const cloud = await sendHomeAssistantTurnViaHiveCloud(history, userMessage, options);
+    if (cloud.ok) {
+      raw = cloud.raw;
+    } else if (byokConfig?.apiKey?.trim()) {
+      const systemInstruction = await buildSystemPrompt(userMessage);
+      const enrichedMessage = options.webSearchContext
+        ? `${userMessage}\n\n[WEB SEARCH RESULTS]\n${options.webSearchContext}`
+        : userMessage;
+      raw = await sendChatMessage(byokConfig, history, enrichedMessage, {
+        systemInstructionOverride: systemInstruction,
+        behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 },
+      });
+    } else {
+      const action: HomeAssistantAction = {
+        reply: cloud.needPayment
+          ? `This needs **Hive credits** to continue (~$${(cloud.amountUsd ?? 0.02).toFixed(2)}). Open **Settings → Add Hive credits**, or add your own API key under AI providers if you prefer.`
+          : `AiBhive assistant is reconnecting (${cloud.error || 'offline'}). Try again in a moment, or add your own API key in Settings.`,
+        intent: 'chat',
+        buildStage: 'none',
+        offerTokens: cloud.needPayment,
+      };
+      return { action };
+    }
+  } else if (byokConfig?.apiKey?.trim()) {
+    const systemInstruction = await buildSystemPrompt(userMessage);
+    raw = await sendChatMessage(byokConfig, history, userMessage, {
+      systemInstructionOverride: systemInstruction,
+      behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 },
+    });
+  } else {
+    const cloud = await sendHomeAssistantTurnViaHiveCloud(history, userMessage, options);
+    if (!cloud.ok) {
+      return {
+        action: {
+          reply: cloud.needPayment
+            ? `Add **Hive credits** in Settings to continue (~$${(cloud.amountUsd ?? 0.02).toFixed(2)}).`
+            : `AiBhive assistant unavailable: ${cloud.error}`,
+          intent: 'chat',
+          buildStage: 'none',
+        },
+      };
+    }
+    raw = cloud.raw;
+  }
+
+  const action = await parseAssistantRaw(raw);
+  return finalizeHomeAssistantTurn(action, history, userMessage, byokConfig ?? null);
 }

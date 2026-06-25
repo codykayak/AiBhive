@@ -83,6 +83,10 @@ const defaultNotes = {
     'v1.6.4 — Samsung DeX / large-screen layout fills the monitor. Web Hive Apps run in-browser with live split-pane store on desktop.',
   '1.6.5':
     'v1.6.5 — Intel Agent: company, website & person targets; regional search filters (city + radius); smarter tool plans per target type.',
+  '1.6.6':
+    'v1.6.6 — DeX side nav & full-width layout; Hive Assistant full-screen chat (Hive credits default); community-style Job Tracker, Resume & Research apps; collapsible top bar.',
+  '1.6.7':
+    'v1.6.7 — Samsung DeX fix: resizable free-form window, Samsung keepalive meta-data, DisplayMetrics refresh on resize (no more tiny phone box on monitor).',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
