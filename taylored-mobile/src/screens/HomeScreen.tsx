@@ -49,18 +49,20 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout compactBadge contentStyle={styles.screenContent}>
-      <HomeAssistantChat
-        expanded={assistantExpanded}
-        onExpandChange={setAssistantExpanded}
-        initialQuery={pendingAsk}
-        onInitialQueryConsumed={() => setPendingAsk(undefined)}
-      />
+      <View style={styles.body}>
+        <HomeAssistantChat
+          expanded={assistantExpanded}
+          onExpandChange={setAssistantExpanded}
+          initialQuery={pendingAsk}
+          onInitialQueryConsumed={() => setPendingAsk(undefined)}
+        />
 
-      <ScreenScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
-        keyboardShouldPersistTaps="handled"
-      >
+        <ScreenScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
           <TouchableOpacity
             style={[styles.priceBlock, isDesktop && styles.gridItem]}
@@ -171,12 +173,15 @@ export default function HomeScreen() {
           <ChevronRight color={colors.amberLight} size={18} />
         </TouchableOpacity>
       </ScreenScrollView>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: spacing.md },
+  body: { flex: 1 },
+  scrollView: { flex: 1 },
   scroll: { paddingTop: spacing.xs },
   grid: { marginBottom: spacing.lg },
   gridDesktop: {

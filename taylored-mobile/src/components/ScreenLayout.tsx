@@ -51,12 +51,6 @@ export function ScreenLayout({
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const headerTranslate = scrollY.interpolate({
-    inputRange: [0, HEADER_COLLAPSE],
-    outputRange: [0, -(showBrand ? 52 : 36)],
-    extrapolate: 'clamp',
-  });
-
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, HEADER_COLLAPSE * 0.55],
     outputRange: [1, 0],
@@ -64,8 +58,14 @@ export function ScreenLayout({
   });
 
   const onScroll = collapsibleHeader
-    ? Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })
+    ? Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })
     : undefined;
+
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, HEADER_COLLAPSE],
+    outputRange: [showBrand ? 52 : 36, 0],
+    extrapolate: 'clamp',
+  });
 
   return (
     <ScrollContext.Provider value={onScroll ? { onScroll } : null}>
@@ -100,10 +100,11 @@ export function ScreenLayout({
 
         <View style={[styles.content, { paddingTop: insets.top + 4 }, contentStyle]}>
           <Animated.View
-            style={{
-              transform: collapsibleHeader ? [{ translateY: headerTranslate }] : undefined,
-              opacity: collapsibleHeader ? headerOpacity : 1,
-            }}
+            style={
+              collapsibleHeader
+                ? { overflow: 'hidden', height: headerHeight, opacity: headerOpacity }
+                : undefined
+            }
           >
             <View style={styles.topRow}>
               {showBrand ? (
@@ -131,7 +132,7 @@ type ScreenScrollProps = ScrollViewProps & {
 };
 
 /** ScrollView wired to ScreenLayout collapsible header */
-export function ScreenScrollView({ children, onScroll, contentContainerStyle, ...rest }: ScreenScrollProps) {
+export function ScreenScrollView({ children, onScroll, contentContainerStyle, style, ...rest }: ScreenScrollProps) {
   const ctx = useContext(ScrollContext);
 
   const mergedOnScroll = ctx?.onScroll
@@ -146,6 +147,7 @@ export function ScreenScrollView({ children, onScroll, contentContainerStyle, ..
   return (
     <Animated.ScrollView
       {...rest}
+      style={[styles.scrollView, style]}
       onScroll={mergedOnScroll}
       scrollEventThrottle={16}
       contentContainerStyle={contentContainerStyle}
@@ -202,5 +204,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.md,
     lineHeight: 21,
+  },
+  scrollView: {
+    flex: 1,
   },
 });
