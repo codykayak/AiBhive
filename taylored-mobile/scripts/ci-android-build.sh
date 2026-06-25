@@ -44,6 +44,9 @@ if [[ -f "$APP_BUILD_GRADLE" ]] && ! grep -q 'checkReleaseBuilds false' "$APP_BU
 fi
 
 cd android
+if [[ -n "${ANDROID_HOME:-}" ]]; then
+  printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+fi
 sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" >/dev/null
 yes | sdkmanager --licenses >/dev/null 2>&1 || true
 

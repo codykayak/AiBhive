@@ -51,6 +51,17 @@ steps:
         cp android/app/build/outputs/apk/release/app-release.apk /workspace/app-release.apk
         ls -lh /workspace/app-release.apk
 
+        # Stage release files for download / optional publish (manifest alone is NOT enough —
+        # you must run scripts/publish-mobile-from-apk.sh and push to main-fixed).
+        mkdir -p /workspace/public
+        cp /workspace/app-release.apk /workspace/public/taylored-mobile.apk
+        cd /workspace
+        node scripts/write-mobile-release.mjs
+        echo "Release manifest staged."
+        echo "NEXT: download app-release.apk from Cloud Build, then run:"
+        echo "  bash scripts/publish-mobile-from-apk.sh /path/to/app-release.apk"
+        echo "  git push origin main-fixed"
+
   - name: gcr.io/cloud-builders/gsutil
     id: upload-apk
     entrypoint: bash

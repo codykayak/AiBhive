@@ -14,7 +14,21 @@ Pick one — **do not run both** for the same release:
 gcloud builds submit --config taylored-mobile/cloudbuild.yaml .
 ```
 
-Optional upload to your bucket:
+**Cloud Build only compiles the APK.** It does **not** update what users see in **Check for updates** until you publish:
+
+1. Download `app-release.apk` from the Cloud Build run (Artifacts / logs).
+2. From repo root:
+
+```bash
+bash scripts/publish-mobile-from-apk.sh /path/to/app-release.apk
+git add public/taylored-mobile.apk public/mobile-releases.json
+git commit -m "chore(mobile): publish APK + manifest [skip-apk]"
+git push origin main-fixed
+```
+
+3. Confirm: `curl https://aibhive.com/api/mobile/releases` shows the new `shippedNativeVersion`.
+
+Optional upload to your bucket during build:
 
 ```bash
 gcloud builds submit --config taylored-mobile/cloudbuild.yaml . \
