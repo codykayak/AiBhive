@@ -11,7 +11,8 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Briefcase, ChevronRight, Search, Plus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { AppThemeShell, AppThemeScroll } from '../components/AppThemeShell';
+import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { EmptyState, PrimaryButton, StatusPill } from '../components/ui';
 import { listJobs, statusLabel, type JobApplication, type JobStatus } from '../lib/jobs';
 import { jobStatusTone } from '../lib/jobStatusUi';
@@ -30,6 +31,7 @@ const FILTERS: Array<{ id: 'all' | JobStatus; label: string }> = [
 export default function JobTrackerScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const theme = builtInAppForThemeKey('tracker')!;
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | JobStatus>('all');
@@ -73,11 +75,9 @@ export default function JobTrackerScreen() {
   }, [jobs]);
 
   return (
-    <ScreenLayout
-      title="Job Tracker"
-      subtitle="Your application pipeline — every kit, status, and research note in one place."
-      showBrand={false}
-      contentStyle={styles.content}
+    <AppThemeShell
+      theme={theme}
+      subtitle="Your application pipeline — every kit, status, and follow-up in one place."
     >
       <PrimaryButton
         label="New application"
@@ -86,12 +86,12 @@ export default function JobTrackerScreen() {
         style={styles.newBtn}
       />
 
-      <View style={styles.searchRow}>
-        <Search color={colors.textDim} size={18} />
+      <View style={[styles.searchRow, { backgroundColor: theme.surface, borderColor: theme.primary + '44' }]}>
+        <Search color={theme.accentText} size={18} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: theme.accentText }]}
           placeholder="Search company or role…"
-          placeholderTextColor={colors.textDim}
+          placeholderTextColor={theme.accentText + '66'}
           value={query}
           onChangeText={setQuery}
         />
@@ -109,10 +109,14 @@ export default function JobTrackerScreen() {
           return (
             <TouchableOpacity
               key={f.id}
-              style={[styles.filterChip, active && styles.filterChipOn]}
+              style={[
+                styles.filterChip,
+                { borderColor: theme.primary + '55', backgroundColor: theme.surface },
+                active && { backgroundColor: theme.primary, borderColor: theme.primary },
+              ]}
               onPress={() => setFilter(f.id)}
             >
-              <Text style={[styles.filterText, active && styles.filterTextOn]}>
+              <Text style={[styles.filterText, { color: theme.accentText + 'aa' }, active && styles.filterTextOn]}>
                 {f.label}{count > 0 ? ` · ${count}` : ''}
               </Text>
             </TouchableOpacity>
@@ -120,12 +124,10 @@ export default function JobTrackerScreen() {
         })}
       </ScrollView>
 
-      <ScrollView
+      <AppThemeScroll
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.amberLight} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
         }
-        contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
-        showsVerticalScrollIndicator={false}
       >
         {filtered.length === 0 ? (
           <EmptyState
@@ -151,14 +153,14 @@ export default function JobTrackerScreen() {
           filtered.map((job) => (
             <TouchableOpacity
               key={job.id}
-              style={styles.card}
+              style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.primary + '33' }]}
               activeOpacity={0.88}
               onPress={() => navigation.navigate('JobDetail', { jobId: job.id })}
             >
-              <View style={styles.cardAccent} />
+              <View style={[styles.cardAccent, { backgroundColor: theme.primary }]} />
               <View style={styles.cardBody}>
-                <Text style={styles.company}>{job.companyName || job.roleTitle || 'Untitled role'}</Text>
-                <Text style={styles.role} numberOfLines={1}>
+                <Text style={[styles.company, { color: theme.accentText }]}>{job.companyName || job.roleTitle || 'Untitled role'}</Text>
+                <Text style={[styles.role, { color: theme.accentText + '99' }]} numberOfLines={1}>
                   {job.roleTitle || job.jobUrl || 'Tap for details'}
                 </Text>
                 <View style={styles.metaRow}>
@@ -166,12 +168,12 @@ export default function JobTrackerScreen() {
                   <Text style={styles.date}>{new Date(job.updatedAt).toLocaleDateString()}</Text>
                 </View>
               </View>
-              <ChevronRight color={colors.amber} size={22} />
+              <ChevronRight color={theme.primary} size={22} />
             </TouchableOpacity>
           ))
         )}
-      </ScrollView>
-    </ScreenLayout>
+      </AppThemeScroll>
+    </AppThemeShell>
   );
 }
 

@@ -2,7 +2,9 @@ import React from 'react';
 import { View, StyleSheet, useWindowDimensions, Platform } from 'react-native';
 import { colors } from '../theme/colors';
 
-const MAX_CONTENT_WIDTH = 1200;
+const MAX_CONTENT_WIDTH = 1400;
+const DESKTOP_BREAKPOINT = 840;
+const WIDE_BREAKPOINT = 600;
 
 type ResponsiveShellProps = {
   children: React.ReactNode;
@@ -10,17 +12,17 @@ type ResponsiveShellProps = {
 
 /** Fills Samsung DeX / tablet / desktop windows — content centers on very wide screens. */
 export function ResponsiveShell({ children }: ResponsiveShellProps) {
-  const { width, height } = useWindowDimensions();
-  const isWide = width >= 600;
-  const isDesktop = width >= 900;
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
 
   return (
-    <View style={[styles.root, { width, height, minHeight: height }]}>
+    <View style={styles.root}>
       <View
         style={[
           styles.inner,
           isWide && styles.innerWide,
-          isDesktop && { maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' as const },
+          isDesktop && { maxWidth: MAX_CONTENT_WIDTH, alignSelf: 'center' as const, width: '100%' },
         ]}
       >
         {children}
@@ -32,6 +34,8 @@ export function ResponsiveShell({ children }: ResponsiveShellProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: colors.bg,
     ...(Platform.OS === 'android' ? { alignSelf: 'stretch' as const } : {}),
   },
@@ -41,17 +45,19 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   innerWide: {
-    width: '100%',
+    flex: 1,
   },
 });
 
 export function useResponsiveLayout() {
   const { width, height } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
   return {
-    isWide: width >= 600,
-    isDesktop: width >= 900,
+    isWide,
+    isDesktop,
     width,
     height,
-    contentMaxWidth: width >= 600 ? Math.min(width, MAX_CONTENT_WIDTH) : width,
+    contentMaxWidth: isWide ? Math.min(width, MAX_CONTENT_WIDTH) : width,
   };
 }

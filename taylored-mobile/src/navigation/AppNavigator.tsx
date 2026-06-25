@@ -71,33 +71,21 @@ export default function AppNavigator() {
         }}
       >
         <Stack.Screen name="Main" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="EnterpriseWebView"
-          component={EnterpriseWebViewScreen}
-          options={{ title: 'AiBhive Enterprise' }}
-        />
-        <Stack.Screen name="AutoBotResume" component={AutoBotResumeScreen} options={{ title: 'Auto-Bot Resume' }} />
-        <Stack.Screen name="AutoBotResumeResult" component={AutoBotResumeResultScreen} options={{ title: 'Application Kit' }} />
-        <Stack.Screen name="Deeper" component={DeeperScreen} options={{ title: 'Company Intel' }} />
-        <Stack.Screen name="JobTracker" component={JobTrackerScreen} options={{ title: 'Job Tracker' }} />
-        <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ title: 'Job Profile' }} />
-        <Stack.Screen name="UserGuide" component={UserGuideScreen} options={{ title: 'User Guide' }} />
-        <Stack.Screen name="HiveAppDetail" component={HiveAppDetailScreen} options={{ title: 'Your App' }} />
-        <Stack.Screen name="UserApp" component={UserAppHostScreen} options={{ title: 'Hive App' }} />
+        <Stack.Screen name="EnterpriseWebView" component={EnterpriseWebViewScreen} options={{ headerShown: false, title: 'AiBhive Enterprise' }} />
+        <Stack.Screen name="AutoBotResume" component={AutoBotResumeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="AutoBotResumeResult" component={AutoBotResumeResultScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Deeper" component={DeeperScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="JobTracker" component={JobTrackerScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="JobDetail" component={JobDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="UserGuide" component={UserGuideScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="HiveAppDetail" component={HiveAppDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="UserApp" component={UserAppHostScreen} options={{ headerShown: false }} />
         <Stack.Screen name="DynamicApp" component={DynamicAppHost} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="HiveExportOptions"
-          component={HiveExportOptionsScreen}
-          options={{ title: 'Export' }}
-        />
-        <Stack.Screen
-          name="AppCustomize"
-          component={AppCustomizeScreen}
-          options={{ title: 'Tweak or Customize' }}
-        />
-        <Stack.Screen name="HiveBuild" component={BuildScreen} options={{ title: 'Build' }} />
-        <Stack.Screen name="IntelAgent" component={IntelAgentScreen} options={{ title: 'Research' }} />
-        <Stack.Screen name="IntelCase" component={IntelCaseScreen} options={{ title: 'Intel Case' }} />
+        <Stack.Screen name="HiveExportOptions" component={HiveExportOptionsScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="AppCustomize" component={AppCustomizeScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="HiveBuild" component={BuildScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="IntelAgent" component={IntelAgentScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="IntelCase" component={IntelCaseScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

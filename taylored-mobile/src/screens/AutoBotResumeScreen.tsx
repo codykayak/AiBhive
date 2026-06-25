@@ -17,7 +17,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { Camera, FileText, Link2, ImagePlus } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { AppThemeShell } from '../components/AppThemeShell';
+import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { PrimaryButton } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { createJobDraft } from '../lib/jobs';
@@ -28,6 +29,7 @@ import { colors, radii, spacing } from '../theme/colors';
 export default function AutoBotResumeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const theme = builtInAppForThemeKey('resume')!;
   const { user } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -188,11 +190,9 @@ export default function AutoBotResumeScreen() {
   };
 
   return (
-    <ScreenLayout
-      title="Auto-Bot Resume"
-      subtitle="Drop in a job listing and your background. Each application saves to Job Tracker on this device."
-      showBrand={false}
-      contentStyle={styles.content}
+    <AppThemeShell
+      theme={theme}
+      subtitle="Drop in a job listing and your background. Each application saves to Job Tracker."
     >
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={keyboardAvoidBehavior()} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}>
@@ -295,7 +295,7 @@ export default function AutoBotResumeScreen() {
         </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>
-    </ScreenLayout>
+    </AppThemeShell>
   );
 }
 

@@ -185,7 +185,7 @@ export default function DynamicAppHost() {
             <Text style={styles.iterTitle}>Make it yours</Text>
           </View>
           <Text style={styles.iterBody}>
-            Quick tweaks update this app in seconds (~$0.50). Full Cursor customize adds real branding
+            Quick tweaks update this app in seconds (~$0.50). Full Hive customize adds real branding
             and custom behavior (~$4+).
           </Text>
           <TouchableOpacity

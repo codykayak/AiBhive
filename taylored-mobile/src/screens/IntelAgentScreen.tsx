@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Radar, Sparkles, ChevronRight, Clock, Shield } from 'lucide-react-native';
-import { ScreenLayout } from '../components/ScreenLayout';
+import { AppThemeShell, AppThemeScroll } from '../components/AppThemeShell';
+import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { GlassCard, PrimaryButton } from '../components/ui';
-import { useTabBarPadding } from '../components/TabScreenContainer';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/ai';
 import { loadUseHiveCloudIntel, saveUseHiveCloudIntel } from '../osint/preferences';
@@ -31,8 +31,8 @@ const TARGET_TYPES: { id: IntelTargetType; label: string; hint: string; placehol
 export default function IntelAgentScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const theme = builtInAppForThemeKey('research')!;
   const prefillIntent = route.params?.prefillIntent as string | undefined;
-  const tabBarPadding = useTabBarPadding(24);
   const [targetType, setTargetType] = useState<IntelTargetType>('company');
   const [targetLabel, setTargetLabel] = useState('');
   const [domainOverride, setDomainOverride] = useState('');
@@ -89,8 +89,8 @@ export default function IntelAgentScreen() {
     }
     if (!agentReady) {
       Alert.alert(
-        'AI agent required',
-        'Add an AI provider API key in Settings. The agent plans and synthesizes your research — tools can still run, but the brief needs AI.'
+        'Hive credits',
+        'Research uses Hive credits by default. Add credits in Settings, or add your own API key under AI providers if you prefer.'
       );
       return;
     }
@@ -129,49 +129,46 @@ export default function IntelAgentScreen() {
   };
 
   return (
-    <ScreenLayout
-      title="Research"
-      subtitle="AI Intel Agent — tell it what to learn, it directs the search."
-      compactBadge
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
+    <AppThemeShell theme={theme} subtitle="AI-directed intel — companies, websites, and people.">
+      <AppThemeScroll
+        contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        <GlassCard style={styles.heroCard}>
+        <GlassCard style={[styles.heroCard, { backgroundColor: theme.surface, borderColor: theme.primary + '44' }]}>
           <View style={styles.heroRow}>
-            <View style={styles.heroIcon}>
-              <Sparkles color={colors.amberLight} size={28} />
+            <View style={[styles.heroIcon, { backgroundColor: theme.primarySoft }]}>
+              <Sparkles color={theme.primary} size={28} />
             </View>
             <View style={styles.heroText}>
-              <Text style={styles.heroTitle}>AI-directed OSINT</Text>
-              <Text style={styles.heroBody}>
-                One tap activates your chosen AI agent. It plans the search, runs your selected tools, and delivers an
+              <Text style={[styles.heroTitle, { color: theme.accentText }]}>AI-directed OSINT</Text>
+              <Text style={[styles.heroBody, { color: theme.accentText + 'aa' }]}>
+                One tap activates Hive-powered research. It plans the search, runs your selected tools, and delivers an
                 exportable intelligence brief.
               </Text>
             </View>
           </View>
           {!agentReady && (
             <TouchableOpacity
-              style={styles.warnBanner}
+              style={[styles.warnBanner, { borderColor: theme.primary + '55' }]}
               onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
             >
-              <Shield color={colors.amber} size={16} />
-              <Text style={styles.warnText}>Add an AI API key in Settings to activate the agent</Text>
+              <Shield color={theme.primary} size={16} />
+              <Text style={[styles.warnText, { color: theme.accentText }]}>
+                Uses Hive credits by default — add credits or your own API key in Settings
+              </Text>
             </TouchableOpacity>
           )}
           <View style={styles.cloudRow}>
-            <Text style={styles.cloudLabel}>Use Hive Cloud for Firecrawl/SerpAPI</Text>
+            <Text style={[styles.cloudLabel, { color: theme.accentText }]}>Use Hive Cloud for Firecrawl/SerpAPI</Text>
             <Switch
               value={useHiveCloud}
               onValueChange={onHiveCloudToggle}
-              trackColor={{ false: colors.borderMuted, true: colors.amber }}
-              thumbColor={useHiveCloud ? colors.amberLight : colors.textDim}
+              trackColor={{ false: colors.borderMuted, true: theme.primary }}
+              thumbColor={useHiveCloud ? theme.accentText : colors.textDim}
             />
           </View>
-          <Text style={styles.cloudHint}>
-            Uses AiBhive credits when you lack your own API keys. Never scrapes Google directly.
+          <Text style={[styles.cloudHint, { color: theme.accentText + '88' }]}>
+            Powered by Hive credits when you lack your own API keys. Never scrapes Google directly.
           </Text>
         </GlassCard>
 
@@ -321,8 +318,8 @@ export default function IntelAgentScreen() {
             ))}
           </>
         )}
-      </ScrollView>
-    </ScreenLayout>
+      </AppThemeScroll>
+    </AppThemeShell>
   );
 }
 

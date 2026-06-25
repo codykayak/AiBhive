@@ -71,7 +71,7 @@ export default function BuildScreen() {
   const [inputText, setInputText] = useState(prefill?.trim() ?? '');
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeLabel, setActiveLabel] = useState('Gemini');
+  const [activeLabel, setActiveLabel] = useState('Hive');
   const [magicMode, setMagicMode] = useState(true);
   const [hiveOnline, setHiveOnline] = useState(false);
   const [creditBalance, setCreditBalance] = useState<number | null>(null);
@@ -125,9 +125,9 @@ export default function BuildScreen() {
 
   useEffect(() => {
     const refresh = async () => {
-      const prefs = await loadAiPrefs();
+      const [prefs, llm] = await Promise.all([loadAiPrefs(), getActiveLlmConfig()]);
       const def = AI_PROVIDERS.find((p) => p.id === prefs.activeProviderId);
-      if (def) setActiveLabel(def.label);
+      if (def) setActiveLabel(llm?.apiKey ? def.label : 'Hive');
     };
     refresh();
     const interval = setInterval(refresh, 5000);
