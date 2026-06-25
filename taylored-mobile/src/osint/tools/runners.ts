@@ -1,13 +1,17 @@
 import { buildDorkPack } from '../dorks';
+import { buildIntelSearchQuery } from '../regionalQuery';
+import { getToolDef } from './registry';
 import { runIntelCloudTool } from '../../lib/intelCloud';
 import { safeFetch, safeFetchText } from '../safeFetch';
-import type { OsintToolId } from '../types';
+import type { IntelRegionFilter, IntelTargetType, OsintToolId } from '../types';
 
 export type RunContext = {
+  targetType: IntelTargetType;
   domain: string;
   company: string;
   username?: string;
   userIntent?: string;
+  region?: IntelRegionFilter;
   firecrawlKey?: string | null;
   serpapiKey?: string | null;
   useHiveCloud?: boolean;
@@ -290,7 +294,13 @@ export async function runOsintTool(
     }
 
     case 'google_dorks': {
-      const pack = buildDorkPack({ domain, company });
+      const pack = buildDorkPack({
+        domain,
+        company,
+        person: ctx.targetType === 'person' ? company : undefined,
+        targetType: ctx.targetType,
+        region: ctx.region,
+      });
       const lines = pack.map(
         (d, i) =>
           `${i + 1}. ${d.label}\n   Query: ${d.query}\n   Open in browser: ${d.googleUrl}\n   (AiBhive never scrapes Google — tap links in case view)`
@@ -341,11 +351,23 @@ export async function runOsintTool(
     }
 
     case 'firecrawl_search': {
-      const cloudParams = { company, domain, userIntent: ctx.userIntent ?? '' };
+      const query = buildIntelSearchQuery({
+        targetType: ctx.targetType,
+        label: company,
+        domain,
+        userIntent: ctx.userIntent,
+        region: ctx.region,
+      });
+      const cloudParams = {
+        company,
+        domain,
+        userIntent: ctx.userIntent ?? '',
+        targetType: ctx.targetType,
+        location: ctx.region?.location ?? '',
+        radiusMiles: String(ctx.region?.radiusMiles ?? ''),
+        restrictToRegion: ctx.region?.restrictToRegion ? '1' : '0',
+      };
       if (ctx.firecrawlKey) {
-        const query = ctx.userIntent?.trim()
-          ? `${company} ${domain} ${ctx.userIntent}`
-          : `${company} ${domain} leadership contact technology news`;
         const res = await fetch('https://api.firecrawl.dev/v1/search', {
           method: 'POST',
           headers: {
@@ -396,12 +418,24 @@ export async function runOsintTool(
     }
 
     case 'serp_search': {
-      const cloudParams = { company, domain, userIntent: ctx.userIntent ?? '' };
+      const query = buildIntelSearchQuery({
+        targetType: ctx.targetType,
+        label: company,
+        domain,
+        userIntent: ctx.userIntent,
+        region: ctx.region,
+      });
+      const cloudParams = {
+        company,
+        domain,
+        userIntent: ctx.userIntent ?? '',
+        targetType: ctx.targetType,
+        location: ctx.region?.location ?? '',
+        radiusMiles: String(ctx.region?.radiusMiles ?? ''),
+        restrictToRegion: ctx.region?.restrictToRegion ? '1' : '0',
+      };
       if (ctx.serpapiKey) {
-        const q = ctx.userIntent?.trim()
-          ? `${company} ${ctx.userIntent}`
-          : `${company} ${domain} company information`;
-        const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(q)}&api_key=${ctx.serpapiKey}`;
+        const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&api_key=${ctx.serpapiKey}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`SerpAPI failed (${res.status})`);
         const json = await res.json();
@@ -424,6 +458,10 @@ export function canRunTool(
   toolId: OsintToolId,
   ctx: RunContext
 ): { ok: true } | { ok: false; reason: string } {
+  const def = getToolDef(toolId);
+  if (!def.applicableTargets.includes(ctx.targetType)) {
+    return { ok: false, reason: `Not used for ${ctx.targetType} targets` };
+  }
   if (toolId === 'firecrawl_search' || toolId === 'firecrawl_scrape') {
     if (!ctx.firecrawlKey && !ctx.useHiveCloud) {
       return { ok: false, reason: 'Firecrawl key or Hive Cloud required' };
@@ -434,8 +472,11 @@ export function canRunTool(
       return { ok: false, reason: 'SerpAPI key or Hive Cloud required' };
     }
   }
-  if (!ctx.domain && toolId !== 'google_dorks' && toolId !== 'username_probe') {
-    return { ok: false, reason: 'Domain could not be resolved from target' };
+  if (def.requiresDomain && !ctx.domain) {
+    return { ok: false, reason: 'Website/domain required for this module' };
+  }
+  if (toolId === 'username_probe' && ctx.targetType !== 'person') {
+    return { ok: false, reason: 'Username probe is for person targets' };
   }
   return { ok: true };
 }

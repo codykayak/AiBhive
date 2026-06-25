@@ -19,8 +19,9 @@ import type { ChatTurn } from '../lib/llm';
 import type { HiveTask } from '../lib/hiveApi';
 import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
 import { upsertHiveAppFromTask } from '../lib/hiveApps';
-import { createIntelCase, resolveDomainFromTarget } from '../osint/cases';
-import { defaultEnabledToolIds } from '../osint/tools/registry';
+import { createIntelCase, inferTargetTypeFromLabel, resolveDomainFromTarget } from '../osint/cases';
+import { defaultToolsForTargetType } from '../osint/tools/registry';
+import { normalizeRadiusMiles } from '../osint/regionalQuery';
 
 type ChatMessage = {
   id: string;
@@ -97,11 +98,26 @@ export function HomeAssistantChat({
       if (action.intent === 'research' && action.intelIntent?.trim()) {
         appendAi(action.reply);
         const label = action.intelIntent.slice(0, 120);
+        const targetType =
+          action.intelTargetType || inferTargetTypeFromLabel(label);
+        const region =
+          action.intelRegion?.trim()
+            ? {
+                restrictToRegion: true,
+                location: action.intelRegion.trim(),
+                radiusMiles: normalizeRadiusMiles(action.intelRadiusMiles),
+              }
+            : undefined;
         const intelCase = await createIntelCase({
-          target: { label, domain: resolveDomainFromTarget(label) },
-          enabledTools: defaultEnabledToolIds(),
+          target: {
+            type: targetType,
+            label,
+            domain: resolveDomainFromTarget(label, undefined, targetType) || undefined,
+            region,
+          },
+          enabledTools: defaultToolsForTargetType(targetType),
         });
-        setTimeout(() => navigation.navigate('IntelCase', { caseId: intelCase.id }), 800);
+        setTimeout(() => navigation.navigate('IntelCase', { caseId: intelCase.id, autoRun: true }), 800);
         return;
       }
 

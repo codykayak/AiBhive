@@ -4,6 +4,39 @@
  */
 import { applyTokenMarkup } from './hivePlans.js';
 
+function appendRegionalSuffix(baseQuery, params) {
+  const restrict = params.restrictToRegion === '1' || params.restrictToRegion === true;
+  const location = String(params.location || '').trim();
+  if (!restrict || !location) return baseQuery.trim();
+  const miles = Math.min(100, Math.max(30, parseInt(params.radiusMiles, 10) || 50));
+  return `${baseQuery.trim()} near ${location} within ${miles} miles local regional`;
+}
+
+function buildCloudSearchQuery(params) {
+  const company = params.company || '';
+  const domain = params.domain || '';
+  const userIntent = params.userIntent || '';
+  const targetType = params.targetType || 'company';
+  let base = '';
+
+  if (targetType === 'person') {
+    base = userIntent.trim()
+      ? `"${company}" ${userIntent} LinkedIn profile biography public records`
+      : `"${company}" LinkedIn profile social media public biography contact`;
+  } else if (targetType === 'domain') {
+    const site = domain || company;
+    base = userIntent.trim()
+      ? `${site} ${userIntent} company about leadership technology`
+      : `${site} company about leadership technology infrastructure contact`;
+  } else {
+    base = userIntent.trim()
+      ? `"${company}" ${userIntent} leadership hiring news`
+      : `"${company}" company leadership technology news contact email`;
+  }
+
+  return appendRegionalSuffix(base, params);
+}
+
 /** Raw API cost (before 20% markup). */
 const SERP_RAW_USD = 0.02;
 const FIRECRAWL_SEARCH_RAW_USD = 0.03;
@@ -116,9 +149,7 @@ export async function runIntelCloudTool(db, usage, opts) {
       case 'firecrawl_search': {
         const apiKey = process.env.FIRECRAWL_API_KEY;
         if (!apiKey) throw new Error('Hive Cloud Firecrawl not configured');
-        const query = userIntent.trim()
-          ? `${company} ${domain} ${userIntent}`
-          : `${company} ${domain} company leadership technology`;
+        const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
         result = await firecrawlSearch(apiKey, query);
         break;
       }
@@ -132,7 +163,7 @@ export async function runIntelCloudTool(db, usage, opts) {
       case 'serp_search': {
         const apiKey = process.env.SERPAPI_KEY;
         if (!apiKey) throw new Error('Hive Cloud SerpAPI not configured');
-        const query = userIntent.trim() ? `${company} ${userIntent}` : `${company} ${domain}`;
+        const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
         result = await serpSearch(apiKey, query);
         break;
       }

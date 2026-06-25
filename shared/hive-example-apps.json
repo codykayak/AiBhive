@@ -117,7 +117,7 @@
     "id": "example-research",
     "title": "Research",
     "tagline": "Intel on companies and people",
-    "summary": "Plan OSINT research targets and track findings. The mobile Intel Agent automates Google-safe searches, PDF export, and more.",
+    "summary": "Plan OSINT on companies, websites, or people. Set a regional filter for local results. Full Intel Agent in the mobile app automates the search.",
     "theme": "purple",
     "icon": "compass",
     "category": "guides",
@@ -130,7 +130,7 @@
         "type": "note",
         "config": {
           "placeholder": "Company, domain, or person to research…",
-          "seedText": "Target: Northwind Labs\nDomain: northwind.example\nFocus: leadership, funding, recent news"
+          "seedText": "Target type: Company\nName: Northwind Labs\nRegion: Austin, TX (50 mi)\nFocus: leadership, funding, recent news"
         }
       },
       {
@@ -163,11 +163,11 @@
         "title": "Intel Agent",
         "type": "info",
         "config": {
-          "body": "AiBhive Intel Agent runs AI-directed OSINT with Google-safe tools, Hive Cloud probes, and PDF export.",
+          "body": "AiBhive Intel Agent runs AI-directed OSINT on companies, websites, and people — with optional regional filters for local search.",
           "bullets": [
-            "Username and domain lookups",
-            "Wayback and public-source checks",
-            "Structured report you can share"
+            "Company, website, or person target modes",
+            "Regional filter (city + radius) for web search",
+            "Username probe, dorks, DNS, Wayback, PDF export"
           ],
           "links": [
             { "label": "Intel gathering overview", "url": "https://aibhive.com/intel-gathering" },

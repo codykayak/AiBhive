@@ -24,6 +24,9 @@ export function buildRawDump(intelCase: IntelCase): string {
   out += `  Label: ${target.label}\n`;
   out += `  Domain: ${domain}\n`;
   if (target.userIntent) out += `  User intent: ${target.userIntent}\n`;
+  if (target.region?.restrictToRegion && target.region.location) {
+    out += `  Region: ${target.region.location} (${target.region.radiusMiles ?? 50} mi)\n`;
+  }
   if (intelCase.agentProvider) {
     out += `  AI agent: ${intelCase.agentProvider} (${intelCase.agentModel ?? 'default'})\n`;
   }

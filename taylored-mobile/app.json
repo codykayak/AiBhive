@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive",
     "slug": "aibhive-mobile",
-    "version": "1.6.4",
+    "version": "1.6.5",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
         "backgroundColor": "#020617"
       },
       "package": "com.tayloredmobile.app",
-      "versionCode": 19,
+      "versionCode": 20,
       "resizeableActivity": true,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
@@ -55,9 +55,9 @@
           "color": "#f59e0b"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/withLargeScreenSupport.js"
     ],
-    "./plugins/withLargeScreenSupport.js"
     "web": {
       "favicon": "./assets/favicon.png"
     },

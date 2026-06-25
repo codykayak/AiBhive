@@ -17,14 +17,15 @@ import { useTabBarPadding } from '../components/TabScreenContainer';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/ai';
 import { loadUseHiveCloudIntel, saveUseHiveCloudIntel } from '../osint/preferences';
-import { OSINT_TOOLS, defaultEnabledToolIds } from '../osint/tools/registry';
+import { OSINT_TOOLS, defaultToolsForTargetType, isToolApplicable } from '../osint/tools/registry';
 import { createIntelCase, estimateRunSeconds, listIntelCases, resolveDomainFromTarget } from '../osint/cases';
+import { REGION_RADIUS_OPTIONS, normalizeRadiusMiles } from '../osint/regionalQuery';
 import type { IntelCase, IntelTargetType, OsintToolId } from '../osint/types';
 
-const TARGET_TYPES: { id: IntelTargetType; label: string }[] = [
-  { id: 'company', label: 'Company' },
-  { id: 'domain', label: 'Domain' },
-  { id: 'person', label: 'Person' },
+const TARGET_TYPES: { id: IntelTargetType; label: string; hint: string; placeholder: string }[] = [
+  { id: 'company', label: 'Company', hint: 'Business name — we find their site & leadership', placeholder: 'Acme Corporation' },
+  { id: 'domain', label: 'Website', hint: 'Domain or URL — DNS, tech stack, site content', placeholder: 'example.com' },
+  { id: 'person', label: 'Person', hint: 'Full name — social, LinkedIn dorks, username probe', placeholder: 'Jane Smith' },
 ];
 
 export default function IntelAgentScreen() {
@@ -39,11 +40,22 @@ export default function IntelAgentScreen() {
     prefillIntent ||
       'I want to know everything there is to know about this target — leadership, tech stack, public contacts, infrastructure, and reputation.'
   );
-  const [enabledTools, setEnabledTools] = useState<OsintToolId[]>(() => defaultEnabledToolIds());
+  const [enabledTools, setEnabledTools] = useState<OsintToolId[]>(() => defaultToolsForTargetType('company'));
   const [recentCases, setRecentCases] = useState<IntelCase[]>([]);
   const [agentReady, setAgentReady] = useState(false);
   const [starting, setStarting] = useState(false);
   const [useHiveCloud, setUseHiveCloud] = useState(true);
+  const [restrictToRegion, setRestrictToRegion] = useState(false);
+  const [regionLocation, setRegionLocation] = useState('');
+  const [radiusMiles, setRadiusMiles] = useState('50');
+
+  const activeTarget = TARGET_TYPES.find((t) => t.id === targetType)!;
+
+  const onTargetTypeChange = (next: IntelTargetType) => {
+    setTargetType(next);
+    setEnabledTools(defaultToolsForTargetType(next));
+    if (next === 'domain') setDomainOverride('');
+  };
 
   const refresh = useCallback(async () => {
     const [cases, llm, hiveCloud] = await Promise.all([
@@ -64,11 +76,11 @@ export default function IntelAgentScreen() {
     setEnabledTools((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
   };
 
-  const resolvedDomain = resolveDomainFromTarget(targetLabel, domainOverride);
+  const resolvedDomain = resolveDomainFromTarget(targetLabel, domainOverride, targetType);
 
   const startAgent = async () => {
     if (!targetLabel.trim()) {
-      Alert.alert('Target required', 'Enter a company name, domain, or person to research.');
+      Alert.alert('Target required', 'Enter a company, website, or person to research.');
       return;
     }
     if (!enabledTools.length) {
@@ -85,12 +97,21 @@ export default function IntelAgentScreen() {
 
     setStarting(true);
     try {
+      const region =
+        restrictToRegion && regionLocation.trim()
+          ? {
+              restrictToRegion: true,
+              location: regionLocation.trim(),
+              radiusMiles: normalizeRadiusMiles(radiusMiles),
+            }
+          : undefined;
       const intelCase = await createIntelCase({
         target: {
           type: targetType,
           label: targetLabel.trim(),
           domain: resolvedDomain || undefined,
           userIntent: userIntent.trim() || undefined,
+          region,
         },
         enabledTools,
       });
@@ -162,29 +183,32 @@ export default function IntelAgentScreen() {
           </Text>
         </GlassCard>
 
-        <Text style={styles.sectionLabel}>Target</Text>
+        <Text style={styles.sectionLabel}>Target type</Text>
         <View style={styles.typeRow}>
           {TARGET_TYPES.map((t) => (
             <TouchableOpacity
               key={t.id}
               style={[styles.typeChip, targetType === t.id && styles.typeChipOn]}
-              onPress={() => setTargetType(t.id)}
+              onPress={() => onTargetTypeChange(t.id)}
             >
               <Text style={[styles.typeChipText, targetType === t.id && styles.typeChipTextOn]}>{t.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
+        <Text style={styles.hint}>{activeTarget.hint}</Text>
         <TextInput
           style={styles.input}
-          placeholder={targetType === 'domain' ? 'example.com' : 'Acme Corporation'}
+          placeholder={activeTarget.placeholder}
           placeholderTextColor={colors.textDim}
           value={targetLabel}
           onChangeText={setTargetLabel}
-          autoCapitalize="none"
+          autoCapitalize={targetType === 'person' ? 'words' : 'none'}
         />
         {targetType !== 'domain' && (
           <>
-            <Text style={styles.hint}>Domain override (optional)</Text>
+            <Text style={styles.hint}>
+              {targetType === 'person' ? 'Their employer website (optional)' : 'Website override (optional)'}
+            </Text>
             <TextInput
               style={styles.input}
               placeholder={resolvedDomain || 'acme.com'}
@@ -193,6 +217,42 @@ export default function IntelAgentScreen() {
               onChangeText={setDomainOverride}
               autoCapitalize="none"
             />
+          </>
+        )}
+
+        <Text style={styles.sectionLabel}>Regional filter</Text>
+        <View style={styles.cloudRow}>
+          <Text style={styles.cloudLabel}>Limit web search to a region</Text>
+          <Switch
+            value={restrictToRegion}
+            onValueChange={setRestrictToRegion}
+            trackColor={{ false: colors.borderMuted, true: colors.amber }}
+            thumbColor={restrictToRegion ? colors.amberLight : colors.textDim}
+          />
+        </View>
+        {restrictToRegion && (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="City, state, or metro (e.g. Miami, FL)"
+              placeholderTextColor={colors.textDim}
+              value={regionLocation}
+              onChangeText={setRegionLocation}
+            />
+            <View style={styles.radiusRow}>
+              {REGION_RADIUS_OPTIONS.map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  style={[styles.radiusChip, String(r) === radiusMiles && styles.radiusChipOn]}
+                  onPress={() => setRadiusMiles(String(r))}
+                >
+                  <Text style={[styles.radiusChipText, String(r) === radiusMiles && styles.radiusChipTextOn]}>
+                    {r} mi
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.hint}>Applies to Firecrawl/Serp searches and regional dorks — not DNS lookups.</Text>
           </>
         )}
 
@@ -211,7 +271,7 @@ export default function IntelAgentScreen() {
           <Text style={styles.sectionLabel}>Research modules</Text>
           <Text style={styles.estBadge}>~{Math.ceil(estSeconds / 60)} min est.</Text>
         </View>
-        {OSINT_TOOLS.map((tool) => {
+        {OSINT_TOOLS.filter((tool) => isToolApplicable(tool.id, targetType)).map((tool) => {
           const on = enabledTools.includes(tool.id);
           return (
             <View key={tool.id} style={styles.toolRow}>
@@ -360,4 +420,15 @@ const styles = StyleSheet.create({
   },
   caseTitle: { color: colors.text, fontWeight: '700', fontSize: 15 },
   caseMeta: { color: colors.textDim, fontSize: 12, marginTop: 2 },
+  radiusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: spacing.sm },
+  radiusChip: {
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    borderRadius: radii.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  radiusChipOn: { backgroundColor: colors.amber, borderColor: colors.amber },
+  radiusChipText: { color: colors.textMuted, fontWeight: '700', fontSize: 12 },
+  radiusChipTextOn: { color: colors.black },
 });

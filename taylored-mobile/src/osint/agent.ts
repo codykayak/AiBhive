@@ -2,9 +2,10 @@ import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/
 import { getSerpApiKey } from '../lib/settings';
 import { resolveDomainFromTarget, updateIntelCase } from './cases';
 import { buildRawDump } from './export';
+import { formatRegionLabel } from './regionalQuery';
 import { loadUseHiveCloudIntel } from './preferences';
 import { toolDelay } from './safeFetch';
-import { OSINT_TOOLS, getToolDef } from './tools/registry';
+import { OSINT_TOOLS, getToolDef, isToolApplicable } from './tools/registry';
 import { canRunTool, runOsintTool } from './tools/runners';
 import type {
   AgentPlan,
@@ -48,14 +49,22 @@ function parseJsonFromModel(text: string): unknown {
   return JSON.parse(cleaned);
 }
 
-function defaultPlan(enabledTools: OsintToolId[]): AgentPlan {
-  return {
-    focusAreas: ['infrastructure', 'public web presence', 'contact signals'],
-    notes: 'Default plan — AI planner unavailable, running all enabled tools.',
-    steps: enabledTools.map((toolId) => ({
+function defaultPlan(enabledTools: OsintToolId[], targetType: IntelCase['target']['type']): AgentPlan {
+  const steps = enabledTools
+    .filter((id) => isToolApplicable(id, targetType))
+    .map((toolId) => ({
       toolId,
       reason: getToolDef(toolId).description,
-    })),
+    }));
+  return {
+    focusAreas:
+      targetType === 'person'
+        ? ['public profiles', 'social signals', 'regional mentions']
+        : targetType === 'domain'
+          ? ['infrastructure', 'public web presence', 'technology']
+          : ['leadership', 'public web presence', 'contact signals'],
+    notes: 'Default plan — AI planner unavailable, running enabled tools for this target type.',
+    steps,
   };
 }
 
@@ -65,9 +74,11 @@ async function buildPlannerPrompt(
   serpAvailable: boolean,
   hiveCloud: boolean
 ): Promise<string> {
-  const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain);
+  const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain, intelCase.target.type);
+  const regionLabel = formatRegionLabel(intelCase.target.region);
   const toolList = OSINT_TOOLS.map((t) => {
     let status = 'available';
+    if (!t.applicableTargets.includes(intelCase.target.type)) status = 'wrong target type — skip';
     if (t.apiKeyField === 'firecrawl' && !firecrawlAvailable && !hiveCloud) status = 'NO KEY — skip unless Hive Cloud';
     if (t.apiKeyField === 'serpapi' && !serpAvailable && !hiveCloud) status = 'NO KEY — skip unless Hive Cloud';
     if (t.apiKeyField === 'firecrawl' && !firecrawlAvailable && hiveCloud) status = 'Hive Cloud available';
@@ -76,10 +87,15 @@ async function buildPlannerPrompt(
     return `- ${t.id}: ${t.name} — ${t.description} [${status}]`;
   }).join('\n');
 
-  return `TARGET TYPE: ${intelCase.target.type}
+  return `TARGET TYPE: ${intelCase.target.type} (company | domain/website | person)
 TARGET LABEL: ${intelCase.target.label}
-DOMAIN (resolved): ${domain || 'unknown'}
+DOMAIN (resolved): ${domain || 'none — skip website-only tools'}
+REGION FILTER: ${regionLabel || 'none (global search)'}
 USER INTENT: ${intelCase.target.userIntent || 'Learn everything publicly available about this target'}
+
+For PERSON targets: prioritize username_probe, person dorks, Firecrawl/Serp people search.
+For COMPANY targets: leadership, news, contacts; use regional filter in search queries when set.
+For DOMAIN/WEBSITE targets: infrastructure, DNS, tech stack, site content first.
 
 ENABLED TOOLS (user selection):
 ${intelCase.enabledTools.join(', ')}
@@ -87,8 +103,8 @@ ${intelCase.enabledTools.join(', ')}
 AVAILABLE TOOLS:
 ${toolList}
 
-Create an efficient research plan using ONLY enabled tools that are available (have API keys if required).
-Prioritize based on user intent. Return JSON only.`;
+Create an efficient research plan using ONLY enabled tools that match the target type and are available.
+Prioritize based on user intent and region filter. Return JSON only.`;
 }
 
 export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
@@ -98,7 +114,7 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
   const hiveCloud = await loadUseHiveCloudIntel();
 
   if (!llm) {
-    return defaultPlan(intelCase.enabledTools);
+    return defaultPlan(intelCase.enabledTools, intelCase.target.type);
   }
 
   try {
@@ -116,13 +132,15 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
       }
     );
     const parsed = parseJsonFromModel(raw) as AgentPlan;
-    if (!parsed.steps?.length) return defaultPlan(intelCase.enabledTools);
+    if (!parsed.steps?.length) return defaultPlan(intelCase.enabledTools, intelCase.target.type);
     const allowed = new Set(intelCase.enabledTools);
-    parsed.steps = parsed.steps.filter((s) => allowed.has(s.toolId));
-    if (!parsed.steps.length) return defaultPlan(intelCase.enabledTools);
+    parsed.steps = parsed.steps.filter(
+      (s) => allowed.has(s.toolId) && isToolApplicable(s.toolId, intelCase.target.type)
+    );
+    if (!parsed.steps.length) return defaultPlan(intelCase.enabledTools, intelCase.target.type);
     return parsed;
   } catch {
-    return defaultPlan(intelCase.enabledTools);
+    return defaultPlan(intelCase.enabledTools, intelCase.target.type);
   }
 }
 
@@ -139,8 +157,10 @@ async function synthesizeBrief(intelCase: IntelCase, rawDump: string): Promise<s
   }
 
   const truncated = rawDump.slice(0, 28000);
-  const prompt = `TARGET: ${intelCase.target.label}
-USER INTENT: ${intelCase.target.userIntent || 'General company/domain intelligence'}
+  const prompt = `TARGET TYPE: ${intelCase.target.type}
+TARGET: ${intelCase.target.label}
+REGION: ${formatRegionLabel(intelCase.target.region) || 'global'}
+USER INTENT: ${intelCase.target.userIntent || 'General intelligence'}
 
 RAW OSINT DATA:
 ${truncated}`;
@@ -170,7 +190,7 @@ export async function runIntelAgent(
   const firecrawlKey = await getFirecrawlApiKey();
   const serpapiKey = await getSerpApiKey();
   const useHiveCloud = await loadUseHiveCloudIntel();
-  const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain);
+  const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain, intelCase.target.type);
   const company = intelCase.target.label;
   const username =
     intelCase.target.type === 'person'
@@ -192,10 +212,12 @@ export async function runIntelAgent(
   emit({ type: 'status', status: 'running', message: `Running ${plan.steps.length} research modules…` });
 
   const ctx = {
+    targetType: intelCase.target.type,
     domain,
     company,
     username,
     userIntent: intelCase.target.userIntent,
+    region: intelCase.target.region,
     firecrawlKey,
     serpapiKey,
     useHiveCloud,

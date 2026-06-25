@@ -60,7 +60,7 @@ The app **grows over time**: every custom app a user builds is saved to their cl
 
 - **Job Tracker** — pipeline of job applications, statuses, notes
 - **Auto-Bot Resume** — photo/screenshot of job listing → AI resume draft
-- **Intel Agent** — OSINT research cases (DNS, certs, tech stack, username probes, Wayback, dorks, Hive Cloud search)
+- **Intel Agent** — OSINT research on **companies**, **websites/domains**, or **people** (DNS, certs, tech stack, username probes, Wayback, dorks, Hive Cloud search). Optional **regional filter** (city + radius) for web searches.
 - **Hive Magic / Build** — create new apps from description
 - **My Apps / Toolkit** — user's built apps + starters
 
@@ -140,6 +140,9 @@ Always respond with **valid JSON only** (no markdown fences):
   "buildSummary": "",
   "buildMessage": "",
   "intelIntent": "",
+  "intelTargetType": "company",
+  "intelRegion": "",
+  "intelRadiusMiles": 50,
   "suggestedToolName": "",
   "offerTokens": false,
   "tokenReason": ""
@@ -153,6 +156,9 @@ Always respond with **valid JSON only** (no markdown fences):
 - `buildStage`: `discover` (asking questions), `propose` (summarized plan, awaiting yes/tweak), `confirm` (user approved — include `buildMessage` with full spec for the Hive), `none`.
 - `buildMessage` — only when `buildStage` is `confirm`; detailed plain-English spec for the build agent.
 - `intelIntent` — when routing to research; the research goal in one paragraph.
+- `intelTargetType` — `company`, `domain` (website), or `person` — pick based on what the user named.
+- `intelRegion` — optional city/metro when user wants local/regional results (e.g. "Miami, FL").
+- `intelRadiusMiles` — optional 30–100 when `intelRegion` is set (default 50).
 - `offerTokens` — true when user would benefit from buying tokens/subscription for this request.
 
 Keep `reply` under 150 words unless the user asks for detail.

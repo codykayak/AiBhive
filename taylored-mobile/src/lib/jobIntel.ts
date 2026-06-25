@@ -1,5 +1,7 @@
 import { getFirecrawlApiKey } from './ai';
 
+import { appendRegionalSuffix } from '../osint/regionalQuery';
+
 export type CompanySearchOptions = {
   companyName: string;
   location?: string;
@@ -7,11 +9,13 @@ export type CompanySearchOptions = {
 };
 
 function buildSearchQuery(opts: CompanySearchOptions): string {
-  const { companyName, location, radiusMiles = 50 } = opts;
-  const locPart = location?.trim()
-    ? ` near ${location.trim()} within ${radiusMiles} miles local regional`
-    : '';
-  return `${companyName}${locPart} leadership hiring manager recruiter HR director contact email phone`;
+  const base = `${opts.companyName} leadership hiring manager recruiter HR director contact email phone`;
+  if (!opts.location?.trim()) return base;
+  return appendRegionalSuffix(base, {
+    restrictToRegion: true,
+    location: opts.location,
+    radiusMiles: opts.radiusMiles,
+  });
 }
 
 export async function scrapeJobPosting(jobUrl: string): Promise<string | null> {
