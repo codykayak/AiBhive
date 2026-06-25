@@ -10,9 +10,12 @@ type Props = {
   webApp?: PublishedWebApp;
   /** Open full-screen runner instead of store detail page. */
   runDirect?: boolean;
+  /** Desktop store: highlight selection without navigating away. */
+  selected?: boolean;
+  onSelect?: (appId: string) => void;
 };
 
-const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp, runDirect }) => {
+const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp, runDirect, selected, onSelect }) => {
   const brand = brandFor(app.theme);
   const Icon = iconFor(app.icon);
   const href =
@@ -69,7 +72,16 @@ const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp, runDirect }) 
   );
 
   const className =
-    'group block p-4 rounded-2xl border border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-bee-amber/20 transition-all';
+    'group block p-4 rounded-2xl border bg-white/[0.03] hover:bg-white/[0.06] hover:border-bee-amber/20 transition-all ' +
+    (selected ? 'border-bee-amber/50 ring-1 ring-bee-amber/30' : 'border-white/5');
+
+  if (onSelect && variant === 'mobile') {
+    return (
+      <button type="button" onClick={() => onSelect(app.id)} className={`${className} w-full text-left`}>
+        {inner}
+      </button>
+    );
+  }
 
   if (isExternal && webApp) {
     return (

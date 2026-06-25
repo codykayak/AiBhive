@@ -5,10 +5,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   Animated,
   ScrollView,
   ImageBackground,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageCircle, ThumbsUp, Bell, LayoutGrid, Wand2 } from 'lucide-react-native';
@@ -18,7 +18,6 @@ import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { shadows } from '../theme/shadows';
 
-const { width, height } = Dimensions.get('window');
 const HIVE_BG = require('../../assets/aibhive-background.png');
 
 type Slide = {
@@ -77,6 +76,7 @@ type Props = {
 
 export function WelcomeTutorial({ visible, onDone }: Props) {
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const [step, setStep] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
   const slide = SLIDES[step];
@@ -98,7 +98,7 @@ export function WelcomeTutorial({ visible, onDone }: Props) {
     <Modal visible={visible} animationType="fade" statusBarTranslucent>
       <ImageBackground
         source={HIVE_BG}
-        style={[styles.screen, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}
+        style={[styles.screen, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16, maxHeight: height }]}
         imageStyle={styles.bgImage}
       >
         <View style={styles.bgDim} />
@@ -106,14 +106,14 @@ export function WelcomeTutorial({ visible, onDone }: Props) {
         <View style={styles.glowBottom} />
 
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, { minHeight: height * 0.55 }]}
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
           <Animated.View style={{ opacity: fade, alignItems: 'center', width: '100%' }}>
             <HiveLogo size={step === 0 ? 112 : 88} glow animate={step === 0} />
             <Text style={styles.emoji}>{slide.emoji}</Text>
-            <Text style={styles.title}>{slide.title}</Text>
+            <Text style={[styles.title, { maxWidth: width - 48 }]}>{slide.title}</Text>
             <Text style={styles.body}>{slide.body}</Text>
 
             {slide.steps && (
@@ -175,7 +175,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
     paddingHorizontal: spacing.lg,
-    maxHeight: height,
   },
   bgImage: {
     opacity: 0.5,
@@ -207,7 +206,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingVertical: spacing.md,
-    minHeight: height * 0.55,
   },
   emoji: {
     fontSize: 28,
@@ -219,7 +217,6 @@ const styles = StyleSheet.create({
     color: colors.amberLight,
     textAlign: 'center',
     marginBottom: spacing.sm,
-    maxWidth: width - 48,
   },
   body: {
     ...typography.body,

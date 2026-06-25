@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Play, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
+import HiveAppLivePanel from '../../components/hive-apps/HiveAppLivePanel';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
 import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
 import type { HiveAppSpec, PublishedWebApp, StoreCatalog } from '../../lib/hiveAppTypes';
@@ -39,14 +40,28 @@ function webAppAsCard(w: PublishedWebApp): HiveAppSpec {
   };
 }
 
+function useDesktopStore() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return isDesktop;
+}
+
 export default function HiveAppsBrowse() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') === 'web' ? 'web' : 'mobile';
   const q = searchParams.get('q') || '';
   const category = searchParams.get('category') || 'all';
+  const activeAppId = searchParams.get('app');
 
   const [catalog, setCatalog] = useState<StoreCatalog>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const isDesktop = useDesktopStore();
 
   useEffect(() => {
     setLoading(true);
@@ -54,6 +69,24 @@ export default function HiveAppsBrowse() {
       .then(setCatalog)
       .finally(() => setLoading(false));
   }, [q, category]);
+
+  const examples = catalog.examples ?? [];
+  const runnableApps = useMemo(
+    () => [...examples, ...catalog.apps],
+    [examples, catalog.apps]
+  );
+
+  const selectApp = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('app', id);
+    setSearchParams(next);
+  };
+
+  useEffect(() => {
+    if (!isDesktop || q || tab === 'web' || activeAppId || !examples.length) return;
+    selectApp(examples[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only seed desktop preview once
+  }, [isDesktop, examples.length, q, tab, activeAppId]);
 
   const categories = useMemo(() => {
     const entries = Object.entries(catalog.categories).sort(
@@ -69,6 +102,153 @@ export default function HiveAppsBrowse() {
     setSearchParams(next);
   };
 
+  const showSplit = isDesktop && tab === 'mobile' && !q;
+
+  const catalogSection = (
+    <>
+      {tab !== 'web' && !q && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Share2 className="w-5 h-5 text-bee-amber" />
+            <h2 className="text-white font-bold text-lg">Community app pool</h2>
+          </div>
+          {STEPS.map((step) => (
+            <div
+              key={step.n}
+              className="w-full flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-bee-amber/15 flex items-center justify-center shrink-0">
+                <span className="text-bee-amber font-black text-lg">{step.n}</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white font-bold">{step.title}</p>
+                <p className="text-slate-400 text-sm mt-0.5">{step.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab !== 'web' && !q && (
+        <div className="mb-8">
+          <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
+          <p className="text-slate-500 text-sm mb-3 px-1">
+            {showSplit ? 'Click to run instantly in the panel →' : 'Tap to try live in your browser.'}
+          </p>
+          <div className="space-y-3">
+            {EXAMPLE_TOOLS.map((tool) =>
+              showSplit ? (
+                <button
+                  key={tool.id}
+                  type="button"
+                  onClick={() => selectApp(tool.id)}
+                  className={`w-full flex items-center justify-between rounded-2xl border p-5 transition-colors text-left ${
+                    activeAppId === tool.id
+                      ? 'border-bee-amber/50 bg-bee-amber/10'
+                      : 'border-white/10 bg-white/[0.03] hover:border-bee-amber/30'
+                  }`}
+                >
+                  <div>
+                    <p className="text-white font-bold">{tool.title}</p>
+                    <p className="text-slate-400 text-sm">{tool.sub}</p>
+                  </div>
+                  <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />
+                </button>
+              ) : (
+                <Link
+                  key={tool.id}
+                  to={`/hive-apps/run/${tool.id}`}
+                  className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-bee-amber/30 transition-colors"
+                >
+                  <div>
+                    <p className="text-white font-bold">{tool.title}</p>
+                    <p className="text-slate-400 text-sm">{tool.sub}</p>
+                  </div>
+                  <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />
+                </Link>
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-end justify-between mb-4 px-1">
+        <div>
+          <h2 className="text-xl font-bold text-white">
+            {tab === 'web' ? 'Web apps' : q ? `Results for “${q}”` : 'All apps'}
+          </h2>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {tab === 'web'
+              ? `${catalog.webApps.length} published`
+              : loading
+                ? 'Loading…'
+                : `${runnableApps.length} runnable · ${catalog.totalInstalls.toLocaleString()} community installs`}
+          </p>
+        </div>
+        <Link to="/hive-apps/build" className="text-bee-amber font-bold text-sm flex items-center gap-1">
+          <Wrench className="w-4 h-4" />
+          Build
+        </Link>
+      </div>
+
+      {tab === 'mobile' && categories.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-4 mb-2">
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCategory(c.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
+                category === c.id ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400'
+              }`}
+            >
+              {CATEGORY_LABELS[c.id] || c.id} ({c.count})
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <HiveAppCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : tab === 'web' ? (
+        catalog.webApps.length === 0 ? (
+          <EmptyBlock title="No web apps yet" body="Export a Hive app as a web link and it appears here." />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {catalog.webApps.map((w) => (
+              <HiveAppCard key={w.id} app={webAppAsCard(w)} variant="web" webApp={w} />
+            ))}
+          </div>
+        )
+      ) : runnableApps.length === 0 ? (
+        <EmptyBlock
+          title={q ? 'No matches' : 'Store is warming up'}
+          body="Build an app, love it, then share to the community."
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {runnableApps.map((app) =>
+            showSplit ? (
+              <HiveAppCard
+                key={app.id}
+                app={app}
+                variant="mobile"
+                selected={activeAppId === app.id}
+                onSelect={selectApp}
+              />
+            ) : (
+              <HiveAppCard key={app.id} app={app} variant="mobile" runDirect={app.isExample} />
+            )
+          )}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
       <SEO
@@ -76,8 +256,7 @@ export default function HiveAppsBrowse() {
         description="Your first app $1–$5. Browse the community pool — install free, tweak, share."
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-16">
-        {/* $1–$5 sell block */}
+      <div className={`mx-auto px-4 sm:px-6 pb-16 ${showSplit ? 'max-w-7xl' : 'max-w-5xl'}`}>
         {tab !== 'web' && !q && (
           <Link
             to="/hive-apps/build"
@@ -96,139 +275,24 @@ export default function HiveAppsBrowse() {
           </Link>
         )}
 
-        {/* Community 1-2-3 */}
-        {tab !== 'web' && !q && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <Share2 className="w-5 h-5 text-bee-amber" />
-              <h2 className="text-white font-bold text-lg">Community app pool</h2>
-            </div>
-            {STEPS.map((step) => (
-              <div
-                key={step.n}
-                className="w-full flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-3"
-              >
-                <div className="w-10 h-10 rounded-xl bg-bee-amber/15 flex items-center justify-center shrink-0">
-                  <span className="text-bee-amber font-black text-lg">{step.n}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-white font-bold">{step.title}</p>
-                  <p className="text-slate-400 text-sm mt-0.5">{step.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Example tools — runnable in browser */}
-        {tab !== 'web' && !q && (
-          <div className="mb-8">
-            <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
-            <p className="text-slate-500 text-sm mb-3 px-1">Tap to try live in your browser — no install required.</p>
-            <div className="space-y-3">
-              {EXAMPLE_TOOLS.map((tool) => (
+        {showSplit ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(380px,480px)] gap-6 lg:gap-8 items-start">
+            <div className="min-w-0">{catalogSection}</div>
+            <div className="lg:sticky lg:top-44">
+              <p className="text-white font-bold text-sm mb-3 px-1">Live preview</p>
+              <HiveAppLivePanel appId={activeAppId} />
+              {activeAppId ? (
                 <Link
-                  key={tool.id}
-                  to={`/hive-apps/run/${tool.id}`}
-                  className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-bee-amber/30 transition-colors"
+                  to={`/hive-apps/run/${activeAppId}`}
+                  className="mt-3 block text-center text-bee-amber text-sm font-bold hover:underline"
                 >
-                  <div>
-                    <p className="text-white font-bold">{tool.title}</p>
-                    <p className="text-slate-400 text-sm">{tool.sub}</p>
-                  </div>
-                  <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />
+                  Open full screen
                 </Link>
-              ))}
+              ) : null}
             </div>
           </div>
-        )}
-
-        {/* Catalog header */}
-        <div className="flex items-end justify-between mb-4 px-1">
-          <div>
-            <h2 className="text-xl font-bold text-white">
-              {tab === 'web' ? 'Web apps' : q ? `Results for “${q}”` : 'Community apps'}
-            </h2>
-            <p className="text-slate-500 text-sm mt-0.5">
-              {tab === 'web'
-                ? `${catalog.webApps.length} published`
-                : loading
-                  ? 'Loading…'
-                  : `${catalog.apps.length} apps · ${catalog.totalInstalls.toLocaleString()} installs`}
-            </p>
-          </div>
-          <Link to="/hive-apps/build" className="text-bee-amber font-bold text-sm flex items-center gap-1">
-            <Wrench className="w-4 h-4" />
-            Build
-          </Link>
-        </div>
-
-        {/* Categories — horizontal chips only when browsing mobile */}
-        {tab === 'mobile' && categories.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-2">
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => setCategory(c.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${
-                  category === c.id ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400'
-                }`}
-              >
-                {CATEGORY_LABELS[c.id] || c.id} ({c.count})
-              </button>
-            ))}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <HiveAppCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : tab === 'web' ? (
-          catalog.webApps.length === 0 ? (
-            <EmptyBlock title="No web apps yet" body="Export a Hive app as a web link and it appears here." />
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {catalog.webApps.map((w) => (
-                <HiveAppCard key={w.id} app={webAppAsCard(w)} variant="web" webApp={w} />
-              ))}
-            </div>
-          )
-        ) : catalog.apps.length === 0 && (catalog.examples?.length ?? 0) === 0 ? (
-          <EmptyBlock
-            title={q ? 'No matches' : 'Store is warming up'}
-            body="Build an app, love it, then share to the community."
-          />
         ) : (
-          <div className="space-y-6">
-            {(catalog.examples?.length ?? 0) > 0 && !q ? (
-              <div>
-                <h3 className="text-white font-bold text-sm mb-3 px-1">Try in browser</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {catalog.examples!.map((app) => (
-                    <HiveAppCard key={app.id} app={app} variant="mobile" runDirect />
-                  ))}
-                </div>
-              </div>
-            ) : null}
-            {catalog.apps.length > 0 ? (
-              <div>
-                {(catalog.examples?.length ?? 0) > 0 && !q ? (
-                  <h3 className="text-white font-bold text-sm mb-3 px-1">Community shared</h3>
-                ) : null}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {catalog.apps.map((app) => (
-                    <HiveAppCard key={app.id} app={app} variant="mobile" />
-                  ))}
-                </div>
-              </div>
-            ) : q ? (
-              <EmptyBlock title="No community matches" body="Try the example tools above or build your own." />
-            ) : null}
-          </div>
+          catalogSection
         )}
       </div>
     </>

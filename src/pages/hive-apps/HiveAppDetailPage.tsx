@@ -137,7 +137,7 @@ export default function HiveAppDetailPage() {
               </div>
             </div>
 
-            <DynamicAppRunner app={app} />
+            <DynamicAppRunner app={app} expanded />
           </div>
 
           {/* Right — action panel (Play Store style) */}

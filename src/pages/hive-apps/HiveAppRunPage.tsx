@@ -75,8 +75,8 @@ export default function HiveAppRunPage() {
           </Link>
         )}
       </header>
-      <main className="flex-1 max-w-lg mx-auto w-full p-4">
-        <DynamicAppRunner app={app} />
+      <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+        <DynamicAppRunner app={app} expanded />
         <p className="text-center text-slate-600 text-xs mt-6">
           Data saved in this browser only ·{' '}
           <Link to={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">
