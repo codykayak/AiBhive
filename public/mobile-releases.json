@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.7",
-  "versionCode": 22,
-  "sourceVersion": "1.6.7",
-  "releaseNotes": "v1.6.7 — Samsung DeX fix: resizable free-form window, Samsung keepalive meta-data, DisplayMetrics refresh on resize (no more tiny phone box on monitor).",
+  "shippedNativeVersion": "1.6.8",
+  "versionCode": 23,
+  "sourceVersion": "1.6.8",
+  "releaseNotes": "v1.6.8 — Home scroll fix: homepage no longer goes blank when scrolling; collapsible header collapses layout space correctly.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782421171178%2Ftaylored-mobile.apk.gz?alt=media&token=04478719-7b4d-4a00-878d-0e44b5d1d9b8",
-  "publishedAt": "2026-06-25T20:59:32.091Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782426281945%2Ftaylored-mobile.apk.gz?alt=media&token=68b86d92-5ec8-4313-9bb3-99f0f58d4dc3",
+  "publishedAt": "2026-06-25T22:24:42.887Z",
   "otaChannel": "production"
 }
