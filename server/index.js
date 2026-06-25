@@ -65,6 +65,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import { fileURLToPath } from 'url';
+import { processOcr } from './ocr.js';
 
 dotenv.config();
 
@@ -170,6 +171,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_123', {
 
 // Middleware
 app.use(cors());
+
+// --- OCR API ---
+// This must be placed before the global express.json() to allow larger payloads
+app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
 
 // Webhook endpoint needs raw body
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {

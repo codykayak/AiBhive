@@ -5,6 +5,7 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import TranscriptionStudio from './pages/TranscriptionStudio';
 import VoiceCloneLab from './pages/VoiceCloneLab';
+import OcrLab from './pages/ocr-lab/OcrLab';
 import GrowGlobally from './pages/GrowGlobally';
 import AboutContact from './pages/AboutContact';
 import GetStarted from './pages/GetStarted';
@@ -47,6 +48,7 @@ function AnimatedRoutes() {
           <Route path="/" element={<Home />} />
           <Route path="/transcription" element={<TranscriptionStudio />} />
           <Route path="/voice-clone" element={<VoiceCloneLab />} />
+          <Route path="/ocr-lab" element={<OcrLab />} />
           <Route path="/grow" element={<GrowGlobally />} />
           <Route path="/about" element={<AboutContact />} />
           <Route path="/faq" element={<FAQ />} />
