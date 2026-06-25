@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { ResponsiveShell } from './src/components/ResponsiveShell';
@@ -30,7 +30,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
       <ToastProvider>
         <AuthProvider>

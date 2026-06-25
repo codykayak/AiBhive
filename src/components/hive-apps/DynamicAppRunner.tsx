@@ -326,10 +326,12 @@ function renderPage(page: HiveAppPage, appId: string, brand: Brand) {
 type Props = {
   app: HiveAppSpec;
   compact?: boolean;
+  /** Taller panels for desktop / DeX browser store. */
+  expanded?: boolean;
   className?: string;
 };
 
-export default function DynamicAppRunner({ app, compact, className = '' }: Props) {
+export default function DynamicAppRunner({ app, compact, expanded, className = '' }: Props) {
   const brand = brandFor(app.theme);
   const pages = Array.isArray(app.pages) ? app.pages : [];
   const [activeIdx, setActiveIdx] = useState(0);
@@ -370,7 +372,15 @@ export default function DynamicAppRunner({ app, compact, className = '' }: Props
         </div>
       )}
 
-      <div className={`p-4 ${compact ? 'max-h-[420px] overflow-y-auto' : 'min-h-[320px]'}`}>
+      <div
+        className={`p-4 ${
+          compact
+            ? 'max-h-[420px] overflow-y-auto'
+            : expanded
+              ? 'min-h-[min(70vh,720px)]'
+              : 'min-h-[320px]'
+        }`}
+      >
         {page ? renderPage(page, previewId, brand) : (
           <p className="text-slate-400 text-sm">This app has no pages yet.</p>
         )}

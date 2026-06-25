@@ -55,7 +55,8 @@
           "color": "#f59e0b"
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "./plugins/withLargeScreenSupport.js"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
