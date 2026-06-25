@@ -202,9 +202,12 @@ ${platformSpecs}
 
 Return ONLY valid JSON:
 {
-  "linkedin": "caption",
-  "twitter": "caption",
-  "facebook": "caption"
+  "facebook": { "caption": "..." },
+  "instagram": { "caption": "...", "hashtags": ["#AI", "#automation"] },
+  "x": { "caption": "..." },
+  "imageHeadline": "5-10 word punchy headline to render ON the image (must match post theme)",
+  "imageScene": "Visual scene description only — no text in this field",
+  "imagePrompt": "Legacy combined field — same as imageScene"
 }`;
 
   const raw = await grokChat(apiKey, textModel, prompt);
@@ -212,12 +215,6 @@ Return ONLY valid JSON:
 }
 
 export async function grokGeneratePlatformImage(apiKey, imageModel, imagePrompt, brand, aspectHint) {
-  const fullPrompt = `${imagePrompt}
-
-${brand.imageStyle}
-Aspect: ${aspectHint}.
-Professional social marketing graphic for ${brand.name}.`;
-
-  const buffer = await grokGenerateImage(apiKey, imageModel, fullPrompt, aspectHint);
+  const buffer = await grokGenerateImage(apiKey, imageModel, imagePrompt, aspectHint);
   return { buffer, model: imageModel };
 }

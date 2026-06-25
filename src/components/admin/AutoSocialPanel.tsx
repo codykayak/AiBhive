@@ -23,6 +23,7 @@ import {
   listPosts,
   markPosted,
   nextSevenDateKeys,
+  publishPost,
   rejectPost,
   sendTestSms,
   shortDayLabel,
@@ -37,6 +38,7 @@ import {
   type DayPromptEntry,
   type PipelineStep,
   type PlatformId,
+  type PublishStatusEntry,
   type SocialPost,
   type UserAutoSocialProfile,
   type WorkflowStep,
@@ -49,6 +51,7 @@ interface AutoSocialPanelProps {
 function statusColor(status: string) {
   if (status === 'approved') return 'text-green-400 bg-green-400/10 border-green-400/30';
   if (status === 'posted') return 'text-sky-400 bg-sky-400/10 border-sky-400/30';
+  if (status === 'partially_posted') return 'text-purple-400 bg-purple-400/10 border-purple-400/30';
   if (status === 'rejected' || status === 'failed') return 'text-red-400 bg-red-400/10 border-red-400/30';
   if (status === 'generating') return 'text-blue-400 bg-blue-400/10 border-blue-400/30';
   return 'text-amber-400 bg-amber-400/10 border-amber-400/30';
@@ -131,6 +134,44 @@ function WorkflowLog({ log }: { log?: WorkflowStep[] }) {
   );
 }
 
+function PublishStatusRow({
+  label,
+  entry,
+}: {
+  label: string;
+  entry?: PublishStatusEntry;
+}) {
+  if (!entry) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="w-2 h-2 rounded-full bg-slate-600" />
+        {label}: not posted yet
+      </div>
+    );
+  }
+  if (entry.status === 'posted') {
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-xs text-green-300">
+        <Check className="w-3.5 h-3.5" />
+        <span>{label}: live</span>
+        {entry.platformPostId && (
+          <code className="text-slate-500">id {entry.platformPostId}</code>
+        )}
+        {entry.postUrl && (
+          <a href={entry.postUrl} target="_blank" rel="noreferrer" className="text-bee-amber hover:underline inline-flex items-center gap-1">
+            View post <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="text-xs text-red-400">
+      {label} failed: {entry.error || 'Unknown error'}
+    </div>
+  );
+}
+
 function PostCard({
   post,
   user,
@@ -197,6 +238,19 @@ function PostCard({
     }
   }
 
+  async function handlePublish(platforms: Array<'facebook' | 'instagram'>) {
+    setActing(true);
+    try {
+      await publishPost(user, post.id, platforms);
+      onToast(platforms.length > 1 ? 'Published to Facebook & Instagram' : `Published to ${platforms[0]}`);
+      onRefresh();
+    } catch (e) {
+      onToast(e instanceof Error ? e.message : 'Publish failed');
+    } finally {
+      setActing(false);
+    }
+  }
+
   const bundleText = copyPostBundle({ ...post, [platform]: { ...p, caption } }, platform);
   const postUrl = buildPlatformPostUrl(platform, bundleText, links);
 
@@ -237,7 +291,14 @@ function PostCard({
       )}
 
       <WorkflowLog log={post.workflowLog} />
+      <RawOutput title="Image headline" content={post.imageHeadline} />
       <RawOutput title="Image prompt" content={post.imagePrompt} />
+
+      <div className="rounded-xl border border-white/10 p-3 bg-black/20 space-y-1.5">
+        <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">Publish status</p>
+        <PublishStatusRow label="Facebook" entry={post.publishStatus?.facebook} />
+        <PublishStatusRow label="Instagram" entry={post.publishStatus?.instagram} />
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {PLATFORMS.map((item) => (
@@ -332,14 +393,42 @@ function PostCard({
             </button>
           </>
         )}
+        {post.status !== 'generating' && (
+          <>
+            <button
+              type="button"
+              disabled={acting || !post.facebook?.imageUrl}
+              onClick={() => handlePublish(['facebook'])}
+              className="px-4 py-2 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/30 text-sm disabled:opacity-40"
+            >
+              Post to Facebook
+            </button>
+            <button
+              type="button"
+              disabled={acting || !post.instagram?.imageUrl}
+              onClick={() => handlePublish(['instagram'])}
+              className="px-4 py-2 rounded-lg bg-pink-500/20 text-pink-300 border border-pink-500/30 text-sm disabled:opacity-40"
+            >
+              Post to Instagram
+            </button>
+            <button
+              type="button"
+              disabled={acting || (!post.facebook?.imageUrl && !post.instagram?.imageUrl)}
+              onClick={() => handlePublish(['facebook', 'instagram'])}
+              className="px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 text-sm disabled:opacity-40"
+            >
+              Post to both
+            </button>
+          </>
+        )}
         {post.status !== 'posted' && post.status !== 'generating' && (
           <button
             type="button"
             disabled={acting}
             onClick={() => doAction(() => markPosted(user, post.id), 'Marked posted')}
-            className="px-4 py-2 rounded-lg bg-bee-amber text-bee-black font-semibold text-sm"
+            className="px-4 py-2 rounded-lg border border-white/10 text-slate-400 text-sm"
           >
-            Mark as posted
+            Mark as posted (manual)
           </button>
         )}
       </div>
@@ -391,6 +480,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
   const [fbAccessToken, setFbAccessToken] = useState('');
   const [igAccountId, setIgAccountId] = useState('');
   const [igAccessToken, setIgAccessToken] = useState('');
+  const [autoPublishOnApprove, setAutoPublishOnApprove] = useState(false);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
@@ -438,6 +528,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
             ? p.socialApiKeys.instagram.accessToken.hint
             : '',
         );
+        setAutoPublishOnApprove(!!p.autoPublishOnApprove);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load Auto Social');
@@ -508,6 +599,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
           },
         },
         dayPrompts: promptsToSave,
+        autoPublishOnApprove,
         socialApiKeys: {
           facebook: { pageId: fbPageId },
           instagram: { accountId: igAccountId },
@@ -864,9 +956,20 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
         <div>
           <h3 className="text-sm font-semibold text-white">Facebook & Instagram API keys</h3>
           <p className="text-xs text-slate-500 mt-1">
-            Stored with your profile for future auto-posting. Copy/open still works without these keys.
+            Required for auto-posting. After saving keys, use Post to Facebook/Instagram on each post — or enable auto-publish on approve below.
           </p>
         </div>
+        <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-white/10 p-4">
+          <input
+            type="checkbox"
+            checked={autoPublishOnApprove}
+            onChange={(e) => setAutoPublishOnApprove(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-sm text-slate-300">
+            Auto-publish to Facebook & Instagram when I click Approve
+          </span>
+        </label>
         <div className="grid lg:grid-cols-2 gap-4">
           <div className="rounded-xl border border-white/10 p-4 space-y-3">
             <p className="text-sm font-medium text-white">Facebook</p>
