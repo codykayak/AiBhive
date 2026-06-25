@@ -58,7 +58,7 @@ export default function AppsScreen() {
       await load();
       Alert.alert(
         'Added to My Apps',
-        `"${installed.title}" is ready. Tweak it for free or customize with Hive.`,
+        `"${installed.title}" is ready. Tweak it for free or customize from the app menu.`,
         [
           {
             text: 'Tweak or Customize',

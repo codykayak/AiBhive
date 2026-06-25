@@ -58,7 +58,7 @@ type Props = {
 };
 
 const WELCOME =
-  'Hi — I\'m your Hive assistant. Ask for a job, research a target, or describe any tool you want built. Powered by Hive credits — no API key needed.';
+  'Hi — I\'m your AiBhive assistant. Ask for a job, research a target, or describe any tool you want built. Uses Hive credits by default — no API key needed.';
 
 function newId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -193,7 +193,7 @@ export function HomeAssistantChat({
         appendAi(
           err instanceof Error
             ? `Something went wrong: ${err.message}`
-            : 'Could not reach Hive assistant. Check your connection or add Hive credits in Settings.'
+            : 'Could not reach AiBhive assistant. Check your connection or add Hive credits in Settings.'
         );
       } finally {
         setLoading(false);
@@ -243,7 +243,7 @@ export function HomeAssistantChat({
         {loading && (
           <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
             <ActivityIndicator color={colors.amber} size="small" />
-            <Text style={styles.loadingText}>Hive is thinking…</Text>
+            <Text style={styles.loadingText}>AiBhive is thinking…</Text>
           </View>
         )}
       </ScrollView>
@@ -290,7 +290,7 @@ export function HomeAssistantChat({
             <Sparkles color={colors.amber} size={22} />
           </View>
           <View style={styles.heroCopy}>
-            <Text style={styles.heroLabel}>Hive Assistant</Text>
+            <Text style={styles.heroLabel}>AiBhive Assistant</Text>
             <Text style={styles.heroPlaceholder} numberOfLines={1}>
               {input.trim() || 'Ask anything — jobs, research, build a tool…'}
             </Text>
@@ -325,7 +325,7 @@ export function HomeAssistantChat({
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
               <Sparkles color={colors.amber} size={20} />
-              <Text style={styles.modalTitle}>Hive Assistant</Text>
+              <Text style={styles.modalTitle}>AiBhive Assistant</Text>
               <View style={styles.poweredBadge}>
                 <Text style={styles.poweredText}>Hive credits</Text>
               </View>

@@ -142,7 +142,7 @@ export default function IntelAgentScreen() {
             <View style={styles.heroText}>
               <Text style={[styles.heroTitle, { color: theme.accentText }]}>AI-directed OSINT</Text>
               <Text style={[styles.heroBody, { color: theme.accentText + 'aa' }]}>
-                One tap activates Hive-powered research. It plans the search, runs your selected tools, and delivers an
+                One tap activates AI-directed research. It plans the search, runs your selected tools, and delivers an
                 exportable intelligence brief.
               </Text>
             </View>
@@ -168,7 +168,7 @@ export default function IntelAgentScreen() {
             />
           </View>
           <Text style={[styles.cloudHint, { color: theme.accentText + '88' }]}>
-            Powered by Hive credits when you lack your own API keys. Never scrapes Google directly.
+            Cloud tools use credits when you lack your own API keys. Never scrapes Google directly.
           </Text>
         </GlassCard>
 

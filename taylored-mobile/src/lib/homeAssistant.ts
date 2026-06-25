@@ -235,7 +235,7 @@ export async function sendHomeAssistantTurn(
       const action: HomeAssistantAction = {
         reply: cloud.needPayment
           ? `This needs **Hive credits** to continue (~$${(cloud.amountUsd ?? 0.02).toFixed(2)}). Open **Settings → Add Hive credits**, or add your own API key under AI providers if you prefer.`
-          : `Hive assistant is reconnecting (${cloud.error || 'offline'}). Try again in a moment, or add your own API key in Settings.`,
+          : `AiBhive assistant is reconnecting (${cloud.error || 'offline'}). Try again in a moment, or add your own API key in Settings.`,
         intent: 'chat',
         buildStage: 'none',
         offerTokens: cloud.needPayment,
@@ -255,7 +255,7 @@ export async function sendHomeAssistantTurn(
         action: {
           reply: cloud.needPayment
             ? `Add **Hive credits** in Settings to continue (~$${(cloud.amountUsd ?? 0.02).toFixed(2)}).`
-            : `Hive assistant unavailable: ${cloud.error}`,
+            : `AiBhive assistant unavailable: ${cloud.error}`,
           intent: 'chat',
           buildStage: 'none',
         },

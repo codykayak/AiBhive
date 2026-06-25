@@ -24,8 +24,8 @@ export const HIVE_COPY = {
   },
   tokensCurrency: 'Hive credits',
   freeWithoutTokens:
-    'Job tools and on-device research are free. Hive assistant & cloud search use Hive credits.',
-  hiveAssistantHint: 'Powered by Hive credits — tap to open full chat. Add your own key in Settings if you prefer.',
+    'Job tools and on-device research are free. AiBhive assistant & cloud search use Hive credits.',
+  hiveAssistantHint: 'AiBhive assistant — uses Hive credits. Tap to open full chat.',
   hiveCreditsFooter: 'Uses Hive credits per message. BYOK optional in Settings → AI providers.',
   serverOffline:
     'Our build service is reconnecting. I can still chat, and you can use My Apps. Try again in a moment.',
@@ -64,7 +64,7 @@ export const HIVE_COPY = {
   toolkitShared: 'Shared with the community',
   shareToToolkit: 'Share to Community Toolkit',
   tweakOrCustomize: 'Tweak or Customize',
-  tweakOrCustomizeHint: 'Quick spec edits (~$0.50) or full Hive customize (~$4+).',
+  tweakOrCustomizeHint: 'Quick spec edits (~$0.50) or full cloud customize (~$4+).',
   chatCleared: 'Chat cleared',
   copied: 'Copied to clipboard',
 };
