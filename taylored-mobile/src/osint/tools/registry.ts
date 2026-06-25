@@ -1,13 +1,19 @@
-import type { OsintToolDef, OsintToolId } from '../types';
+import type { IntelTargetType, OsintToolDef, OsintToolId } from '../types';
+
+const ALL_TARGETS: IntelTargetType[] = ['company', 'domain', 'person'];
+const SITE_TARGETS: IntelTargetType[] = ['company', 'domain'];
+const SEARCH_TARGETS: IntelTargetType[] = ['company', 'domain', 'person'];
 
 export const OSINT_TOOLS: OsintToolDef[] = [
   {
     id: 'dns_records',
     name: 'DNS Records',
-    description: 'A, AAAA, NS lookups for the target domain',
+    description: 'A, AAAA, NS lookups for the target website',
     tier: 'free',
     estSeconds: 3,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'mx_records',
@@ -16,6 +22,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 2,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'txt_records',
@@ -24,6 +32,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 2,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'cert_transparency',
@@ -32,6 +42,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 8,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'subdomain_probe',
@@ -40,6 +52,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 15,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'rdap_domain',
@@ -48,6 +62,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 4,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'tech_fingerprint',
@@ -56,6 +72,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 6,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'security_headers',
@@ -64,6 +82,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 4,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'page_extract',
@@ -72,6 +92,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 6,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'email_harvest',
@@ -80,6 +102,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 6,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'robots_sitemap',
@@ -88,6 +112,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 4,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'google_dorks',
@@ -96,14 +122,16 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 1,
     defaultEnabled: true,
+    applicableTargets: ALL_TARGETS,
   },
   {
     id: 'username_probe',
     name: 'Username Probe',
-    description: 'Check common platforms for a username (GitHub, Reddit, etc.)',
+    description: 'Check GitHub, Reddit, and other platforms for a person handle',
     tier: 'free',
     estSeconds: 20,
     defaultEnabled: true,
+    applicableTargets: ['person'],
   },
   {
     id: 'wayback_snapshot',
@@ -112,6 +140,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     tier: 'free',
     estSeconds: 4,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'firecrawl_search',
@@ -121,6 +151,7 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     apiKeyField: 'firecrawl',
     estSeconds: 20,
     defaultEnabled: true,
+    applicableTargets: SEARCH_TARGETS,
   },
   {
     id: 'firecrawl_scrape',
@@ -130,6 +161,8 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     apiKeyField: 'firecrawl',
     estSeconds: 12,
     defaultEnabled: true,
+    applicableTargets: SITE_TARGETS,
+    requiresDomain: true,
   },
   {
     id: 'serp_search',
@@ -139,6 +172,7 @@ export const OSINT_TOOLS: OsintToolDef[] = [
     apiKeyField: 'serpapi',
     estSeconds: 8,
     defaultEnabled: false,
+    applicableTargets: SEARCH_TARGETS,
   },
 ];
 
@@ -150,6 +184,22 @@ export function defaultEnabledToolIds(): OsintToolId[] {
   return OSINT_TOOLS.filter((t) => t.defaultEnabled).map((t) => t.id);
 }
 
+/** Sensible default modules per target mode. */
+export function defaultToolsForTargetType(targetType: IntelTargetType): OsintToolId[] {
+  return OSINT_TOOLS.filter((t) => t.defaultEnabled && t.applicableTargets.includes(targetType)).map(
+    (t) => t.id
+  );
+}
+
+export function toolsForTargetType(targetType: IntelTargetType): OsintToolDef[] {
+  return OSINT_TOOLS.filter((t) => t.applicableTargets.includes(targetType));
+}
+
 export function toolsRequiringKey(field: 'firecrawl' | 'serpapi'): OsintToolId[] {
   return OSINT_TOOLS.filter((t) => t.apiKeyField === field).map((t) => t.id);
+}
+
+export function isToolApplicable(toolId: OsintToolId, targetType: IntelTargetType): boolean {
+  const def = getToolDef(toolId);
+  return def.applicableTargets.includes(targetType);
 }

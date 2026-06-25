@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OSINT_TOOLS } from './tools/registry';
-import type { IntelCase, OsintToolId } from './types';
+import type { IntelCase, IntelTargetType, OsintToolId } from './types';
 
 const CASES_KEY = 'aibhive_intel_cases_v1';
 
@@ -66,7 +66,10 @@ export async function deleteIntelCase(id: string): Promise<void> {
   await saveAll(cases.filter((c) => c.id !== id));
 }
 
-export function resolveDomainFromTarget(label: string, explicit?: string): string {
+export function resolveDomainFromTarget(label: string, explicit?: string, targetType?: IntelTargetType): string {
+  if (targetType === 'person' && !explicit?.trim()) {
+    return '';
+  }
   if (explicit?.trim()) {
     return explicit.replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
   }
@@ -74,12 +77,32 @@ export function resolveDomainFromTarget(label: string, explicit?: string): strin
   if (/^[a-z0-9][-a-z0-9.]*\.[a-z]{2,}$/i.test(trimmed)) {
     return trimmed.toLowerCase();
   }
+  if (targetType === 'domain') {
+    return '';
+  }
   const guess = trimmed
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '')
     .replace(/(inc|llc|ltd|corp|co)$/i, '');
   return guess ? `${guess}.com` : '';
+}
+
+/** Guess target mode from a free-form label (home assistant, quick start). */
+export function inferTargetTypeFromLabel(label: string): IntelTargetType {
+  const trimmed = label.trim();
+  if (!trimmed) return 'company';
+  if (/^[a-z0-9][-a-z0-9.]*\.[a-z]{2,}$/i.test(trimmed) || /^https?:\/\//i.test(trimmed)) {
+    return 'domain';
+  }
+  if (/linkedin\.com\/in\//i.test(trimmed) || /^@[a-z0-9._-]+$/i.test(trimmed)) {
+    return 'person';
+  }
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length >= 2 && words.length <= 4 && !/\b(inc|llc|ltd|corp|company|group|holdings)\b/i.test(trimmed)) {
+    return 'person';
+  }
+  return 'company';
 }
 
 export function estimateRunSeconds(toolIds: OsintToolId[]): number {

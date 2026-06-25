@@ -1,12 +1,20 @@
 export type IntelTargetType = 'company' | 'domain' | 'person';
 
+/** Optional geographic filter for web search modules (Firecrawl / Serp). */
+export type IntelRegionFilter = {
+  restrictToRegion?: boolean;
+  location?: string;
+  radiusMiles?: number;
+};
+
 export type IntelTarget = {
   type: IntelTargetType;
-  /** Primary label — company name, domain, or person name */
+  /** Primary label — company name, website/domain, or person name */
   label: string;
   domain?: string;
   /** Free-form user intent, e.g. "everything about leadership and tech stack" */
   userIntent?: string;
+  region?: IntelRegionFilter;
 };
 
 export type ToolTier = 'free' | 'api_key' | 'hive_cloud';
@@ -39,6 +47,10 @@ export type OsintToolDef = {
   /** Rough seconds for UI estimates */
   estSeconds: number;
   defaultEnabled: boolean;
+  /** Which target modes this module applies to (website = domain). */
+  applicableTargets: IntelTargetType[];
+  /** Requires a resolved domain to run */
+  requiresDomain?: boolean;
 };
 
 export type ToolRunStatus = 'pending' | 'running' | 'done' | 'skipped' | 'error';

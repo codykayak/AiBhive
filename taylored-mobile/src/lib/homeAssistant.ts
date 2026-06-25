@@ -19,6 +19,9 @@ export type HomeAssistantAction = {
   buildSummary?: string;
   buildMessage?: string;
   intelIntent?: string;
+  intelTargetType?: 'company' | 'domain' | 'person';
+  intelRegion?: string;
+  intelRadiusMiles?: number;
   suggestedToolName?: string;
   offerTokens?: boolean;
   tokenReason?: string;
@@ -46,6 +49,9 @@ function parseJsonBlock(text: string): HomeAssistantAction {
     buildSummary: parsed.buildSummary || '',
     buildMessage: parsed.buildMessage || '',
     intelIntent: parsed.intelIntent || '',
+    intelTargetType: parsed.intelTargetType as HomeAssistantAction['intelTargetType'],
+    intelRegion: parsed.intelRegion || '',
+    intelRadiusMiles: Number(parsed.intelRadiusMiles) || undefined,
     suggestedToolName: parsed.suggestedToolName || '',
     offerTokens: !!parsed.offerTokens,
     tokenReason: parsed.tokenReason || '',

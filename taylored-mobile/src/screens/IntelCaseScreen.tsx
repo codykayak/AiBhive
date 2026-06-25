@@ -28,6 +28,7 @@ import { IntelDorkLinks } from '../components/IntelDorkLinks';
 import { colors, radii, spacing } from '../theme/colors';
 import { getIntelCase } from '../osint/cases';
 import { runIntelAgent } from '../osint/agent';
+import { formatRegionLabel } from '../osint/regionalQuery';
 import { buildJsonExport, buildRawDump, buildShareSummary } from '../osint/export';
 import { shareIntelPdf } from '../osint/pdfExport';
 import { getToolDef } from '../osint/tools/registry';
@@ -141,8 +142,19 @@ export default function IntelCaseScreen() {
   const planSteps = intelCase.plan?.steps ?? [];
   const resultsByTool = new Map(intelCase.toolResults.map((r) => [r.toolId, r]));
 
+  const typeLabel =
+    intelCase.target.type === 'domain'
+      ? 'Website'
+      : intelCase.target.type === 'person'
+        ? 'Person'
+        : 'Company';
+  const regionLabel = formatRegionLabel(intelCase.target.region);
+  const caseSubtitle = regionLabel
+    ? `${typeLabel} · ${regionLabel}`
+    : `${typeLabel} research`;
+
   return (
-    <ScreenLayout title={intelCase.target.label} subtitle="AiBhive Intel case" compactBadge>
+    <ScreenLayout title={intelCase.target.label} subtitle={caseSubtitle} compactBadge>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {running && (
           <View style={styles.orbWrap}>
