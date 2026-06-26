@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
   Vibration,
   Image,
   useWindowDimensions,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Briefcase,
   Radar,
@@ -35,7 +37,7 @@ import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
 import { ChatComposerBox, type ComposerMode } from './ChatComposerBox';
-import { useKeyboardInset } from '../hooks/useKeyboardInset';
+import { useKeyboardInset, detectWindowShrank, getComposerBottomInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { useToast } from '../contexts/ToastContext';
@@ -104,7 +106,7 @@ export function HomeAssistantChat({
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { height: windowHeight } = useWindowDimensions();
-  const { keyboardHeight } = useKeyboardInset(0);
+  const { keyboardHeight, bottomPad, safeBottom } = useKeyboardInset(0);
   const baselineHeightRef = useRef(windowHeight);
   const [baselineHeight, setBaselineHeight] = useState(windowHeight);
 
@@ -116,10 +118,47 @@ export function HomeAssistantChat({
   }, [keyboardHeight, windowHeight]);
 
   const keyboardOpen = keyboardHeight > 0;
-  // Always lift content by the full keyboard height — most reliable on Android Modals
-  // (where softwareKeyboardLayoutMode=resize does NOT apply) and safe on iOS.
-  const liftForKeyboard = keyboardOpen ? Math.max(keyboardHeight - insets.bottom, 0) : 0;
-  const panelHeight = getAssistantDockHeight(baselineHeight);
+  const windowShrank = detectWindowShrank(
+    keyboardOpen,
+    baselineHeightRef.current,
+    windowHeight,
+    keyboardHeight
+  );
+
+  const dockBottomLift = getComposerBottomInset({
+    keyboardOpen,
+    windowShrank,
+    keyboardPad: bottomPad,
+    basePadding: 0,
+  });
+
+  const modalKeyboardLift = getComposerBottomInset({
+    keyboardOpen,
+    windowShrank: false,
+    keyboardPad: keyboardHeight,
+    basePadding: 0,
+    forceManual: true,
+  });
+
+  const dockNeedsManualLift = keyboardOpen && dockBottomLift > 0;
+  const dockVisibleHeight = dockNeedsManualLift
+    ? Math.max(180, windowHeight - keyboardHeight)
+    : windowHeight;
+
+  const baseDockHeight = getAssistantDockHeight(baselineHeight);
+  const dockPanelHeight = keyboardOpen
+    ? Math.max(200, Math.min(baseDockHeight, dockVisibleHeight - 4))
+    : baseDockHeight;
+
+  const modalComposerHeight = useMemo(() => {
+    if (!keyboardOpen) return 220;
+    const visible = Math.max(220, windowHeight - modalKeyboardLift - insets.top - 72);
+    return Math.max(200, Math.round(visible * 0.42));
+  }, [keyboardOpen, windowHeight, modalKeyboardLift, insets.top]);
+
+  const dockComposerHeight = keyboardOpen
+    ? Math.max(150, Math.min(200, Math.round(dockPanelHeight * 0.48)))
+    : Math.max(140, Math.round(dockPanelHeight * 0.42));
   const scrollRef = useRef<ScrollView>(null);
   const dockScrollRef = useRef<ScrollView>(null);
   const dockInputRef = useRef<TextInput>(null);
@@ -373,15 +412,17 @@ export function HomeAssistantChat({
     onModeChange: setMode,
   };
 
-  // Dock — collapsed panel on the home screen. When the keyboard pops, we lift
-  // the dock above it so the user can see what they're typing.
+  const isFloating = variant === 'floating';
+
   const homePanel = (
     <View
       style={[
         styles.homePanel,
-        { height: panelHeight },
-        keyboardOpen && styles.homePanelKeyboard,
-        keyboardOpen && { bottom: liftForKeyboard },
+        isFloating && styles.homePanelFloating,
+        {
+          height: dockPanelHeight,
+          bottom: dockBottomLift,
+        },
       ]}
     >
       <TouchableOpacity style={styles.expandStrip} onPress={openChat} activeOpacity={0.7}>
@@ -408,91 +449,96 @@ export function HomeAssistantChat({
         ) : null}
       </ScrollView>
 
-      <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={140} />
+      <View style={[styles.dockComposerWrap, { height: dockComposerHeight }]}>
+        <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={dockComposerHeight} />
+      </View>
     </View>
   );
-
-  // Modal — full-screen chat. We pin a flex container that paddingTops by the
-  // status-bar inset and paddingBottoms by the keyboard height so the composer
-  // toolbar (image / mic / mode toggle / send) stays *above* the keyboard.
-  const modalBottomInset = keyboardOpen ? liftForKeyboard : Math.max(insets.bottom, 0);
 
   return (
     <>
       {variant === 'inline' ? homePanel : null}
-      {variant === 'floating' && !expanded ? homePanel : null}
+      {isFloating && !expanded ? homePanel : null}
 
-      <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
-        <View
-          style={[
-            styles.modalRoot,
-            { paddingTop: insets.top, paddingBottom: modalBottomInset },
-          ]}
-        >
-          <View style={styles.modalHeader}>
-            <View style={styles.modalTitleWrap}>
-              <HiveLogo size={28} />
-              <Text style={styles.modalTitle}>AiBhive Assistant</Text>
-            </View>
-            <TouchableOpacity onPress={closeChat} hitSlop={12} style={styles.closeBtn}>
-              <ChevronDown color={colors.textMuted} size={26} />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            ref={scrollRef}
-            style={styles.chatScroll}
-            contentContainerStyle={styles.chatContent}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            onContentSizeChange={scrollEnd}
-            showsVerticalScrollIndicator={false}
+      <Modal visible={expanded} animationType="slide" onRequestClose={closeChat} statusBarTranslucent>
+        <SafeAreaView style={styles.modalSafe} edges={['top']}>
+          <KeyboardAvoidingView
+            style={styles.modalAvoid}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={0}
           >
-            {messages.map((m) => (
-              <MessageBubble key={m.id} m={m} />
-            ))}
-            {loading && (
-              <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
-                <ActivityIndicator color={colors.amber} size="small" />
-                <Text style={styles.loadingText}>AiBhive is thinking…</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {keyboardOpen ? null : (
-            <View style={styles.quickRow}>
-              {insightBullets.map((tip) => (
-                <TouchableOpacity
-                  key={tip}
-                  style={styles.insightChip}
-                  onPress={() => {
-                    setInput(tip);
-                    scrollEnd();
-                  }}
-                >
-                  <Text style={styles.insightChipText}>{tip}</Text>
+            <View
+              style={[
+                styles.modalRoot,
+                { paddingBottom: keyboardOpen ? modalKeyboardLift : safeBottom },
+              ]}
+            >
+              <View style={styles.modalHeader}>
+                <View style={styles.modalTitleWrap}>
+                  <HiveLogo size={28} />
+                  <Text style={styles.modalTitle}>AiBhive Assistant</Text>
+                </View>
+                <TouchableOpacity onPress={closeChat} hitSlop={12} style={styles.closeBtn}>
+                  <ChevronDown color={colors.textMuted} size={26} />
                 </TouchableOpacity>
-              ))}
-              {quickActions.map((q) => {
-                const Icon = q.icon;
-                return (
-                  <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
-                    <Icon size={14} color={colors.amber} />
-                    <Text style={styles.quickChipText}>{q.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
+              </View>
 
-          <View style={styles.modalComposerWrap}>
-            <ChatComposerBox
-              {...composerProps}
-              inputRef={modalInputRef}
-              minHeight={keyboardOpen ? 200 : 240}
-            />
-          </View>
-        </View>
+              <ScrollView
+                ref={scrollRef}
+                style={styles.chatScroll}
+                contentContainerStyle={styles.chatContent}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                onContentSizeChange={scrollEnd}
+                showsVerticalScrollIndicator={false}
+              >
+                {messages.map((m) => (
+                  <MessageBubble key={m.id} m={m} />
+                ))}
+                {loading && (
+                  <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
+                    <ActivityIndicator color={colors.amber} size="small" />
+                    <Text style={styles.loadingText}>AiBhive is thinking…</Text>
+                  </View>
+                )}
+              </ScrollView>
+
+              {keyboardOpen ? null : (
+                <View style={styles.quickRow}>
+                  {insightBullets.map((tip) => (
+                    <TouchableOpacity
+                      key={tip}
+                      style={styles.insightChip}
+                      onPress={() => {
+                        setInput(tip);
+                        scrollEnd();
+                      }}
+                    >
+                      <Text style={styles.insightChipText}>{tip}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {quickActions.map((q) => {
+                    const Icon = q.icon;
+                    return (
+                      <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
+                        <Icon size={14} color={colors.amber} />
+                        <Text style={styles.quickChipText}>{q.label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+
+              <View style={[styles.modalComposerWrap, { height: modalComposerHeight }]}>
+                <ChatComposerBox
+                  {...composerProps}
+                  inputRef={modalInputRef}
+                  minHeight={modalComposerHeight}
+                />
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -503,12 +549,17 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     backgroundColor: '#000000',
   },
-  homePanelKeyboard: {
+  homePanelFloating: {
     position: 'absolute',
     left: 0,
     right: 0,
     zIndex: 50,
     elevation: 50,
+  },
+  dockComposerWrap: {
+    width: '100%',
+    flexShrink: 0,
+    backgroundColor: colors.black,
   },
   expandStrip: {
     flexDirection: 'row',
@@ -532,6 +583,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 2,
     gap: 4,
+  },
+  modalSafe: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  modalAvoid: {
+    flex: 1,
   },
   modalRoot: {
     flex: 1,
@@ -559,6 +617,7 @@ const styles = StyleSheet.create({
   chatContent: { paddingHorizontal: 8, paddingTop: 4, gap: spacing.sm, paddingBottom: spacing.sm },
   modalComposerWrap: {
     width: '100%',
+    flexShrink: 0,
     backgroundColor: colors.black,
   },
   bubble: {

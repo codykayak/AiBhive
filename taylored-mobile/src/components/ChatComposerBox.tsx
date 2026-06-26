@@ -212,8 +212,8 @@ export function ChatComposerBox({
 const styles = StyleSheet.create({
   box: {
     width: '100%',
+    height: '100%',
     backgroundColor: colors.black,
-    flex: 1,
     borderTopWidth: 1,
     borderTopColor: 'rgba(245, 158, 11, 0.18)',
   },

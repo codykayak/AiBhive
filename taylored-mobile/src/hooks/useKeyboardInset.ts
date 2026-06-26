@@ -3,6 +3,31 @@ import { Keyboard, Platform, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 
+/** True when Android resize mode already shrunk the window for the keyboard. */
+export function detectWindowShrank(
+  keyboardOpen: boolean,
+  baselineHeight: number,
+  windowHeight: number,
+  keyboardHeight: number
+): boolean {
+  return keyboardOpen && baselineHeight - windowHeight >= keyboardHeight * 0.35;
+}
+
+/** Bottom inset for a composer pinned above the keyboard (0 when resize already handled it). */
+export function getComposerBottomInset(opts: {
+  keyboardOpen: boolean;
+  windowShrank: boolean;
+  keyboardPad: number;
+  basePadding?: number;
+  /** Modals ignore Android resize — always lift manually. */
+  forceManual?: boolean;
+}): number {
+  const { keyboardOpen, windowShrank, keyboardPad, basePadding = 0, forceManual = false } = opts;
+  if (!keyboardOpen) return basePadding;
+  if (forceManual || Platform.OS === 'ios' || !windowShrank) return keyboardPad;
+  return 0;
+}
+
 /** Extra bottom inset when keyboard is open — fixes DeX / tablet input hidden behind keyboard. */
 export function useKeyboardInset(basePadding = 0) {
   const insets = useSafeAreaInsets();
@@ -31,7 +56,9 @@ export function useKeyboardInset(basePadding = 0) {
       ? Math.max(8, keyboardHeight - insets.bottom + (isWide ? 12 : 0))
       : basePadding;
 
-  return { keyboardHeight, bottomPad, isWide };
+  const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 12 : 0);
+
+  return { keyboardHeight, bottomPad, safeBottom, isWide };
 }
 
 export function keyboardAvoidBehavior(): 'padding' | 'height' | undefined {
