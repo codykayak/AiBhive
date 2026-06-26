@@ -62,13 +62,17 @@ type Props = {
   onExpandChange: (expanded: boolean) => void;
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
-  /** Fixed dock at bottom of the screen (Home tab) */
+  /** Fixed dock at bottom of the Home screen (in layout flow, above tab bar) */
   variant?: 'inline' | 'floating';
-  /** Distance from screen bottom to dock (includes tab bar + gap) */
-  dockBottom?: number;
 };
 
-export const ASSISTANT_DOCK_HEIGHT = 140;
+/** Blank rows of space below the dock input (visual breathing room above tab bar). */
+export const DOCK_BOTTOM_ROW_COUNT = 5;
+export const DOCK_ROW_HEIGHT = 22;
+export const DOCK_BOTTOM_SPACER = DOCK_BOTTOM_ROW_COUNT * DOCK_ROW_HEIGHT;
+
+/** Total floating dock height — header + input + bottom spacer + padding. */
+export const ASSISTANT_DOCK_HEIGHT = 132 + DOCK_BOTTOM_SPACER;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
@@ -83,12 +87,11 @@ export function HomeAssistantChat({
   initialQuery,
   onInitialQueryConsumed,
   variant = 'inline',
-  dockBottom = 0,
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { isWide } = useResponsiveLayout();
-  const { bottomPad: keyboardPad, keyboardHeight } = useKeyboardInset(0);
+  const { keyboardHeight } = useKeyboardInset(0);
   const scrollRef = useRef<ScrollView>(null);
   const dockInputRef = useRef<TextInput>(null);
   const modalInputRef = useRef<TextInput>(null);
@@ -372,13 +375,12 @@ export function HomeAssistantChat({
         {micButton(true)}
         {sendButton(true)}
       </View>
+      <View style={styles.dockBottomSpacer} />
     </View>
   );
 
   const floatingDock = !expanded ? (
-    <View style={[styles.floatingDock, { bottom: dockBottom }]}>
-      {floatingDockBar}
-    </View>
+    <View style={styles.dockAnchor}>{floatingDockBar}</View>
   ) : null;
 
   const chatBody = (
@@ -428,7 +430,13 @@ export function HomeAssistantChat({
         })}
       </View>
 
-      <View style={[styles.composer, dexInputBarStyle(keyboardHeight > 0), { paddingBottom: Math.max(insets.bottom, 8) + keyboardPad * 0.15 }]}>
+      <View
+        style={[
+          styles.composer,
+          dexInputBarStyle(keyboardHeight > 0),
+          { paddingBottom: keyboardHeight > 0 ? spacing.sm : Math.max(insets.bottom, spacing.sm) },
+        ]}
+      >
         <View style={styles.composerStack}>
           {attachmentPreview}
           <View style={styles.composerRow}>
@@ -527,7 +535,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     zIndex: 100,
     ...Platform.select({
-      android: { elevation: 12 },
+      android: { elevation: 16 },
       ios: {
         shadowColor: '#000',
         shadowOpacity: 0.35,
@@ -536,6 +544,12 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  /** In-flow dock at bottom of Home — sits above tab bar, lifts with keyboard (resize / KAV). */
+  dockAnchor: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+  },
   heroBar: {
     backgroundColor: colors.bgElevated,
     borderRadius: radii.lg,
@@ -543,11 +557,14 @@ const styles = StyleSheet.create({
     borderColor: colors.amber + '66',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    paddingBottom: 0,
     gap: spacing.sm,
     ...Platform.select({
       android: { elevation: 6 },
     }),
+  },
+  dockBottomSpacer: {
+    height: DOCK_BOTTOM_SPACER,
   },
   heroHeader: {
     flexDirection: 'row',

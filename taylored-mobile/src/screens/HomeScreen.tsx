@@ -4,15 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
 import { HomeHeroVideo } from '../components/HomeHeroVideo';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
-import { TAB_BAR_BODY_HEIGHT } from '../navigation/TabNavigator';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
 import { colors, radii, spacing } from '../theme/colors';
@@ -26,12 +26,11 @@ const COMMUNITY_STEPS = [
   { n: '3', title: 'Share back', body: 'Love it? Opt in to share — the hive grows smarter for everyone.' },
 ];
 
-/** Gap between chat dock and tab bar */
-const DOCK_ABOVE_TABS = 8;
+/** Small gap between scroll content and dock */
+const DOCK_TOP_GAP = 8;
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
   const { isDesktop } = useResponsiveLayout();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
@@ -40,10 +39,7 @@ export default function HomeScreen() {
   const [showHeroVideo, setShowHeroVideo] = useState(true);
   const introDoneRef = useRef(false);
 
-  const bottomInset = Math.max(insets.bottom, 10);
-  const tabBarHeight = TAB_BAR_BODY_HEIGHT + bottomInset;
-  const dockBottom = tabBarHeight + DOCK_ABOVE_TABS;
-  const scrollBottomPad = ASSISTANT_DOCK_HEIGHT + dockBottom + spacing.lg;
+  const scrollBottomPad = spacing.md;
 
   useFocusEffect(
     useCallback(() => {
@@ -70,7 +66,11 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout compactBadge collapsibleHeader={false} edgeToEdge contentStyle={styles.screenContent}>
-      <View style={styles.body}>
+      <KeyboardAvoidingView
+        style={styles.body}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
         <ScreenScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -80,7 +80,7 @@ export default function HomeScreen() {
           {showHeroVideo ? (
             <HomeHeroVideo
               skip={introDoneRef.current}
-              bottomOverlay={ASSISTANT_DOCK_HEIGHT + dockBottom}
+              bottomOverlay={ASSISTANT_DOCK_HEIGHT + DOCK_TOP_GAP}
               onIntroComplete={() => {
                 introDoneRef.current = true;
                 setShowHeroVideo(false);
@@ -192,16 +192,15 @@ export default function HomeScreen() {
           onExpandChange={setAssistantExpanded}
           initialQuery={pendingAsk}
           onInitialQueryConsumed={() => setPendingAsk(undefined)}
-          dockBottom={dockBottom}
         />
-      </View>
+      </KeyboardAvoidingView>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: 0 },
-  body: { flex: 1, position: 'relative' },
+  body: { flex: 1 },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1 },
   content: {

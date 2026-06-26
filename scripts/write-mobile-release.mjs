@@ -114,6 +114,8 @@ const defaultNotes = {
     'v1.6.16 — Home chat dock: real text field + mic + send, static hero after video, cleaner logo (no glow).',
   '1.6.17':
     'v1.6.17 — Home chat: attach photos from the dock or full-screen chat; assistant can see your images.',
+  '1.6.19':
+    'v1.6.19 — Home chat dock: pinned to bottom with breathing room below input, stays visible while typing, no tab overlap.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
