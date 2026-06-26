@@ -117,7 +117,13 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
 
   const latestNative = manifest.shippedNativeVersion;
   if (isNativeUpdateAvailable(manifest)) {
-    const url = manifest.firebaseGzUrl || manifest.downloadUrl;
+    // Direct .apk only — .gz mirrors cannot be installed on Android from the browser.
+    const url =
+      manifest.fullApkUrl ||
+      (manifest.downloadUrl?.includes('compressed=1')
+        ? manifest.downloadUrl.replace('?compressed=1', '').replace('&compressed=1', '')
+        : manifest.downloadUrl) ||
+      `${HIVE_API_BASE}/taylored-mobile.apk`;
     return {
       status: 'native-available',
       latestVersion: latestNative,

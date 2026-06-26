@@ -39,8 +39,8 @@ if (fs.existsSync(manifestPath)) {
 manifest.shippedNativeVersion = version;
 manifest.versionCode = versionCode;
 manifest.sourceVersion = version;
-manifest.downloadUrl = manifest.downloadUrl || 'https://aibhive.com/api/download/apk?compressed=1';
-manifest.fullApkUrl = manifest.fullApkUrl || 'https://aibhive.com/api/download/apk';
+manifest.downloadUrl = 'https://aibhive.com/taylored-mobile.apk';
+manifest.fullApkUrl = 'https://aibhive.com/taylored-mobile.apk';
 manifest.publishedAt = new Date().toISOString();
 manifest.otaChannel = manifest.otaChannel || 'production';
 
@@ -93,6 +93,8 @@ const defaultNotes = {
     'v1.6.9 — Home hero video intro (5s fade into AiBhive Assistant), floating assistant dock, updated app icon, tab bar reveals at scroll end.',
   '1.6.10':
     'v1.6.10 — Fix startup crash: migrate home hero video from expo-av to expo-video (Android + New Architecture).',
+  '1.6.11':
+    'v1.6.11 — Fix in-app update download: installs direct .apk link instead of .gz mirror.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

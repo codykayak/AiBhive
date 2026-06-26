@@ -71,38 +71,51 @@
             color: #bbf7d0;
             font-size: 0.9rem;
         }
+        #version-line { font-weight: 700; color: #fbbf24; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>AiBhive</h1>
-        <p>Hive Magic — describe an app or feature in plain English, approve the estimate, wait for the ding.</p>
+        <p id="version-line">Loading latest version…</p>
+        <p>Install the Android app package (.apk) below. Use <strong>Chrome</strong> on your phone if one browser fails.</p>
 
-        <a class="btn" href="/api/download/apk?compressed=1" id="download-gz-btn">Download (37 MB .gz) — recommended on phone</a>
-        <a class="btn btn-secondary" href="/api/download/apk" id="download-btn">Download full APK (86 MB)</a>
+        <a class="btn" href="/taylored-mobile.apk" id="download-btn">Download AiBhive APK</a>
+        <a class="btn btn-secondary" href="/api/download/apk?compressed=1" id="download-gz-btn">Smaller .gz mirror (advanced — extract before install)</a>
 
-        <h2>Install steps (read this)</h2>
+        <h2>Install steps</h2>
         <ol>
-            <li><strong>Uninstall</strong> any old AiBhive app first (Settings → Apps → Uninstall). Required if you tried before.</li>
-            <li>Download the <strong>.gz</strong> file above.</li>
-            <li>Open with <strong>ZArchiver</strong> → Extract <em>once</em> → you get one file: <code>taylored-mobile.apk</code></li>
-            <li>Tap that <strong>.apk file</strong> to install.</li>
+            <li><strong>Uninstall</strong> any old AiBhive copy first (Settings → Apps → Uninstall).</li>
+            <li>Tap <strong>Download AiBhive APK</strong> above and wait for the full download (~65 MB).</li>
+            <li>Open the downloaded <code>taylored-mobile.apk</code> file and tap Install.</li>
+            <li>Allow “Install unknown apps” for Chrome or Files if Android asks.</li>
         </ol>
 
         <div class="warn">
-            <strong>Do NOT extract the .apk itself.</strong> If you see folders like <code>classes.dex</code>, <code>lib</code>, or <code>AndroidManifest.xml</code> next to the apk, you unzipped the apk by mistake. Delete that folder, re-download, extract only the .gz, then install the single .apk file.
+            <strong>Link does nothing?</strong> Copy this into Chrome’s address bar:<br>
+            <code>https://aibhive.com/taylored-mobile.apk</code>
         </div>
 
         <div class="ok" id="version-check">
-            <strong>Success check:</strong> top-right badge should match the latest version shown above after install.
+            After install, open AiBhive → Settings to confirm the version matches above.
         </div>
 
         <p class="note"><strong>Still says "App not installed"?</strong></p>
         <ul>
-            <li>Uninstall every copy of the app, reboot phone, try again</li>
-            <li>Do not install <code>app-debug.apk</code> — use <code>taylored-mobile.apk</code> only</li>
-            <li>Enable "Install unknown apps" for ZArchiver or Files</li>
+            <li>Uninstall every copy, reboot, try again</li>
+            <li>Do not open the .gz file directly — use the main APK button</li>
         </ul>
     </div>
+    <script>
+        fetch('/api/mobile/releases')
+            .then((r) => r.json())
+            .then((m) => {
+                document.getElementById('version-line').textContent =
+                    'Latest: v' + (m.shippedNativeVersion || '?') + ' (build ' + (m.versionCode || '?') + ')';
+            })
+            .catch(() => {
+                document.getElementById('version-line').textContent = 'Latest: check Settings after install';
+            });
+    </script>
 </body>
 </html>
