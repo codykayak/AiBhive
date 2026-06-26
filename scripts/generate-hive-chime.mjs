@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outPath = path.join(root, 'taylored-mobile/assets/sounds/hive-chime.wav');
+const outPath = path.join(root, 'taylored-mobile/assets/sounds/hive_chime.wav');
 
 const sampleRate = 44100;
 const durationSec = 0.55;

@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { getOrCreateHiveUserId, registerHiveDevice } from './hiveApi';
 
 /** Bundled notification sound (see app.json expo-notifications plugin sounds). */
-export const HIVE_CHIME_SOUND = 'hive-chime.wav';
+export const HIVE_CHIME_SOUND = 'hive_chime.wav';
 
 export const NOTIFICATION_CHANNELS = {
   hiveMagic: 'hive-magic',

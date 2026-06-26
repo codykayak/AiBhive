@@ -57,7 +57,7 @@
         {
           "icon": "./assets/icon.png",
           "color": "#f59e0b",
-          "sounds": ["./assets/sounds/hive-chime.wav"]
+          "sounds": ["./assets/sounds/hive_chime.wav"]
         }
       ],
       [
