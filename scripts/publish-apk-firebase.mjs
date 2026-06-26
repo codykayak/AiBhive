@@ -95,3 +95,12 @@ const publishManifest = spawnSync(
 if (publishManifest.status !== 0) {
   process.exit(publishManifest.status ?? 1);
 }
+
+const publishDownloadPage = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts/publish-firebase-download-page.mjs')],
+  { cwd: root, stdio: 'inherit' }
+);
+if (publishDownloadPage.status !== 0) {
+  process.exit(publishDownloadPage.status ?? 1);
+}

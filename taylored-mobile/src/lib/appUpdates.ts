@@ -53,6 +53,10 @@ function isInstallableApkUrl(url: string | undefined): url is string {
 
 /** Pick a URL the Android package installer can use (never .gz). */
 export function resolveNativeDownloadUrl(manifest?: Partial<MobileReleaseManifest> | null): string {
+  // Always prefer the site API redirect — it tracks the latest Firebase mirror and
+  // avoids stale APKs served from Cloud Run disk at /taylored-mobile.apk.
+  if (Platform.OS === 'android') return NATIVE_APK_DOWNLOAD_URL;
+
   const candidates = [manifest?.fullApkUrl, manifest?.firebaseApkUrl, manifest?.downloadUrl];
   for (const url of candidates) {
     if (isInstallableApkUrl(url)) return url;
