@@ -11,6 +11,7 @@ import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
 import { HomeHeroVideo } from '../components/HomeHeroVideo';
+import { HomeHeroBanner } from '../components/HomeHeroBanner';
 import { TAB_BAR_BODY_HEIGHT } from '../navigation/TabNavigator';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
@@ -85,7 +86,9 @@ export default function HomeScreen() {
                 setShowHeroVideo(false);
               }}
             />
-          ) : null}
+          ) : (
+            <HomeHeroBanner />
+          )}
 
           <View style={styles.content}>
             <View style={[styles.grid, isDesktop && styles.gridDesktop]}>

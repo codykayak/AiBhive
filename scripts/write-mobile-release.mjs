@@ -110,6 +110,10 @@ const defaultNotes = {
     'v1.6.14 — Fix bottom nav and chat dock: tab bar always visible, chat pinned above tabs with more padding, tap-to-open chat (no focus glitch).',
   '1.6.15':
     'v1.6.15 — Fix in-app update download: downloads APK inside the app and opens the installer (no broken browser/.gz links).',
+  '1.6.16':
+    'v1.6.16 — Home chat dock: real text field + mic + send, static hero after video, cleaner logo (no glow).',
+  '1.6.17':
+    'v1.6.17 — Home chat: attach photos from the dock or full-screen chat; assistant can see your images.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

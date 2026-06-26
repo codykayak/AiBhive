@@ -72,6 +72,11 @@ export async function runHomeAssistantChat(db, userId, opts) {
     return { ok: false, error: 'Empty message.' };
   }
 
+  const attachment = opts.attachment;
+  if (attachment?.base64 && attachment.base64.length > 900_000) {
+    return { ok: false, error: 'Image attachment is too large. Try a smaller photo.' };
+  }
+
   const gemini = getGemini();
   if (!gemini) {
     return { ok: false, error: 'Hive AI is warming up. Try again in a moment.' };
@@ -93,7 +98,19 @@ export async function runHomeAssistantChat(db, userId, opts) {
       parts: [{ text: String(turn.content).trim() }],
     });
   }
-  contents.push({ role: 'user', parts: [{ text: message }] });
+  const userParts = [{ text: message }];
+  if (attachment?.base64) {
+    userParts.push({
+      inlineData: {
+        mimeType: attachment.mime || 'image/jpeg',
+        data: attachment.base64,
+      },
+    });
+    userParts[0].text =
+      message +
+      `\n\n[User attached an image${attachment.width && attachment.height ? ` (${attachment.width}x${attachment.height})` : ''}. Describe it and help with their request.]`;
+  }
+  contents.push({ role: 'user', parts: userParts });
 
   try {
     const response = await gemini.models.generateContent({

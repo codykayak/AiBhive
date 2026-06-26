@@ -11,6 +11,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +21,10 @@ import {
   Radar,
   Wand2,
   ChevronDown,
+  Mic,
+  Maximize2,
+  ImagePlus,
+  X,
 } from 'lucide-react-native';
 import { colors, radii, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/settings';
@@ -40,12 +45,16 @@ import {
   useKeyboardInset,
 } from '../hooks/useKeyboardInset';
 import { useResponsiveLayout } from './ResponsiveShell';
+import { useSpeechToText } from '../hooks/useSpeechToText';
+import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
+import { HIVE_COPY } from '../constants/hiveCopy';
 
 type ChatMessage = {
   id: string;
   role: 'user' | 'ai';
   content: string;
   at: string;
+  imageUri?: string;
 };
 
 type Props = {
@@ -59,7 +68,7 @@ type Props = {
   dockBottom?: number;
 };
 
-export const ASSISTANT_DOCK_HEIGHT = 100;
+export const ASSISTANT_DOCK_HEIGHT = 140;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
@@ -81,12 +90,15 @@ export function HomeAssistantChat({
   const { isWide } = useResponsiveLayout();
   const { bottomPad: keyboardPad, keyboardHeight } = useKeyboardInset(0);
   const scrollRef = useRef<ScrollView>(null);
-  const inputRef = useRef<TextInput>(null);
+  const dockInputRef = useRef<TextInput>(null);
+  const modalInputRef = useRef<TextInput>(null);
+  const preSpeechInput = useRef('');
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: 'welcome', role: 'ai', content: WELCOME, at: new Date().toISOString() },
   ]);
   const [loading, setLoading] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState<HiveAttachment | null>(null);
   const pendingInitial = useRef(initialQuery?.trim() || '');
 
   const scrollEnd = useCallback(() => {
@@ -172,17 +184,30 @@ export function HomeAssistantChat({
   );
 
   const submit = useCallback(
-    async (text: string) => {
+    async (text: string, attachment?: HiveAttachment | null) => {
       const trimmed = text.trim();
-      if (!trimmed || loading) return;
+      const attach = attachment ?? pendingAttachment;
+      if ((!trimmed && !attach) || loading) return;
       Keyboard.dismiss();
       onExpandChange(true);
 
+      const displayText = trimmed || '📷 Photo';
+      const apiText =
+        trimmed ||
+        'The user sent an image without a caption. Describe what you see and ask how you can help.';
+
       setMessages((prev) => [
         ...prev,
-        { id: newId(), role: 'user', content: trimmed, at: new Date().toISOString() },
+        {
+          id: newId(),
+          role: 'user',
+          content: displayText,
+          imageUri: attach?.uri,
+          at: new Date().toISOString(),
+        },
       ]);
       setInput('');
+      setPendingAttachment(null);
       setLoading(true);
       scrollEnd();
 
@@ -193,7 +218,12 @@ export function HomeAssistantChat({
           .slice(-10)
           .map((m) => ({ role: m.role === 'ai' ? 'ai' : 'user', content: m.content }));
 
-        const { action, buildTask } = await sendHomeAssistantTurn(history, trimmed, {}, byokConfig);
+        const { action, buildTask } = await sendHomeAssistantTurn(
+          history,
+          apiText,
+          { attachment: attach ?? undefined },
+          byokConfig
+        );
         await handleAction(action, buildTask);
       } catch (err) {
         appendAi(
@@ -205,7 +235,7 @@ export function HomeAssistantChat({
         setLoading(false);
       }
     },
-    [loading, messages, appendAi, handleAction, onExpandChange, scrollEnd]
+    [loading, messages, appendAi, handleAction, onExpandChange, scrollEnd, pendingAttachment]
   );
 
   useEffect(() => {
@@ -225,42 +255,129 @@ export function HomeAssistantChat({
 
   const openChat = useCallback(() => {
     onExpandChange(true);
-    setTimeout(() => inputRef.current?.focus(), 150);
+    setTimeout(() => modalInputRef.current?.focus(), 150);
   }, [onExpandChange]);
+
+  const handleSpeechTranscript = useCallback((text: string, isFinal: boolean) => {
+    if (isFinal) {
+      setInput(() => {
+        const base = preSpeechInput.current.trim();
+        return base ? `${base} ${text}`.trim() : text;
+      });
+      preSpeechInput.current = '';
+    } else {
+      setInput(() => {
+        const base = preSpeechInput.current.trim();
+        return base ? `${base} ${text}`.trim() : text;
+      });
+    }
+  }, []);
+
+  const { listening, toggleListening, stopListening } = useSpeechToText({
+    onTranscript: handleSpeechTranscript,
+  });
 
   const closeChat = useCallback(() => {
+    stopListening();
     Keyboard.dismiss();
-    inputRef.current?.blur();
+    dockInputRef.current?.blur();
+    modalInputRef.current?.blur();
     onExpandChange(false);
-  }, [onExpandChange]);
+  }, [onExpandChange, stopListening]);
 
-  const inputBar = (
-    <TouchableOpacity style={styles.heroBar} activeOpacity={0.94} onPress={openChat}>
-      <View style={styles.heroIconWrap}>
-        <HiveLogo size={36} glow />
-      </View>
-      <View style={styles.heroCopy}>
-        <Text style={styles.heroLabel}>AiBhive Assistant</Text>
-        <Text style={styles.heroPlaceholder} numberOfLines={2}>
-          {input.trim() || HOME_INTRO_TAGLINE}
-        </Text>
-      </View>
-      <TouchableOpacity
-        style={styles.heroSend}
-        onPress={(e) => {
-          e.stopPropagation?.();
-          void (input.trim() ? submit(input) : openChat());
-        }}
-        disabled={loading}
-      >
-        <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
+  const onMicPress = useCallback(() => {
+    if (!listening) {
+      preSpeechInput.current = input;
+    }
+    void toggleListening();
+  }, [input, listening, toggleListening]);
+
+  const canSend = Boolean(input.trim() || pendingAttachment);
+
+  const onPickImage = useCallback(async () => {
+    const picked = await pickHiveReferenceImage();
+    if (picked) {
+      setPendingAttachment(picked);
+      if (!expanded) onExpandChange(true);
+    }
+  }, [expanded, onExpandChange]);
+
+  const attachmentPreview = pendingAttachment ? (
+    <View style={styles.attachPreview}>
+      <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
+      <Text style={styles.attachLabel} numberOfLines={1}>
+        Photo attached
+      </Text>
+      <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
+        <X color={colors.textDim} size={18} />
       </TouchableOpacity>
+    </View>
+  ) : null;
+
+  const imageButton = (compact?: boolean) => (
+    <TouchableOpacity
+      style={[styles.attachBtn, compact && styles.attachBtnCompact]}
+      onPress={() => void onPickImage()}
+      disabled={loading}
+      accessibilityLabel={HIVE_COPY.attachImage}
+      hitSlop={8}
+    >
+      <ImagePlus color={pendingAttachment ? colors.amber : colors.amberLight} size={compact ? 20 : 22} />
     </TouchableOpacity>
+  );
+
+  const micButton = (compact?: boolean) => (
+    <TouchableOpacity
+      style={[styles.micBtn, listening && styles.micBtnActive, compact && styles.micBtnCompact]}
+      onPress={onMicPress}
+      hitSlop={8}
+    >
+      <Mic color={listening ? colors.bg : colors.amber} size={compact ? 20 : 22} />
+    </TouchableOpacity>
+  );
+
+  const sendButton = (compact?: boolean) => (
+    <TouchableOpacity
+      style={[styles.heroSend, compact && styles.sendBtnCompact, !canSend && styles.sendBtnDisabled]}
+      onPress={() => void submit(input)}
+      disabled={!canSend || loading}
+      hitSlop={8}
+    >
+      <Send color={canSend ? colors.amber : colors.textDim} size={compact ? 20 : 22} />
+    </TouchableOpacity>
+  );
+
+  const floatingDockBar = (
+    <View style={styles.heroBar}>
+      <TouchableOpacity style={styles.heroHeader} activeOpacity={0.85} onPress={openChat}>
+        <HiveLogo size={28} />
+        <Text style={styles.heroLabel}>AiBhive Assistant</Text>
+        <Maximize2 color={colors.textDim} size={16} />
+      </TouchableOpacity>
+      {attachmentPreview}
+      <View style={styles.heroInputRow}>
+        {imageButton(true)}
+        <TextInput
+          ref={dockInputRef}
+          style={styles.dockInput}
+          placeholder={HOME_INTRO_TAGLINE}
+          placeholderTextColor={colors.textDim}
+          value={input}
+          onChangeText={setInput}
+          returnKeyType="send"
+          onSubmitEditing={() => void submit(input)}
+          multiline={false}
+          maxLength={2000}
+        />
+        {micButton(true)}
+        {sendButton(true)}
+      </View>
+    </View>
   );
 
   const floatingDock = !expanded ? (
     <View style={[styles.floatingDock, { bottom: dockBottom }]}>
-      {inputBar}
+      {floatingDockBar}
     </View>
   ) : null;
 
@@ -279,7 +396,16 @@ export function HomeAssistantChat({
             key={m.id}
             style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAi]}
           >
-            <Text style={styles.bubbleText}>{m.content}</Text>
+            {m.imageUri ? (
+              <Image source={{ uri: m.imageUri }} style={styles.bubbleImage} resizeMode="cover" />
+            ) : null}
+            {m.content && m.content !== '📷 Photo' ? (
+              <Text style={styles.bubbleText}>{m.content}</Text>
+            ) : m.imageUri ? (
+              <Text style={styles.bubbleTextMuted}>Photo</Text>
+            ) : (
+              <Text style={styles.bubbleText}>{m.content}</Text>
+            )}
           </View>
         ))}
         {loading && (
@@ -303,23 +429,30 @@ export function HomeAssistantChat({
       </View>
 
       <View style={[styles.composer, dexInputBarStyle(keyboardHeight > 0), { paddingBottom: Math.max(insets.bottom, 8) + keyboardPad * 0.15 }]}>
-        <TextInput
-          ref={inputRef}
-          style={styles.composerInput}
-          placeholder={HOME_INTRO_TAGLINE}
-          placeholderTextColor={colors.textDim}
-          value={input}
-          onChangeText={setInput}
-          multiline
-          maxLength={2000}
-        />
-        <TouchableOpacity
-          style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
-          onPress={() => void submit(input)}
-          disabled={!input.trim() || loading}
-        >
-          <Send color={colors.bg} size={20} />
-        </TouchableOpacity>
+        <View style={styles.composerStack}>
+          {attachmentPreview}
+          <View style={styles.composerRow}>
+            {imageButton()}
+            <TextInput
+              ref={modalInputRef}
+              style={styles.composerInput}
+              placeholder={HOME_INTRO_TAGLINE}
+              placeholderTextColor={colors.textDim}
+              value={input}
+              onChangeText={setInput}
+              multiline
+              maxLength={2000}
+            />
+            {micButton()}
+            <TouchableOpacity
+              style={[styles.sendBtn, (!canSend || loading) && styles.sendBtnDisabled]}
+              onPress={() => void submit(input)}
+              disabled={!canSend || loading}
+            >
+              <Send color={colors.bg} size={20} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </>
   );
@@ -328,7 +461,7 @@ export function HomeAssistantChat({
     <>
       {variant === 'inline' ? (
         <View style={styles.heroWrap}>
-          {inputBar}
+          {floatingDockBar}
         </View>
       ) : variant === 'floating' ? (
         floatingDock
@@ -404,42 +537,113 @@ const styles = StyleSheet.create({
     }),
   },
   heroBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: colors.bgElevated,
     borderRadius: radii.lg,
     borderWidth: 2,
     borderColor: colors.amber + '66',
-    paddingHorizontal: spacing.lg,
-    minHeight: 96,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
     ...Platform.select({
       android: { elevation: 6 },
     }),
   },
-  heroIconWrap: {
-    width: 48,
-    height: 48,
+  heroHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: 2,
+  },
+  heroInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.bgInput,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.xs,
+    minHeight: 52,
+  },
+  attachBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
-  heroCopy: { flex: 1 },
+  attachBtnCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  attachPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: colors.amberSoft,
+    borderWidth: 1,
+    borderColor: colors.amber + '33',
+  },
+  attachThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bgCard,
+  },
+  attachLabel: {
+    flex: 1,
+    color: colors.amberLight,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  dockInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '600',
+    paddingVertical: 12,
+    minHeight: 44,
+  },
+  micBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.amberSoft,
+    borderWidth: 1,
+    borderColor: colors.amber + '44',
+  },
+  micBtnCompact: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  micBtnActive: {
+    backgroundColor: colors.amber,
+    borderColor: colors.amber,
+  },
   heroLabel: {
+    flex: 1,
     color: colors.amberLight,
     fontWeight: '900',
     fontSize: 13,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  heroPlaceholder: {
-    color: colors.text,
-    fontSize: 17,
-    fontWeight: '600',
   },
   heroSend: {
     padding: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendBtnCompact: {
+    padding: spacing.xs,
   },
   hiddenInput: {
     position: 'absolute',
@@ -505,6 +709,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  bubbleTextMuted: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontStyle: 'italic',
+  },
+  bubbleImage: {
+    width: 200,
+    height: 150,
+    borderRadius: radii.md,
+    marginBottom: 8,
+    backgroundColor: colors.bgCard,
+  },
   loadingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -531,13 +747,19 @@ const styles = StyleSheet.create({
   },
   quickChipText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
   composer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    gap: 10,
     borderTopWidth: 1,
     borderTopColor: colors.borderMuted,
+  },
+  composerStack: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  composerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
   },
   composerInput: {
     flex: 1,

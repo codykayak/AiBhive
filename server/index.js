@@ -1186,9 +1186,18 @@ app.post('/api/hive/home-assist/web-search', express.json(), async (req, res) =>
   }
 });
 
-app.post('/api/hive/home-assist/chat', express.json(), async (req, res) => {
+app.post('/api/hive/home-assist/chat', express.json({ limit: '2mb' }), async (req, res) => {
   try {
-    const { userId, history, message, systemInstruction } = req.body || {};
+    const {
+      userId,
+      history,
+      message,
+      systemInstruction,
+      attachmentBase64,
+      attachmentMime,
+      attachmentWidth,
+      attachmentHeight,
+    } = req.body || {};
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
     if (!resolvedUserId || !message?.trim()) {
@@ -1199,6 +1208,15 @@ app.post('/api/hive/home-assist/chat', express.json(), async (req, res) => {
       history: history || [],
       message: message.trim(),
       systemInstruction: systemInstruction || '',
+      attachment:
+        attachmentBase64 && typeof attachmentBase64 === 'string'
+          ? {
+              base64: attachmentBase64,
+              mime: attachmentMime || 'image/jpeg',
+              width: attachmentWidth || null,
+              height: attachmentHeight || null,
+            }
+          : null,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;
