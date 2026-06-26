@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '../theme/colors';
 
 const HOME_HERO_VIDEO = require('../../assets/home-hero.mp4');
 
 export const HERO_VIDEO_PLAY_MS = 5000;
 export const HERO_VIDEO_FADE_MS = 900;
 
+/** Used in chat placeholder + static hero banner — not shown over the video fade. */
 export const HOME_INTRO_TAGLINE = "Ask anything, if it doesn't exist we BUILD it";
 
 type Props = {
@@ -21,16 +21,14 @@ type Props = {
 };
 
 /**
- * Full-viewport intro video (first visit only). After 5s cross-fades to tagline.
+ * Full-viewport intro video (first visit only). After 5s fades to black — no overlay text.
  */
 export function HomeHeroVideo({ bottomOverlay, skip = false, onIntroComplete }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const videoOpacity = useRef(new Animated.Value(1)).current;
-  const taglineOpacity = useRef(new Animated.Value(0)).current;
   const onIntroCompleteRef = useRef(onIntroComplete);
   const [videoMounted, setVideoMounted] = useState(!skip);
-  const [taglineVisible, setTaglineVisible] = useState(false);
   const [finished, setFinished] = useState(skip);
 
   const player = useVideoPlayer(skip ? null : HOME_HERO_VIDEO, (instance) => {
@@ -59,19 +57,11 @@ export function HomeHeroVideo({ bottomOverlay, skip = false, onIntroComplete }: 
       return;
     }
     const fadeTimer = setTimeout(() => {
-      setTaglineVisible(true);
-      Animated.parallel([
-        Animated.timing(videoOpacity, {
-          toValue: 0,
-          duration: HERO_VIDEO_FADE_MS,
-          useNativeDriver: true,
-        }),
-        Animated.timing(taglineOpacity, {
-          toValue: 1,
-          duration: HERO_VIDEO_FADE_MS,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
+      Animated.timing(videoOpacity, {
+        toValue: 0,
+        duration: HERO_VIDEO_FADE_MS,
+        useNativeDriver: true,
+      }).start(() => {
         try {
           player.pause();
         } catch {
@@ -84,7 +74,7 @@ export function HomeHeroVideo({ bottomOverlay, skip = false, onIntroComplete }: 
     }, HERO_VIDEO_PLAY_MS);
 
     return () => clearTimeout(fadeTimer);
-  }, [player, skip, taglineOpacity, videoOpacity]);
+  }, [player, skip, videoOpacity]);
 
   if (skip || finished) {
     return null;
@@ -105,12 +95,6 @@ export function HomeHeroVideo({ bottomOverlay, skip = false, onIntroComplete }: 
           <View style={styles.scrim} pointerEvents="none" />
         </Animated.View>
       ) : null}
-
-      {taglineVisible ? (
-        <Animated.View style={[styles.taglineLayer, { opacity: taglineOpacity }]} pointerEvents="none">
-          <Text style={styles.tagline}>{HOME_INTRO_TAGLINE}</Text>
-        </Animated.View>
-      ) : null}
     </View>
   );
 }
@@ -128,19 +112,5 @@ const styles = StyleSheet.create({
   scrim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(2, 6, 23, 0.12)',
-  },
-  taglineLayer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  tagline: {
-    color: colors.amberLight,
-    fontSize: 26,
-    fontWeight: '900',
-    textAlign: 'center',
-    lineHeight: 34,
-    letterSpacing: 0.2,
   },
 });

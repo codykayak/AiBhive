@@ -49,6 +49,8 @@ manifest.otaChannel = manifest.otaChannel || 'production';
 
 if (firebaseApkUrl) {
   manifest.firebaseApkUrl = firebaseApkUrl;
+  manifest.downloadUrl = firebaseApkUrl;
+  manifest.fullApkUrl = firebaseApkUrl;
 }
 
 if (firebaseGzUrl) {
@@ -116,6 +118,8 @@ const defaultNotes = {
     'v1.6.17 — Home chat: attach photos from the dock or full-screen chat; assistant can see your images.',
   '1.6.19':
     'v1.6.19 — Home chat dock: pinned to bottom with breathing room below input, stays visible while typing, no tab overlap.',
+  '1.6.20':
+    'v1.6.20 — Home intro fades to black (no overlay text); chat dock pinned at bottom; update manifest sync.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
