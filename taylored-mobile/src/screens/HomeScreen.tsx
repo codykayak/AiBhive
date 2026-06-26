@@ -4,11 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
-import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
+import {
+  HomeAssistantChat,
+  getAssistantDockHeight,
+  DOCK_SCREEN_FRACTION,
+} from '../components/HomeAssistantChat';
 import { HomeHeroVideo } from '../components/HomeHeroVideo';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
@@ -24,20 +29,17 @@ const COMMUNITY_STEPS = [
   { n: '3', title: 'Share back', body: 'Love it? Opt in to share — the hive grows smarter for everyone.' },
 ];
 
-/** Gap between scroll content and pinned dock */
-const DOCK_SCROLL_GAP = spacing.sm;
-
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { height: windowHeight } = useWindowDimensions();
   const { isDesktop } = useResponsiveLayout();
+  const dockHeight = getAssistantDockHeight(windowHeight);
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
   const [showHeroVideo, setShowHeroVideo] = useState(true);
   const introDoneRef = useRef(false);
-
-  const scrollBottomPad = ASSISTANT_DOCK_HEIGHT + DOCK_SCROLL_GAP;
 
   useFocusEffect(
     useCallback(() => {
@@ -68,13 +70,13 @@ export default function HomeScreen() {
         <ScreenScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPad }]}
+          contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
           {showHeroVideo ? (
             <HomeHeroVideo
               skip={introDoneRef.current}
-              bottomOverlay={ASSISTANT_DOCK_HEIGHT + DOCK_SCROLL_GAP}
+              bottomOverlay={dockHeight}
               onIntroComplete={() => {
                 introDoneRef.current = true;
                 setShowHeroVideo(false);
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: 0 },
   body: { flex: 1, position: 'relative' },
   scrollView: { flex: 1 },
-  scroll: { flexGrow: 1 },
+  scroll: { flexGrow: 1, paddingBottom: spacing.md },
   content: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.lg,
@@ -287,3 +289,5 @@ const styles = StyleSheet.create({
   },
   toolkitText: { color: colors.amberLight, fontWeight: '800', fontSize: 15 },
 });
+
+export { DOCK_SCREEN_FRACTION, getAssistantDockHeight };
