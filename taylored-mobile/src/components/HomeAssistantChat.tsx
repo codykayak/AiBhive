@@ -8,7 +8,6 @@ import {
   ScrollView,
   ActivityIndicator,
   Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Image,
@@ -17,15 +16,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Send,
   Briefcase,
   Radar,
   Wand2,
   ChevronDown,
-  Mic,
   Maximize2,
-  ImagePlus,
-  X,
 } from 'lucide-react-native';
 import { colors, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/settings';
@@ -39,10 +34,10 @@ import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
+import { ChatComposerBox } from './ChatComposerBox';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
-import { HIVE_COPY } from '../constants/hiveCopy';
 
 type ChatMessage = {
   id: string;
@@ -61,10 +56,10 @@ type Props = {
 };
 
 /** Home chat panel = bottom quarter of the screen. */
-export const DOCK_SCREEN_FRACTION = 0.25;
+export const DOCK_SCREEN_FRACTION = 0.28;
 
 export function getAssistantDockHeight(screenHeight: number): number {
-  return Math.max(160, Math.round(screenHeight * DOCK_SCREEN_FRACTION));
+  return Math.max(180, Math.round(screenHeight * DOCK_SCREEN_FRACTION));
 }
 
 /** @deprecated use getAssistantDockHeight */
@@ -328,8 +323,6 @@ export function HomeAssistantChat({
     void toggleListening();
   }, [input, listening, toggleListening]);
 
-  const canSend = Boolean(input.trim() || pendingAttachment);
-
   const onPickImage = useCallback(async () => {
     const picked = await pickHiveReferenceImage();
     if (picked) {
@@ -337,34 +330,32 @@ export function HomeAssistantChat({
     }
   }, []);
 
-  const imageButton = () => (
-    <TouchableOpacity style={styles.toolBtn} onPress={() => void onPickImage()} disabled={loading} hitSlop={8}>
-      <ImagePlus color={pendingAttachment ? colors.amber : colors.textMuted} size={22} />
-    </TouchableOpacity>
-  );
-
-  const micButton = () => (
-    <TouchableOpacity style={[styles.toolBtn, listening && styles.toolBtnActive]} onPress={onMicPress} hitSlop={8}>
-      <Mic color={listening ? colors.bg : colors.textMuted} size={22} />
-    </TouchableOpacity>
-  );
-
-  const sendButton = () => (
-    <TouchableOpacity
-      style={[styles.toolBtn, styles.sendToolBtn, !canSend && styles.sendBtnDisabled]}
-      onPress={() => void submit(input)}
-      disabled={!canSend || loading}
-      hitSlop={8}
-    >
-      <Send color={canSend ? colors.bg : colors.textDim} size={20} />
-    </TouchableOpacity>
-  );
-
   const keyboardOpen = keyboardHeight > 0;
+  const modalHeaderHeight = 44;
+  const visibleAboveKeyboard = Math.max(
+    200,
+    windowHeight - dockBottomOffset - insets.top - modalHeaderHeight
+  );
+  const modalComposerHeight = keyboardOpen
+    ? Math.max(300, Math.round(visibleAboveKeyboard * 0.62))
+    : Math.max(220, Math.round(baselineHeight * 0.22));
 
   useEffect(() => {
     if (keyboardOpen) scrollEnd();
   }, [keyboardOpen, scrollEnd]);
+
+  const composerProps = {
+    value: input,
+    onChangeText: setInput,
+    onFocus: scrollEnd,
+    onSubmit: () => void submit(input),
+    loading,
+    pendingAttachment,
+    onClearAttachment: () => setPendingAttachment(null),
+    onPickImage: () => void onPickImage(),
+    onMicPress,
+    listening,
+  };
 
   const homePanel = (
     <View
@@ -399,40 +390,11 @@ export function HomeAssistantChat({
         ) : null}
       </ScrollView>
 
-      {pendingAttachment ? (
-        <View style={styles.attachRow}>
-          <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
-          <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
-            <X color={colors.textDim} size={18} />
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      <TextInput
-        ref={dockInputRef}
-        style={styles.dockInput}
-        placeholder="Ask anything…"
-        placeholderTextColor={colors.textDim}
-        value={input}
-        onChangeText={setInput}
-        multiline
-        textAlignVertical="top"
-        scrollEnabled
-        maxLength={2000}
-        onFocus={scrollEnd}
-      />
-
-      <View style={styles.dockToolbar}>
-        {imageButton()}
-        {micButton()}
-        <View style={{ flex: 1 }} />
-        {sendButton()}
-      </View>
+      <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={120} />
     </View>
   );
 
-  const modalBottomPad =
-    keyboardOpen ? dockBottomOffset + spacing.xs : Math.max(insets.bottom, spacing.xs);
+  const modalBottomInset = keyboardOpen ? dockBottomOffset : Math.max(insets.bottom, 0);
 
   return (
     <>
@@ -440,11 +402,7 @@ export function HomeAssistantChat({
       {variant === 'floating' && !expanded ? homePanel : null}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
-        <KeyboardAvoidingView
-          style={[styles.modalRoot, { paddingTop: insets.top }]}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
-        >
+        <View style={[styles.modalRoot, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
               <HiveLogo size={28} />
@@ -488,35 +446,14 @@ export function HomeAssistantChat({
             </View>
           )}
 
-          <View style={[styles.modalComposer, { paddingBottom: modalBottomPad }]}>
-            {pendingAttachment ? (
-              <View style={styles.attachRow}>
-                <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
-                <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
-                  <X color={colors.textDim} size={18} />
-                </TouchableOpacity>
-              </View>
-            ) : null}
-            <TextInput
-              ref={modalInputRef}
-              style={styles.modalInput}
-              placeholder="Ask anything…"
-              placeholderTextColor={colors.textDim}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              textAlignVertical="top"
-              maxLength={2000}
-              onFocus={scrollEnd}
+          <View style={[styles.modalComposerWrap, { height: modalComposerHeight, marginBottom: modalBottomInset }]}>
+            <ChatComposerBox
+              {...composerProps}
+              inputRef={modalInputRef}
+              minHeight={modalComposerHeight}
             />
-            <View style={styles.dockToolbar}>
-              {imageButton()}
-              {micButton()}
-              <View style={{ flex: 1 }} />
-              {sendButton()}
-            </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </>
   );
@@ -526,8 +463,6 @@ const styles = StyleSheet.create({
   homePanel: {
     flexShrink: 0,
     backgroundColor: '#000000',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(148, 163, 184, 0.18)',
   },
   homePanelKeyboard: {
     position: 'absolute',
@@ -541,7 +476,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   expandLabel: {
     color: colors.textDim,
@@ -552,57 +487,12 @@ const styles = StyleSheet.create({
   },
   dockThread: {
     flex: 1,
-    minHeight: 0,
+    minHeight: 48,
   },
   dockThreadContent: {
     paddingHorizontal: 8,
     paddingBottom: 2,
     gap: 4,
-  },
-  dockInput: {
-    flex: 2,
-    minHeight: 64,
-    color: colors.text,
-    fontSize: 17,
-    lineHeight: 24,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    backgroundColor: '#000000',
-  },
-  dockToolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingBottom: 2,
-    gap: 2,
-  },
-  toolBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toolBtnActive: {
-    backgroundColor: colors.amber,
-    borderRadius: 20,
-  },
-  sendToolBtn: {
-    backgroundColor: colors.amber,
-    borderRadius: 20,
-  },
-  sendBtnDisabled: { opacity: 0.35 },
-  attachRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  attachThumb: {
-    width: 36,
-    height: 36,
-    borderRadius: 4,
-    backgroundColor: colors.bgCard,
   },
   modalRoot: {
     flex: 1,
@@ -612,10 +502,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(148, 163, 184, 0.18)',
+    paddingHorizontal: 8,
+    paddingBottom: 4,
   },
   modalTitleWrap: {
     flexDirection: 'row',
@@ -628,8 +516,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   closeBtn: { padding: 6 },
-  chatScroll: { flex: 1 },
-  chatContent: { paddingHorizontal: spacing.sm, paddingTop: spacing.xs, gap: spacing.sm, paddingBottom: spacing.md },
+  chatScroll: { flex: 1, minHeight: 0 },
+  chatContent: { paddingHorizontal: 8, paddingTop: 4, gap: spacing.sm, paddingBottom: spacing.sm },
+  modalComposerWrap: {
+    width: '100%',
+    backgroundColor: '#000000',
+  },
   bubble: {
     borderRadius: 8,
     padding: 12,
@@ -696,20 +588,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
   },
   quickChipText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
-  modalComposer: {
-    backgroundColor: '#000000',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(148, 163, 184, 0.18)',
-    paddingTop: 4,
-  },
-  modalInput: {
-    minHeight: 88,
-    maxHeight: 180,
-    color: colors.text,
-    fontSize: 17,
-    lineHeight: 24,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    backgroundColor: '#000000',
-  },
 });

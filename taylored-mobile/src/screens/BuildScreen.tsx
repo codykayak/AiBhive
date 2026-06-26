@@ -6,26 +6,23 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
   ActivityIndicator,
   Vibration,
-  Image,
   Keyboard,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Send, Sparkles, Wand2, Grid, Zap, Trash2, ImagePlus, X } from 'lucide-react-native';
+import { Sparkles, Wand2, Grid, Zap, Trash2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { ChatComposerBox } from '../components/ChatComposerBox';
 import { HiveLogo } from '../components/HiveLogo';
 import { QuickPrompts } from '../components/QuickPrompts';
 import { GlassCard, PrimaryButton, StatusPill } from '../components/ui';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { useToast } from '../contexts/ToastContext';
-import {
-  dexInputBarStyle,
-  keyboardAvoidBehavior,
-  keyboardVerticalOffset,
-  useKeyboardInset,
-} from '../hooks/useKeyboardInset';
+import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { getActiveLlmConfig, loadAiPrefs, sendChatMessage } from '../lib/ai';
 import { loadAiBehavior } from '../lib/aiBehavior';
 import { triageLocally, localTaskToHiveTask } from '../lib/hiveBrain';
@@ -64,9 +61,12 @@ export default function BuildScreen() {
   const prefill = route.params?.prefill as string | undefined;
   const { showToast } = useToast();
   const tabBarPadding = useTabBarPadding(12);
-  const { bottomPad: keyboardPad, isWide, keyboardHeight } = useKeyboardInset(0);
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const { bottomPad: keyboardPad, keyboardHeight } = useKeyboardInset(0);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
+  const baselineHeightRef = useRef(windowHeight);
 
   const [inputText, setInputText] = useState(prefill?.trim() ?? '');
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
@@ -344,6 +344,30 @@ export default function BuildScreen() {
     showToast(HIVE_COPY.chatCleared);
   };
 
+  useEffect(() => {
+    if (keyboardHeight === 0) {
+      baselineHeightRef.current = windowHeight;
+    }
+  }, [keyboardHeight, windowHeight]);
+
+  const keyboardOpen = keyboardHeight > 0;
+  const windowShrank =
+    keyboardOpen && baselineHeightRef.current - windowHeight >= keyboardHeight * 0.35;
+  const composerBottomInset =
+    keyboardOpen
+      ? Platform.OS === 'ios' || !windowShrank
+        ? keyboardPad
+        : 0
+      : tabBarPadding;
+  const visibleAboveKeyboard = Math.max(180, windowHeight - composerBottomInset - insets.top - 120);
+  const composerHeight = keyboardOpen
+    ? Math.max(280, Math.round(visibleAboveKeyboard * 0.58))
+    : Math.max(200, Math.round(baselineHeightRef.current * 0.2));
+
+  useEffect(() => {
+    if (keyboardOpen) scrollToEnd();
+  }, [keyboardOpen, scrollToEnd]);
+
   return (
     <ScreenLayout title="Build" subtitle="Describe any tool — AiBhive creates it." contentStyle={styles.screenContent} compactBadge>
       <View style={styles.heroBlock}>
@@ -389,15 +413,11 @@ export default function BuildScreen() {
         </TouchableOpacity>
       )}
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={keyboardAvoidBehavior()}
-        keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
-      >
+      <View style={styles.flex}>
         <ScrollView
           ref={scrollRef}
           style={styles.chatContainer}
-          contentContainerStyle={[styles.chatContent, { paddingBottom: Math.max(tabBarPadding, 24) }]}
+          contentContainerStyle={styles.chatContent}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           onContentSizeChange={scrollToEnd}
@@ -472,62 +492,36 @@ export default function BuildScreen() {
         </ScrollView>
 
         <View style={styles.composer}>
-          {magicMode && !isLoading && (
+          {magicMode && !isLoading && !keyboardOpen && (
             <QuickPrompts
               prompts={HIVE_COPY.quickPrompts}
               onSelect={(p) => void sendMessage(p)}
               disabled={isLoading}
             />
           )}
-          {pendingAttachment && (
-            <View style={styles.attachPreview}>
-              <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
-              <Text style={styles.attachLabel}>Reference image attached</Text>
-              <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
-                <X color={colors.textDim} size={18} />
-              </TouchableOpacity>
-            </View>
-          )}
-          <View
-            style={[
-              styles.inputContainer,
-              dexInputBarStyle(keyboardHeight > 0),
-              { paddingBottom: keyboardHeight > 0 ? keyboardPad : 12 },
-            ]}
-          >
-            {magicMode && (
-              <TouchableOpacity
-                style={styles.attachBtn}
-                onPress={() => void pickHiveReferenceImage().then((a) => a && setPendingAttachment(a))}
-                disabled={isLoading}
-                accessibilityLabel={HIVE_COPY.attachImage}
-              >
-                <ImagePlus color={colors.amberLight} size={22} />
-              </TouchableOpacity>
-            )}
-            <TextInput
-              ref={inputRef}
-              style={[styles.input, isWide && styles.inputWide]}
-              placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
-              placeholderTextColor={colors.textDim}
+          <View style={[styles.composerBleed, { height: composerHeight, marginBottom: composerBottomInset }]}>
+            <ChatComposerBox
+              inputRef={inputRef}
               value={inputText}
               onChangeText={setInputText}
-              multiline
-              blurOnSubmit
-              onSubmitEditing={() => {
+              onFocus={scrollToEnd}
+              onSubmit={() => {
                 if (inputText.trim()) void sendMessage(inputText);
               }}
+              placeholder={magicMode ? 'Describe what to build…' : 'Ask anything…'}
+              loading={isLoading}
+              pendingAttachment={pendingAttachment}
+              onClearAttachment={() => setPendingAttachment(null)}
+              onPickImage={
+                magicMode
+                  ? () => void pickHiveReferenceImage().then((a) => a && setPendingAttachment(a))
+                  : undefined
+              }
+              minHeight={composerHeight}
             />
-            <TouchableOpacity
-              style={[styles.sendButton, (!inputText.trim() || isLoading) && styles.sendDisabled]}
-              onPress={() => void sendMessage(inputText)}
-              disabled={isLoading || !inputText.trim()}
-            >
-              <Send color={colors.black} size={20} />
-            </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </ScreenLayout>
   );
 }
@@ -659,49 +653,11 @@ const styles = StyleSheet.create({
     maxWidth: '90%',
   },
   failedText: { color: colors.danger, fontSize: 14, lineHeight: 20 },
-  composer: { paddingTop: 4 },
-  attachPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 8,
-    padding: 8,
-    borderRadius: radii.md,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.borderMuted,
+  composer: { paddingTop: 0 },
+  composerBleed: {
+    marginHorizontal: -spacing.md,
+    width: undefined,
+    alignSelf: 'stretch',
+    backgroundColor: '#000000',
   },
-  attachThumb: { width: 44, height: 44, borderRadius: 8 },
-  attachLabel: { flex: 1, color: colors.textMuted, fontSize: 12, fontWeight: '600' },
-  attachBtn: { paddingHorizontal: 4, paddingVertical: 8, justifyContent: 'center' },
-  inputContainer: {
-    flexDirection: 'row',
-    paddingTop: 8,
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: colors.bgInput,
-    color: colors.text,
-    borderRadius: radii.pill,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    fontSize: 16,
-    maxHeight: 120,
-    minHeight: 50,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  inputWide: { minHeight: 54, fontSize: 17, maxHeight: 140 },
-  sendButton: {
-    backgroundColor: colors.amber,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...shadows.amber,
-  },
-  sendDisabled: { opacity: 0.45 },
 });
