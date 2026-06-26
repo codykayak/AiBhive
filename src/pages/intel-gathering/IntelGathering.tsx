@@ -11,7 +11,9 @@ interface DBPRRecord {
   type?: string;
 }
 
-export default function IntelGathering() {
+type Props = { embedded?: boolean };
+
+export default function IntelGathering({ embedded = false }: Props) {
   const [records, setRecords] = useState<DBPRRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,8 +83,8 @@ export default function IntelGathering() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="mb-12">
+    <div className={embedded ? 'px-3 sm:px-4 py-4' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12'}>
+      <div className={embedded ? 'mb-6' : 'mb-12'}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -91,10 +93,12 @@ export default function IntelGathering() {
           <div className="w-12 h-12 bg-bee-amber/10 rounded-xl flex items-center justify-center border border-bee-amber/20">
             <Search className="w-6 h-6 text-bee-amber" />
           </div>
-          <h1 className="text-4xl font-display font-bold text-white">Intel Gathering</h1>
+          <h1 className={`font-display font-bold text-white ${embedded ? 'text-2xl' : 'text-4xl'}`}>
+            Intel Gathering
+          </h1>
         </motion.div>
-        <p className="text-xl text-slate-400 max-w-3xl">
-          A human intelligence gathering operation. Viewing filtered records from the Florida DBPR API.
+        <p className={`text-slate-400 max-w-3xl ${embedded ? 'text-sm' : 'text-xl'}`}>
+          DBPR license records plus Firecrawl deep scan — same tools as aibhive.com/intel-gathering.
         </p>
       </div>
 
