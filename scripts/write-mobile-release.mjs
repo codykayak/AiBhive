@@ -49,6 +49,9 @@ manifest.otaChannel = manifest.otaChannel || 'production';
 
 if (firebaseApkUrl) {
   manifest.firebaseApkUrl = firebaseApkUrl;
+  // Point download URLs at Firebase so clients get the latest APK before Cloud Run redeploys.
+  manifest.downloadUrl = firebaseApkUrl;
+  manifest.fullApkUrl = firebaseApkUrl;
 }
 
 if (firebaseGzUrl) {
