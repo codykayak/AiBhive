@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Keyboard,
   Modal,
-  Platform,
+  Vibration,
   Image,
   useWindowDimensions,
 } from 'react-native';
@@ -34,10 +34,11 @@ import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
-import { ChatComposerBox } from './ChatComposerBox';
+import { ChatComposerBox, type ComposerMode } from './ChatComposerBox';
 import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
+import { useToast } from '../contexts/ToastContext';
 
 type ChatMessage = {
   id: string;
@@ -100,8 +101,9 @@ export function HomeAssistantChat({
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
   const { height: windowHeight } = useWindowDimensions();
-  const { keyboardHeight, bottomPad } = useKeyboardInset(0);
+  const { keyboardHeight } = useKeyboardInset(0);
   const baselineHeightRef = useRef(windowHeight);
   const [baselineHeight, setBaselineHeight] = useState(windowHeight);
 
@@ -112,10 +114,10 @@ export function HomeAssistantChat({
     }
   }, [keyboardHeight, windowHeight]);
 
-  const windowShrank =
-    keyboardHeight > 0 && baselineHeightRef.current - windowHeight >= keyboardHeight * 0.35;
-  const dockBottomOffset =
-    keyboardHeight <= 0 ? 0 : Platform.OS === 'ios' || !windowShrank ? bottomPad : 0;
+  const keyboardOpen = keyboardHeight > 0;
+  // Always lift content by the full keyboard height — most reliable on Android Modals
+  // (where softwareKeyboardLayoutMode=resize does NOT apply) and safe on iOS.
+  const liftForKeyboard = keyboardOpen ? Math.max(keyboardHeight - insets.bottom, 0) : 0;
   const panelHeight = getAssistantDockHeight(baselineHeight);
   const scrollRef = useRef<ScrollView>(null);
   const dockScrollRef = useRef<ScrollView>(null);
@@ -128,6 +130,7 @@ export function HomeAssistantChat({
   ]);
   const [loading, setLoading] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<HiveAttachment | null>(null);
+  const [mode, setMode] = useState<ComposerMode>('build');
   const pendingInitial = useRef(initialQuery?.trim() || '');
 
   const scrollEnd = useCallback(() => {
@@ -252,7 +255,7 @@ export function HomeAssistantChat({
         const { action, buildTask } = await sendHomeAssistantTurn(
           history,
           apiText,
-          { attachment: attach ?? undefined },
+          { attachment: attach ?? undefined, mode },
           byokConfig
         );
         await handleAction(action, buildTask);
@@ -266,7 +269,7 @@ export function HomeAssistantChat({
         setLoading(false);
       }
     },
-    [loading, messages, appendAi, handleAction, scrollEnd, pendingAttachment]
+    [loading, messages, appendAi, handleAction, scrollEnd, pendingAttachment, mode]
   );
 
   useEffect(() => {
@@ -304,8 +307,20 @@ export function HomeAssistantChat({
     }
   }, []);
 
+  const handleSpeechStart = useCallback(() => {
+    // Double-tap haptic so the user knows the mic is hot.
+    Vibration.vibrate([0, 35, 60, 35]);
+    showToast('Listening… speak now', 'success');
+  }, [showToast]);
+
+  const handleSpeechEnd = useCallback(() => {
+    Vibration.vibrate(25);
+  }, []);
+
   const { listening, toggleListening, stopListening } = useSpeechToText({
     onTranscript: handleSpeechTranscript,
+    onStart: handleSpeechStart,
+    onEnd: handleSpeechEnd,
   });
 
   const closeChat = useCallback(() => {
@@ -330,16 +345,6 @@ export function HomeAssistantChat({
     }
   }, []);
 
-  const keyboardOpen = keyboardHeight > 0;
-  const modalHeaderHeight = 44;
-  const visibleAboveKeyboard = Math.max(
-    200,
-    windowHeight - dockBottomOffset - insets.top - modalHeaderHeight
-  );
-  const modalComposerHeight = keyboardOpen
-    ? Math.max(300, Math.round(visibleAboveKeyboard * 0.62))
-    : Math.max(220, Math.round(baselineHeight * 0.22));
-
   useEffect(() => {
     if (keyboardOpen) scrollEnd();
   }, [keyboardOpen, scrollEnd]);
@@ -355,15 +360,19 @@ export function HomeAssistantChat({
     onPickImage: () => void onPickImage(),
     onMicPress,
     listening,
+    mode,
+    onModeChange: setMode,
   };
 
+  // Dock — collapsed panel on the home screen. When the keyboard pops, we lift
+  // the dock above it so the user can see what they're typing.
   const homePanel = (
     <View
       style={[
         styles.homePanel,
         { height: panelHeight },
         keyboardOpen && styles.homePanelKeyboard,
-        keyboardOpen && { bottom: dockBottomOffset },
+        keyboardOpen && { bottom: liftForKeyboard },
       ]}
     >
       <TouchableOpacity style={styles.expandStrip} onPress={openChat} activeOpacity={0.7}>
@@ -390,11 +399,14 @@ export function HomeAssistantChat({
         ) : null}
       </ScrollView>
 
-      <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={120} />
+      <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={140} />
     </View>
   );
 
-  const modalBottomInset = keyboardOpen ? dockBottomOffset : Math.max(insets.bottom, 0);
+  // Modal — full-screen chat. We pin a flex container that paddingTops by the
+  // status-bar inset and paddingBottoms by the keyboard height so the composer
+  // toolbar (image / mic / mode toggle / send) stays *above* the keyboard.
+  const modalBottomInset = keyboardOpen ? liftForKeyboard : Math.max(insets.bottom, 0);
 
   return (
     <>
@@ -402,7 +414,12 @@ export function HomeAssistantChat({
       {variant === 'floating' && !expanded ? homePanel : null}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
-        <View style={[styles.modalRoot, { paddingTop: insets.top }]}>
+        <View
+          style={[
+            styles.modalRoot,
+            { paddingTop: insets.top, paddingBottom: modalBottomInset },
+          ]}
+        >
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
               <HiveLogo size={28} />
@@ -418,6 +435,7 @@ export function HomeAssistantChat({
             style={styles.chatScroll}
             contentContainerStyle={styles.chatContent}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             onContentSizeChange={scrollEnd}
             showsVerticalScrollIndicator={false}
           >
@@ -446,11 +464,11 @@ export function HomeAssistantChat({
             </View>
           )}
 
-          <View style={[styles.modalComposerWrap, { height: modalComposerHeight, marginBottom: modalBottomInset }]}>
+          <View style={styles.modalComposerWrap}>
             <ChatComposerBox
               {...composerProps}
               inputRef={modalInputRef}
-              minHeight={modalComposerHeight}
+              minHeight={keyboardOpen ? 200 : 240}
             />
           </View>
         </View>
@@ -520,7 +538,7 @@ const styles = StyleSheet.create({
   chatContent: { paddingHorizontal: 8, paddingTop: 4, gap: spacing.sm, paddingBottom: spacing.sm },
   modalComposerWrap: {
     width: '100%',
-    backgroundColor: '#000000',
+    backgroundColor: colors.black,
   },
   bubble: {
     borderRadius: 8,
