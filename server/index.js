@@ -2284,9 +2284,12 @@ app.get('/api/download/apk', async (req, res) => {
 });
 
 app.get('/taylored-mobile.apk', async (req, res) => {
+  const manifest = await getMobileReleaseManifest();
+  if (manifest?.firebaseApkUrl && req.query.local !== '1') {
+    return res.redirect(302, manifest.firebaseApkUrl);
+  }
   const apkPath = resolveApkPath();
   if (!apkPath) {
-    const manifest = await getMobileReleaseManifest();
     if (manifest?.firebaseApkUrl) {
       return res.redirect(302, manifest.firebaseApkUrl);
     }

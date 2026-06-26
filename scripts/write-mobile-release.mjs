@@ -126,6 +126,8 @@ const defaultNotes = {
     'v1.7.0 — Custom hive chime, daily motivation (Grok 3), calendar follow-ups, activity-aware suggestions. Plan/Build chat toggle.',
   '1.7.1':
     'v1.7.1 — Fixes APK publish (correct signed v1.7.0 build was not uploaded). Same features as 1.7.0.',
+  '1.7.2':
+    'v1.7.2 — Fixes home chat keyboard: dock stays above keyboard, full-screen composer clears nav bar and system controls.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
