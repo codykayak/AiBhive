@@ -55,13 +55,11 @@ type Props = {
   onInitialQueryConsumed?: () => void;
   /** Fixed dock at bottom of the screen (Home tab) */
   variant?: 'inline' | 'floating';
-  /** Bottom offset when tab bar is visible (floating mode) */
-  tabBarOffset?: number;
-  /** Extra padding above the bottom edge */
-  dockBottomBuffer?: number;
+  /** Distance from screen bottom to dock (includes tab bar + gap) */
+  dockBottom?: number;
 };
 
-export const ASSISTANT_DOCK_HEIGHT = 92;
+export const ASSISTANT_DOCK_HEIGHT = 100;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
@@ -76,8 +74,7 @@ export function HomeAssistantChat({
   initialQuery,
   onInitialQueryConsumed,
   variant = 'inline',
-  tabBarOffset = 0,
-  dockBottomBuffer = 0,
+  dockBottom = 0,
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -226,47 +223,16 @@ export function HomeAssistantChat({
     { label: 'Research', icon: Radar, onPress: () => navigation.navigate('IntelAgent') },
   ];
 
-  const openChat = () => {
+  const openChat = useCallback(() => {
     onExpandChange(true);
-    setTimeout(() => inputRef.current?.focus(), 120);
-  };
+    setTimeout(() => inputRef.current?.focus(), 150);
+  }, [onExpandChange]);
 
-  const floatingDock = (
-    <View
-      style={[
-        styles.floatingDock,
-        {
-          bottom: tabBarOffset + Math.max(insets.bottom, 8) + dockBottomBuffer,
-        },
-      ]}
-    >
-      <View style={styles.heroBar}>
-        <View style={styles.heroIconWrap}>
-          <HiveLogo size={36} glow />
-        </View>
-        <TextInput
-          ref={inputRef}
-          style={styles.floatingInput}
-          placeholder={HOME_INTRO_TAGLINE}
-          placeholderTextColor={colors.textDim}
-          value={input}
-          onChangeText={setInput}
-          onFocus={() => onExpandChange(true)}
-          returnKeyType="send"
-          onSubmitEditing={() => void submit(input)}
-          multiline={false}
-          maxLength={2000}
-        />
-        <TouchableOpacity
-          style={styles.heroSend}
-          onPress={() => (input.trim() ? void submit(input) : openChat())}
-          disabled={loading}
-        >
-          <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const closeChat = useCallback(() => {
+    Keyboard.dismiss();
+    inputRef.current?.blur();
+    onExpandChange(false);
+  }, [onExpandChange]);
 
   const inputBar = (
     <TouchableOpacity style={styles.heroBar} activeOpacity={0.94} onPress={openChat}>
@@ -281,13 +247,22 @@ export function HomeAssistantChat({
       </View>
       <TouchableOpacity
         style={styles.heroSend}
-        onPress={() => (input.trim() ? void submit(input) : openChat())}
+        onPress={(e) => {
+          e.stopPropagation?.();
+          void (input.trim() ? submit(input) : openChat());
+        }}
         disabled={loading}
       >
         <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
+
+  const floatingDock = !expanded ? (
+    <View style={[styles.floatingDock, { bottom: dockBottom }]}>
+      {inputBar}
+    </View>
+  ) : null;
 
   const chatBody = (
     <>
@@ -359,7 +334,7 @@ export function HomeAssistantChat({
         floatingDock
       ) : null}
 
-      <Modal visible={expanded} animationType="slide" onRequestClose={() => onExpandChange(false)}>
+      <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
         <KeyboardAvoidingView
           style={[styles.modalRoot, { paddingTop: insets.top }]}
           behavior={keyboardAvoidBehavior()}
@@ -373,7 +348,7 @@ export function HomeAssistantChat({
                 <Text style={styles.poweredText}>Hive credits</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => onExpandChange(false)} hitSlop={12} style={styles.closeBtn}>
+            <TouchableOpacity onPress={closeChat} hitSlop={12} style={styles.closeBtn}>
               <ChevronDown color={colors.textMuted} size={26} />
             </TouchableOpacity>
           </View>
@@ -417,7 +392,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.md,
     right: spacing.md,
-    zIndex: 40,
+    zIndex: 100,
     ...Platform.select({
       android: { elevation: 12 },
       ios: {
@@ -428,15 +403,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  floatingInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    minHeight: 48,
-  },
   heroBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,19 +410,19 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 2,
     borderColor: colors.amber + '66',
-    paddingHorizontal: spacing.md,
-    minHeight: 84,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    minHeight: 96,
+    paddingVertical: spacing.md,
     ...Platform.select({
       android: { elevation: 6 },
     }),
   },
   heroIconWrap: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   heroCopy: { flex: 1 },
   heroLabel: {
@@ -473,7 +439,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   heroSend: {
-    padding: 10,
+    padding: spacing.sm,
   },
   hiddenInput: {
     position: 'absolute',

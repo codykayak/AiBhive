@@ -9,7 +9,6 @@ import AppsScreen from '../screens/AppsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { SideTabBar } from '../components/SideTabBar';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
-import { TabBarControlContext } from '../context/TabBarControlContext';
 import { colors, radii } from '../theme/colors';
 import { countBuildingApps } from '../lib/hiveApps';
 
@@ -36,7 +35,6 @@ export default function TabNavigator() {
   const bottomInset = Math.max(insets.bottom, 10);
   const [buildingCount, setBuildingCount] = useState(0);
   const [sideProps, setSideProps] = useState<BottomTabBarProps | null>(null);
-  const [tabBarHidden, setTabBarHidden] = useState(false);
 
   const phoneTabBarStyle = useMemo(
     () => ({
@@ -67,29 +65,22 @@ export default function TabNavigator() {
   }, []);
 
   return (
-    <TabBarControlContext.Provider value={{ tabBarHidden, setTabBarHidden }}>
-      <View style={styles.shell}>
-        {isDesktop && sideProps ? (
-          <View style={styles.sideRailWrap}>
-            <SideTabBar {...sideProps} />
-          </View>
-        ) : null}
-        <View style={[styles.content, isDesktop && { marginLeft: SIDE_RAIL_WIDTH }]}>
-          <Tab.Navigator
-            safeAreaInsets={{ bottom: isDesktop ? 0 : bottomInset }}
-            tabBar={(props) => (
-              <AdaptiveTabBar isDesktop={isDesktop} onSideProps={setSideProps} {...props} />
-            )}
-            screenOptions={{
-              headerShown: false,
-              tabBarHideOnKeyboard: true,
-              tabBarStyle: isDesktop
-                ? { display: 'none', height: 0 }
-                : {
-                    ...phoneTabBarStyle,
-                    opacity: tabBarHidden ? 0 : 1,
-                    pointerEvents: tabBarHidden ? ('none' as const) : ('auto' as const),
-                  },
+    <View style={styles.shell}>
+      {isDesktop && sideProps ? (
+        <View style={styles.sideRailWrap}>
+          <SideTabBar {...sideProps} />
+        </View>
+      ) : null}
+      <View style={[styles.content, isDesktop && { marginLeft: SIDE_RAIL_WIDTH }]}>
+        <Tab.Navigator
+          safeAreaInsets={{ bottom: isDesktop ? 0 : bottomInset }}
+          tabBar={(props) => (
+            <AdaptiveTabBar isDesktop={isDesktop} onSideProps={setSideProps} {...props} />
+          )}
+          screenOptions={{
+            headerShown: false,
+            tabBarHideOnKeyboard: false,
+            tabBarStyle: isDesktop ? { display: 'none', height: 0 } : phoneTabBarStyle,
             tabBarBackground: isDesktop
               ? undefined
               : () => (
@@ -146,9 +137,8 @@ export default function TabNavigator() {
             }}
           />
         </Tab.Navigator>
-        </View>
       </View>
-    </TabBarControlContext.Provider>
+    </View>
   );
 }
 
