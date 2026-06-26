@@ -1,22 +1,16 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import { Copy, ChevronRight, Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { CompanyResearchPanel } from '../components/CompanyResearchPanel';
+import { CalendarFollowUpSheet } from '../components/CalendarFollowUpSheet';
 import { GlassCard } from '../components/ui';
 import { getJob, statusLabel, updateJob, type JobApplication, type JobStatus } from '../lib/jobs';
 import { colors, radii, spacing } from '../theme/colors';
+import { logScreenVisit } from '../lib/userActivityLog';
 
 const STATUS_OPTIONS: JobStatus[] = ['draft', 'generated', 'submitted', 'interviewing', 'rejected', 'offer'];
 type TabId = 'overview' | 'application' | 'research';
@@ -31,6 +25,13 @@ export default function JobDetailScreen() {
   const [job, setJob] = useState<JobApplication | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabId>(initialTab);
+  const [calendarPrompt, setCalendarPrompt] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      void logScreenVisit('JobDetail', jobId);
+    }, [jobId])
+  );
 
   useEffect(() => {
     const next = route.params?.tab as TabId | undefined;
@@ -57,8 +58,14 @@ export default function JobDetailScreen() {
   };
 
   const setStatus = async (status: JobStatus) => {
+    const prev = job?.status;
     const updated = await updateJob(jobId, { status });
-    if (updated) setJob(updated);
+    if (updated) {
+      setJob(updated);
+      if (status === 'submitted' && prev !== 'submitted') {
+        setCalendarPrompt(true);
+      }
+    }
   };
 
   if (loading || !job) {
@@ -153,6 +160,16 @@ export default function JobDetailScreen() {
           <CompanyResearchPanel job={job} onUpdated={setJob} />
         </View>
       )}
+
+      <CalendarFollowUpSheet
+        visible={calendarPrompt}
+        companyName={job.companyName || job.roleTitle || 'Application'}
+        roleTitle={job.roleTitle}
+        onClose={() => setCalendarPrompt(false)}
+        onAdded={() =>
+          Alert.alert('Added to calendar', 'We will remind you to follow up on this application.')
+        }
+      />
     </ScreenLayout>
   );
 }

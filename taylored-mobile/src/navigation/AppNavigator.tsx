@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import React, { useRef } from 'react';
+import { NavigationContainer, DarkTheme, type NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import TabNavigator from './TabNavigator';
@@ -20,6 +20,7 @@ import IntelAgentScreen from '../screens/IntelAgentScreen';
 import BuildScreen from '../screens/BuildScreen';
 import { HIVE_USER_APPS } from '../userApps';
 import { colors } from '../theme/colors';
+import { useNavigationActivityLogger } from '../hooks/useNavigationActivityLogger';
 
 const Stack = createNativeStackNavigator();
 
@@ -60,8 +61,11 @@ const AiBhiveTheme = {
 };
 
 export default function AppNavigator() {
+  const navRef = useRef<NavigationContainerRef<any>>(null);
+  useNavigationActivityLogger(navRef);
+
   return (
-    <NavigationContainer theme={AiBhiveTheme} linking={linking}>
+    <NavigationContainer ref={navRef} theme={AiBhiveTheme} linking={linking}>
       <Stack.Navigator
         screenOptions={{
           headerStyle: { backgroundColor: colors.bgElevated },

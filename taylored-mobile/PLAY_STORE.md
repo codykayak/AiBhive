@@ -53,22 +53,26 @@ Until then, sideload builds keep auth off (`GOOGLE_AUTH_ENABLED` defaults false)
 
 ## Store listing copy (starter)
 
-- **Short description:** Describe apps in plain English. Hive Magic estimates, builds, and notifies you.
-- **Full description:** Taylored Mobile is your pocket AI factory — job research, custom mini-apps, and Hive Magic builds powered by AiBhive.
+- **Short description:** Your AI pocket factory — build apps, track jobs, get daily motivation.
+- **Full description:** AiBhive is your pocket AI factory — describe tools in plain English, track job applications, run research, and get a daily motivational nudge with smart suggestions. Hive Magic builds notify you with a custom chime when your app is ready. Optional calendar follow-ups when you submit applications.
 - **Category:** Productivity
 - **Contact:** support@aibhive.com
 
-## Build APK on GCP (sideload / beta)
+## v1.7.0 Play readiness notes
 
-From repo root (requires `gcloud` and Cloud Build API):
+| New permission | Why |
+|--------------|-----|
+| `READ_CALENDAR` / `WRITE_CALENDAR` | Optional job follow-up reminders (user taps "Add to calendar") |
+| `POST_NOTIFICATIONS` | Daily motivation + build-ready dings (custom hive chime) |
 
-```bash
-gcloud builds submit --config taylored-mobile/cloudbuild.yaml .
-```
+**Data safety additions:** App activity (screens visited, job counts) stored on-device for proactive suggestions; optional Grok 3 brief via Hive credits. Toggles in Settings → Daily Hive assistant.
 
-Optional: set `_DEPLOY_TO_REPO=true` substitution only if a follow-up step with git credentials is configured (default uploads APK to GCS only).
-
-After build, download APK from the Cloud Build artifacts bucket or run the local publish script if you copied the APK to `public/taylored-mobile.apk`.
+**Pre-submit smoke test:**
+1. Home chat keyboard + Plan/Build toggle (PR #143)
+2. Mark job **Submitted** → calendar prompt appears
+3. Settings → enable daily notification → verify permission prompt
+4. Build completes → custom chime notification
+5. `eas build --platform android --profile production` → upload AAB to Internal testing
 
 ## Sideload beta (current)
 

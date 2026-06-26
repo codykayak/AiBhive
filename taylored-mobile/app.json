@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive",
     "slug": "aibhive-mobile",
-    "version": "1.6.23",
+    "version": "1.7.0",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
         "backgroundColor": "#020617"
       },
       "package": "com.tayloredmobile.app",
-      "versionCode": 38,
+      "versionCode": 40,
       "resizeableActivity": true,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
@@ -38,6 +38,8 @@
         "READ_MEDIA_IMAGES",
         "POST_NOTIFICATIONS",
         "VIBRATE",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
         "REQUEST_INSTALL_PACKAGES",
         "RECORD_AUDIO"
       ]
@@ -54,7 +56,14 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#f59e0b"
+          "color": "#f59e0b",
+          "sounds": ["./assets/sounds/hive-chime.wav"]
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow AiBhive to add job follow-up reminders to your calendar."
         }
       ],
       "expo-sharing",

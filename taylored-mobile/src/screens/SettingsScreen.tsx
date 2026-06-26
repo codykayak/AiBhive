@@ -60,6 +60,14 @@ import {
   NATIVE_APK_DOWNLOAD_URL,
   type UpdateCheckResult,
 } from '../lib/appUpdates';
+import {
+  DEFAULT_PROACTIVE_PREFS,
+  loadProactivePrefs,
+  saveProactivePrefs,
+  type ProactivePrefs,
+} from '../lib/proactivePrefs';
+import { refreshProactiveSchedules } from '../lib/dailyBriefScheduler';
+import { PROACTIVE_MODEL } from '../lib/proactiveAssistant';
 
 const EMPTY_KEYS: Record<ProviderId, string> = {
   gemini: '',
@@ -91,6 +99,7 @@ export default function SettingsScreen() {
   const [updateDownloading, setUpdateDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [otaPending, setOtaPending] = useState(false);
+  const [proactivePrefs, setProactivePrefs] = useState<ProactivePrefs>({ ...DEFAULT_PROACTIVE_PREFS });
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const instructionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -120,6 +129,12 @@ export default function SettingsScreen() {
       setBehavior(loadedBehavior);
     } catch {
       setBehavior({ ...DEFAULT_BEHAVIOR });
+    }
+
+    try {
+      setProactivePrefs(await loadProactivePrefs());
+    } catch {
+      setProactivePrefs({ ...DEFAULT_PROACTIVE_PREFS });
     }
 
     try {
@@ -294,6 +309,13 @@ export default function SettingsScreen() {
     flashSaved('Defaults restored');
   };
 
+  const onProactiveToggle = async (key: keyof ProactivePrefs, value: boolean) => {
+    const next = await saveProactivePrefs({ [key]: value });
+    setProactivePrefs(next);
+    await refreshProactiveSchedules();
+    flashSaved('Hive assistant prefs');
+  };
+
   return (
     <ScreenLayout
       title="Settings"
@@ -306,6 +328,44 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>Plans & usage</Text>
         <PlansPanel usage={usage} currentPlanId={planId} onRefresh={() => void refreshAccount()} />
+
+        <Text style={styles.sectionTitle}>Daily Hive assistant</Text>
+        <GlassCard style={styles.providerCard}>
+          <Text style={styles.providerName}>Motivation & smart nudges</Text>
+          <Text style={styles.hint}>
+            Chat uses Grok 4. Daily briefs and quick insights use {PROACTIVE_MODEL} for low-cost proactive help.
+          </Text>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Daily motivational notification</Text>
+            <Switch
+              value={proactivePrefs.dailyMotivation}
+              onValueChange={(v) => void onProactiveToggle('dailyMotivation', v)}
+              trackColor={{ false: colors.borderMuted, true: colors.amber }}
+              thumbColor={proactivePrefs.dailyMotivation ? colors.amberLight : colors.textDim}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Smart suggestions (Grok 3)</Text>
+            <Switch
+              value={proactivePrefs.smartSuggestions}
+              onValueChange={(v) => void onProactiveToggle('smartSuggestions', v)}
+              trackColor={{ false: colors.borderMuted, true: colors.amber }}
+              thumbColor={proactivePrefs.smartSuggestions ? colors.amberLight : colors.textDim}
+            />
+          </View>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>Calendar follow-up prompts</Text>
+            <Switch
+              value={proactivePrefs.calendarReminders}
+              onValueChange={(v) => void onProactiveToggle('calendarReminders', v)}
+              trackColor={{ false: colors.borderMuted, true: colors.amber }}
+              thumbColor={proactivePrefs.calendarReminders ? colors.amberLight : colors.textDim}
+            />
+          </View>
+          <Text style={styles.hint}>
+            Daily push defaults to {proactivePrefs.dailyHour}:00 local time with the custom AiBhive chime.
+          </Text>
+        </GlassCard>
 
         <Text style={styles.sectionTitle}>Your account</Text>
         <GlassCard style={styles.providerCard}>
@@ -745,6 +805,19 @@ const styles = StyleSheet.create({
   },
   signOutText: {
     color: colors.textMuted,
+    fontWeight: '600',
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    gap: 12,
+  },
+  switchLabel: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

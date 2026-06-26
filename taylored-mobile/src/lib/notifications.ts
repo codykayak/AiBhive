@@ -3,6 +3,15 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { getOrCreateHiveUserId, registerHiveDevice } from './hiveApi';
 
+/** Bundled notification sound (see app.json expo-notifications plugin sounds). */
+export const HIVE_CHIME_SOUND = 'hive-chime.wav';
+
+export const NOTIFICATION_CHANNELS = {
+  hiveMagic: 'hive-magic',
+  daily: 'hive-daily',
+  proactive: 'hive-proactive',
+} as const;
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -15,6 +24,31 @@ Notifications.setNotificationHandler({
 
 let permissionGranted = false;
 
+async function ensureAndroidChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.hiveMagic, {
+    name: 'Hive Magic',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: HIVE_CHIME_SOUND,
+    vibrationPattern: [0, 100, 60, 100],
+    lightColor: '#f59e0b',
+  });
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.daily, {
+    name: 'Daily motivation',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: HIVE_CHIME_SOUND,
+    vibrationPattern: [0, 80, 40, 80],
+  });
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNELS.proactive, {
+    name: 'Smart suggestions',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: HIVE_CHIME_SOUND,
+  });
+}
+
 export async function ensureNotificationPermission(): Promise<boolean> {
   if (permissionGranted) return true;
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -24,23 +58,47 @@ export async function ensureNotificationPermission(): Promise<boolean> {
     final = status;
   }
   permissionGranted = final === 'granted';
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('hive-magic', {
-      name: 'Hive Magic',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
-      vibrationPattern: [0, 120, 80, 120],
-    });
+  if (permissionGranted) {
+    await ensureAndroidChannels();
   }
   return permissionGranted;
 }
 
-export async function dingFeatureReady(title = 'Hive Magic', body = 'Your feature is ready!') {
+type DingOptions = {
+  title?: string;
+  body?: string;
+  channel?: keyof typeof NOTIFICATION_CHANNELS;
+};
+
+export async function dingFeatureReady(
+  title = 'Hive Magic',
+  body = 'Your feature is ready!',
+  opts?: DingOptions
+) {
+  await ensureNotificationPermission();
+  const channelKey = opts?.channel ?? 'hiveMagic';
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: opts?.title ?? title,
+      body: opts?.body ?? body,
+      sound: HIVE_CHIME_SOUND,
+      ...(Platform.OS === 'android' ? { channelId: NOTIFICATION_CHANNELS[channelKey] } : {}),
+    },
+    trigger: null,
+  });
+}
+
+export async function notifyProactive(title: string, body: string): Promise<void> {
   await ensureNotificationPermission();
   await Notifications.scheduleNotificationAsync({
-    content: { title, body, sound: 'default' },
+    content: {
+      title,
+      body,
+      sound: HIVE_CHIME_SOUND,
+      data: { type: 'proactive' },
+      ...(Platform.OS === 'android' ? { channelId: NOTIFICATION_CHANNELS.proactive } : {}),
+    },
     trigger: null,
-    ...(Platform.OS === 'android' ? { channelId: 'hive-magic' } : {}),
   });
 }
 
@@ -66,15 +124,15 @@ export async function registerExpoPushToken(): Promise<string | null> {
     const token = tokenRes?.data;
     if (!token) return null;
     const userId = await getOrCreateHiveUserId();
-    if (!userId || userId.startsWith('anon_')) {
-      // We still send the anonymous id so the server can deliver pushes
-      // before sign-in. The auth-aware server prefers the Firebase uid
-      // when present.
-    }
     const registered = await registerHiveDevice(userId, token, Platform.OS);
     pushRegistered = registered;
     return token;
   } catch {
     return null;
   }
+}
+
+export async function initNotificationServices(): Promise<void> {
+  await ensureNotificationPermission();
+  await registerExpoPushToken();
 }

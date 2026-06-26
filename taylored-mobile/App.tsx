@@ -10,6 +10,8 @@ import { checkForOtaUpdate } from './src/lib/appUpdates';
 import { preloadHiveMission } from './src/lib/hiveMission';
 import { preloadHomeAssistantKnowledge } from './src/lib/homeAssistantKnowledge';
 import { isOnboardingDone, markOnboardingDone } from './src/lib/onboarding';
+import { initNotificationServices } from './src/lib/notifications';
+import { refreshProactiveSchedules } from './src/lib/dailyBriefScheduler';
 import { colors } from './src/theme/colors';
 
 export default function App() {
@@ -19,6 +21,7 @@ export default function App() {
     void preloadHiveMission();
     void preloadHomeAssistantKnowledge();
     void checkForOtaUpdate();
+    void initNotificationServices().then(() => refreshProactiveSchedules());
     isOnboardingDone().then((done) => {
       if (!done) setShowOnboarding(true);
     });

@@ -58,6 +58,7 @@ import {
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
+import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
@@ -1249,6 +1250,48 @@ app.post('/api/hive/home-assist/chat', express.json({ limit: '2mb' }), async (re
   } catch (err) {
     console.error('[hive/home-assist/chat]', err);
     return res.status(500).json({ error: err.message || 'Home chat failed.' });
+  }
+});
+
+app.post('/api/hive/proactive/daily-brief', express.json(), async (req, res) => {
+  try {
+    const { userId, snapshot } = req.body || {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) {
+      return res.status(400).json({ error: 'userId required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runProactiveDailyBrief(db, resolvedUserId, snapshot);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 502;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/proactive/daily-brief]', err);
+    return res.status(500).json({ error: err.message || 'Daily brief failed.' });
+  }
+});
+
+app.post('/api/hive/proactive/insights', express.json(), async (req, res) => {
+  try {
+    const { userId, snapshot } = req.body || {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) {
+      return res.status(400).json({ error: 'userId required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runProactiveInsights(db, resolvedUserId, snapshot);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 502;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/proactive/insights]', err);
+    return res.status(500).json({ error: err.message || 'Insights failed.' });
   }
 });
 

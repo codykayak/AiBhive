@@ -39,6 +39,7 @@ import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { useToast } from '../contexts/ToastContext';
+import { fetchQuickInsights } from '../lib/proactiveAssistant';
 
 type ChatMessage = {
   id: string;
@@ -131,6 +132,7 @@ export function HomeAssistantChat({
   const [loading, setLoading] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<HiveAttachment | null>(null);
   const [mode, setMode] = useState<ComposerMode>('build');
+  const [insightBullets, setInsightBullets] = useState<string[]>([]);
   const pendingInitial = useRef(initialQuery?.trim() || '');
 
   const scrollEnd = useCallback(() => {
@@ -349,6 +351,13 @@ export function HomeAssistantChat({
     if (keyboardOpen) scrollEnd();
   }, [keyboardOpen, scrollEnd]);
 
+  useEffect(() => {
+    if (!expanded) return;
+    void fetchQuickInsights().then((r) => {
+      if (r.bullets.length) setInsightBullets(r.bullets);
+    });
+  }, [expanded]);
+
   const composerProps = {
     value: input,
     onChangeText: setInput,
@@ -452,6 +461,18 @@ export function HomeAssistantChat({
 
           {keyboardOpen ? null : (
             <View style={styles.quickRow}>
+              {insightBullets.map((tip) => (
+                <TouchableOpacity
+                  key={tip}
+                  style={styles.insightChip}
+                  onPress={() => {
+                    setInput(tip);
+                    scrollEnd();
+                  }}
+                >
+                  <Text style={styles.insightChipText}>{tip}</Text>
+                </TouchableOpacity>
+              ))}
               {quickActions.map((q) => {
                 const Icon = q.icon;
                 return (
@@ -606,4 +627,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.9)',
   },
   quickChipText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
+  insightChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(245, 158, 11, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+  },
+  insightChipText: { color: colors.amberLight, fontSize: 12, fontWeight: '700' },
 });
