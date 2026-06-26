@@ -2214,6 +2214,11 @@ app.get('/api/download/apk', async (req, res) => {
     return res.redirect(302, manifest.firebaseGzUrl);
   }
 
+  // Prefer Firebase mirror when published — disk APK may lag until Cloud Run redeploy.
+  if (manifest?.firebaseApkUrl && req.query.compressed !== '1' && req.query.local !== '1') {
+    return res.redirect(302, manifest.firebaseApkUrl);
+  }
+
   const apkPath = resolveApkPath();
   if (!apkPath) {
     if (manifest?.firebaseApkUrl) {

@@ -45,9 +45,22 @@ export type DownloadProgress = {
   downloadedBytes: number;
 };
 
+function isInstallableApkUrl(url: string | undefined): url is string {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  if (lower.includes('.apk.gz') || lower.includes('compressed=1')) return false;
+  if (lower.endsWith('.apk')) return true;
+  if (lower.includes('taylored-mobile.apk')) return true;
+  if (lower.includes('/api/download/apk')) return true;
+  return false;
+}
+
 /** Pick a URL the Android package installer can use (never .gz). */
-export function resolveNativeDownloadUrl(_manifest?: Partial<MobileReleaseManifest> | null): string {
-  // Always prefer the direct API endpoint — streams a real .apk, never a redirect to .gz.
+export function resolveNativeDownloadUrl(manifest?: Partial<MobileReleaseManifest> | null): string {
+  const candidates = [manifest?.firebaseApkUrl, manifest?.fullApkUrl, manifest?.downloadUrl, NATIVE_APK_DOWNLOAD_URL];
+  for (const url of candidates) {
+    if (isInstallableApkUrl(url)) return url;
+  }
   return NATIVE_APK_DOWNLOAD_URL;
 }
 
