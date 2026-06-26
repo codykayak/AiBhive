@@ -58,6 +58,7 @@ import {
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
+import { generateResumeKit } from './resumeBot.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -376,6 +377,28 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 });
 
 // Regular JSON middleware for other endpoints
+// Resume kit — large base64 payloads (resume PDF + job screenshots)
+app.post('/api/hive/resume/generate', express.json({ limit: '12mb' }), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    const { userId, ...payload } = req.body || {};
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) {
+      return res.status(400).json({ error: 'userId required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await generateResumeKit(db, resolvedUserId, payload);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 400;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/resume/generate]', err);
+    return res.status(500).json({ error: err.message || 'Resume generation failed.' });
+  }
+});
+
 app.use(express.json());
 
 // --- Admin API (uses named Firestore DB — same as checkout) ---

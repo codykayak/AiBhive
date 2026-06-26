@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, Maximize2 } from 'lucide-react';
 import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
+import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
@@ -48,11 +49,13 @@ export default function HiveAppRunPage() {
     );
   }
 
+  const Enhanced = getEnhancedExampleApp(app.id);
+
   return (
     <div className="min-h-screen bg-[#070a0f] flex flex-col">
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#070a0f]/95 backdrop-blur">
         <Link
-          to={app.isExample ? '/hive-apps' : `/hive-apps/app/${app.id}`}
+          to={app.isExample ? `/hive-apps?app=${app.id}` : `/hive-apps/app/${app.id}`}
           className="inline-flex items-center gap-1 text-slate-400 hover:text-white text-sm font-semibold"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -76,7 +79,7 @@ export default function HiveAppRunPage() {
         )}
       </header>
       <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        <DynamicAppRunner app={app} expanded />
+        {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
         <p className="text-center text-slate-600 text-xs mt-6">
           Data saved in this browser only ·{' '}
           <Link to={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">

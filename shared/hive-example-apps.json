@@ -61,7 +61,7 @@
     "id": "example-resume-bot",
     "title": "Auto-Bot Resume",
     "tagline": "Tailored resume & cover letter",
-    "summary": "Paste a job description, draft a resume, and iterate. This browser demo uses notes — the mobile app adds AI rewriting and export.",
+    "summary": "Paste a job URL or description, upload your resume, and get AI-tailored cover letter, resume bullets, and cold email — same flow as the mobile app.",
     "theme": "amber",
     "icon": "sparkles",
     "category": "notes",
@@ -100,11 +100,11 @@
         "title": "Full version",
         "type": "info",
         "config": {
-          "body": "In the AiBhive mobile app, Auto-Bot Resume uses AI to rewrite bullets, match keywords, and export PDFs.",
+          "body": "This web runner uses Hive Cloud AI — the same Auto-Bot Resume engine as the AiBhive mobile app.",
           "bullets": [
-            "One-tap tailor per saved job",
-            "Cover letter from the same job description",
-            "Export and share when you're happy"
+            "Job URL scrape + screenshot support",
+            "Cover letter, tailored resume, cold email",
+            "Mobile app adds Job Tracker sync & PDF export"
           ],
           "links": [
             { "label": "Download AiBhive", "url": "https://aibhive.com/download.html" }
