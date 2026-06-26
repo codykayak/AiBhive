@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive",
     "slug": "aibhive-mobile",
-    "version": "1.6.15",
+    "version": "1.6.17",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +29,7 @@
         "backgroundColor": "#020617"
       },
       "package": "com.tayloredmobile.app",
-      "versionCode": 30,
+      "versionCode": 32,
       "resizeableActivity": true,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
@@ -38,7 +38,8 @@
         "READ_MEDIA_IMAGES",
         "POST_NOTIFICATIONS",
         "VIBRATE",
-        "REQUEST_INSTALL_PACKAGES"
+        "REQUEST_INSTALL_PACKAGES",
+        "RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -58,7 +59,14 @@
       ],
       "expo-sharing",
       "./plugins/withLargeScreenSupport.js",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow AiBhive to use the microphone for voice input in chat.",
+          "speechRecognitionPermission": "Allow AiBhive to convert your speech to text in the assistant."
+        }
+      ]
     ],
     "web": {
       "favicon": "./assets/favicon.png"

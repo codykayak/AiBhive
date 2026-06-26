@@ -119,7 +119,7 @@ export function ScreenLayout({
             <View style={styles.topRow}>
               {showBrand ? (
                 <View style={styles.brandRow}>
-                  <HiveLogo size={26} glow />
+                  <HiveLogo size={26} />
                   <Text style={styles.brandText}>AiBhive</Text>
                 </View>
               ) : (

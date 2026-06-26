@@ -1,4 +1,5 @@
-import { sendChatMessage, type ChatTurn } from './llm';
+import { sendChatMessage, generateWithParts, type ChatTurn } from './llm';
+import type { HiveAttachment } from './hiveAttachments';
 import type { ActiveLlmConfig } from './settings';
 import { loadHomeAssistantKnowledge } from './homeAssistantKnowledge';
 import { getMissionPromptBlock } from './hiveMission';
@@ -121,7 +122,7 @@ export async function runHomeAssistantWebSearch(query: string): Promise<
 export async function sendHomeAssistantTurnViaHiveCloud(
   history: ChatTurn[],
   userMessage: string,
-  options: { webSearchContext?: string } = {}
+  options: { webSearchContext?: string; attachment?: HiveAttachment } = {}
 ): Promise<{ ok: true; raw: string } | { ok: false; needPayment?: boolean; amountUsd?: number; error?: string }> {
   try {
     const userId = await getOrCreateHiveUserId();
@@ -138,6 +139,10 @@ export async function sendHomeAssistantTurnViaHiveCloud(
         history: history.map((t) => ({ role: t.role, content: t.content })),
         message: enrichedMessage,
         systemInstruction,
+        attachmentBase64: options.attachment?.base64,
+        attachmentMime: options.attachment?.mimeType,
+        attachmentWidth: options.attachment?.width,
+        attachmentHeight: options.attachment?.height,
       }),
     });
     const data = await res.json();
@@ -213,7 +218,7 @@ async function finalizeHomeAssistantTurn(
 export async function sendHomeAssistantTurn(
   history: ChatTurn[],
   userMessage: string,
-  options: { webSearchContext?: string } = {},
+  options: { webSearchContext?: string; attachment?: HiveAttachment } = {},
   byokConfig?: ActiveLlmConfig | null
 ): Promise<HomeAssistantTurnResult> {
   let raw = '';
@@ -227,10 +232,26 @@ export async function sendHomeAssistantTurn(
       const enrichedMessage = options.webSearchContext
         ? `${userMessage}\n\n[WEB SEARCH RESULTS]\n${options.webSearchContext}`
         : userMessage;
-      raw = await sendChatMessage(byokConfig, history, enrichedMessage, {
-        systemInstructionOverride: systemInstruction,
-        behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 },
-      });
+      if (options.attachment?.base64 && byokConfig.providerId === 'gemini') {
+        raw = await generateWithParts(
+          byokConfig,
+          `${systemInstruction}\n\nRespond ONLY with valid JSON as specified in the knowledge doc. No markdown fences.\n\nUser message:\n${enrichedMessage}`,
+          [
+            {
+              inlineData: {
+                data: options.attachment.base64,
+                mimeType: options.attachment.mimeType || 'image/jpeg',
+              },
+            },
+          ],
+          { behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 } }
+        );
+      } else {
+        raw = await sendChatMessage(byokConfig, history, enrichedMessage, {
+          systemInstructionOverride: systemInstruction,
+          behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 },
+        });
+      }
     } else {
       const action: HomeAssistantAction = {
         reply: cloud.needPayment
