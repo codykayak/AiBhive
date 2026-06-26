@@ -5,8 +5,8 @@
   "releaseNotes": "v1.6.18 — Fix update detection: release manifest syncs with app version; reliable APK download from Settings.",
   "downloadUrl": "https://aibhive.com/api/download/apk",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782449535463%2Ftaylored-mobile.apk.gz?alt=media&token=53f31cd2-9c1f-4521-abfa-02f40e8b1210",
-  "publishedAt": "2026-06-26T07:55:13.042Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782460870616%2Ftaylored-mobile.apk.gz?alt=media&token=78ec1356-6db5-4187-ae04-90e087e9627c",
+  "publishedAt": "2026-06-26T08:01:12.894Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=c9ed51d6-cbe1-4937-9012-4eff466a09cf"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=a0996e06-6ffa-4e11-8160-dc5647da844d"
 }
