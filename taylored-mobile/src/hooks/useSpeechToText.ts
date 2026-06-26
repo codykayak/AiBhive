@@ -7,13 +7,21 @@ import {
 
 type Options = {
   onTranscript: (text: string, isFinal: boolean) => void;
+  onStart?: () => void;
+  onEnd?: () => void;
 };
 
-export function useSpeechToText({ onTranscript }: Options) {
+export function useSpeechToText({ onTranscript, onStart, onEnd }: Options) {
   const [listening, setListening] = useState(false);
 
-  useSpeechRecognitionEvent('start', () => setListening(true));
-  useSpeechRecognitionEvent('end', () => setListening(false));
+  useSpeechRecognitionEvent('start', () => {
+    setListening(true);
+    onStart?.();
+  });
+  useSpeechRecognitionEvent('end', () => {
+    setListening(false);
+    onEnd?.();
+  });
   useSpeechRecognitionEvent('result', (event) => {
     const text = event.results[0]?.transcript?.trim();
     if (text) onTranscript(text, event.isFinal);

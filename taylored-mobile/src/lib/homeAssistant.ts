@@ -59,7 +59,30 @@ function parseJsonBlock(text: string): HomeAssistantAction {
   };
 }
 
-async function buildSystemPrompt(userMessage?: string): Promise<string> {
+export type HomeAssistantMode = 'plan' | 'build';
+
+function buildModeBlock(mode: HomeAssistantMode | undefined): string {
+  if (mode === 'plan') {
+    return [
+      '--- CURRENT INTERACTION MODE: PLAN ONLY ---',
+      'The user has switched the assistant into PLAN ONLY mode. Your job is to DISCUSS, BRAINSTORM, and PLAN — never trigger a real build.',
+      '- Ask clarifying questions whenever the request is vague.',
+      '- Propose detailed app plans (pages, data, UX) and refine them with the user.',
+      '- NEVER set "buildStage" to "confirm". The maximum buildStage allowed is "propose".',
+      '- Always finish with: "Flip the toggle to **Build** when you are ready and I will spin it up." or similar.',
+    ].join('\n');
+  }
+  return [
+    '--- CURRENT INTERACTION MODE: BUILD ---',
+    'The user has the assistant in BUILD mode. You may ask onboarding questions, propose a plan, and once they confirm, set "buildStage" to "confirm" with a complete "buildMessage" spec.',
+    'If the user has not given you enough detail, ASK FOR CLARIFICATION before proposing — see the "Clarify-first rule" in the knowledge doc.',
+  ].join('\n');
+}
+
+async function buildSystemPrompt(
+  userMessage?: string,
+  mode?: HomeAssistantMode
+): Promise<string> {
   const [knowledge, apps, toolkit] = await Promise.all([
     loadHomeAssistantKnowledge(),
     fetchUserApps(),
@@ -91,6 +114,7 @@ async function buildSystemPrompt(userMessage?: string): Promise<string> {
     '--- COMMUNITY TOOLKIT (shared by all users — suggest before building duplicates) ---',
     toolkitList,
     'If the user wants something already in the community toolkit, suggest installing it (free) instead of building from scratch.',
+    buildModeBlock(mode),
     'Respond ONLY with valid JSON as specified in the knowledge doc. No markdown fences.',
   ].join('\n\n');
 }
@@ -122,11 +146,15 @@ export async function runHomeAssistantWebSearch(query: string): Promise<
 export async function sendHomeAssistantTurnViaHiveCloud(
   history: ChatTurn[],
   userMessage: string,
-  options: { webSearchContext?: string; attachment?: HiveAttachment } = {}
+  options: {
+    webSearchContext?: string;
+    attachment?: HiveAttachment;
+    mode?: HomeAssistantMode;
+  } = {}
 ): Promise<{ ok: true; raw: string } | { ok: false; needPayment?: boolean; amountUsd?: number; error?: string }> {
   try {
     const userId = await getOrCreateHiveUserId();
-    const systemInstruction = await buildSystemPrompt(userMessage);
+    const systemInstruction = await buildSystemPrompt(userMessage, options.mode);
     const enrichedMessage = options.webSearchContext
       ? `${userMessage}\n\n[WEB SEARCH RESULTS — use these to answer, then suggest next steps]\n${options.webSearchContext}`
       : userMessage;
@@ -174,7 +202,8 @@ async function finalizeHomeAssistantTurn(
   action: HomeAssistantAction,
   history: ChatTurn[],
   userMessage: string,
-  config: ActiveLlmConfig | null
+  config: ActiveLlmConfig | null,
+  mode: HomeAssistantMode | undefined
 ): Promise<HomeAssistantTurnResult> {
   if (action.needsWebSearch && action.webSearchQuery?.trim()) {
     const search = await runHomeAssistantWebSearch(action.webSearchQuery.trim());
@@ -193,7 +222,18 @@ async function finalizeHomeAssistantTurn(
       };
     }
     const context = `${search.summary}\n\n${search.data}`.slice(0, 12000);
-    return sendHomeAssistantTurn(history, userMessage, { webSearchContext: context }, config);
+    return sendHomeAssistantTurn(history, userMessage, { webSearchContext: context, mode }, config);
+  }
+
+  // Safety net: in plan-only mode, never trigger an actual build, even if the AI ignored the rule.
+  if (mode === 'plan' && action.buildStage === 'confirm') {
+    action = {
+      ...action,
+      buildStage: 'propose',
+      reply:
+        action.reply +
+        '\n\n_(Plan-only mode is on — flip the toggle to **Build** to spin this up for real.)_',
+    };
   }
 
   let buildTask: HiveTask | undefined;
@@ -218,17 +258,22 @@ async function finalizeHomeAssistantTurn(
 export async function sendHomeAssistantTurn(
   history: ChatTurn[],
   userMessage: string,
-  options: { webSearchContext?: string; attachment?: HiveAttachment } = {},
+  options: {
+    webSearchContext?: string;
+    attachment?: HiveAttachment;
+    mode?: HomeAssistantMode;
+  } = {},
   byokConfig?: ActiveLlmConfig | null
 ): Promise<HomeAssistantTurnResult> {
   let raw = '';
+  const mode = options.mode;
 
   if (!options.webSearchContext) {
     const cloud = await sendHomeAssistantTurnViaHiveCloud(history, userMessage, options);
     if (cloud.ok) {
       raw = cloud.raw;
     } else if (byokConfig?.apiKey?.trim()) {
-      const systemInstruction = await buildSystemPrompt(userMessage);
+      const systemInstruction = await buildSystemPrompt(userMessage, mode);
       const enrichedMessage = options.webSearchContext
         ? `${userMessage}\n\n[WEB SEARCH RESULTS]\n${options.webSearchContext}`
         : userMessage;
@@ -264,7 +309,7 @@ export async function sendHomeAssistantTurn(
       return { action };
     }
   } else if (byokConfig?.apiKey?.trim()) {
-    const systemInstruction = await buildSystemPrompt(userMessage);
+    const systemInstruction = await buildSystemPrompt(userMessage, mode);
     raw = await sendChatMessage(byokConfig, history, userMessage, {
       systemInstructionOverride: systemInstruction,
       behavior: { customInstructions: '', responseStyle: 'balanced', maxOutputTokens: 1200 },
@@ -286,5 +331,5 @@ export async function sendHomeAssistantTurn(
   }
 
   const action = await parseAssistantRaw(raw);
-  return finalizeHomeAssistantTurn(action, history, userMessage, byokConfig ?? null);
+  return finalizeHomeAssistantTurn(action, history, userMessage, byokConfig ?? null, mode);
 }
