@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.10",
-  "versionCode": 25,
-  "sourceVersion": "1.6.10",
-  "releaseNotes": "v1.6.10 — Fix startup crash: migrate home hero video from expo-av to expo-video (Android + New Architecture).",
-  "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
-  "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782439254588%2Ftaylored-mobile.apk.gz?alt=media&token=345c336f-adbd-48d4-bea3-762504253a1e",
-  "publishedAt": "2026-06-26T02:00:55.680Z",
+  "shippedNativeVersion": "1.6.11",
+  "versionCode": 26,
+  "sourceVersion": "1.6.11",
+  "releaseNotes": "v1.6.11 — Fix in-app update download: installs direct .apk link instead of .gz mirror.",
+  "downloadUrl": "https://aibhive.com/taylored-mobile.apk",
+  "fullApkUrl": "https://aibhive.com/taylored-mobile.apk",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782440540060%2Ftaylored-mobile.apk.gz?alt=media&token=9f695a4c-4bec-426a-9b59-2a665539e910",
+  "publishedAt": "2026-06-26T02:22:20.962Z",
   "otaChannel": "production"
 }
