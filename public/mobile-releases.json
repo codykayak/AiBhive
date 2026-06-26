@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.13",
-  "versionCode": 28,
-  "sourceVersion": "1.6.13",
-  "releaseNotes": "v1.6.13 — Fix home scroll glitch (stable tab bar slot), bigger chat dock, hide hero video on return to Home.",
+  "shippedNativeVersion": "1.6.14",
+  "versionCode": 29,
+  "sourceVersion": "1.6.14",
+  "releaseNotes": "v1.6.14 — Fix bottom nav and chat dock: tab bar always visible, chat pinned above tabs with more padding, tap-to-open chat (no focus glitch).",
   "downloadUrl": "https://aibhive.com/taylored-mobile.apk",
   "fullApkUrl": "https://aibhive.com/taylored-mobile.apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782443921617%2Ftaylored-mobile.apk.gz?alt=media&token=4e09ddc4-97c6-4fa5-bf46-b854665ee979",
-  "publishedAt": "2026-06-26T03:18:42.571Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782447828498%2Ftaylored-mobile.apk.gz?alt=media&token=7a1bd328-718c-4203-ad95-452afb779cd1",
+  "publishedAt": "2026-06-26T04:23:55.412Z",
   "otaChannel": "production"
 }
