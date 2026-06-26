@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.8",
-  "versionCode": 23,
-  "sourceVersion": "1.6.8",
-  "releaseNotes": "v1.6.8 — Home scroll fix: homepage no longer goes blank when scrolling; collapsible header collapses layout space correctly.",
+  "shippedNativeVersion": "1.6.9",
+  "versionCode": 24,
+  "sourceVersion": "1.6.9",
+  "releaseNotes": "v1.6.9 — Home hero video intro (5s fade into AiBhive Assistant), floating assistant dock, updated app icon, tab bar reveals at scroll end.",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782426281945%2Ftaylored-mobile.apk.gz?alt=media&token=68b86d92-5ec8-4313-9bb3-99f0f58d4dc3",
-  "publishedAt": "2026-06-25T22:24:42.887Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782438079967%2Ftaylored-mobile.apk.gz?alt=media&token=3497311c-20ee-496e-a00a-731fbec6261e",
+  "publishedAt": "2026-06-26T01:41:20.942Z",
   "otaChannel": "production"
 }
