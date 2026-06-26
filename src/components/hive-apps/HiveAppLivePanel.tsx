@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
+import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
@@ -58,9 +59,11 @@ export default function HiveAppLivePanel({ appId, className = '' }: Props) {
     );
   }
 
+  const Enhanced = getEnhancedExampleApp(app.id);
+
   return (
     <div className={`flex flex-col min-h-[480px] ${className}`}>
-      <DynamicAppRunner app={app} expanded />
+      {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
       <p className="text-center text-slate-600 text-xs mt-4">
         Data saves in this browser ·{' '}
         <a href={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">
