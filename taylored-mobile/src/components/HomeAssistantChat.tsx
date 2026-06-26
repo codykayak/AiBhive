@@ -53,7 +53,7 @@ type Props = {
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
   /** Fixed dock at bottom of the screen (Home tab) */
-  variant?: 'inline' | 'floating';
+  variant?: 'inline' | 'floating' | 'hero';
   /** Bottom offset when tab bar is visible (floating mode) */
   tabBarOffset?: number;
 };
@@ -324,6 +324,27 @@ export function HomeAssistantChat({
             />
           )}
         </View>
+      ) : variant === 'hero' ? (
+        <View style={styles.heroSlot}>
+          <View style={styles.heroSlotLogo}>
+            <HiveLogo size={72} glow animate />
+          </View>
+          <Text style={styles.heroSlotTitle}>AiBhive Assistant</Text>
+          <Text style={styles.heroSlotSub}>
+            Ask for a job, research a target, or describe any tool you want built.
+          </Text>
+          {inputBar}
+          {!expanded && (
+            <TextInput
+              style={styles.hiddenInput}
+              value={input}
+              onChangeText={setInput}
+              onFocus={openChat}
+              returnKeyType="send"
+              onSubmitEditing={() => void submit(input)}
+            />
+          )}
+        </View>
       ) : (
         <View
           style={[
@@ -376,6 +397,32 @@ export function HomeAssistantChat({
 
 const styles = StyleSheet.create({
   heroWrap: { marginBottom: spacing.lg },
+  heroSlot: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    paddingVertical: spacing.lg,
+  },
+  heroSlotLogo: {
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  heroSlotTitle: {
+    color: colors.amberLight,
+    fontWeight: '900',
+    fontSize: 26,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  heroSlotSub: {
+    color: colors.textMuted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
+  },
   floatingDock: {
     position: 'absolute',
     left: spacing.md,

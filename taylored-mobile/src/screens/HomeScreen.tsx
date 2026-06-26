@@ -37,11 +37,22 @@ export default function HomeScreen() {
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
+  const [assistantInHero, setAssistantInHero] = useState(false);
+  const [introComplete, setIntroComplete] = useState(false);
 
   const bottomInset = Math.max(insets.bottom, 10);
   const tabBarOffset = tabBarHidden ? 0 : TAB_BAR_BODY_HEIGHT + bottomInset;
-  const scrollBottomPad =
-    ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.lg;
+  const scrollBottomPad = introComplete
+    ? tabBarOffset + bottomInset + spacing.lg
+    : ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.lg;
+
+  const assistantProps = {
+    expanded: assistantExpanded,
+    onExpandChange: setAssistantExpanded,
+    initialQuery: pendingAsk,
+    onInitialQueryConsumed: () => setPendingAsk(undefined),
+    tabBarOffset,
+  };
 
   useEffect(() => {
     preloadHomeAssistantKnowledge();
@@ -70,7 +81,20 @@ export default function HomeScreen() {
           onLayout={onScrollLayout}
           scrollEventThrottle={16}
         >
-          <HomeHeroVideo bottomOverlay={ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md} />
+          <HomeHeroVideo
+            bottomOverlay={
+              assistantInHero
+                ? spacing.md
+                : ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md
+            }
+            onFadeStart={() => setAssistantInHero(true)}
+            onIntroComplete={() => setIntroComplete(true)}
+            assistantSlot={
+              assistantInHero ? (
+                <HomeAssistantChat variant="hero" {...assistantProps} />
+              ) : null
+            }
+          />
 
           <View style={styles.content}>
             <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
@@ -168,14 +192,9 @@ export default function HomeScreen() {
           </View>
         </ScreenScrollView>
 
-        <HomeAssistantChat
-          variant="floating"
-          expanded={assistantExpanded}
-          onExpandChange={setAssistantExpanded}
-          initialQuery={pendingAsk}
-          onInitialQueryConsumed={() => setPendingAsk(undefined)}
-          tabBarOffset={tabBarOffset}
-        />
+        {!assistantInHero ? (
+          <HomeAssistantChat variant="floating" {...assistantProps} />
+        ) : null}
       </View>
     </ScreenLayout>
   );
