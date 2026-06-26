@@ -31,17 +31,28 @@ await signInAnonymously(getAuth(app));
 const sessionId = `mobile-apk-${Date.now()}`;
 const storage = getStorage(app);
 
+const apkRef = ref(storage, 'mobile/taylored-mobile.apk');
+await uploadBytes(apkRef, apk, { contentType: 'application/vnd.android.package-archive' });
+const firebaseApkUrl = await getDownloadURL(apkRef);
+
 const gzRef = ref(storage, `leads/${sessionId}/taylored-mobile.apk.gz`);
 await uploadBytes(gzRef, gz, { contentType: 'application/gzip' });
 const gzUrl = await getDownloadURL(gzRef);
 
+console.log('FIREBASE_APK_URL=' + firebaseApkUrl);
 console.log('FIREBASE_GZ_URL=' + gzUrl);
 console.log('APK_BYTES=' + apk.length);
 console.log('GZ_BYTES=' + gz.length);
 
 const writeRelease = spawnSync(
   process.execPath,
-  ['scripts/write-mobile-release.mjs', '--firebase-gz-url', gzUrl],
+  [
+    'scripts/write-mobile-release.mjs',
+    '--firebase-apk-url',
+    firebaseApkUrl,
+    '--firebase-gz-url',
+    gzUrl,
+  ],
   { cwd: process.cwd(), stdio: 'inherit' }
 );
 if (writeRelease.status !== 0) {

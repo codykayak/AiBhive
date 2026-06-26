@@ -1,6 +1,8 @@
 import * as Updates from 'expo-updates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Linking } from 'react-native';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import { Linking, Platform } from 'react-native';
 import { APP_VERSION, APP_VERSION_CODE } from '../constants/version';
 import { isNewerVersion } from './semver';
 
@@ -15,6 +17,9 @@ function isNativeUpdateAvailable(manifest: MobileReleaseManifest): boolean {
 const HIVE_API_BASE = 'https://aibhive.com';
 const OTA_PENDING_KEY = 'hive_ota_pending_v1';
 
+/** Direct APK endpoint — never the .gz mirror. */
+export const NATIVE_APK_DOWNLOAD_URL = `${HIVE_API_BASE}/api/download/apk`;
+
 export type MobileReleaseManifest = {
   shippedNativeVersion: string;
   versionCode?: number;
@@ -22,6 +27,7 @@ export type MobileReleaseManifest = {
   releaseNotes?: string;
   downloadUrl: string;
   fullApkUrl?: string;
+  firebaseApkUrl?: string;
   firebaseGzUrl?: string;
   publishedAt?: string;
   otaChannel?: string;
@@ -34,10 +40,31 @@ export type UpdateCheckResult =
   | { status: 'offline'; message: string }
   | { status: 'error'; message: string };
 
+export type DownloadProgress = {
+  totalBytes: number;
+  downloadedBytes: number;
+};
+
+function isInstallableApkUrl(url: string | undefined): url is string {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return lower.endsWith('.apk') && !lower.includes('.apk.gz') && !lower.includes('compressed=1');
+}
+
+/** Pick a URL the Android package installer can use (never .gz). */
+export function resolveNativeDownloadUrl(manifest?: Partial<MobileReleaseManifest> | null): string {
+  const candidates = [manifest?.fullApkUrl, manifest?.firebaseApkUrl, manifest?.downloadUrl];
+  for (const url of candidates) {
+    if (isInstallableApkUrl(url)) return url;
+  }
+  return NATIVE_APK_DOWNLOAD_URL;
+}
+
 export async function fetchReleaseManifest(): Promise<MobileReleaseManifest | null> {
   try {
     const res = await fetch(`${HIVE_API_BASE}/api/mobile/releases`, {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
     });
     if (!res.ok) return null;
     return (await res.json()) as MobileReleaseManifest;
@@ -117,19 +144,13 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
 
   const latestNative = manifest.shippedNativeVersion;
   if (isNativeUpdateAvailable(manifest)) {
-    // Direct .apk only — .gz mirrors cannot be installed on Android from the browser.
-    const url =
-      manifest.fullApkUrl ||
-      (manifest.downloadUrl?.includes('compressed=1')
-        ? manifest.downloadUrl.replace('?compressed=1', '').replace('&compressed=1', '')
-        : manifest.downloadUrl) ||
-      `${HIVE_API_BASE}/taylored-mobile.apk`;
+    const url = resolveNativeDownloadUrl(manifest);
     return {
       status: 'native-available',
       latestVersion: latestNative,
       downloadUrl: url,
       releaseNotes: manifest.releaseNotes,
-      message: `Version v${latestNative} is ready. Download and install the new app package.`,
+      message: `Version v${latestNative} is ready. Tap Download update below.`,
     };
   }
 
@@ -155,8 +176,65 @@ export async function checkForAppUpdate(): Promise<UpdateCheckResult> {
   };
 }
 
+async function downloadApkToCache(
+  url: string,
+  onProgress?: (progress: DownloadProgress) => void
+): Promise<string> {
+  const dest = new File(Paths.cache, 'aibhive-update.apk');
+  const file = await File.downloadFileAsync(url, dest, {
+    idempotent: true,
+    onProgress: onProgress
+      ? (p) => {
+          if (p.totalBytes > 0) {
+            onProgress({
+              totalBytes: p.totalBytes,
+              downloadedBytes: p.bytesWritten,
+            });
+          }
+        }
+      : undefined,
+  });
+  return file.uri;
+}
+
+async function promptInstallApk(localUri: string): Promise<void> {
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(localUri, {
+      mimeType: 'application/vnd.android.package-archive',
+      dialogTitle: 'Install AiBhive update',
+    });
+    return;
+  }
+  throw new Error('Install picker unavailable on this device.');
+}
+
+/**
+ * Download and open the Android package installer.
+ * Falls back to the system browser if in-app download fails.
+ */
+export async function downloadNativeUpdate(
+  url?: string,
+  onProgress?: (progress: DownloadProgress) => void
+): Promise<'installed-prompt' | 'browser'> {
+  const target = resolveNativeDownloadUrl(
+    url ? { downloadUrl: url, fullApkUrl: url } : null
+  );
+
+  if (Platform.OS === 'android') {
+    try {
+      const localUri = await downloadApkToCache(target, onProgress);
+      await promptInstallApk(localUri);
+      return 'installed-prompt';
+    } catch {
+      // Browser fallback below
+    }
+  }
+
+  await Linking.openURL(target);
+  return 'browser';
+}
+
+/** @deprecated Use downloadNativeUpdate — kept for callers that only open a link. */
 export async function openUpdateDownload(url: string): Promise<void> {
-  const can = await Linking.canOpenURL(url);
-  if (!can) throw new Error('Cannot open download link on this device.');
-  await Linking.openURL(url);
+  await downloadNativeUpdate(url);
 }

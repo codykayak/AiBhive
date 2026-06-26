@@ -2142,7 +2142,10 @@ app.get('/api/download/apk', async (req, res) => {
 
   const apkPath = resolveApkPath();
   if (!apkPath) {
-    if (manifest?.firebaseGzUrl) {
+    if (manifest?.firebaseApkUrl) {
+      return res.redirect(302, manifest.firebaseApkUrl);
+    }
+    if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {
       return res.redirect(302, manifest.firebaseGzUrl);
     }
     return res.status(404).json({ error: 'APK not available yet. Try again after the mobile build finishes.' });
@@ -2159,9 +2162,13 @@ app.get('/api/download/apk', async (req, res) => {
   return res.sendFile(apkPath);
 });
 
-app.get('/taylored-mobile.apk', (req, res) => {
+app.get('/taylored-mobile.apk', async (req, res) => {
   const apkPath = resolveApkPath();
   if (!apkPath) {
+    const manifest = await getMobileReleaseManifest();
+    if (manifest?.firebaseApkUrl) {
+      return res.redirect(302, manifest.firebaseApkUrl);
+    }
     return res.status(404).send('APK not available yet.');
   }
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
