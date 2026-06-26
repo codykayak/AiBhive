@@ -49,6 +49,9 @@ manifest.otaChannel = manifest.otaChannel || 'production';
 
 if (firebaseApkUrl) {
   manifest.firebaseApkUrl = firebaseApkUrl;
+  // Point download URLs at Firebase so clients get the latest APK before Cloud Run redeploys.
+  manifest.downloadUrl = firebaseApkUrl;
+  manifest.fullApkUrl = firebaseApkUrl;
 }
 
 if (firebaseGzUrl) {
@@ -114,6 +117,8 @@ const defaultNotes = {
     'v1.6.16 — Home chat dock: real text field + mic + send, static hero after video, cleaner logo (no glow).',
   '1.6.17':
     'v1.6.17 — Home chat: attach photos from the dock or full-screen chat; assistant can see your images.',
+  '1.6.18':
+    'v1.6.18 — Fix update detection: release manifest syncs with app version; reliable APK download from Settings.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
