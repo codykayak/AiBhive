@@ -6,14 +6,17 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2, Sparkles } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
-import { HomeAssistantChat } from '../components/HomeAssistantChat';
-import { useTabBarPadding } from '../components/TabScreenContainer';
+import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
+import { HomeHeroVideo } from '../components/HomeHeroVideo';
+import { useTabBarControl } from '../context/TabBarControlContext';
+import { useRevealTabBarAtScrollEnd } from '../hooks/useRevealTabBarAtScrollEnd';
+import { TAB_BAR_BODY_HEIGHT } from '../navigation/TabNavigator';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
 import { colors, radii, spacing } from '../theme/colors';
-import { typography } from '../theme/typography';
 import { listIntelCases } from '../osint/cases';
 import { countBuildingApps } from '../lib/hiveApps';
 import type { IntelCase } from '../osint/types';
@@ -26,12 +29,19 @@ const COMMUNITY_STEPS = [
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
-  const tabBarPadding = useTabBarPadding(24);
+  const insets = useSafeAreaInsets();
   const { isDesktop } = useResponsiveLayout();
+  const { tabBarHidden } = useTabBarControl() ?? { tabBarHidden: true };
+  const { onScroll, onContentSizeChange, onScrollLayout } = useRevealTabBarAtScrollEnd();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
+
+  const bottomInset = Math.max(insets.bottom, 10);
+  const tabBarOffset = tabBarHidden ? 0 : TAB_BAR_BODY_HEIGHT + bottomInset;
+  const scrollBottomPad =
+    ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.lg;
 
   useEffect(() => {
     preloadHomeAssistantKnowledge();
@@ -48,190 +58,146 @@ export default function HomeScreen() {
   }, [refresh]);
 
   return (
-    <ScreenLayout compactBadge contentStyle={styles.screenContent}>
+    <ScreenLayout compactBadge collapsibleHeader={false} edgeToEdge contentStyle={styles.screenContent}>
       <View style={styles.body}>
+        <ScreenScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPad }]}
+          keyboardShouldPersistTaps="handled"
+          onScroll={onScroll}
+          onContentSizeChange={onContentSizeChange}
+          onLayout={onScrollLayout}
+          scrollEventThrottle={16}
+        >
+          <HomeHeroVideo bottomOverlay={ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md} />
+
+          <View style={styles.content}>
+            <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+              <View style={[styles.sideColumn, isDesktop && styles.gridItemWide]}>
+                <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('JobTracker')}>
+                  <Briefcase color={colors.info} size={24} />
+                  <View style={styles.actionCopy}>
+                    <Text style={styles.actionTitle}>Do</Text>
+                    <Text style={styles.actionSub}>Jobs & Auto-Bot Resume</Text>
+                  </View>
+                  <ChevronRight color={colors.textDim} size={20} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionBlock}
+                  onPress={() => {
+                    setAssistantExpanded(true);
+                    setPendingAsk('I want to build a custom tool');
+                  }}
+                >
+                  <Wand2 color={colors.amber} size={24} />
+                  <View style={styles.actionCopy}>
+                    <Text style={styles.actionTitle}>Build</Text>
+                    <Text style={styles.actionSub}>Hive Magic — apps from plain English</Text>
+                  </View>
+                  <ChevronRight color={colors.textDim} size={20} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
+                  <Radar color={colors.purple} size={24} />
+                  <View style={styles.actionCopy}>
+                    <Text style={styles.actionTitle}>Research</Text>
+                    <Text style={styles.actionSub}>Intel on companies, sites & people</Text>
+                  </View>
+                  <ChevronRight color={colors.textDim} size={20} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.sectionHead}>
+              <Share2 color={colors.amberLight} size={18} />
+              <Text style={styles.sectionTitle}>Community app pool</Text>
+            </View>
+            {COMMUNITY_STEPS.map((step) => (
+              <TouchableOpacity
+                key={step.n}
+                style={styles.stepBlock}
+                activeOpacity={0.9}
+                onPress={() => navigation.navigate('Apps')}
+              >
+                <View style={styles.stepNumWrap}>
+                  <Text style={styles.stepNum}>{step.n}</Text>
+                </View>
+                <View style={styles.stepCopy}>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepBody}>{step.body}</Text>
+                </View>
+                <ChevronRight color={colors.textDim} size={20} />
+              </TouchableOpacity>
+            ))}
+
+            {(buildingCount > 0 || recentIntel.length > 0) && (
+              <View style={styles.activity}>
+                <Text style={styles.activityTitle}>Active</Text>
+                {buildingCount > 0 && (
+                  <TouchableOpacity style={styles.activityRow} onPress={() => navigation.navigate('Apps')}>
+                    <Wand2 color={colors.amber} size={16} />
+                    <Text style={styles.activityText}>
+                      {buildingCount} app{buildingCount === 1 ? '' : 's'} building
+                    </Text>
+                    <ChevronRight color={colors.textDim} size={16} />
+                  </TouchableOpacity>
+                )}
+                {recentIntel.map((c) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={styles.activityRow}
+                    onPress={() => navigation.navigate('IntelCase', { caseId: c.id })}
+                  >
+                    <Radar color={colors.purple} size={16} />
+                    <Text style={styles.activityText} numberOfLines={1}>
+                      Research: {c.target.label}
+                    </Text>
+                    <ChevronRight color={colors.textDim} size={16} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.toolkitBlock} onPress={() => navigation.navigate('Apps')}>
+              <Download color={colors.amberLight} size={20} />
+              <Text style={styles.toolkitText}>Open toolkit & community store</Text>
+              <ChevronRight color={colors.amberLight} size={18} />
+            </TouchableOpacity>
+          </View>
+        </ScreenScrollView>
+
         <HomeAssistantChat
+          variant="floating"
           expanded={assistantExpanded}
           onExpandChange={setAssistantExpanded}
           initialQuery={pendingAsk}
           onInitialQueryConsumed={() => setPendingAsk(undefined)}
+          tabBarOffset={tabBarOffset}
         />
-
-        <ScreenScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPadding }]}
-          keyboardShouldPersistTaps="handled"
-        >
-        <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
-          <TouchableOpacity
-            style={[styles.priceBlock, isDesktop && styles.gridItem]}
-            activeOpacity={0.92}
-            onPress={() => navigation.navigate('HiveBuild')}
-          >
-            <Text style={styles.priceEyebrow}>Your first app</Text>
-            <Text style={styles.priceHeadline}>$1 to $5</Text>
-            <Text style={styles.priceSub}>
-              Describe any tool in plain English — live on your phone in under a minute.
-            </Text>
-            <View style={styles.priceCta}>
-              <Sparkles color={colors.black} size={18} />
-              <Text style={styles.priceCtaText}>Build now</Text>
-              <ChevronRight color={colors.black} size={18} />
-            </View>
-          </TouchableOpacity>
-
-          <View style={[styles.sideColumn, isDesktop && styles.gridItem]}>
-            <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('JobTracker')}>
-              <Briefcase color={colors.info} size={24} />
-              <View style={styles.actionCopy}>
-                <Text style={styles.actionTitle}>Do</Text>
-                <Text style={styles.actionSub}>Jobs & Auto-Bot Resume</Text>
-              </View>
-              <ChevronRight color={colors.textDim} size={20} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.actionBlock}
-              onPress={() => {
-                setAssistantExpanded(true);
-                setPendingAsk('I want to build a custom tool');
-              }}
-            >
-              <Wand2 color={colors.amber} size={24} />
-              <View style={styles.actionCopy}>
-                <Text style={styles.actionTitle}>Build</Text>
-                <Text style={styles.actionSub}>Hive Magic — apps from plain English</Text>
-              </View>
-              <ChevronRight color={colors.textDim} size={20} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
-              <Radar color={colors.purple} size={24} />
-              <View style={styles.actionCopy}>
-                <Text style={styles.actionTitle}>Research</Text>
-                <Text style={styles.actionSub}>Intel on companies, sites & people</Text>
-              </View>
-              <ChevronRight color={colors.textDim} size={20} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.sectionHead}>
-          <Share2 color={colors.amberLight} size={18} />
-          <Text style={styles.sectionTitle}>Community app pool</Text>
-        </View>
-        {COMMUNITY_STEPS.map((step) => (
-          <TouchableOpacity
-            key={step.n}
-            style={styles.stepBlock}
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('Apps')}
-          >
-            <View style={styles.stepNumWrap}>
-              <Text style={styles.stepNum}>{step.n}</Text>
-            </View>
-            <View style={styles.stepCopy}>
-              <Text style={styles.stepTitle}>{step.title}</Text>
-              <Text style={styles.stepBody}>{step.body}</Text>
-            </View>
-            <ChevronRight color={colors.textDim} size={20} />
-          </TouchableOpacity>
-        ))}
-
-        {(buildingCount > 0 || recentIntel.length > 0) && (
-          <View style={styles.activity}>
-            <Text style={styles.activityTitle}>Active</Text>
-            {buildingCount > 0 && (
-              <TouchableOpacity style={styles.activityRow} onPress={() => navigation.navigate('Apps')}>
-                <Wand2 color={colors.amber} size={16} />
-                <Text style={styles.activityText}>
-                  {buildingCount} app{buildingCount === 1 ? '' : 's'} building
-                </Text>
-                <ChevronRight color={colors.textDim} size={16} />
-              </TouchableOpacity>
-            )}
-            {recentIntel.map((c) => (
-              <TouchableOpacity
-                key={c.id}
-                style={styles.activityRow}
-                onPress={() => navigation.navigate('IntelCase', { caseId: c.id })}
-              >
-                <Radar color={colors.purple} size={16} />
-                <Text style={styles.activityText} numberOfLines={1}>
-                  Research: {c.target.label}
-                </Text>
-                <ChevronRight color={colors.textDim} size={16} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        <TouchableOpacity style={styles.toolkitBlock} onPress={() => navigation.navigate('Apps')}>
-          <Download color={colors.amberLight} size={20} />
-          <Text style={styles.toolkitText}>Open toolkit & community store</Text>
-          <ChevronRight color={colors.amberLight} size={18} />
-        </TouchableOpacity>
-      </ScreenScrollView>
       </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  screenContent: { paddingHorizontal: spacing.md },
+  screenContent: { paddingHorizontal: 0 },
   body: { flex: 1 },
   scrollView: { flex: 1 },
-  scroll: { paddingTop: spacing.xs },
+  scroll: { flexGrow: 1 },
+  content: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+  },
   grid: { marginBottom: spacing.lg },
   gridDesktop: {
     flexDirection: 'row',
     gap: spacing.md,
     alignItems: 'stretch',
   },
-  gridItem: { flex: 1 },
+  gridItemWide: { flex: 1 },
   sideColumn: { gap: spacing.sm },
-  priceBlock: {
-    width: '100%',
-    backgroundColor: colors.amber,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  priceEyebrow: {
-    color: colors.black,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    opacity: 0.75,
-  },
-  priceHeadline: {
-    color: colors.black,
-    fontSize: 42,
-    fontWeight: '900',
-    marginTop: 4,
-    letterSpacing: -1,
-  },
-  priceSub: {
-    color: colors.black,
-    fontSize: 15,
-    lineHeight: 22,
-    marginTop: spacing.sm,
-    opacity: 0.85,
-  },
-  priceCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.md,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: radii.pill,
-  },
-  priceCtaText: { color: colors.black, fontWeight: '900', fontSize: 15 },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -36,6 +36,8 @@ type ScreenLayoutProps = {
   compactBadge?: boolean;
   /** Hide brand/title row when user scrolls down */
   collapsibleHeader?: boolean;
+  /** Full-bleed body (Home hero video) while keeping the header padded */
+  edgeToEdge?: boolean;
 };
 
 export function ScreenLayout({
@@ -47,6 +49,7 @@ export function ScreenLayout({
   showBrand = true,
   compactBadge = false,
   collapsibleHeader = true,
+  edgeToEdge = false,
 }: ScreenLayoutProps) {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -98,13 +101,20 @@ export function ScreenLayout({
           </Svg>
         </View>
 
-        <View style={[styles.content, { paddingTop: insets.top + 4 }, contentStyle]}>
+        <View
+          style={[
+            styles.content,
+            { paddingTop: insets.top + 4, paddingHorizontal: edgeToEdge ? 0 : spacing.lg },
+            contentStyle,
+          ]}
+        >
           <Animated.View
-            style={
+            style={[
               collapsibleHeader
                 ? { overflow: 'hidden', height: headerHeight, opacity: headerOpacity }
-                : undefined
-            }
+                : undefined,
+              edgeToEdge ? styles.edgeHeader : undefined,
+            ]}
           >
             <View style={styles.topRow}>
               {showBrand ? (
@@ -173,6 +183,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  edgeHeader: {
     paddingHorizontal: spacing.lg,
   },
   topRow: {
