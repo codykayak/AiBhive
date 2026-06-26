@@ -38,13 +38,7 @@ import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
-import {
-  dexInputBarStyle,
-  keyboardAvoidBehavior,
-  keyboardVerticalOffset,
-  useKeyboardInset,
-} from '../hooks/useKeyboardInset';
-import { useResponsiveLayout } from './ResponsiveShell';
+import { keyboardAvoidBehavior, useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { HIVE_COPY } from '../constants/hiveCopy';
@@ -62,17 +56,17 @@ type Props = {
   onExpandChange: (expanded: boolean) => void;
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
-  /** Fixed dock at bottom of the Home screen (in layout flow, above tab bar) */
+  /** Pinned dock on Home tab */
   variant?: 'inline' | 'floating';
 };
 
-/** Blank rows of space below the dock input (visual breathing room above tab bar). */
-export const DOCK_BOTTOM_ROW_COUNT = 5;
+/** Tall home input — ~5 text rows. */
+export const DOCK_INPUT_ROW_COUNT = 5;
 export const DOCK_ROW_HEIGHT = 22;
-export const DOCK_BOTTOM_SPACER = DOCK_BOTTOM_ROW_COUNT * DOCK_ROW_HEIGHT;
+export const DOCK_INPUT_MIN_HEIGHT = DOCK_INPUT_ROW_COUNT * DOCK_ROW_HEIGHT;
 
-/** Total floating dock height — header + input + bottom spacer + padding. */
-export const ASSISTANT_DOCK_HEIGHT = 132 + DOCK_BOTTOM_SPACER;
+/** Header + tall input + action row + padding — used for scroll inset. */
+export const ASSISTANT_DOCK_HEIGHT = 48 + DOCK_INPUT_MIN_HEIGHT + 52 + spacing.md * 2;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
@@ -90,7 +84,6 @@ export function HomeAssistantChat({
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { isWide } = useResponsiveLayout();
   const { keyboardHeight } = useKeyboardInset(0);
   const scrollRef = useRef<ScrollView>(null);
   const dockInputRef = useRef<TextInput>(null);
@@ -341,50 +334,56 @@ export function HomeAssistantChat({
 
   const sendButton = (compact?: boolean) => (
     <TouchableOpacity
-      style={[styles.heroSend, compact && styles.sendBtnCompact, !canSend && styles.sendBtnDisabled]}
+      style={[styles.sendBtn, compact && styles.sendBtnCompact, !canSend && styles.sendBtnDisabled]}
       onPress={() => void submit(input)}
       disabled={!canSend || loading}
       hitSlop={8}
     >
-      <Send color={canSend ? colors.amber : colors.textDim} size={compact ? 20 : 22} />
+      <Send color={canSend ? colors.bg : colors.textDim} size={compact ? 20 : 22} />
     </TouchableOpacity>
   );
 
-  const floatingDockBar = (
+  const homeDockBar = (
     <View style={styles.heroBar}>
       <TouchableOpacity style={styles.heroHeader} activeOpacity={0.85} onPress={openChat}>
-        <HiveLogo size={28} />
+        <HiveLogo size={26} />
         <Text style={styles.heroLabel}>AiBhive Assistant</Text>
         <Maximize2 color={colors.textDim} size={16} />
       </TouchableOpacity>
       {attachmentPreview}
-      <View style={styles.heroInputRow}>
+      <TextInput
+        ref={dockInputRef}
+        style={styles.dockInputBig}
+        placeholder={HOME_INTRO_TAGLINE}
+        placeholderTextColor={colors.textDim}
+        value={input}
+        onChangeText={setInput}
+        multiline
+        textAlignVertical="top"
+        scrollEnabled
+        maxLength={2000}
+      />
+      <View style={styles.dockActionsRow}>
         {imageButton(true)}
-        <TextInput
-          ref={dockInputRef}
-          style={styles.dockInput}
-          placeholder={HOME_INTRO_TAGLINE}
-          placeholderTextColor={colors.textDim}
-          value={input}
-          onChangeText={setInput}
-          returnKeyType="send"
-          onSubmitEditing={() => void submit(input)}
-          multiline={false}
-          maxLength={2000}
-        />
         {micButton(true)}
+        <View style={styles.dockActionsSpacer} />
         {sendButton(true)}
       </View>
-      <View style={styles.dockBottomSpacer} />
     </View>
   );
 
   const floatingDock = !expanded ? (
-    <View style={styles.dockAnchor}>{floatingDockBar}</View>
+    <View style={styles.dockPinned} pointerEvents="box-none">
+      {homeDockBar}
+    </View>
   ) : null;
 
+  const keyboardOpen = keyboardHeight > 0;
+  const modalComposerPad =
+    Platform.OS === 'ios' && keyboardOpen ? spacing.sm : Math.max(insets.bottom, spacing.sm);
+
   const chatBody = (
-    <>
+    <View style={styles.modalChatWrap}>
       <ScrollView
         ref={scrollRef}
         style={styles.chatScroll}
@@ -418,68 +417,52 @@ export function HomeAssistantChat({
         )}
       </ScrollView>
 
-      <View style={styles.quickRow}>
-        {quickActions.map((q) => {
-          const Icon = q.icon;
-          return (
-            <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
-              <Icon size={14} color={colors.amber} />
-              <Text style={styles.quickChipText}>{q.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {!keyboardOpen ? (
+        <View style={styles.quickRow}>
+          {quickActions.map((q) => {
+            const Icon = q.icon;
+            return (
+              <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
+                <Icon size={14} color={colors.amber} />
+                <Text style={styles.quickChipText}>{q.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : null}
 
-      <View
-        style={[
-          styles.composer,
-          dexInputBarStyle(keyboardHeight > 0),
-          { paddingBottom: keyboardHeight > 0 ? spacing.sm : Math.max(insets.bottom, spacing.sm) },
-        ]}
-      >
-        <View style={styles.composerStack}>
-          {attachmentPreview}
-          <View style={styles.composerRow}>
-            {imageButton()}
-            <TextInput
-              ref={modalInputRef}
-              style={styles.composerInput}
-              placeholder={HOME_INTRO_TAGLINE}
-              placeholderTextColor={colors.textDim}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={2000}
-            />
-            {micButton()}
-            <TouchableOpacity
-              style={[styles.sendBtn, (!canSend || loading) && styles.sendBtnDisabled]}
-              onPress={() => void submit(input)}
-              disabled={!canSend || loading}
-            >
-              <Send color={colors.bg} size={20} />
-            </TouchableOpacity>
-          </View>
+      <View style={[styles.composer, { paddingBottom: modalComposerPad }]}>
+        {attachmentPreview}
+        <View style={styles.composerRow}>
+          {imageButton()}
+          <TextInput
+            ref={modalInputRef}
+            style={styles.composerInput}
+            placeholder={HOME_INTRO_TAGLINE}
+            placeholderTextColor={colors.textDim}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            textAlignVertical="top"
+            maxLength={2000}
+          />
+          {micButton()}
+          {sendButton()}
         </View>
       </View>
-    </>
+    </View>
   );
 
   return (
     <>
-      {variant === 'inline' ? (
-        <View style={styles.heroWrap}>
-          {floatingDockBar}
-        </View>
-      ) : variant === 'floating' ? (
-        floatingDock
-      ) : null}
+      {variant === 'inline' ? <View style={styles.heroWrap}>{homeDockBar}</View> : null}
+      {variant === 'floating' ? floatingDock : null}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
         <KeyboardAvoidingView
           style={[styles.modalRoot, { paddingTop: insets.top }]}
           behavior={keyboardAvoidBehavior()}
-          keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
+          keyboardVerticalOffset={0}
         >
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
@@ -494,7 +477,7 @@ export function HomeAssistantChat({
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalBody}>{chatBody}</View>
+          {chatBody}
         </KeyboardAvoidingView>
       </Modal>
     </>
@@ -503,52 +486,17 @@ export function HomeAssistantChat({
 
 const styles = StyleSheet.create({
   heroWrap: { marginBottom: spacing.lg },
-  heroSlot: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    paddingVertical: spacing.lg,
-  },
-  heroSlotLogo: {
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
-  heroSlotTitle: {
-    color: colors.amberLight,
-    fontWeight: '900',
-    fontSize: 26,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  heroSlotSub: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.sm,
-  },
-  floatingDock: {
+  dockPinned: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
-    zIndex: 100,
-    ...Platform.select({
-      android: { elevation: 16 },
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: -2 },
-      },
-    }),
-  },
-  /** In-flow dock at bottom of Home — sits above tab bar, lifts with keyboard (resize / KAV). */
-  dockAnchor: {
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 200,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
     paddingBottom: spacing.xs,
+    ...Platform.select({
+      android: { elevation: 24 },
+    }),
   },
   heroBar: {
     backgroundColor: colors.bgElevated,
@@ -557,14 +505,17 @@ const styles = StyleSheet.create({
     borderColor: colors.amber + '66',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: 0,
+    paddingBottom: spacing.sm,
     gap: spacing.sm,
     ...Platform.select({
-      android: { elevation: 6 },
+      android: { elevation: 8 },
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: -4 },
+      },
     }),
-  },
-  dockBottomSpacer: {
-    height: DOCK_BOTTOM_SPACER,
   },
   heroHeader: {
     flexDirection: 'row',
@@ -572,18 +523,27 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingVertical: 2,
   },
-  heroInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  dockInputBig: {
+    width: '100%',
+    minHeight: DOCK_INPUT_MIN_HEIGHT,
+    maxHeight: DOCK_INPUT_MIN_HEIGHT + 40,
+    color: colors.text,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '600',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.bgInput,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingLeft: spacing.xs,
-    paddingRight: spacing.xs,
-    minHeight: 52,
   },
+  dockActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  dockActionsSpacer: { flex: 1 },
   attachBtn: {
     width: 44,
     height: 44,
@@ -592,9 +552,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   attachBtnCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   attachPreview: {
     flexDirection: 'row',
@@ -618,14 +578,6 @@ const styles = StyleSheet.create({
     color: colors.amberLight,
     fontSize: 12,
     fontWeight: '700',
-  },
-  dockInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-    paddingVertical: 12,
-    minHeight: 44,
   },
   micBtn: {
     width: 44,
@@ -654,20 +606,20 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  heroSend: {
-    padding: spacing.sm,
+  sendBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.amber,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnCompact: {
-    padding: spacing.xs,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
-  hiddenInput: {
-    position: 'absolute',
-    opacity: 0,
-    height: 0,
-    width: 0,
-  },
+  sendBtnDisabled: { opacity: 0.4 },
   modalRoot: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -703,7 +655,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   closeBtn: { padding: 6 },
-  modalBody: { flex: 1 },
+  modalChatWrap: {
+    flex: 1,
+  },
   chatScroll: { flex: 1 },
   chatContent: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.lg },
   bubble: {
@@ -768,9 +722,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.borderMuted,
-  },
-  composerStack: {
-    flex: 1,
+    backgroundColor: colors.bg,
     gap: spacing.sm,
   },
   composerRow: {
@@ -780,10 +732,11 @@ const styles = StyleSheet.create({
   },
   composerInput: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 52,
     maxHeight: 120,
     color: colors.text,
     fontSize: 16,
+    lineHeight: 22,
     paddingHorizontal: 14,
     paddingVertical: 12,
     backgroundColor: colors.bgInput,
@@ -791,13 +744,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.amber,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.4 },
 });

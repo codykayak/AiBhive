@@ -14,7 +14,7 @@ export function HomeHeroBanner() {
         <HiveLogo size={72} />
         <Text style={styles.brand}>AiBhive</Text>
         <Text style={styles.tagline}>{HOME_INTRO_TAGLINE}</Text>
-        <Text style={styles.hint}>Type below or tap the assistant to open full chat</Text>
+        <Text style={styles.hint}>Tap expand for full chat, or type in the box below</Text>
       </View>
     </View>
   );

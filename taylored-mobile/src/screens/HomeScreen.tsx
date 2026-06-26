@@ -4,8 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
@@ -26,8 +24,8 @@ const COMMUNITY_STEPS = [
   { n: '3', title: 'Share back', body: 'Love it? Opt in to share — the hive grows smarter for everyone.' },
 ];
 
-/** Small gap between scroll content and dock */
-const DOCK_TOP_GAP = 8;
+/** Gap between scroll content and pinned dock */
+const DOCK_SCROLL_GAP = spacing.sm;
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -39,7 +37,7 @@ export default function HomeScreen() {
   const [showHeroVideo, setShowHeroVideo] = useState(true);
   const introDoneRef = useRef(false);
 
-  const scrollBottomPad = spacing.md;
+  const scrollBottomPad = ASSISTANT_DOCK_HEIGHT + DOCK_SCROLL_GAP;
 
   useFocusEffect(
     useCallback(() => {
@@ -66,11 +64,7 @@ export default function HomeScreen() {
 
   return (
     <ScreenLayout compactBadge collapsibleHeader={false} edgeToEdge contentStyle={styles.screenContent}>
-      <KeyboardAvoidingView
-        style={styles.body}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-      >
+      <View style={styles.body}>
         <ScreenScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -80,7 +74,7 @@ export default function HomeScreen() {
           {showHeroVideo ? (
             <HomeHeroVideo
               skip={introDoneRef.current}
-              bottomOverlay={ASSISTANT_DOCK_HEIGHT + DOCK_TOP_GAP}
+              bottomOverlay={ASSISTANT_DOCK_HEIGHT + DOCK_SCROLL_GAP}
               onIntroComplete={() => {
                 introDoneRef.current = true;
                 setShowHeroVideo(false);
@@ -193,14 +187,14 @@ export default function HomeScreen() {
           initialQuery={pendingAsk}
           onInitialQueryConsumed={() => setPendingAsk(undefined)}
         />
-      </KeyboardAvoidingView>
+      </View>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: 0 },
-  body: { flex: 1 },
+  body: { flex: 1, position: 'relative' },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1 },
   content: {
