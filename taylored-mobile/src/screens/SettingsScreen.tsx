@@ -55,8 +55,9 @@ import { APP_VERSION, APP_VERSION_CODE } from '../constants/version';
 import {
   applyPendingOtaRestart,
   checkForAppUpdate,
+  downloadNativeUpdate,
   getOtaStatus,
-  openUpdateDownload,
+  NATIVE_APK_DOWNLOAD_URL,
   type UpdateCheckResult,
 } from '../lib/appUpdates';
 
@@ -87,6 +88,8 @@ export default function SettingsScreen() {
   const [saveStatus, setSaveStatus] = useState('');
   const [updateStatus, setUpdateStatus] = useState<UpdateCheckResult | null>(null);
   const [updateChecking, setUpdateChecking] = useState(false);
+  const [updateDownloading, setUpdateDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [otaPending, setOtaPending] = useState(false);
   const saveTimers = useRef<Partial<Record<string, ReturnType<typeof setTimeout>>>>({});
   const instructionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -168,10 +171,29 @@ export default function SettingsScreen() {
 
   const onDownloadUpdate = async () => {
     if (updateStatus?.status !== 'native-available') return;
+    setUpdateDownloading(true);
+    setDownloadProgress(null);
     try {
-      await openUpdateDownload(updateStatus.downloadUrl);
+      const result = await downloadNativeUpdate(updateStatus.downloadUrl, (p) => {
+        if (p.totalBytes > 0) {
+          setDownloadProgress(Math.round((p.downloadedBytes / p.totalBytes) * 100));
+        }
+      });
+      if (result === 'browser') {
+        Alert.alert(
+          'Download started',
+          'Your browser is downloading the update. Open the APK file when it finishes, then tap Install.'
+        );
+      }
     } catch (err) {
-      Alert.alert('Download', err instanceof Error ? err.message : 'Could not open download link.');
+      Alert.alert(
+        'Download failed',
+        (err instanceof Error ? err.message : 'Could not download the update.') +
+          `\n\nTry opening this link in your browser:\n${NATIVE_APK_DOWNLOAD_URL}`
+      );
+    } finally {
+      setUpdateDownloading(false);
+      setDownloadProgress(null);
     }
   };
 
@@ -504,10 +526,23 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           )}
           {updateStatus?.status === 'native-available' && (
-            <TouchableOpacity style={styles.googleBtn} onPress={() => void onDownloadUpdate()}>
-              <Text style={styles.googleBtnText}>
-                {HIVE_COPY.updateInstall} (v{updateStatus.latestVersion})
-              </Text>
+            <TouchableOpacity
+              style={styles.googleBtn}
+              onPress={() => void onDownloadUpdate()}
+              disabled={updateDownloading}
+            >
+              {updateDownloading ? (
+                <View style={styles.downloadRow}>
+                  <ActivityIndicator color={colors.amberLight} size="small" />
+                  <Text style={styles.googleBtnText}>
+                    Downloading…{downloadProgress != null ? ` ${downloadProgress}%` : ''}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.googleBtnText}>
+                  {HIVE_COPY.updateInstall} (v{updateStatus.latestVersion})
+                </Text>
+              )}
             </TouchableOpacity>
           )}
         </GlassCard>
@@ -698,6 +733,11 @@ const styles = StyleSheet.create({
     color: colors.black,
     fontWeight: '800',
     fontSize: 15,
+  },
+  downloadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   signOutBtn: {
     marginTop: spacing.md,

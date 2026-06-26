@@ -18,6 +18,9 @@ function readJson(file) {
 }
 
 const args = process.argv.slice(2);
+const firebaseApkUrl = args.includes('--firebase-apk-url')
+  ? args[args.indexOf('--firebase-apk-url') + 1]
+  : undefined;
 const firebaseGzUrl = args.includes('--firebase-gz-url')
   ? args[args.indexOf('--firebase-gz-url') + 1]
   : undefined;
@@ -39,10 +42,14 @@ if (fs.existsSync(manifestPath)) {
 manifest.shippedNativeVersion = version;
 manifest.versionCode = versionCode;
 manifest.sourceVersion = version;
-manifest.downloadUrl = 'https://aibhive.com/taylored-mobile.apk';
-manifest.fullApkUrl = 'https://aibhive.com/taylored-mobile.apk';
+manifest.downloadUrl = 'https://aibhive.com/api/download/apk';
+manifest.fullApkUrl = 'https://aibhive.com/api/download/apk';
 manifest.publishedAt = new Date().toISOString();
 manifest.otaChannel = manifest.otaChannel || 'production';
+
+if (firebaseApkUrl) {
+  manifest.firebaseApkUrl = firebaseApkUrl;
+}
 
 if (firebaseGzUrl) {
   manifest.firebaseGzUrl = firebaseGzUrl;
@@ -101,6 +108,8 @@ const defaultNotes = {
     'v1.6.13 — Fix home scroll glitch (stable tab bar slot), bigger chat dock, hide hero video on return to Home.',
   '1.6.14':
     'v1.6.14 — Fix bottom nav and chat dock: tab bar always visible, chat pinned above tabs with more padding, tap-to-open chat (no focus glitch).',
+  '1.6.15':
+    'v1.6.15 — Fix in-app update download: downloads APK inside the app and opens the installer (no broken browser/.gz links).',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
