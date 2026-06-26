@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.7.1",
-  "versionCode": 41,
-  "sourceVersion": "1.7.1",
+  "shippedNativeVersion": "1.7.2",
+  "versionCode": 42,
+  "sourceVersion": "1.7.2",
   "releaseNotes": "v1.7.1 — Fixes APK publish (correct signed v1.7.0 build was not uploaded). Same features as 1.7.0.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=f362aa68-b580-4bde-8e90-bcd400446133",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=f362aa68-b580-4bde-8e90-bcd400446133",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782474536239%2Ftaylored-mobile.apk.gz?alt=media&token=bf006e11-4180-4a40-8756-88748a95e690",
-  "publishedAt": "2026-06-26T11:48:58.414Z",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=dc4fece0-f04d-4300-ba53-f3a42a39f64d",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=dc4fece0-f04d-4300-ba53-f3a42a39f64d",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782476040135%2Ftaylored-mobile.apk.gz?alt=media&token=7c7ee7a6-b235-470d-9ac4-7760d799c4ff",
+  "publishedAt": "2026-06-26T12:14:02.858Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=f362aa68-b580-4bde-8e90-bcd400446133"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=dc4fece0-f04d-4300-ba53-f3a42a39f64d"
 }
