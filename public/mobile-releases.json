@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.12",
-  "versionCode": 27,
-  "sourceVersion": "1.6.12",
-  "releaseNotes": "v1.6.12 — Home video fix (Android textureView), assistant pinned to bottom, new intro tagline, tab bar reveals at scroll end.",
+  "shippedNativeVersion": "1.6.13",
+  "versionCode": 28,
+  "sourceVersion": "1.6.13",
+  "releaseNotes": "v1.6.13 — Fix home scroll glitch (stable tab bar slot), bigger chat dock, hide hero video on return to Home.",
   "downloadUrl": "https://aibhive.com/taylored-mobile.apk",
   "fullApkUrl": "https://aibhive.com/taylored-mobile.apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782441238716%2Ftaylored-mobile.apk.gz?alt=media&token=5b01696c-280d-4d2e-ae4b-e4b92eef9a7c",
-  "publishedAt": "2026-06-26T02:33:59.705Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782443921617%2Ftaylored-mobile.apk.gz?alt=media&token=4e09ddc4-97c6-4fa5-bf46-b854665ee979",
+  "publishedAt": "2026-06-26T03:18:42.571Z",
   "otaChannel": "production"
 }
