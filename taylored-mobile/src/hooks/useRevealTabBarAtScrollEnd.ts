@@ -3,8 +3,11 @@ import { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'reac
 import { useFocusEffect } from '@react-navigation/native';
 import { useTabBarControl } from '../context/TabBarControlContext';
 
-/** How close to the bottom (px) before the tab bar appears */
-const BOTTOM_THRESHOLD = 96;
+/** How close to the bottom (px) before the tab bar fades in */
+const BOTTOM_THRESHOLD = 80;
+
+/** Extra space below the floating chat dock */
+export const DOCK_BOTTOM_BUFFER = 10;
 
 /** Hide the bottom tab bar until the user scrolls to the end of the content. */
 export function useRevealTabBarAtScrollEnd() {
@@ -49,10 +52,6 @@ export function useRevealTabBarAtScrollEnd() {
     [evaluate]
   );
 
-  const onScroll = ingestScroll;
-  const onMomentumScrollEnd = ingestScroll;
-  const onScrollEndDrag = ingestScroll;
-
   const onContentSizeChange = useCallback(
     (_width: number, height: number) => {
       metricsRef.current.contentH = height;
@@ -69,5 +68,11 @@ export function useRevealTabBarAtScrollEnd() {
     [evaluate]
   );
 
-  return { onScroll, onMomentumScrollEnd, onScrollEndDrag, onContentSizeChange, onScrollLayout };
-};
+  return {
+    onScroll: ingestScroll,
+    onMomentumScrollEnd: ingestScroll,
+    onScrollEndDrag: ingestScroll,
+    onContentSizeChange,
+    onScrollLayout,
+  };
+}

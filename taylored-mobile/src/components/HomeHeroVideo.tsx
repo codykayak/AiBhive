@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,23 +14,26 @@ export const HOME_INTRO_TAGLINE = "Ask anything, if it doesn't exist we BUILD it
 type Props = {
   /** Height reserved at the bottom for the floating assistant bar */
   bottomOverlay: number;
+  /** Skip video — intro already played this session */
+  skip?: boolean;
   /** Fires when the fade finishes */
   onIntroComplete?: () => void;
 };
 
 /**
- * Full-viewport intro video. After 5s it cross-fades to the tagline (assistant stays pinned at bottom).
+ * Full-viewport intro video (first visit only). After 5s cross-fades to tagline.
  */
-export function HomeHeroVideo({ bottomOverlay, onIntroComplete }: Props) {
+export function HomeHeroVideo({ bottomOverlay, skip = false, onIntroComplete }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const videoOpacity = useRef(new Animated.Value(1)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const onIntroCompleteRef = useRef(onIntroComplete);
-  const [videoMounted, setVideoMounted] = useState(true);
+  const [videoMounted, setVideoMounted] = useState(!skip);
   const [taglineVisible, setTaglineVisible] = useState(false);
+  const [finished, setFinished] = useState(skip);
 
-  const player = useVideoPlayer(HOME_HERO_VIDEO, (instance) => {
+  const player = useVideoPlayer(skip ? null : HOME_HERO_VIDEO, (instance) => {
     instance.loop = true;
     instance.muted = true;
   });
@@ -40,6 +43,7 @@ export function HomeHeroVideo({ bottomOverlay, onIntroComplete }: Props) {
   const heroHeight = Math.max(height - insets.top - bottomOverlay, width * 0.55);
 
   useEffect(() => {
+    if (skip || finished) return;
     const playSub = player.addListener('statusChange', ({ status }) => {
       if (status === 'readyToPlay') {
         player.play();
@@ -47,9 +51,13 @@ export function HomeHeroVideo({ bottomOverlay, onIntroComplete }: Props) {
     });
     player.play();
     return () => playSub.remove();
-  }, [player]);
+  }, [finished, player, skip]);
 
   useEffect(() => {
+    if (skip) {
+      onIntroCompleteRef.current?.();
+      return;
+    }
     const fadeTimer = setTimeout(() => {
       setTaglineVisible(true);
       Animated.parallel([
@@ -70,12 +78,17 @@ export function HomeHeroVideo({ bottomOverlay, onIntroComplete }: Props) {
           // ignore
         }
         setVideoMounted(false);
+        setFinished(true);
         onIntroCompleteRef.current?.();
       });
     }, HERO_VIDEO_PLAY_MS);
 
     return () => clearTimeout(fadeTimer);
-  }, [player, taglineOpacity, videoOpacity]);
+  }, [player, skip, taglineOpacity, videoOpacity]);
+
+  if (skip || finished) {
+    return null;
+  }
 
   return (
     <View style={[styles.wrap, { width, height: heroHeight }]}>

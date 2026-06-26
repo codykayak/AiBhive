@@ -57,9 +57,11 @@ type Props = {
   variant?: 'inline' | 'floating';
   /** Bottom offset when tab bar is visible (floating mode) */
   tabBarOffset?: number;
+  /** Extra padding above the bottom edge */
+  dockBottomBuffer?: number;
 };
 
-export const ASSISTANT_DOCK_HEIGHT = 80;
+export const ASSISTANT_DOCK_HEIGHT = 92;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
@@ -75,6 +77,7 @@ export function HomeAssistantChat({
   onInitialQueryConsumed,
   variant = 'inline',
   tabBarOffset = 0,
+  dockBottomBuffer = 0,
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -233,7 +236,7 @@ export function HomeAssistantChat({
       style={[
         styles.floatingDock,
         {
-          bottom: tabBarOffset + Math.max(insets.bottom, 8),
+          bottom: tabBarOffset + Math.max(insets.bottom, 8) + dockBottomBuffer,
         },
       ]}
     >
@@ -428,11 +431,11 @@ const styles = StyleSheet.create({
   floatingInput: {
     flex: 1,
     color: colors.text,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 4,
-    minHeight: 44,
+    minHeight: 48,
   },
   heroBar: {
     flexDirection: 'row',
@@ -442,7 +445,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.amber + '66',
     paddingHorizontal: spacing.md,
-    minHeight: 72,
+    minHeight: 84,
+    paddingVertical: spacing.sm,
     ...Platform.select({
       android: { elevation: 6 },
     }),

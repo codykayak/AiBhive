@@ -97,6 +97,8 @@ const defaultNotes = {
     'v1.6.11 — Fix in-app update download: installs direct .apk link instead of .gz mirror.',
   '1.6.12':
     'v1.6.12 — Home video fix (Android textureView), assistant pinned to bottom, new intro tagline, tab bar reveals at scroll end.',
+  '1.6.13':
+    'v1.6.13 — Fix home scroll glitch (stable tab bar slot), bigger chat dock, hide hero video on return to Home.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

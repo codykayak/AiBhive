@@ -85,9 +85,11 @@ export default function TabNavigator() {
               tabBarHideOnKeyboard: true,
               tabBarStyle: isDesktop
                 ? { display: 'none', height: 0 }
-                : tabBarHidden
-                  ? { display: 'none', height: 0, overflow: 'hidden' as const }
-                  : phoneTabBarStyle,
+                : {
+                    ...phoneTabBarStyle,
+                    opacity: tabBarHidden ? 0 : 1,
+                    pointerEvents: tabBarHidden ? ('none' as const) : ('auto' as const),
+                  },
             tabBarBackground: isDesktop
               ? undefined
               : () => (

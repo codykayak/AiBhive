@@ -1,18 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
 import { HomeHeroVideo } from '../components/HomeHeroVideo';
-import { useTabBarControl } from '../context/TabBarControlContext';
-import { useRevealTabBarAtScrollEnd } from '../hooks/useRevealTabBarAtScrollEnd';
+import { useRevealTabBarAtScrollEnd, DOCK_BOTTOM_BUFFER } from '../hooks/useRevealTabBarAtScrollEnd';
 import { TAB_BAR_BODY_HEIGHT } from '../navigation/TabNavigator';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
@@ -31,26 +30,37 @@ export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { isDesktop } = useResponsiveLayout();
-  const { tabBarHidden } = useTabBarControl() ?? { tabBarHidden: true };
   const { onScroll, onMomentumScrollEnd, onScrollEndDrag, onContentSizeChange, onScrollLayout } =
     useRevealTabBarAtScrollEnd();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
+  const [showHeroVideo, setShowHeroVideo] = useState(true);
+  const introDoneRef = useRef(false);
 
   const bottomInset = Math.max(insets.bottom, 10);
-  const tabBarOffset = tabBarHidden ? 0 : TAB_BAR_BODY_HEIGHT + bottomInset;
+  /** Always reserve tab bar space so the dock/scroll padding never jump */
+  const tabBarReserved = TAB_BAR_BODY_HEIGHT + bottomInset;
   const scrollBottomPad =
-    ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.xl;
+    ASSISTANT_DOCK_HEIGHT + tabBarReserved + DOCK_BOTTOM_BUFFER + spacing.xl;
 
   const assistantProps = {
     expanded: assistantExpanded,
     onExpandChange: setAssistantExpanded,
     initialQuery: pendingAsk,
     onInitialQueryConsumed: () => setPendingAsk(undefined),
-    tabBarOffset,
+    tabBarOffset: tabBarReserved,
+    dockBottomBuffer: DOCK_BOTTOM_BUFFER,
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (introDoneRef.current) {
+        setShowHeroVideo(false);
+      }
+    }, [])
+  );
 
   useEffect(() => {
     preloadHomeAssistantKnowledge();
@@ -81,7 +91,16 @@ export default function HomeScreen() {
           onLayout={onScrollLayout}
           scrollEventThrottle={16}
         >
-          <HomeHeroVideo bottomOverlay={ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md} />
+          {showHeroVideo ? (
+            <HomeHeroVideo
+              skip={introDoneRef.current}
+              bottomOverlay={ASSISTANT_DOCK_HEIGHT + tabBarReserved + DOCK_BOTTOM_BUFFER}
+              onIntroComplete={() => {
+                introDoneRef.current = true;
+                setShowHeroVideo(false);
+              }}
+            />
+          ) : null}
 
           <View style={styles.content}>
             <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
