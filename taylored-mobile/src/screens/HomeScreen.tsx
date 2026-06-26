@@ -32,19 +32,17 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { isDesktop } = useResponsiveLayout();
   const { tabBarHidden } = useTabBarControl() ?? { tabBarHidden: true };
-  const { onScroll, onContentSizeChange, onScrollLayout } = useRevealTabBarAtScrollEnd();
+  const { onScroll, onMomentumScrollEnd, onScrollEndDrag, onContentSizeChange, onScrollLayout } =
+    useRevealTabBarAtScrollEnd();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
   const [buildingCount, setBuildingCount] = useState(0);
-  const [assistantInHero, setAssistantInHero] = useState(false);
-  const [introComplete, setIntroComplete] = useState(false);
 
   const bottomInset = Math.max(insets.bottom, 10);
   const tabBarOffset = tabBarHidden ? 0 : TAB_BAR_BODY_HEIGHT + bottomInset;
-  const scrollBottomPad = introComplete
-    ? tabBarOffset + bottomInset + spacing.lg
-    : ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.lg;
+  const scrollBottomPad =
+    ASSISTANT_DOCK_HEIGHT + tabBarOffset + bottomInset + spacing.xl;
 
   const assistantProps = {
     expanded: assistantExpanded,
@@ -77,24 +75,13 @@ export default function HomeScreen() {
           contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPad }]}
           keyboardShouldPersistTaps="handled"
           onScroll={onScroll}
+          onMomentumScrollEnd={onMomentumScrollEnd}
+          onScrollEndDrag={onScrollEndDrag}
           onContentSizeChange={onContentSizeChange}
           onLayout={onScrollLayout}
           scrollEventThrottle={16}
         >
-          <HomeHeroVideo
-            bottomOverlay={
-              assistantInHero
-                ? spacing.md
-                : ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md
-            }
-            onFadeStart={() => setAssistantInHero(true)}
-            onIntroComplete={() => setIntroComplete(true)}
-            assistantSlot={
-              assistantInHero ? (
-                <HomeAssistantChat variant="hero" {...assistantProps} />
-              ) : null
-            }
-          />
+          <HomeHeroVideo bottomOverlay={ASSISTANT_DOCK_HEIGHT + bottomInset + spacing.md} />
 
           <View style={styles.content}>
             <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
@@ -192,9 +179,7 @@ export default function HomeScreen() {
           </View>
         </ScreenScrollView>
 
-        {!assistantInHero ? (
-          <HomeAssistantChat variant="floating" {...assistantProps} />
-        ) : null}
+        <HomeAssistantChat variant="floating" {...assistantProps} />
       </View>
     </ScreenLayout>
   );

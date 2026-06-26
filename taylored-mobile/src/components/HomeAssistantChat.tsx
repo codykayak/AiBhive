@@ -32,6 +32,7 @@ import { createIntelCase, inferTargetTypeFromLabel, resolveDomainFromTarget } fr
 import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
+import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
 import {
   dexInputBarStyle,
   keyboardAvoidBehavior,
@@ -53,15 +54,15 @@ type Props = {
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
   /** Fixed dock at bottom of the screen (Home tab) */
-  variant?: 'inline' | 'floating' | 'hero';
+  variant?: 'inline' | 'floating';
   /** Bottom offset when tab bar is visible (floating mode) */
   tabBarOffset?: number;
 };
 
-export const ASSISTANT_DOCK_HEIGHT = 76;
+export const ASSISTANT_DOCK_HEIGHT = 80;
 
 const WELCOME =
-  'Hi — I\'m your AiBhive assistant. Ask for a job, research a target, or describe any tool you want built. Uses Hive credits by default — no API key needed.';
+  "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
 
 function newId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -227,6 +228,43 @@ export function HomeAssistantChat({
     setTimeout(() => inputRef.current?.focus(), 120);
   };
 
+  const floatingDock = (
+    <View
+      style={[
+        styles.floatingDock,
+        {
+          bottom: tabBarOffset + Math.max(insets.bottom, 8),
+        },
+      ]}
+    >
+      <View style={styles.heroBar}>
+        <View style={styles.heroIconWrap}>
+          <HiveLogo size={36} glow />
+        </View>
+        <TextInput
+          ref={inputRef}
+          style={styles.floatingInput}
+          placeholder={HOME_INTRO_TAGLINE}
+          placeholderTextColor={colors.textDim}
+          value={input}
+          onChangeText={setInput}
+          onFocus={() => onExpandChange(true)}
+          returnKeyType="send"
+          onSubmitEditing={() => void submit(input)}
+          multiline={false}
+          maxLength={2000}
+        />
+        <TouchableOpacity
+          style={styles.heroSend}
+          onPress={() => (input.trim() ? void submit(input) : openChat())}
+          disabled={loading}
+        >
+          <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const inputBar = (
     <TouchableOpacity style={styles.heroBar} activeOpacity={0.94} onPress={openChat}>
       <View style={styles.heroIconWrap}>
@@ -234,8 +272,8 @@ export function HomeAssistantChat({
       </View>
       <View style={styles.heroCopy}>
         <Text style={styles.heroLabel}>AiBhive Assistant</Text>
-        <Text style={styles.heroPlaceholder} numberOfLines={1}>
-          {input.trim() || 'Ask anything — jobs, research, build a tool…'}
+        <Text style={styles.heroPlaceholder} numberOfLines={2}>
+          {input.trim() || HOME_INTRO_TAGLINE}
         </Text>
       </View>
       <TouchableOpacity
@@ -290,7 +328,7 @@ export function HomeAssistantChat({
         <TextInput
           ref={inputRef}
           style={styles.composerInput}
-          placeholder="Ask anything — jobs, research, build a tool…"
+          placeholder={HOME_INTRO_TAGLINE}
           placeholderTextColor={colors.textDim}
           value={input}
           onChangeText={setInput}
@@ -313,61 +351,10 @@ export function HomeAssistantChat({
       {variant === 'inline' ? (
         <View style={styles.heroWrap}>
           {inputBar}
-          {!expanded && (
-            <TextInput
-              style={styles.hiddenInput}
-              value={input}
-              onChangeText={setInput}
-              onFocus={openChat}
-              returnKeyType="send"
-              onSubmitEditing={() => void submit(input)}
-            />
-          )}
         </View>
-      ) : variant === 'hero' ? (
-        <View style={styles.heroSlot}>
-          <View style={styles.heroSlotLogo}>
-            <HiveLogo size={72} glow animate />
-          </View>
-          <Text style={styles.heroSlotTitle}>AiBhive Assistant</Text>
-          <Text style={styles.heroSlotSub}>
-            Ask for a job, research a target, or describe any tool you want built.
-          </Text>
-          {inputBar}
-          {!expanded && (
-            <TextInput
-              style={styles.hiddenInput}
-              value={input}
-              onChangeText={setInput}
-              onFocus={openChat}
-              returnKeyType="send"
-              onSubmitEditing={() => void submit(input)}
-            />
-          )}
-        </View>
-      ) : (
-        <View
-          style={[
-            styles.floatingDock,
-            {
-              bottom: tabBarOffset + Math.max(insets.bottom, 8),
-            },
-          ]}
-          pointerEvents="box-none"
-        >
-          {inputBar}
-          {!expanded && (
-            <TextInput
-              style={styles.hiddenInput}
-              value={input}
-              onChangeText={setInput}
-              onFocus={openChat}
-              returnKeyType="send"
-              onSubmitEditing={() => void submit(input)}
-            />
-          )}
-        </View>
-      )}
+      ) : variant === 'floating' ? (
+        floatingDock
+      ) : null}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={() => onExpandChange(false)}>
         <KeyboardAvoidingView
@@ -427,7 +414,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.md,
     right: spacing.md,
-    zIndex: 30,
+    zIndex: 40,
+    ...Platform.select({
+      android: { elevation: 12 },
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: -2 },
+      },
+    }),
+  },
+  floatingInput: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '600',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    minHeight: 44,
   },
   heroBar: {
     flexDirection: 'row',

@@ -3,7 +3,8 @@ import { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'reac
 import { useFocusEffect } from '@react-navigation/native';
 import { useTabBarControl } from '../context/TabBarControlContext';
 
-const BOTTOM_THRESHOLD = 48;
+/** How close to the bottom (px) before the tab bar appears */
+const BOTTOM_THRESHOLD = 96;
 
 /** Hide the bottom tab bar until the user scrolls to the end of the content. */
 export function useRevealTabBarAtScrollEnd() {
@@ -16,11 +17,10 @@ export function useRevealTabBarAtScrollEnd() {
     if (!tabBarControl) return;
 
     const { contentH, layoutH, offsetY } = metricsRef.current;
-    if (layoutH <= 0) return;
+    if (layoutH <= 0 || contentH <= 0) return;
 
-    const fitsOnScreen = contentH <= layoutH + 4;
-    const atBottom =
-      fitsOnScreen || offsetY + layoutH >= contentH - BOTTOM_THRESHOLD;
+    const maxScroll = Math.max(contentH - layoutH, 0);
+    const atBottom = maxScroll <= BOTTOM_THRESHOLD || offsetY >= maxScroll - BOTTOM_THRESHOLD;
 
     if (atBottom !== atBottomRef.current) {
       atBottomRef.current = atBottom;
@@ -36,7 +36,7 @@ export function useRevealTabBarAtScrollEnd() {
     }, [tabBar])
   );
 
-  const onScroll = useCallback(
+  const ingestScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
       metricsRef.current = {
@@ -48,6 +48,10 @@ export function useRevealTabBarAtScrollEnd() {
     },
     [evaluate]
   );
+
+  const onScroll = ingestScroll;
+  const onMomentumScrollEnd = ingestScroll;
+  const onScrollEndDrag = ingestScroll;
 
   const onContentSizeChange = useCallback(
     (_width: number, height: number) => {
@@ -65,5 +69,5 @@ export function useRevealTabBarAtScrollEnd() {
     [evaluate]
   );
 
-  return { onScroll, onContentSizeChange, onScrollLayout };
-}
+  return { onScroll, onMomentumScrollEnd, onScrollEndDrag, onContentSizeChange, onScrollLayout };
+};

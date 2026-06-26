@@ -1,60 +1,64 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, spacing } from '../theme/colors';
 
 const HOME_HERO_VIDEO = require('../../assets/home-hero.mp4');
 
 export const HERO_VIDEO_PLAY_MS = 5000;
 export const HERO_VIDEO_FADE_MS = 900;
 
+export const HOME_INTRO_TAGLINE = "Ask anything, if it doesn't exist we BUILD it";
+
 type Props = {
-  /** Height reserved at the bottom for the floating assistant bar (during video) */
+  /** Height reserved at the bottom for the floating assistant bar */
   bottomOverlay: number;
-  /** Shown as the video fades — typically the assistant hero panel */
-  assistantSlot?: React.ReactNode;
-  /** Fires when the 5s timer ends and the cross-fade begins */
-  onFadeStart?: () => void;
-  /** Fires when the fade finishes and the assistant owns the hero */
+  /** Fires when the fade finishes */
   onIntroComplete?: () => void;
 };
 
 /**
- * Full-viewport intro video. After 5s it cross-fades out and the assistant slot fades in.
- * Uses expo-video (expo-av crashes on Android with New Architecture enabled).
+ * Full-viewport intro video. After 5s it cross-fades to the tagline (assistant stays pinned at bottom).
  */
-export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onIntroComplete }: Props) {
+export function HomeHeroVideo({ bottomOverlay, onIntroComplete }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const videoOpacity = useRef(new Animated.Value(1)).current;
-  const assistantOpacity = useRef(new Animated.Value(0)).current;
-  const onFadeStartRef = useRef(onFadeStart);
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
   const onIntroCompleteRef = useRef(onIntroComplete);
   const [videoMounted, setVideoMounted] = useState(true);
-  const [assistantReady, setAssistantReady] = useState(false);
+  const [taglineVisible, setTaglineVisible] = useState(false);
 
   const player = useVideoPlayer(HOME_HERO_VIDEO, (instance) => {
-    instance.loop = false;
+    instance.loop = true;
     instance.muted = true;
-    instance.play();
   });
 
-  onFadeStartRef.current = onFadeStart;
   onIntroCompleteRef.current = onIntroComplete;
 
   const heroHeight = Math.max(height - insets.top - bottomOverlay, width * 0.55);
 
   useEffect(() => {
+    const playSub = player.addListener('statusChange', ({ status }) => {
+      if (status === 'readyToPlay') {
+        player.play();
+      }
+    });
+    player.play();
+    return () => playSub.remove();
+  }, [player]);
+
+  useEffect(() => {
     const fadeTimer = setTimeout(() => {
-      onFadeStartRef.current?.();
-      setAssistantReady(true);
+      setTaglineVisible(true);
       Animated.parallel([
         Animated.timing(videoOpacity, {
           toValue: 0,
           duration: HERO_VIDEO_FADE_MS,
           useNativeDriver: true,
         }),
-        Animated.timing(assistantOpacity, {
+        Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: HERO_VIDEO_FADE_MS,
           useNativeDriver: true,
@@ -63,7 +67,7 @@ export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onInt
         try {
           player.pause();
         } catch {
-          // Player may already be released
+          // ignore
         }
         setVideoMounted(false);
         onIntroCompleteRef.current?.();
@@ -71,7 +75,7 @@ export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onInt
     }, HERO_VIDEO_PLAY_MS);
 
     return () => clearTimeout(fadeTimer);
-  }, [assistantOpacity, player, videoOpacity]);
+  }, [player, taglineOpacity, videoOpacity]);
 
   return (
     <View style={[styles.wrap, { width, height: heroHeight }]}>
@@ -79,18 +83,19 @@ export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onInt
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: videoOpacity }]}>
           <VideoView
             player={player}
-            style={StyleSheet.absoluteFill}
+            style={styles.video}
             contentFit="cover"
             nativeControls={false}
             allowsPictureInPicture={false}
+            surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
           />
           <View style={styles.scrim} pointerEvents="none" />
         </Animated.View>
       ) : null}
 
-      {assistantReady ? (
-        <Animated.View style={[styles.assistantLayer, { opacity: assistantOpacity }]}>
-          {assistantSlot}
+      {taglineVisible ? (
+        <Animated.View style={[styles.taglineLayer, { opacity: taglineOpacity }]} pointerEvents="none">
+          <Text style={styles.tagline}>{HOME_INTRO_TAGLINE}</Text>
         </Animated.View>
       ) : null}
     </View>
@@ -102,13 +107,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#020617',
   },
+  video: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
   scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(2, 6, 23, 0.18)',
+    backgroundColor: 'rgba(2, 6, 23, 0.12)',
   },
-  assistantLayer: {
+  taglineLayer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  tagline: {
+    color: colors.amberLight,
+    fontSize: 26,
+    fontWeight: '900',
+    textAlign: 'center',
+    lineHeight: 34,
+    letterSpacing: 0.2,
   },
 });

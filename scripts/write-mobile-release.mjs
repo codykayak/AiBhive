@@ -95,6 +95,8 @@ const defaultNotes = {
     'v1.6.10 — Fix startup crash: migrate home hero video from expo-av to expo-video (Android + New Architecture).',
   '1.6.11':
     'v1.6.11 — Fix in-app update download: installs direct .apk link instead of .gz mirror.',
+  '1.6.12':
+    'v1.6.12 — Home video fix (Android textureView), assistant pinned to bottom, new intro tagline, tab bar reveals at scroll end.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
