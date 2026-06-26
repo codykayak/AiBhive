@@ -79,7 +79,7 @@ export default function TabNavigator() {
           )}
           screenOptions={{
             headerShown: false,
-            tabBarHideOnKeyboard: false,
+            tabBarHideOnKeyboard: true,
             tabBarStyle: isDesktop ? { display: 'none', height: 0 } : phoneTabBarStyle,
             tabBarBackground: isDesktop
               ? undefined
