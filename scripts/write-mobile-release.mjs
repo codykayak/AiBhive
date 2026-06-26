@@ -124,6 +124,8 @@ const defaultNotes = {
     'v1.6.21 — Big home chat input (~5 rows), pinned above keyboard; full-screen chat overlap fixed.',
   '1.7.0':
     'v1.7.0 — Custom hive chime, daily motivation (Grok 3), calendar follow-ups, activity-aware suggestions. Plan/Build chat toggle.',
+  '1.7.1':
+    'v1.7.1 — Fixes APK publish (correct signed v1.7.0 build was not uploaded). Same features as 1.7.0.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

@@ -43,6 +43,9 @@ if [[ -f "$APP_BUILD_GRADLE" ]] && ! grep -q 'checkReleaseBuilds false' "$APP_BU
   sed -i '/^android {/a\    lint {\n        checkReleaseBuilds false\n        abortOnError false\n    }' "$APP_BUILD_GRADLE"
 fi
 
+echo "==> Wire release keystore (prebuild defaults to debug signing)"
+node scripts/patch-release-signing.mjs
+
 cd android
 sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006" >/dev/null
 yes | sdkmanager --licenses >/dev/null 2>&1 || true
@@ -57,4 +60,8 @@ echo "==> Gradle assembleRelease (arm phones only, lint disabled)"
   -Pandroid.injected.signing.key.alias=taylored-release \
   -Pandroid.injected.signing.key.password=taylored2026
 
-echo "==> APK ready at android/app/build/outputs/apk/release/app-release.apk"
+APK_OUT="app/build/outputs/apk/release/app-release.apk"
+PUBLIC_APK="../../public/taylored-mobile.apk"
+cp "$APK_OUT" "$PUBLIC_APK"
+echo "==> APK ready at android/$APK_OUT (copied to public/taylored-mobile.apk)"
+node ../scripts/verify-built-apk.mjs "$APK_OUT"
