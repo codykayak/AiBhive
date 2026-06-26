@@ -31,6 +31,7 @@ import {
   getStoreCatalog,
 } from './hiveAppsApi.js';
 import { listPublishedWebApps } from './hiveWebAppsRegistry.js';
+import { listPlatformWebApps } from './platformWebApps.js';
 import { getExampleApp, installExampleApp, listExampleApps } from './hiveExampleApps.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 import {
@@ -1961,7 +1962,7 @@ app.get('/api/hive/store', async (req, res) => {
     const category = String(req.query.category || '').trim();
     const limit = Math.min(Number(req.query.limit) || 48, 48);
     const catalog = await getStoreCatalog(db, { query: q, category, limit });
-    const webApps = listPublishedWebApps();
+    const webApps = [...listPlatformWebApps(), ...listPublishedWebApps()];
     return res.json({ ...catalog, webApps });
   } catch (err) {
     console.error('[hive/store] catalog error:', err);
@@ -1971,7 +1972,7 @@ app.get('/api/hive/store', async (req, res) => {
 
 app.get('/api/hive/web-apps', async (_req, res) => {
   try {
-    return res.json({ apps: listPublishedWebApps() });
+    return res.json({ apps: [...listPlatformWebApps(), ...listPublishedWebApps()] });
   } catch (err) {
     console.error('[hive/web-apps] list error:', err);
     return res.status(500).json({ error: 'Could not load web apps.' });

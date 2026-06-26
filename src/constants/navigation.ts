@@ -38,9 +38,7 @@ export const SOLUTION_CATEGORIES = [
 export const TRANSCRIPTION_SERVICES_LINKS = [
   { name: 'Transcription Studio', path: '/transcription' },
   { name: 'Voice Clone Lab', path: '/voice-clone' },
-  { name: 'OCR Lab', path: '/ocr-lab' },
   { name: 'Grow Globally', path: '/grow' },
-  { name: 'Pricing', path: '/get-started#pricing' },
 ] as const;
 
 export const BOOK_CONSULTATION_PATH = '/book-consultation';

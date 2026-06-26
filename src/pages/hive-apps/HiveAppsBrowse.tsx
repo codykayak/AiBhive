@@ -6,6 +6,7 @@ import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/Hiv
 import HiveAppLivePanel from '../../components/hive-apps/HiveAppLivePanel';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
 import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
+import { PLATFORM_WEB_APPS, platformAppAsCard } from '../../lib/platformWebApps';
 import type { HiveAppSpec, PublishedWebApp, StoreCatalog } from '../../lib/hiveAppTypes';
 import { CATEGORY_LABELS } from '../../lib/hiveAppBranding';
 
@@ -131,6 +132,20 @@ export default function HiveAppsBrowse() {
 
       {tab !== 'web' && !q && (
         <div className="mb-8">
+          <h2 className="text-white font-bold text-lg mb-3 px-1">AiBhive Labs</h2>
+          <p className="text-slate-500 text-sm mb-3 px-1">
+            Built-in web tools — OCR and multilingual transcription.
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {PLATFORM_WEB_APPS.map((app) => (
+              <HiveAppCard key={app.id} app={platformAppAsCard(app)} variant="web" webApp={app} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab !== 'web' && !q && (
+        <div className="mb-8">
           <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
           <p className="text-slate-500 text-sm mb-3 px-1">
             {showSplit ? 'Click to run instantly in the panel →' : 'Tap to try live in your browser.'}
@@ -219,7 +234,7 @@ export default function HiveAppsBrowse() {
           <EmptyBlock title="No web apps yet" body="Export a Hive app as a web link and it appears here." />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {catalog.webApps.map((w) => (
+            {[...PLATFORM_WEB_APPS, ...catalog.webApps.filter((w) => !w.id.startsWith('platform/'))].map((w) => (
               <HiveAppCard key={w.id} app={webAppAsCard(w)} variant="web" webApp={w} />
             ))}
           </div>

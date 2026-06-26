@@ -3,6 +3,9 @@ import { Keyboard, Platform, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 
+/** Extra lift so composer toolbar (mic, mode toggle, send) clears the keyboard edge. */
+export const KEYBOARD_TOOLBAR_CLEARANCE = 72;
+
 /** True when Android resize mode already shrunk the window for the keyboard. */
 export function detectWindowShrank(
   keyboardOpen: boolean,

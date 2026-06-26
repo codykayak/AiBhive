@@ -84,6 +84,17 @@ const HiveAppCard: FC<Props> = ({ app, variant = 'mobile', webApp, runDirect, se
   }
 
   if (isExternal && webApp) {
+    const sameSite = webApp.url.startsWith('/') || webApp.url.includes('aibhive.com');
+    if (sameSite) {
+      const to = webApp.url.startsWith('http')
+        ? new URL(webApp.url).pathname + new URL(webApp.url).hash
+        : webApp.url;
+      return (
+        <Link to={to} className={className}>
+          {inner}
+        </Link>
+      );
+    }
     return (
       <a href={webApp.url} target="_blank" rel="noopener noreferrer" className={className}>
         {inner}

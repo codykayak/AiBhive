@@ -37,7 +37,7 @@ import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
 import { ChatComposerBox, type ComposerMode } from './ChatComposerBox';
-import { useKeyboardInset, detectWindowShrank, getComposerBottomInset } from '../hooks/useKeyboardInset';
+import { useKeyboardInset, detectWindowShrank, getComposerBottomInset, KEYBOARD_TOOLBAR_CLEARANCE } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { useToast } from '../contexts/ToastContext';
@@ -125,25 +125,31 @@ export function HomeAssistantChat({
     keyboardHeight
   );
 
-  const dockBottomLift = getComposerBottomInset({
-    keyboardOpen,
-    windowShrank,
-    keyboardPad: bottomPad,
-    basePadding: 0,
-  });
+  const dockBottomLift = keyboardOpen
+    ? getComposerBottomInset({
+        keyboardOpen,
+        windowShrank,
+        keyboardPad: bottomPad,
+        basePadding: 0,
+      }) +
+      KEYBOARD_TOOLBAR_CLEARANCE +
+      (windowShrank ? 24 : 0)
+    : 0;
 
-  const modalKeyboardLift = getComposerBottomInset({
-    keyboardOpen,
-    windowShrank: false,
-    keyboardPad: keyboardHeight,
-    basePadding: 0,
-    forceManual: true,
-  });
+  const modalKeyboardLift = keyboardOpen
+    ? getComposerBottomInset({
+        keyboardOpen,
+        windowShrank: false,
+        keyboardPad: keyboardHeight,
+        basePadding: 0,
+        forceManual: true,
+      }) + KEYBOARD_TOOLBAR_CLEARANCE
+    : 0;
 
   const dockNeedsManualLift = keyboardOpen && dockBottomLift > 0;
   const dockVisibleHeight = dockNeedsManualLift
-    ? Math.max(180, windowHeight - keyboardHeight)
-    : windowHeight;
+    ? Math.max(180, windowHeight - keyboardHeight - KEYBOARD_TOOLBAR_CLEARANCE)
+    : Math.max(180, windowHeight - (keyboardOpen ? KEYBOARD_TOOLBAR_CLEARANCE + 24 : 0));
 
   const baseDockHeight = getAssistantDockHeight(baselineHeight);
   const dockPanelHeight = keyboardOpen
@@ -152,8 +158,11 @@ export function HomeAssistantChat({
 
   const modalComposerHeight = useMemo(() => {
     if (!keyboardOpen) return 220;
-    const visible = Math.max(220, windowHeight - modalKeyboardLift - insets.top - 72);
-    return Math.max(200, Math.round(visible * 0.42));
+    const visible = Math.max(
+      220,
+      windowHeight - modalKeyboardLift - insets.top - 72
+    );
+    return Math.max(200, Math.round(visible * 0.38));
   }, [keyboardOpen, windowHeight, modalKeyboardLift, insets.top]);
 
   const dockComposerHeight = keyboardOpen
