@@ -11,7 +11,6 @@ import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { HomeAssistantChat, ASSISTANT_DOCK_HEIGHT } from '../components/HomeAssistantChat';
 import { HomeHeroVideo } from '../components/HomeHeroVideo';
-import { useRevealTabBarAtScrollEnd, DOCK_BOTTOM_BUFFER } from '../hooks/useRevealTabBarAtScrollEnd';
 import { TAB_BAR_BODY_HEIGHT } from '../navigation/TabNavigator';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
@@ -26,12 +25,13 @@ const COMMUNITY_STEPS = [
   { n: '3', title: 'Share back', body: 'Love it? Opt in to share — the hive grows smarter for everyone.' },
 ];
 
+/** Gap between chat dock and tab bar */
+const DOCK_ABOVE_TABS = 8;
+
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const { isDesktop } = useResponsiveLayout();
-  const { onScroll, onMomentumScrollEnd, onScrollEndDrag, onContentSizeChange, onScrollLayout } =
-    useRevealTabBarAtScrollEnd();
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
@@ -40,25 +40,16 @@ export default function HomeScreen() {
   const introDoneRef = useRef(false);
 
   const bottomInset = Math.max(insets.bottom, 10);
-  /** Always reserve tab bar space so the dock/scroll padding never jump */
-  const tabBarReserved = TAB_BAR_BODY_HEIGHT + bottomInset;
-  const scrollBottomPad =
-    ASSISTANT_DOCK_HEIGHT + tabBarReserved + DOCK_BOTTOM_BUFFER + spacing.xl;
-
-  const assistantProps = {
-    expanded: assistantExpanded,
-    onExpandChange: setAssistantExpanded,
-    initialQuery: pendingAsk,
-    onInitialQueryConsumed: () => setPendingAsk(undefined),
-    tabBarOffset: tabBarReserved,
-    dockBottomBuffer: DOCK_BOTTOM_BUFFER,
-  };
+  const tabBarHeight = TAB_BAR_BODY_HEIGHT + bottomInset;
+  const dockBottom = tabBarHeight + DOCK_ABOVE_TABS;
+  const scrollBottomPad = ASSISTANT_DOCK_HEIGHT + dockBottom + spacing.lg;
 
   useFocusEffect(
     useCallback(() => {
       if (introDoneRef.current) {
         setShowHeroVideo(false);
       }
+      return () => setAssistantExpanded(false);
     }, [])
   );
 
@@ -84,17 +75,11 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPad }]}
           keyboardShouldPersistTaps="handled"
-          onScroll={onScroll}
-          onMomentumScrollEnd={onMomentumScrollEnd}
-          onScrollEndDrag={onScrollEndDrag}
-          onContentSizeChange={onContentSizeChange}
-          onLayout={onScrollLayout}
-          scrollEventThrottle={16}
         >
           {showHeroVideo ? (
             <HomeHeroVideo
               skip={introDoneRef.current}
-              bottomOverlay={ASSISTANT_DOCK_HEIGHT + tabBarReserved + DOCK_BOTTOM_BUFFER}
+              bottomOverlay={ASSISTANT_DOCK_HEIGHT + dockBottom}
               onIntroComplete={() => {
                 introDoneRef.current = true;
                 setShowHeroVideo(false);
@@ -198,7 +183,14 @@ export default function HomeScreen() {
           </View>
         </ScreenScrollView>
 
-        <HomeAssistantChat variant="floating" {...assistantProps} />
+        <HomeAssistantChat
+          variant="floating"
+          expanded={assistantExpanded}
+          onExpandChange={setAssistantExpanded}
+          initialQuery={pendingAsk}
+          onInitialQueryConsumed={() => setPendingAsk(undefined)}
+          dockBottom={dockBottom}
+        />
       </View>
     </ScreenLayout>
   );
@@ -206,7 +198,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   screenContent: { paddingHorizontal: 0 },
-  body: { flex: 1 },
+  body: { flex: 1, position: 'relative' },
   scrollView: { flex: 1 },
   scroll: { flexGrow: 1 },
   content: {

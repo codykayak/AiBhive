@@ -99,6 +99,8 @@ const defaultNotes = {
     'v1.6.12 — Home video fix (Android textureView), assistant pinned to bottom, new intro tagline, tab bar reveals at scroll end.',
   '1.6.13':
     'v1.6.13 — Fix home scroll glitch (stable tab bar slot), bigger chat dock, hide hero video on return to Home.',
+  '1.6.14':
+    'v1.6.14 — Fix bottom nav and chat dock: tab bar always visible, chat pinned above tabs with more padding, tap-to-open chat (no focus glitch).',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
