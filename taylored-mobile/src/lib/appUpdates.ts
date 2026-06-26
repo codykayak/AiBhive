@@ -45,18 +45,9 @@ export type DownloadProgress = {
   downloadedBytes: number;
 };
 
-function isInstallableApkUrl(url: string | undefined): url is string {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  return lower.endsWith('.apk') && !lower.includes('.apk.gz') && !lower.includes('compressed=1');
-}
-
 /** Pick a URL the Android package installer can use (never .gz). */
-export function resolveNativeDownloadUrl(manifest?: Partial<MobileReleaseManifest> | null): string {
-  const candidates = [manifest?.fullApkUrl, manifest?.firebaseApkUrl, manifest?.downloadUrl];
-  for (const url of candidates) {
-    if (isInstallableApkUrl(url)) return url;
-  }
+export function resolveNativeDownloadUrl(_manifest?: Partial<MobileReleaseManifest> | null): string {
+  // Always prefer the direct API endpoint — streams a real .apk, never a redirect to .gz.
   return NATIVE_APK_DOWNLOAD_URL;
 }
 

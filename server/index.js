@@ -2053,6 +2053,38 @@ function loadMobileReleaseManifestFromDisk() {
   }
 }
 
+/** Read taylored-mobile/app.json so stale mobile-releases.json never hides updates. */
+function loadMobileVersionFromAppJson() {
+  const appJsonPath = path.join(__dirname, '../taylored-mobile/app.json');
+  if (!fs.existsSync(appJsonPath)) return null;
+  try {
+    const expo = JSON.parse(fs.readFileSync(appJsonPath, 'utf8')).expo ?? {};
+    if (!expo.version) return null;
+    return {
+      shippedNativeVersion: expo.version,
+      versionCode: expo.android?.versionCode,
+      sourceVersion: expo.version,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function mergeManifestWithAppJson(manifest) {
+  const fromApp = loadMobileVersionFromAppJson();
+  if (!fromApp) return manifest;
+  const base = manifest ?? {};
+  if (!isManifestNewer(fromApp, base)) return base;
+  return {
+    ...base,
+    ...fromApp,
+    downloadUrl: base.downloadUrl || 'https://aibhive.com/api/download/apk',
+    fullApkUrl: base.fullApkUrl || 'https://aibhive.com/api/download/apk',
+    publishedAt: base.publishedAt || new Date().toISOString(),
+    otaChannel: base.otaChannel || 'production',
+  };
+}
+
 function parseVersionParts(version) {
   return String(version || '0')
     .split('.')
@@ -2104,7 +2136,7 @@ async function getMobileReleaseManifest() {
     fetchMobileReleaseFromRemote(),
     Promise.resolve(loadMobileReleaseManifestFromDisk()),
   ]);
-  const manifest = pickNewerMobileReleaseManifest(remote, disk);
+  const manifest = mergeManifestWithAppJson(pickNewerMobileReleaseManifest(remote, disk));
   mobileReleaseCache = { at: now, manifest };
   return manifest;
 }
@@ -2114,6 +2146,7 @@ app.get('/api/mobile/releases', async (_req, res) => {
   if (!manifest) {
     return res.status(404).json({ error: 'Release manifest not available.' });
   }
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   return res.json(manifest);
 });
 
