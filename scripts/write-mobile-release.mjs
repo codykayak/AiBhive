@@ -91,6 +91,8 @@ const defaultNotes = {
     'v1.6.8 — Home scroll fix: homepage no longer goes blank when scrolling; collapsible header collapses layout space correctly.',
   '1.6.9':
     'v1.6.9 — Home hero video intro (5s fade into AiBhive Assistant), floating assistant dock, updated app icon, tab bar reveals at scroll end.',
+  '1.6.10':
+    'v1.6.10 — Fix startup crash: migrate home hero video from expo-av to expo-video (Android + New Architecture).',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

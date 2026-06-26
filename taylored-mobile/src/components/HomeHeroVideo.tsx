@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HOME_HERO_VIDEO = require('../../assets/home-hero.mp4');
@@ -21,22 +21,32 @@ type Props = {
 
 /**
  * Full-viewport intro video. After 5s it cross-fades out and the assistant slot fades in.
- * Replace `assets/home-hero.mp4` with your upload before building.
+ * Uses expo-video (expo-av crashes on Android with New Architecture enabled).
  */
 export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onIntroComplete }: Props) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const videoRef = useRef<Video>(null);
   const videoOpacity = useRef(new Animated.Value(1)).current;
   const assistantOpacity = useRef(new Animated.Value(0)).current;
+  const onFadeStartRef = useRef(onFadeStart);
+  const onIntroCompleteRef = useRef(onIntroComplete);
   const [videoMounted, setVideoMounted] = useState(true);
   const [assistantReady, setAssistantReady] = useState(false);
+
+  const player = useVideoPlayer(HOME_HERO_VIDEO, (instance) => {
+    instance.loop = false;
+    instance.muted = true;
+    instance.play();
+  });
+
+  onFadeStartRef.current = onFadeStart;
+  onIntroCompleteRef.current = onIntroComplete;
 
   const heroHeight = Math.max(height - insets.top - bottomOverlay, width * 0.55);
 
   useEffect(() => {
     const fadeTimer = setTimeout(() => {
-      onFadeStart?.();
+      onFadeStartRef.current?.();
       setAssistantReady(true);
       Animated.parallel([
         Animated.timing(videoOpacity, {
@@ -49,33 +59,30 @@ export function HomeHeroVideo({ bottomOverlay, assistantSlot, onFadeStart, onInt
           duration: HERO_VIDEO_FADE_MS,
           useNativeDriver: true,
         }),
-      ]).start(async () => {
+      ]).start(() => {
         try {
-          await videoRef.current?.stopAsync();
+          player.pause();
         } catch {
-          // Player may already be unloaded
+          // Player may already be released
         }
         setVideoMounted(false);
-        onIntroComplete?.();
+        onIntroCompleteRef.current?.();
       });
     }, HERO_VIDEO_PLAY_MS);
 
     return () => clearTimeout(fadeTimer);
-  }, [assistantOpacity, onFadeStart, onIntroComplete, videoOpacity]);
+  }, [assistantOpacity, player, videoOpacity]);
 
   return (
     <View style={[styles.wrap, { width, height: heroHeight }]}>
       {videoMounted ? (
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: videoOpacity }]}>
-          <Video
-            ref={videoRef}
-            source={HOME_HERO_VIDEO}
+          <VideoView
+            player={player}
             style={StyleSheet.absoluteFill}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay
-            isLooping={false}
-            isMuted
-            useNativeControls={false}
+            contentFit="cover"
+            nativeControls={false}
+            allowsPictureInPicture={false}
           />
           <View style={styles.scrim} pointerEvents="none" />
         </Animated.View>
