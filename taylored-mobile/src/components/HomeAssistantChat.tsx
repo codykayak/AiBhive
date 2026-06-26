@@ -9,24 +9,20 @@ import {
   ActivityIndicator,
   Keyboard,
   Modal,
-  KeyboardAvoidingView,
   Platform,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Send,
   Briefcase,
   Radar,
   Wand2,
   ChevronDown,
-  Mic,
   Maximize2,
-  ImagePlus,
-  X,
 } from 'lucide-react-native';
-import { colors, radii, spacing } from '../theme/colors';
+import { colors, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/settings';
 import { sendHomeAssistantTurn, type HomeAssistantAction } from '../lib/homeAssistant';
 import type { ChatTurn } from '../lib/llm';
@@ -38,16 +34,10 @@ import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
-import {
-  dexInputBarStyle,
-  keyboardAvoidBehavior,
-  keyboardVerticalOffset,
-  useKeyboardInset,
-} from '../hooks/useKeyboardInset';
-import { useResponsiveLayout } from './ResponsiveShell';
+import { ChatComposerBox } from './ChatComposerBox';
+import { useKeyboardInset } from '../hooks/useKeyboardInset';
 import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
-import { HIVE_COPY } from '../constants/hiveCopy';
 
 type ChatMessage = {
   id: string;
@@ -62,23 +52,43 @@ type Props = {
   onExpandChange: (expanded: boolean) => void;
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
-  /** Fixed dock at bottom of the Home screen (in layout flow, above tab bar) */
   variant?: 'inline' | 'floating';
 };
 
-/** Blank rows of space below the dock input (visual breathing room above tab bar). */
-export const DOCK_BOTTOM_ROW_COUNT = 5;
-export const DOCK_ROW_HEIGHT = 22;
-export const DOCK_BOTTOM_SPACER = DOCK_BOTTOM_ROW_COUNT * DOCK_ROW_HEIGHT;
+/** Home chat panel = bottom quarter of the screen. */
+export const DOCK_SCREEN_FRACTION = 0.28;
 
-/** Total floating dock height — header + input + bottom spacer + padding. */
-export const ASSISTANT_DOCK_HEIGHT = 132 + DOCK_BOTTOM_SPACER;
+export function getAssistantDockHeight(screenHeight: number): number {
+  return Math.max(180, Math.round(screenHeight * DOCK_SCREEN_FRACTION));
+}
+
+/** @deprecated use getAssistantDockHeight */
+export const ASSISTANT_DOCK_HEIGHT = 200;
 
 const WELCOME =
   "Hi — I'm your AiBhive assistant. " + HOME_INTRO_TAGLINE;
 
 function newId(): string {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function MessageBubble({ m, compact }: { m: ChatMessage; compact?: boolean }) {
+  return (
+    <View style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAi, compact && styles.bubbleCompact]}>
+      {m.imageUri ? (
+        <Image source={{ uri: m.imageUri }} style={compact ? styles.bubbleImageCompact : styles.bubbleImage} resizeMode="cover" />
+      ) : null}
+      {m.content && m.content !== '📷 Photo' ? (
+        <Text style={[styles.bubbleText, compact && styles.bubbleTextCompact]} numberOfLines={compact ? 4 : undefined}>
+          {m.content}
+        </Text>
+      ) : m.imageUri ? (
+        <Text style={styles.bubbleTextMuted}>Photo</Text>
+      ) : (
+        <Text style={[styles.bubbleText, compact && styles.bubbleTextCompact]}>{m.content}</Text>
+      )}
+    </View>
+  );
 }
 
 export function HomeAssistantChat({
@@ -90,9 +100,25 @@ export function HomeAssistantChat({
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { isWide } = useResponsiveLayout();
-  const { keyboardHeight } = useKeyboardInset(0);
+  const { height: windowHeight } = useWindowDimensions();
+  const { keyboardHeight, bottomPad } = useKeyboardInset(0);
+  const baselineHeightRef = useRef(windowHeight);
+  const [baselineHeight, setBaselineHeight] = useState(windowHeight);
+
+  useEffect(() => {
+    if (keyboardHeight === 0) {
+      baselineHeightRef.current = windowHeight;
+      setBaselineHeight(windowHeight);
+    }
+  }, [keyboardHeight, windowHeight]);
+
+  const windowShrank =
+    keyboardHeight > 0 && baselineHeightRef.current - windowHeight >= keyboardHeight * 0.35;
+  const dockBottomOffset =
+    keyboardHeight <= 0 ? 0 : Platform.OS === 'ios' || !windowShrank ? bottomPad : 0;
+  const panelHeight = getAssistantDockHeight(baselineHeight);
   const scrollRef = useRef<ScrollView>(null);
+  const dockScrollRef = useRef<ScrollView>(null);
   const dockInputRef = useRef<TextInput>(null);
   const modalInputRef = useRef<TextInput>(null);
   const preSpeechInput = useRef('');
@@ -105,7 +131,10 @@ export function HomeAssistantChat({
   const pendingInitial = useRef(initialQuery?.trim() || '');
 
   const scrollEnd = useCallback(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+      dockScrollRef.current?.scrollToEnd({ animated: true });
+    }, 60);
   }, []);
 
   const appendAi = useCallback(
@@ -192,7 +221,6 @@ export function HomeAssistantChat({
       const attach = attachment ?? pendingAttachment;
       if ((!trimmed && !attach) || loading) return;
       Keyboard.dismiss();
-      onExpandChange(true);
 
       const displayText = trimmed || '📷 Photo';
       const apiText =
@@ -238,7 +266,7 @@ export function HomeAssistantChat({
         setLoading(false);
       }
     },
-    [loading, messages, appendAi, handleAction, onExpandChange, scrollEnd, pendingAttachment]
+    [loading, messages, appendAi, handleAction, scrollEnd, pendingAttachment]
   );
 
   useEffect(() => {
@@ -295,391 +323,187 @@ export function HomeAssistantChat({
     void toggleListening();
   }, [input, listening, toggleListening]);
 
-  const canSend = Boolean(input.trim() || pendingAttachment);
-
   const onPickImage = useCallback(async () => {
     const picked = await pickHiveReferenceImage();
     if (picked) {
       setPendingAttachment(picked);
-      if (!expanded) onExpandChange(true);
     }
-  }, [expanded, onExpandChange]);
+  }, []);
 
-  const attachmentPreview = pendingAttachment ? (
-    <View style={styles.attachPreview}>
-      <Image source={{ uri: pendingAttachment.uri }} style={styles.attachThumb} />
-      <Text style={styles.attachLabel} numberOfLines={1}>
-        Photo attached
-      </Text>
-      <TouchableOpacity onPress={() => setPendingAttachment(null)} hitSlop={12}>
-        <X color={colors.textDim} size={18} />
+  const keyboardOpen = keyboardHeight > 0;
+  const modalHeaderHeight = 44;
+  const visibleAboveKeyboard = Math.max(
+    200,
+    windowHeight - dockBottomOffset - insets.top - modalHeaderHeight
+  );
+  const modalComposerHeight = keyboardOpen
+    ? Math.max(300, Math.round(visibleAboveKeyboard * 0.62))
+    : Math.max(220, Math.round(baselineHeight * 0.22));
+
+  useEffect(() => {
+    if (keyboardOpen) scrollEnd();
+  }, [keyboardOpen, scrollEnd]);
+
+  const composerProps = {
+    value: input,
+    onChangeText: setInput,
+    onFocus: scrollEnd,
+    onSubmit: () => void submit(input),
+    loading,
+    pendingAttachment,
+    onClearAttachment: () => setPendingAttachment(null),
+    onPickImage: () => void onPickImage(),
+    onMicPress,
+    listening,
+  };
+
+  const homePanel = (
+    <View
+      style={[
+        styles.homePanel,
+        { height: panelHeight },
+        keyboardOpen && styles.homePanelKeyboard,
+        keyboardOpen && { bottom: dockBottomOffset },
+      ]}
+    >
+      <TouchableOpacity style={styles.expandStrip} onPress={openChat} activeOpacity={0.7}>
+        <Text style={styles.expandLabel}>AiBhive Assistant</Text>
+        <Maximize2 color={colors.textDim} size={14} />
       </TouchableOpacity>
-    </View>
-  ) : null;
 
-  const imageButton = (compact?: boolean) => (
-    <TouchableOpacity
-      style={[styles.attachBtn, compact && styles.attachBtnCompact]}
-      onPress={() => void onPickImage()}
-      disabled={loading}
-      accessibilityLabel={HIVE_COPY.attachImage}
-      hitSlop={8}
-    >
-      <ImagePlus color={pendingAttachment ? colors.amber : colors.amberLight} size={compact ? 20 : 22} />
-    </TouchableOpacity>
-  );
-
-  const micButton = (compact?: boolean) => (
-    <TouchableOpacity
-      style={[styles.micBtn, listening && styles.micBtnActive, compact && styles.micBtnCompact]}
-      onPress={onMicPress}
-      hitSlop={8}
-    >
-      <Mic color={listening ? colors.bg : colors.amber} size={compact ? 20 : 22} />
-    </TouchableOpacity>
-  );
-
-  const sendButton = (compact?: boolean) => (
-    <TouchableOpacity
-      style={[styles.heroSend, compact && styles.sendBtnCompact, !canSend && styles.sendBtnDisabled]}
-      onPress={() => void submit(input)}
-      disabled={!canSend || loading}
-      hitSlop={8}
-    >
-      <Send color={canSend ? colors.amber : colors.textDim} size={compact ? 20 : 22} />
-    </TouchableOpacity>
-  );
-
-  const floatingDockBar = (
-    <View style={styles.heroBar}>
-      <TouchableOpacity style={styles.heroHeader} activeOpacity={0.85} onPress={openChat}>
-        <HiveLogo size={28} />
-        <Text style={styles.heroLabel}>AiBhive Assistant</Text>
-        <Maximize2 color={colors.textDim} size={16} />
-      </TouchableOpacity>
-      {attachmentPreview}
-      <View style={styles.heroInputRow}>
-        {imageButton(true)}
-        <TextInput
-          ref={dockInputRef}
-          style={styles.dockInput}
-          placeholder={HOME_INTRO_TAGLINE}
-          placeholderTextColor={colors.textDim}
-          value={input}
-          onChangeText={setInput}
-          returnKeyType="send"
-          onSubmitEditing={() => void submit(input)}
-          multiline={false}
-          maxLength={2000}
-        />
-        {micButton(true)}
-        {sendButton(true)}
-      </View>
-      <View style={styles.dockBottomSpacer} />
-    </View>
-  );
-
-  const floatingDock = !expanded ? (
-    <View style={styles.dockAnchor}>{floatingDockBar}</View>
-  ) : null;
-
-  const chatBody = (
-    <>
       <ScrollView
-        ref={scrollRef}
-        style={styles.chatScroll}
-        contentContainerStyle={styles.chatContent}
+        ref={dockScrollRef}
+        style={styles.dockThread}
+        contentContainerStyle={styles.dockThreadContent}
         keyboardShouldPersistTaps="handled"
         onContentSizeChange={scrollEnd}
         showsVerticalScrollIndicator={false}
       >
         {messages.map((m) => (
-          <View
-            key={m.id}
-            style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAi]}
-          >
-            {m.imageUri ? (
-              <Image source={{ uri: m.imageUri }} style={styles.bubbleImage} resizeMode="cover" />
-            ) : null}
-            {m.content && m.content !== '📷 Photo' ? (
-              <Text style={styles.bubbleText}>{m.content}</Text>
-            ) : m.imageUri ? (
-              <Text style={styles.bubbleTextMuted}>Photo</Text>
-            ) : (
-              <Text style={styles.bubbleText}>{m.content}</Text>
-            )}
-          </View>
+          <MessageBubble key={m.id} m={m} compact />
         ))}
-        {loading && (
-          <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
+        {loading ? (
+          <View style={[styles.bubble, styles.bubbleAi, styles.bubbleCompact, styles.loadingBubble]}>
             <ActivityIndicator color={colors.amber} size="small" />
-            <Text style={styles.loadingText}>AiBhive is thinking…</Text>
+            <Text style={styles.loadingText}>Thinking…</Text>
           </View>
-        )}
+        ) : null}
       </ScrollView>
 
-      <View style={styles.quickRow}>
-        {quickActions.map((q) => {
-          const Icon = q.icon;
-          return (
-            <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
-              <Icon size={14} color={colors.amber} />
-              <Text style={styles.quickChipText}>{q.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      <View
-        style={[
-          styles.composer,
-          dexInputBarStyle(keyboardHeight > 0),
-          { paddingBottom: keyboardHeight > 0 ? spacing.sm : Math.max(insets.bottom, spacing.sm) },
-        ]}
-      >
-        <View style={styles.composerStack}>
-          {attachmentPreview}
-          <View style={styles.composerRow}>
-            {imageButton()}
-            <TextInput
-              ref={modalInputRef}
-              style={styles.composerInput}
-              placeholder={HOME_INTRO_TAGLINE}
-              placeholderTextColor={colors.textDim}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={2000}
-            />
-            {micButton()}
-            <TouchableOpacity
-              style={[styles.sendBtn, (!canSend || loading) && styles.sendBtnDisabled]}
-              onPress={() => void submit(input)}
-              disabled={!canSend || loading}
-            >
-              <Send color={colors.bg} size={20} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </>
+      <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={120} />
+    </View>
   );
+
+  const modalBottomInset = keyboardOpen ? dockBottomOffset : Math.max(insets.bottom, 0);
 
   return (
     <>
-      {variant === 'inline' ? (
-        <View style={styles.heroWrap}>
-          {floatingDockBar}
-        </View>
-      ) : variant === 'floating' ? (
-        floatingDock
-      ) : null}
+      {variant === 'inline' ? homePanel : null}
+      {variant === 'floating' && !expanded ? homePanel : null}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={closeChat}>
-        <KeyboardAvoidingView
-          style={[styles.modalRoot, { paddingTop: insets.top }]}
-          behavior={keyboardAvoidBehavior()}
-          keyboardVerticalOffset={keyboardVerticalOffset(isWide)}
-        >
+        <View style={[styles.modalRoot, { paddingTop: insets.top }]}>
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
               <HiveLogo size={28} />
               <Text style={styles.modalTitle}>AiBhive Assistant</Text>
-              <View style={styles.poweredBadge}>
-                <Text style={styles.poweredText}>Hive credits</Text>
-              </View>
             </View>
             <TouchableOpacity onPress={closeChat} hitSlop={12} style={styles.closeBtn}>
               <ChevronDown color={colors.textMuted} size={26} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalBody}>{chatBody}</View>
-        </KeyboardAvoidingView>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.chatScroll}
+            contentContainerStyle={styles.chatContent}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={scrollEnd}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((m) => (
+              <MessageBubble key={m.id} m={m} />
+            ))}
+            {loading && (
+              <View style={[styles.bubble, styles.bubbleAi, styles.loadingBubble]}>
+                <ActivityIndicator color={colors.amber} size="small" />
+                <Text style={styles.loadingText}>AiBhive is thinking…</Text>
+              </View>
+            )}
+          </ScrollView>
+
+          {keyboardOpen ? null : (
+            <View style={styles.quickRow}>
+              {quickActions.map((q) => {
+                const Icon = q.icon;
+                return (
+                  <TouchableOpacity key={q.label} style={styles.quickChip} onPress={q.onPress}>
+                    <Icon size={14} color={colors.amber} />
+                    <Text style={styles.quickChipText}>{q.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          <View style={[styles.modalComposerWrap, { height: modalComposerHeight, marginBottom: modalBottomInset }]}>
+            <ChatComposerBox
+              {...composerProps}
+              inputRef={modalInputRef}
+              minHeight={modalComposerHeight}
+            />
+          </View>
+        </View>
       </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  heroWrap: { marginBottom: spacing.lg },
-  heroSlot: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'stretch',
-    paddingVertical: spacing.lg,
+  homePanel: {
+    flexShrink: 0,
+    backgroundColor: '#000000',
   },
-  heroSlotLogo: {
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
-  heroSlotTitle: {
-    color: colors.amberLight,
-    fontWeight: '900',
-    fontSize: 26,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  heroSlotSub: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.sm,
-  },
-  floatingDock: {
+  homePanelKeyboard: {
     position: 'absolute',
-    left: spacing.md,
-    right: spacing.md,
-    zIndex: 100,
-    ...Platform.select({
-      android: { elevation: 16 },
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.35,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: -2 },
-      },
-    }),
+    left: 0,
+    right: 0,
+    zIndex: 50,
+    elevation: 50,
   },
-  /** In-flow dock at bottom of Home — sits above tab bar, lifts with keyboard (resize / KAV). */
-  dockAnchor: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xs,
-  },
-  heroBar: {
-    backgroundColor: colors.bgElevated,
-    borderRadius: radii.lg,
-    borderWidth: 2,
-    borderColor: colors.amber + '66',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: 0,
-    gap: spacing.sm,
-    ...Platform.select({
-      android: { elevation: 6 },
-    }),
-  },
-  dockBottomSpacer: {
-    height: DOCK_BOTTOM_SPACER,
-  },
-  heroHeader: {
+  expandStrip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: 2,
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  heroInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.bgInput,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingLeft: spacing.xs,
-    paddingRight: spacing.xs,
-    minHeight: 52,
-  },
-  attachBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  attachBtnCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-  },
-  attachPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.md,
-    backgroundColor: colors.amberSoft,
-    borderWidth: 1,
-    borderColor: colors.amber + '33',
-  },
-  attachThumb: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.sm,
-    backgroundColor: colors.bgCard,
-  },
-  attachLabel: {
-    flex: 1,
-    color: colors.amberLight,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  dockInput: {
-    flex: 1,
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-    paddingVertical: 12,
-    minHeight: 44,
-  },
-  micBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.amberSoft,
-    borderWidth: 1,
-    borderColor: colors.amber + '44',
-  },
-  micBtnCompact: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  micBtnActive: {
-    backgroundColor: colors.amber,
-    borderColor: colors.amber,
-  },
-  heroLabel: {
-    flex: 1,
-    color: colors.amberLight,
-    fontWeight: '900',
-    fontSize: 13,
+  expandLabel: {
+    color: colors.textDim,
+    fontSize: 10,
+    fontWeight: '800',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  heroSend: {
-    padding: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
+  dockThread: {
+    flex: 1,
+    minHeight: 48,
   },
-  sendBtnCompact: {
-    padding: spacing.xs,
-  },
-  hiddenInput: {
-    position: 'absolute',
-    opacity: 0,
-    height: 0,
-    width: 0,
+  dockThreadContent: {
+    paddingHorizontal: 8,
+    paddingBottom: 2,
+    gap: 4,
   },
   modalRoot: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: '#000000',
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderMuted,
+    paddingHorizontal: 8,
+    paddingBottom: 4,
   },
   modalTitleWrap: {
     flexDirection: 'row',
@@ -691,40 +515,38 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 18,
   },
-  poweredBadge: {
-    backgroundColor: colors.amberSoft,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radii.pill,
-  },
-  poweredText: {
-    color: colors.amberLight,
-    fontSize: 11,
-    fontWeight: '800',
-  },
   closeBtn: { padding: 6 },
-  modalBody: { flex: 1 },
-  chatScroll: { flex: 1 },
-  chatContent: { padding: spacing.md, gap: spacing.sm, paddingBottom: spacing.lg },
+  chatScroll: { flex: 1, minHeight: 0 },
+  chatContent: { paddingHorizontal: 8, paddingTop: 4, gap: spacing.sm, paddingBottom: spacing.sm },
+  modalComposerWrap: {
+    width: '100%',
+    backgroundColor: '#000000',
+  },
   bubble: {
-    borderRadius: radii.lg,
-    padding: 14,
-    maxWidth: '88%',
+    borderRadius: 8,
+    padding: 12,
+    maxWidth: '90%',
+  },
+  bubbleCompact: {
+    padding: 8,
+    maxWidth: '95%',
   },
   bubbleUser: {
     alignSelf: 'flex-end',
-    backgroundColor: colors.amber + '33',
+    backgroundColor: 'rgba(245, 158, 11, 0.2)',
   },
   bubbleAi: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.borderMuted,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
   },
   bubbleText: {
     color: colors.text,
     fontSize: 15,
     lineHeight: 22,
+  },
+  bubbleTextCompact: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   bubbleTextMuted: {
     color: colors.textMuted,
@@ -734,22 +556,27 @@ const styles = StyleSheet.create({
   bubbleImage: {
     width: 200,
     height: 150,
-    borderRadius: radii.md,
+    borderRadius: 8,
     marginBottom: 8,
-    backgroundColor: colors.bgCard,
+  },
+  bubbleImageCompact: {
+    width: 120,
+    height: 90,
+    borderRadius: 6,
+    marginBottom: 4,
   },
   loadingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   loadingText: { color: colors.textMuted, fontSize: 13 },
   quickRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   quickChip: {
     flexDirection: 'row',
@@ -757,47 +584,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
+    borderRadius: 20,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
   },
   quickChipText: { color: colors.textMuted, fontSize: 12, fontWeight: '700' },
-  composer: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderMuted,
-  },
-  composerStack: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  composerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  composerInput: {
-    flex: 1,
-    minHeight: 48,
-    maxHeight: 120,
-    color: colors.text,
-    fontSize: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: colors.bgInput,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.amber,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.4 },
 });

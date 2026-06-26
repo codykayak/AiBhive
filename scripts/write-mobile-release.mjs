@@ -120,6 +120,8 @@ const defaultNotes = {
     'v1.6.19 — Home chat dock: pinned to bottom with breathing room below input, stays visible while typing, no tab overlap.',
   '1.6.20':
     'v1.6.20 — Home intro fades to black (no overlay text); chat dock pinned at bottom; update manifest sync.',
+  '1.6.21':
+    'v1.6.21 — Big home chat input (~5 rows), pinned above keyboard; full-screen chat overlap fixed.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];
