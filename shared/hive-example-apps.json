@@ -3,7 +3,7 @@
     "id": "example-job-tracker",
     "title": "Job Tracker",
     "tagline": "Applications, status, and follow-ups",
-    "summary": "Track every application, interview stage, and follow-up in one place. Try it in your browser — install the mobile app for AI resume tools and cloud sync.",
+    "summary": "Track every application, interview stage, and follow-up in one place — full browser demo with local save. Mobile syncs across devices.",
     "theme": "blue",
     "icon": "target",
     "category": "lists",
@@ -44,10 +44,10 @@
         "title": "Tips",
         "type": "info",
         "config": {
-          "body": "This is a live browser demo of a Hive spec app. Check items off, add your own rows — data stays in this browser.",
+          "body": "This web runner mirrors the mobile Job Tracker — add apps, cycle status, and manage follow-ups. Data stays in this browser.",
           "bullets": [
+            "Link to Auto-Bot Resume for tailored kits",
             "Full mobile version syncs across devices",
-            "Auto-Bot Resume tailors materials per job",
             "Research tab runs OSINT on companies"
           ],
           "links": [
@@ -117,7 +117,7 @@
     "id": "example-research",
     "title": "Research",
     "tagline": "Intel on companies and people",
-    "summary": "Plan OSINT on companies, websites, or people. Set a regional filter for local results. Full Intel Agent in the mobile app automates the search.",
+    "summary": "AI-directed OSINT on companies, websites, or people — Hive Cloud Firecrawl + SerpAPI, then an intelligence brief. Same engine as mobile Intel Agent.",
     "theme": "purple",
     "icon": "compass",
     "category": "guides",
@@ -163,15 +163,87 @@
         "title": "Intel Agent",
         "type": "info",
         "config": {
-          "body": "AiBhive Intel Agent runs AI-directed OSINT on companies, websites, and people — with optional regional filters for local search.",
+          "body": "This web runner runs the Hive Cloud Intel Agent — Firecrawl search, SerpAPI, site scrape, and AI synthesis.",
           "bullets": [
             "Company, website, or person target modes",
             "Regional filter (city + radius) for web search",
-            "Username probe, dorks, DNS, Wayback, PDF export"
+            "Mobile adds username probe, DNS, Wayback, PDF export"
           ],
           "links": [
-            { "label": "Intel gathering overview", "url": "https://aibhive.com/intel-gathering" },
+            { "label": "Intel gathering (DBPR)", "url": "https://aibhive.com/intel-gathering" },
             { "label": "Get mobile app", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-intel-gathering",
+    "title": "Intel Gathering",
+    "tagline": "DBPR records & deep web scan",
+    "summary": "Florida DBPR license search plus Firecrawl deep scan on any business URL — the same page as aibhive.com/intel-gathering, runnable in the store.",
+    "theme": "slate",
+    "icon": "compass",
+    "category": "guides",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "deep-scan",
+        "title": "Deep Scan",
+        "type": "info",
+        "config": {
+          "body": "Extract markdown intelligence from any business website via Firecrawl.",
+          "bullets": [
+            "Paste a URL and run Deep Scan",
+            "Results show extracted page content",
+            "Uses server Firecrawl key"
+          ],
+          "links": [
+            { "label": "Standalone page", "url": "https://aibhive.com/intel-gathering" }
+          ]
+        }
+      },
+      {
+        "id": "dbpr",
+        "title": "DBPR",
+        "type": "info",
+        "config": {
+          "body": "Browse and filter Florida DBPR license records — inactive and null-and-void entries.",
+          "bullets": [
+            "Filter by name, location, business type",
+            "Live data from AiBhive DBPR API",
+            "Pair with Research app for full OSINT"
+          ],
+          "links": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-auto-social",
+    "title": "Auto Social",
+    "tagline": "AI social posting pipeline",
+    "summary": "Generate, approve, and schedule posts across platforms — admin-only mirror of the Auto Social tab in AiBhive admin.",
+    "theme": "pink",
+    "icon": "sparkles",
+    "category": "other",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "pipeline",
+        "title": "Pipeline",
+        "type": "info",
+        "config": {
+          "body": "Weekly social content workflow — AI captions, image generation, approve/reject, mark posted.",
+          "bullets": [
+            "Same UI as /admin?tab=auto-social",
+            "Requires admin Google sign-in",
+            "Uses autoposter API + your configured models"
+          ],
+          "links": [
+            { "label": "Admin dashboard", "url": "https://aibhive.com/admin?tab=auto-social" }
           ]
         }
       }

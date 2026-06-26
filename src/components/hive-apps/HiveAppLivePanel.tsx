@@ -37,7 +37,7 @@ export default function HiveAppLivePanel({ appId, className = '' }: Props) {
       <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center min-h-[480px] ${className}`}>
         <p className="text-white font-bold text-lg">Pick an app to run</p>
         <p className="text-slate-400 text-sm mt-2 max-w-sm">
-          Select Job Tracker, Resume, or Research from the list — it opens here instantly.
+          Select any example app from the list — Job Tracker, Resume, Research, Intel Gathering, or Auto Social.
         </p>
       </div>
     );

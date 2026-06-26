@@ -61,6 +61,7 @@ import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './int
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
+import { runIntelResearch } from './intelAgentWeb.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -398,6 +399,27 @@ app.post('/api/hive/resume/generate', express.json({ limit: '12mb' }), async (re
   } catch (err) {
     console.error('[hive/resume/generate]', err);
     return res.status(500).json({ error: err.message || 'Resume generation failed.' });
+  }
+});
+
+app.post('/api/hive/intel/run', express.json(), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    const { userId, ...payload } = req.body || {};
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) {
+      return res.status(400).json({ error: 'userId required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runIntelResearch(db, resolvedUserId, payload);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 400;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/intel/run]', err);
+    return res.status(500).json({ error: err.message || 'Intel research failed.' });
   }
 });
 
