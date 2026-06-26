@@ -89,6 +89,8 @@ const defaultNotes = {
     'v1.6.7 — Samsung DeX fix: resizable free-form window, Samsung keepalive meta-data, DisplayMetrics refresh on resize (no more tiny phone box on monitor).',
   '1.6.8':
     'v1.6.8 — Home scroll fix: homepage no longer goes blank when scrolling; collapsible header collapses layout space correctly.',
+  '1.6.9':
+    'v1.6.9 — Home hero video intro (5s fade into AiBhive Assistant), floating assistant dock, updated app icon, tab bar reveals at scroll end.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

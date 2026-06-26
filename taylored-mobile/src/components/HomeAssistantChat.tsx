@@ -16,25 +16,22 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Send,
-  Sparkles,
   Briefcase,
   Radar,
   Wand2,
-  X,
   ChevronDown,
 } from 'lucide-react-native';
 import { colors, radii, spacing } from '../theme/colors';
-import { typography } from '../theme/typography';
 import { getActiveLlmConfig } from '../lib/settings';
 import { sendHomeAssistantTurn, type HomeAssistantAction } from '../lib/homeAssistant';
 import type { ChatTurn } from '../lib/llm';
 import type { HiveTask } from '../lib/hiveApi';
-import { HIVE_COPY, formatEstimateCard } from '../constants/hiveCopy';
+import { formatEstimateCard } from '../constants/hiveCopy';
 import { upsertHiveAppFromTask } from '../lib/hiveApps';
 import { createIntelCase, inferTargetTypeFromLabel, resolveDomainFromTarget } from '../osint/cases';
 import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
-import { openAddCredits } from '../lib/hiveAccount';
+import { HiveLogo } from './HiveLogo';
 import {
   dexInputBarStyle,
   keyboardAvoidBehavior,
@@ -55,7 +52,13 @@ type Props = {
   onExpandChange: (expanded: boolean) => void;
   initialQuery?: string;
   onInitialQueryConsumed?: () => void;
+  /** Fixed dock at bottom of the screen (Home tab) */
+  variant?: 'inline' | 'floating' | 'hero';
+  /** Bottom offset when tab bar is visible (floating mode) */
+  tabBarOffset?: number;
 };
+
+export const ASSISTANT_DOCK_HEIGHT = 76;
 
 const WELCOME =
   'Hi — I\'m your AiBhive assistant. Ask for a job, research a target, or describe any tool you want built. Uses Hive credits by default — no API key needed.';
@@ -69,6 +72,8 @@ export function HomeAssistantChat({
   onExpandChange,
   initialQuery,
   onInitialQueryConsumed,
+  variant = 'inline',
+  tabBarOffset = 0,
 }: Props) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -222,6 +227,27 @@ export function HomeAssistantChat({
     setTimeout(() => inputRef.current?.focus(), 120);
   };
 
+  const inputBar = (
+    <TouchableOpacity style={styles.heroBar} activeOpacity={0.94} onPress={openChat}>
+      <View style={styles.heroIconWrap}>
+        <HiveLogo size={36} glow />
+      </View>
+      <View style={styles.heroCopy}>
+        <Text style={styles.heroLabel}>AiBhive Assistant</Text>
+        <Text style={styles.heroPlaceholder} numberOfLines={1}>
+          {input.trim() || 'Ask anything — jobs, research, build a tool…'}
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={styles.heroSend}
+        onPress={() => (input.trim() ? void submit(input) : openChat())}
+        disabled={loading}
+      >
+        <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
   const chatBody = (
     <>
       <ScrollView
@@ -284,37 +310,64 @@ export function HomeAssistantChat({
 
   return (
     <>
-      <View style={styles.heroWrap}>
-        <TouchableOpacity style={styles.heroBar} activeOpacity={0.94} onPress={openChat}>
-          <View style={styles.heroIconWrap}>
-            <Sparkles color={colors.amber} size={22} />
+      {variant === 'inline' ? (
+        <View style={styles.heroWrap}>
+          {inputBar}
+          {!expanded && (
+            <TextInput
+              style={styles.hiddenInput}
+              value={input}
+              onChangeText={setInput}
+              onFocus={openChat}
+              returnKeyType="send"
+              onSubmitEditing={() => void submit(input)}
+            />
+          )}
+        </View>
+      ) : variant === 'hero' ? (
+        <View style={styles.heroSlot}>
+          <View style={styles.heroSlotLogo}>
+            <HiveLogo size={72} glow animate />
           </View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroLabel}>AiBhive Assistant</Text>
-            <Text style={styles.heroPlaceholder} numberOfLines={1}>
-              {input.trim() || 'Ask anything — jobs, research, build a tool…'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.heroSend}
-            onPress={() => (input.trim() ? void submit(input) : openChat())}
-            disabled={loading}
-          >
-            <Send color={input.trim() ? colors.amber : colors.textDim} size={22} />
-          </TouchableOpacity>
-        </TouchableOpacity>
-        {!expanded && (
-          <TextInput
-            style={styles.hiddenInput}
-            value={input}
-            onChangeText={setInput}
-            onFocus={openChat}
-            returnKeyType="send"
-            onSubmitEditing={() => void submit(input)}
-          />
-        )}
-        <Text style={styles.heroHint}>{HIVE_COPY.hiveAssistantHint}</Text>
-      </View>
+          <Text style={styles.heroSlotTitle}>AiBhive Assistant</Text>
+          <Text style={styles.heroSlotSub}>
+            Ask for a job, research a target, or describe any tool you want built.
+          </Text>
+          {inputBar}
+          {!expanded && (
+            <TextInput
+              style={styles.hiddenInput}
+              value={input}
+              onChangeText={setInput}
+              onFocus={openChat}
+              returnKeyType="send"
+              onSubmitEditing={() => void submit(input)}
+            />
+          )}
+        </View>
+      ) : (
+        <View
+          style={[
+            styles.floatingDock,
+            {
+              bottom: tabBarOffset + Math.max(insets.bottom, 8),
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          {inputBar}
+          {!expanded && (
+            <TextInput
+              style={styles.hiddenInput}
+              value={input}
+              onChangeText={setInput}
+              onFocus={openChat}
+              returnKeyType="send"
+              onSubmitEditing={() => void submit(input)}
+            />
+          )}
+        </View>
+      )}
 
       <Modal visible={expanded} animationType="slide" onRequestClose={() => onExpandChange(false)}>
         <KeyboardAvoidingView
@@ -324,7 +377,7 @@ export function HomeAssistantChat({
         >
           <View style={styles.modalHeader}>
             <View style={styles.modalTitleWrap}>
-              <Sparkles color={colors.amber} size={20} />
+              <HiveLogo size={28} />
               <Text style={styles.modalTitle}>AiBhive Assistant</Text>
               <View style={styles.poweredBadge}>
                 <Text style={styles.poweredText}>Hive credits</Text>
@@ -336,13 +389,6 @@ export function HomeAssistantChat({
           </View>
 
           <View style={styles.modalBody}>{chatBody}</View>
-
-          <View style={styles.modalFooter}>
-            <Text style={styles.hint}>{HIVE_COPY.hiveCreditsFooter}</Text>
-            <TouchableOpacity onPress={() => void openAddCredits()}>
-              <Text style={styles.addCreditsLink}>Add credits</Text>
-            </TouchableOpacity>
-          </View>
         </KeyboardAvoidingView>
       </Modal>
     </>
@@ -351,6 +397,38 @@ export function HomeAssistantChat({
 
 const styles = StyleSheet.create({
   heroWrap: { marginBottom: spacing.lg },
+  heroSlot: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'stretch',
+    paddingVertical: spacing.lg,
+  },
+  heroSlotLogo: {
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  heroSlotTitle: {
+    color: colors.amberLight,
+    fontWeight: '900',
+    fontSize: 26,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  heroSlotSub: {
+    color: colors.textMuted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
+  },
+  floatingDock: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    zIndex: 30,
+  },
   heroBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -367,8 +445,6 @@ const styles = StyleSheet.create({
   heroIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.amberSoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
@@ -395,13 +471,6 @@ const styles = StyleSheet.create({
     opacity: 0,
     height: 0,
     width: 0,
-  },
-  heroHint: {
-    ...typography.caption,
-    color: colors.textDim,
-    marginTop: spacing.xs,
-    paddingHorizontal: 4,
-    fontSize: 12,
   },
   modalRoot: {
     flex: 1,
@@ -517,22 +586,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sendBtnDisabled: { opacity: 0.4 },
-  modalFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  hint: {
-    ...typography.caption,
-    color: colors.textDim,
-    fontSize: 11,
-  },
-  addCreditsLink: {
-    color: colors.amberLight,
-    fontWeight: '800',
-    fontSize: 11,
-  },
 });

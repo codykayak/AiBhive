@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Sync AiBhive beehive logo + background from repo source into Expo / Android assets.
+#
+# IMPORTANT: Replace assets/aibhive-logo.png (1024×1024 PNG) — NOT icon.png alone.
+# Every APK build copies aibhive-logo.png → icon.png, splash-icon.png, android-icon-foreground.png.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$(cd ../.. && pwd)"
