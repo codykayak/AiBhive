@@ -1,11 +1,11 @@
 {
-  "shippedNativeVersion": "1.6.9",
-  "versionCode": 24,
-  "sourceVersion": "1.6.9",
-  "releaseNotes": "v1.6.9 — Home hero video intro (5s fade into AiBhive Assistant), floating assistant dock, updated app icon, tab bar reveals at scroll end.",
+  "shippedNativeVersion": "1.6.10",
+  "versionCode": 25,
+  "sourceVersion": "1.6.10",
+  "releaseNotes": "v1.6.10 — Fix startup crash: migrate home hero video from expo-av to expo-video (Android + New Architecture).",
   "downloadUrl": "https://aibhive.com/api/download/apk?compressed=1",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782438079967%2Ftaylored-mobile.apk.gz?alt=media&token=3497311c-20ee-496e-a00a-731fbec6261e",
-  "publishedAt": "2026-06-26T01:41:20.942Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782439254588%2Ftaylored-mobile.apk.gz?alt=media&token=345c336f-adbd-48d4-bea3-762504253a1e",
+  "publishedAt": "2026-06-26T02:00:55.680Z",
   "otaChannel": "production"
 }
