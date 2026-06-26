@@ -57,4 +57,7 @@ echo "==> Gradle assembleRelease (arm phones only, lint disabled)"
   -Pandroid.injected.signing.key.alias=taylored-release \
   -Pandroid.injected.signing.key.password=taylored2026
 
-echo "==> APK ready at android/app/build/outputs/apk/release/app-release.apk"
+APK_OUT="app/build/outputs/apk/release/app-release.apk"
+PUBLIC_APK="../public/taylored-mobile.apk"
+cp "$APK_OUT" "$PUBLIC_APK"
+echo "==> APK ready at android/$APK_OUT (copied to public/taylored-mobile.apk)"

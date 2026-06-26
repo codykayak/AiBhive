@@ -122,6 +122,10 @@ const defaultNotes = {
     'v1.6.20 — Home intro fades to black (no overlay text); chat dock pinned at bottom; update manifest sync.',
   '1.6.21':
     'v1.6.21 — Big home chat input (~5 rows), pinned above keyboard; full-screen chat overlap fixed.',
+  '1.6.23':
+    'v1.6.23 — Full-width giant chat composer on home, expanded chat, and Build screen.',
+  '1.6.24':
+    'v1.6.24 — Fixes botched v1.6.23 publish (manifest said 1.6.23 but APK was still 1.6.21). Full-width chat composer included.',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.6.23",
-  "versionCode": 38,
-  "sourceVersion": "1.6.23",
-  "releaseNotes": "v1.6.21 — Big home chat input (~5 rows), pinned above keyboard; full-screen chat overlap fixed.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=ceedd966-80aa-48f0-a1b6-68124baed61e",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=ceedd966-80aa-48f0-a1b6-68124baed61e",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782468896517%2Ftaylored-mobile.apk.gz?alt=media&token=7ee8767d-13f6-4521-9bdf-f5ad6d702638",
-  "publishedAt": "2026-06-26T10:14:59.421Z",
+  "shippedNativeVersion": "1.6.24",
+  "versionCode": 39,
+  "sourceVersion": "1.6.24",
+  "releaseNotes": "v1.6.24 — Fixes botched v1.6.23 publish (manifest said 1.6.23 but APK was still 1.6.21). Full-width chat composer included.",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=4508993f-dc8d-4b0f-ab13-886e297c012a",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=4508993f-dc8d-4b0f-ab13-886e297c012a",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782471118956%2Ftaylored-mobile.apk.gz?alt=media&token=0183bb5e-75ce-43db-b2a5-fc3a5dbf709c",
+  "publishedAt": "2026-06-26T10:52:01.374Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=ceedd966-80aa-48f0-a1b6-68124baed61e"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=4508993f-dc8d-4b0f-ab13-886e297c012a"
 }

@@ -18,9 +18,25 @@ const app = initializeApp({
   messagingSenderId: config.messagingSenderId,
 });
 
-const apkPath = 'public/taylored-mobile.apk';
+const builtApkPath = 'taylored-mobile/android/app/build/outputs/apk/release/app-release.apk';
+const publicApkPath = 'public/taylored-mobile.apk';
+
+if (fs.existsSync(builtApkPath)) {
+  const builtStat = fs.statSync(builtApkPath);
+  const publicStat = fs.existsSync(publicApkPath) ? fs.statSync(publicApkPath) : null;
+  const shouldSync =
+    !publicStat ||
+    builtStat.mtimeMs > publicStat.mtimeMs ||
+    builtStat.size !== publicStat.size;
+  if (shouldSync) {
+    fs.copyFileSync(builtApkPath, publicApkPath);
+    console.log('Synced fresh Gradle APK → public/taylored-mobile.apk');
+  }
+}
+
+const apkPath = publicApkPath;
 if (!fs.existsSync(apkPath)) {
-  console.error('APK not found at', apkPath);
+  console.error('APK not found. Run taylored-mobile/scripts/ci-android-build.sh first.');
   process.exit(1);
 }
 
