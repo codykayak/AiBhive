@@ -29,8 +29,9 @@ import { getActiveLlmConfig } from '../lib/settings';
 import { sendHomeAssistantTurn, type HomeAssistantAction } from '../lib/homeAssistant';
 import type { ChatTurn } from '../lib/llm';
 import type { HiveTask } from '../lib/hiveApi';
-import { formatEstimateCard } from '../constants/hiveCopy';
+import { formatEstimateCard, HIVE_COPY } from '../constants/hiveCopy';
 import { upsertHiveAppFromTask } from '../lib/hiveApps';
+import { dingFeatureReady } from '../lib/notifications';
 import { createIntelCase, inferTargetTypeFromLabel, resolveDomainFromTarget } from '../osint/cases';
 import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
@@ -210,7 +211,13 @@ export function HomeAssistantChat({
           return;
         }
         if (buildTask.status === 'complete') {
-          appendAi(`${action.reply}\n\n✨ Your app is ready — check **My Apps**.`);
+          appendAi(
+            `${action.reply}\n\n✨ Your app is ready — check **My Apps**.\n\n${HIVE_COPY.buildCompleteUpsell}\n\n📖 ${HIVE_COPY.buildCompleteGuide}`
+          );
+          void dingFeatureReady(
+            'Your app is ready!',
+            'Open My Apps — your User Guide is waiting for you.'
+          );
           return;
         }
       }
@@ -330,6 +337,9 @@ export function HomeAssistantChat({
       void submit(q);
     }
   }, [initialQuery, onInitialQueryConsumed, submit]);
+
+  const hasUserSentMessage = messages.some((m) => m.role === 'user');
+  const showSuggestions = !keyboardOpen && !hasUserSentMessage;
 
   const quickActions = [
     { label: 'Better job', icon: Briefcase, onPress: () => void submit('I want a better job — help me with applications and resume') },
@@ -512,7 +522,7 @@ export function HomeAssistantChat({
                 )}
               </ScrollView>
 
-              {keyboardOpen ? null : (
+              {showSuggestions ? (
                 <View style={styles.quickRow}>
                   {insightBullets.map((tip) => (
                     <TouchableOpacity

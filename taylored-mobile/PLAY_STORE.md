@@ -1,6 +1,6 @@
-# Google Play Store — Taylored Mobile checklist
+# Google Play Store — AiBhive checklist
 
-Use this when you are ready to move from sideload beta to Play Store internal testing.
+Use this when moving from sideload beta to Play Store internal testing and production.
 
 ## Why Cloud Build instead of GitHub Actions?
 
@@ -16,10 +16,41 @@ APK builds take ~30–45 minutes. **Google Cloud Build** runs them on GCP machin
 | Version | `app.json` → `version` + `android.versionCode` (must increase each upload) |
 | AAB for Play | `eas build --platform android --profile production` (buildType: app-bundle) |
 | APK for sideload | `scripts/ci-android-build.sh` or Cloud Build |
+| ASO listing copy | `store/android/en-US/` — title, short + full description (keyword-optimized) |
+
+## App Store Optimization (ASO)
+
+Listing files live in `taylored-mobile/store/android/en-US/` for EAS metadata upload:
+
+```bash
+cd taylored-mobile
+eas metadata:push --platform android
+```
+
+**Primary keywords (woven into full description):**
+AI app builder, no-code app maker, custom app creator, productivity, job tracker, resume builder, business tools, habit tracker, workflow app, AI assistant
+
+**Title (30 chars max for Play — use brand + primary keyword):**
+`AiBhive — AI App Builder & Job Tools`
+
+**Short description (80 chars max):**
+`Build custom apps in plain English. AI app builder, job tracker, resume helper & research tools.`
+
+**Category:** Productivity  
+**Tags / content rating:** Everyone (no mature content)  
+**Contact:** support@aibhive.com
+
+**ASO tips:**
+1. Front-load the title with "AI App Builder" — highest-intent search term for this product.
+2. Repeat natural keyword variants in the first 2 lines of the full description (Google indexes this heavily).
+3. Use feature bullets with verbs users search: "Build", "Track", "Export", "Resume".
+4. Include "no coding" and "plain English" — common long-tail queries.
+5. Upload 4–6 screenshots showing: home chat, Build tab, finished app, Apps list, Export options, Job tracker.
+6. Feature graphic: amber hive logo + "Build apps in plain English" tagline on dark background.
 
 ## Play Console setup
 
-1. [Google Play Console](https://play.google.com/console) → Create app → **Taylored** (or AiBhive)
+1. [Google Play Console](https://play.google.com/console) → Create app → **AiBhive**
 2. **App content** → Privacy policy → `https://aibhive.com/privacy-policy.html`
 3. **App content** → Data safety — declare: account info, user-generated content, payments (Stripe), optional AI processing
 4. **Testing** → Internal testing → upload first **AAB** from EAS production profile
@@ -31,7 +62,8 @@ APK builds take ~30–45 minutes. **Google Cloud Build** runs them on GCP machin
 cd taylored-mobile
 # One-time: eas init (real projectId replaces placeholder in app.json extra.eas.projectId)
 eas build --platform android --profile production
-eas submit --platform android --profile production   # optional: uploads to internal track
+eas submit --platform android --profile production   # uploads to internal track
+eas metadata:push --platform android                 # push ASO listing copy
 ```
 
 Secrets in EAS / local `.env`:
@@ -51,27 +83,27 @@ Set `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true` for Play/beta builds with Google sign
 
 Until then, sideload builds keep auth off (`GOOGLE_AUTH_ENABLED` defaults false).
 
-## Store listing copy (starter)
+## v1.7.6 Play readiness notes
 
-- **Short description:** Your AI pocket factory — build apps, track jobs, get daily motivation.
-- **Full description:** AiBhive is your pocket AI factory — describe tools in plain English, track job applications, run research, and get a daily motivational nudge with smart suggestions. Hive Magic builds notify you with a custom chime when your app is ready. Optional calendar follow-ups when you submit applications.
-- **Category:** Productivity
-- **Contact:** support@aibhive.com
+| Change | Why |
+|--------|-----|
+| Chat suggestions hide after first message | Cleaner composer once user starts chatting |
+| 30% Hive credit markup | Lower token pricing for users |
+| Build-complete upsell + User Guide | Grok offers Hive vs stand-alone export; guide ships with every app |
+| ASO store listing files | `store/android/en-US/` for Play search optimization |
 
-## v1.7.0 Play readiness notes
-
-| New permission | Why |
-|--------------|-----|
+| Permission | Why |
+|------------|-----|
 | `READ_CALENDAR` / `WRITE_CALENDAR` | Optional job follow-up reminders (user taps "Add to calendar") |
 | `POST_NOTIFICATIONS` | Daily motivation + build-ready dings (custom hive chime) |
 
 **Data safety additions:** App activity (screens visited, job counts) stored on-device for proactive suggestions; optional Grok 3 brief via Hive credits. Toggles in Settings → Daily Hive assistant.
 
 **Pre-submit smoke test:**
-1. Home chat keyboard + Plan/Build toggle (PR #143)
-2. Mark job **Submitted** → calendar prompt appears
-3. Settings → enable daily notification → verify permission prompt
-4. Build completes → custom chime notification
+1. Home chat — suggestions disappear after first message
+2. Build completes → User Guide button + export upsell appear
+3. Mark job **Submitted** → calendar prompt appears
+4. Settings → enable daily notification → verify permission prompt
 5. `eas build --platform android --profile production` → upload AAB to Internal testing
 
 ## Sideload beta (current)

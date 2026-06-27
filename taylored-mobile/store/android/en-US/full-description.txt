@@ -1,0 +1,29 @@
+AiBhive is your pocket AI app factory — describe any tool in plain English and watch it appear in seconds.
+
+<b>Build custom apps without coding</b>
+• Describe a habit tracker, calculator, business tool, or workflow app — Hive Magic builds it for you
+• Most apps are ready in seconds inside AiBhive (~$1)
+• Change your app anytime by chatting — add pages, themes, and features
+• Export to a web link, installable Android app, or Google Play listing when you are ready
+
+<b>Job search & productivity</b>
+• Job application tracker with status pipeline
+• Auto-Bot Resume — snap a job listing screenshot and get a tailored resume draft
+• Daily motivation and smart suggestions to keep you moving
+
+<b>Research & intelligence</b>
+• Intel Agent for company, domain, and people research
+• On-device OSINT plus optional Hive Cloud search
+
+<b>How pricing works</b>
+• Job tools and on-device research are free
+• Hive credits power assistant chat and cloud features at API cost + 30%
+• Stand-alone exported apps run from their own icon — no Hive credits for everyday use
+
+<b>Every build includes a User Guide</b>
+Step-by-step help for using, changing, and exporting your app — always included when your app is ready.
+
+<b>Keywords:</b> AI app builder, no-code app maker, custom app creator, productivity app, business app builder, habit tracker maker, job tracker, resume builder, AI assistant, app factory, small business tools, workflow automation, personal app maker
+
+Questions? support@aibhive.com
+Privacy: https://aibhive.com/privacy-policy.html

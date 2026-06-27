@@ -31,6 +31,10 @@ export const HIVE_COPY = {
     'Our build service is reconnecting. I can still chat, and you can use My Apps. Try again in a moment.',
   buildStarted: 'Build started. We\'ll notify you when it\'s ready.',
   buildFailed: 'Something went wrong with the build. Try again or describe a smaller first step.',
+  buildCompleteUpsell:
+    'That sounds like a great app! Keep using it here in the Hive, or package it as your own stand-alone app on your phone for a little extra (~$18 installable APK or ~$35 Play Store ready).\n\n**Inside AiBhive:** Hive credits apply when you chat with the assistant or use cloud features — your built app itself is free to use day to day.\n\n**Stand-alone export:** runs from its own home-screen icon with your data on your phone — no Hive credits needed for everyday use.',
+  buildCompleteGuide:
+    'Your **User Guide** ships with every app — open **Apps → your app → User Guide** (or **Settings → User Guide**) for step-by-step help.',
   iterateHint: 'Want changes? Describe them here — we\'ll quote the next update.',
   updateCurrent: (version: string) => `You are on the latest version (v${version}).`,
   updateNativeAvailable: (version: string) => `Version v${version} is ready. Download and install the new app package.`,

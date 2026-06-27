@@ -101,10 +101,20 @@ export default function HiveAppDetailScreen() {
                     ? 'Your screen is registered inside AiBhive. Tap to open it now.'
                     : 'Your screen is built. The next AiBhive update (auto-shipping now) will make it tappable.'}
             </Text>
+            <Text style={styles.body}>
+              Your User Guide is included — step-by-step help for using, changing, and exporting this app.
+            </Text>
             <PrimaryButton
               label={openLabel}
               icon={Rocket}
               onPress={openDeliverable}
+              style={styles.btn}
+            />
+            <PrimaryButton
+              label="Read User Guide"
+              variant="secondary"
+              icon={BookOpen}
+              onPress={() => navigation.navigate('UserGuide')}
               style={styles.btn}
             />
             {app.target !== 'web_app' && (
@@ -140,10 +150,18 @@ export default function HiveAppDetailScreen() {
         ) : null}
 
         <GlassCard style={styles.card}>
-          <Text style={styles.fieldLabel}>Want it standalone or on your website?</Text>
+          <Text style={styles.fieldLabel}>Keep it in the Hive or go stand-alone?</Text>
           <Text style={styles.body}>
-            In-app modules ship fastest. Web apps and separate APKs are on the roadmap — see the User Guide.
+            Use your app free inside AiBhive, or export it as a web link (~$5), installable APK (~$18), or Play Store
+            kit (~$35). Stand-alone apps run from their own icon — no Hive credits for everyday use.
           </Text>
+          <PrimaryButton
+            label="Export options"
+            variant="secondary"
+            icon={Rocket}
+            onPress={() => navigation.navigate('HiveExportOptions', { appId: app.id })}
+            style={styles.btn}
+          />
           <PrimaryButton
             label="Read User Guide"
             variant="secondary"

@@ -100,8 +100,18 @@ export const USER_GUIDE_SECTIONS: GuideSection[] = [
     ],
   },
   {
+    id: 'credits',
+    title: '10. Hive credits vs stand-alone apps',
+    body: 'Your built app is free to use inside AiBhive. Credits only apply when you use cloud features.',
+    bullets: [
+      'Inside AiBhive: Hive credits meter assistant chat, cloud research, and paid builds — not opening your app day to day.',
+      'Stand-alone export (APK or Play Store): your app runs from its own icon with data on your phone — no Hive credits for everyday use.',
+      'Optional cloud AI inside an exported app would be separate; most spec apps work fully offline.',
+    ],
+  },
+  {
     id: 'help',
-    title: '9. Stuck?',
+    title: '11. Stuck?',
     body: 'Common fixes:',
     bullets: [
       'App not appearing in Apps tab — pull down to refresh, or wait 10 seconds for sync.',

@@ -1,0 +1,9 @@
+{
+  "config": {
+    "android": {
+      "release": {
+        "track": "internal"
+      }
+    }
+  }
+}

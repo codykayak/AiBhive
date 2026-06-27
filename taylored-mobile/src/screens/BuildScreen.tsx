@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Sparkles, Wand2, Grid, Zap, Trash2 } from 'lucide-react-native';
+import { Sparkles, Wand2, Grid, Zap, Trash2, BookOpen, Rocket } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { ChatComposerBox } from '../components/ChatComposerBox';
 import { HiveLogo } from '../components/HiveLogo';
@@ -171,8 +171,11 @@ export default function BuildScreen() {
           updateMessageTask(taskId, task, prompt);
           if (task.status === 'complete') {
             dingReady();
-            void dingFeatureReady();
-            showToast('Your app is ready — check My Apps', 'success');
+            void dingFeatureReady(
+              'Your app is ready!',
+              'Open My Apps — your User Guide is waiting for you.'
+            );
+            showToast('Your app is ready — User Guide included', 'success');
             if (pollRef.current) clearInterval(pollRef.current);
           } else if (task.status === 'failed') {
             if (pollRef.current) clearInterval(pollRef.current);
@@ -308,8 +311,11 @@ export default function BuildScreen() {
         ) {
           const appId = (task.deliverable as any).appId;
           dingReady();
-          void dingFeatureReady('Your app is ready', task.title || 'Open it from My Apps.');
-          showToast('App ready — tap to open', 'success');
+          void dingFeatureReady(
+            'Your app is ready!',
+            task.title || 'Open it from My Apps — your User Guide is included.'
+          );
+          showToast('App ready — User Guide included', 'success');
           setTimeout(() => navigation.navigate('DynamicApp', { appId }), 400);
         }
 
@@ -367,6 +373,9 @@ export default function BuildScreen() {
   useEffect(() => {
     if (keyboardOpen) scrollToEnd();
   }, [keyboardOpen, scrollToEnd]);
+
+  const hasUserSentMessage = messages.some((m) => m.role === 'user');
+  const showQuickPrompts = magicMode && !isLoading && !keyboardOpen && !hasUserSentMessage;
 
   return (
     <ScreenLayout title="Build" subtitle="Describe any tool — AiBhive creates it." contentStyle={styles.screenContent} compactBadge>
@@ -465,10 +474,25 @@ export default function BuildScreen() {
               {msg.task?.status === 'complete' && (
                 <GlassCard style={styles.doneCard} glow>
                   <Text style={styles.doneText}>{HIVE_COPY.done}</Text>
+                  <Text style={styles.doneUpsell}>{HIVE_COPY.buildCompleteUpsell}</Text>
+                  <Text style={styles.doneGuide}>{HIVE_COPY.buildCompleteGuide}</Text>
                   <PrimaryButton
                     label="Open My Apps"
                     variant="secondary"
                     icon={Grid}
+                    onPress={() => navigation.navigate('Apps')}
+                    style={styles.doneBtn}
+                  />
+                  <PrimaryButton
+                    label="Read User Guide"
+                    variant="secondary"
+                    icon={BookOpen}
+                    onPress={() => navigation.navigate('UserGuide')}
+                    style={styles.doneBtn}
+                  />
+                  <PrimaryButton
+                    label="Export stand-alone app"
+                    icon={Rocket}
                     onPress={() => navigation.navigate('Apps')}
                     style={styles.doneBtn}
                   />
@@ -492,7 +516,7 @@ export default function BuildScreen() {
         </ScrollView>
 
         <View style={styles.composer}>
-          {magicMode && !isLoading && !keyboardOpen && (
+          {showQuickPrompts && (
             <QuickPrompts
               prompts={HIVE_COPY.quickPrompts}
               onSelect={(p) => void sendMessage(p)}
@@ -642,6 +666,8 @@ const styles = StyleSheet.create({
   buildingText: { color: colors.textMuted, fontSize: 14 },
   doneCard: { marginTop: 8, maxWidth: '92%', alignSelf: 'flex-start', gap: 10 },
   doneText: { color: colors.amberLight, fontWeight: '700', fontSize: 15 },
+  doneUpsell: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
+  doneGuide: { color: colors.text, fontSize: 13, lineHeight: 20, fontWeight: '600' },
   doneBtn: { alignSelf: 'flex-start', paddingHorizontal: 20 },
   failedCard: {
     marginTop: 8,
