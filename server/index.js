@@ -58,6 +58,7 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
+import { runIntelResearchChat } from './intelResearchChat.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
@@ -550,6 +551,35 @@ app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => 
   } catch (error) {
     console.error('[intel/cloud-tool]', error);
     res.status(500).json({ error: 'Intel cloud tool failed' });
+  }
+});
+
+/** Intel Agent Grok/Gemini chat — same Hive credit pricing as mobile cloud intel. */
+app.post('/api/intel-gathering/chat', express.json({ limit: '512kb' }), async (req, res) => {
+  try {
+    const { userId, message, history, systemInstruction, targetContext } = req.body ?? {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || !message?.trim()) {
+      return res.status(400).json({ error: 'userId and message required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const sys = targetContext
+      ? `${systemInstruction || ''}\n\nCURRENT RESEARCH TARGET:\n${String(targetContext).slice(0, 4000)}`
+      : systemInstruction;
+    const result = await runIntelResearchChat(db, resolvedUserId, {
+      message: message.trim(),
+      history: history || [],
+      systemInstruction: sys,
+    });
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 502;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (error) {
+    console.error('[intel/chat]', error);
+    return res.status(500).json({ error: 'Intel chat failed.' });
   }
 });
 

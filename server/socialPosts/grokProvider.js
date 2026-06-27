@@ -16,7 +16,11 @@ export async function grokChat(apiKey, model, prompt, system = '') {
   const messages = [];
   if (system) messages.push({ role: 'system', content: system });
   messages.push({ role: 'user', content: prompt });
+  return grokChatMessages(apiKey, model, messages);
+}
 
+/** Multi-turn Grok chat (system + history + latest user message). */
+export async function grokChatMessages(apiKey, model, messages) {
   const res = await fetch(`${XAI_BASE}/chat/completions`, {
     method: 'POST',
     headers: {

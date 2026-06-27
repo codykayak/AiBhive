@@ -24,7 +24,10 @@ import MedicalLegalMultiAgent from './pages/solutions/MedicalLegalMultiAgent';
 import RealEstateSolutions from './pages/solutions/RealEstateSolutions';
 import PhoneSystemsIntegration from './pages/solutions/PhoneSystemsIntegration';
 import BookConsultation from './pages/BookConsultation';
-import IntelGathering from './pages/intel-gathering/IntelGathering';
+import ResearchPage from './pages/app/ResearchPage';
+import AppLayout, { AppRedirect } from './pages/app/AppLayout';
+import AppHub from './pages/app/AppHub';
+import AppTopicPage from './pages/app/AppTopicPage';
 import HiveAppsLayout from './pages/hive-apps/HiveAppsLayout';
 import HiveAppsBrowse from './pages/hive-apps/HiveAppsBrowse';
 import HiveAppDetailPage from './pages/hive-apps/HiveAppDetailPage';
@@ -67,7 +70,18 @@ function AnimatedRoutes() {
           <Route path="/solutions/real-estate-ai-automation" element={<RealEstateSolutions />} />
           <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
           <Route path="/book-consultation" element={<BookConsultation />} />
-          <Route path="/intel-gathering" element={<IntelGathering />} />
+          <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
+          <Route path="/app" element={<AppLayout />}>
+            <Route index element={<AppHub />} />
+            <Route path="automated-social-media" element={<AppTopicPage />} />
+            <Route path="phone-intelligence" element={<AppTopicPage />} />
+            <Route path="lead-generation" element={<AppTopicPage />} />
+            <Route path="productivity" element={<AppTopicPage />} />
+            <Route path="build" element={<AppRedirect to="/hive-apps/build" />} />
+            <Route path="apps" element={<AppRedirect to="/hive-apps" />} />
+            <Route path="research" element={<ResearchPage />} />
+            <Route path="admin" element={<AppRedirect to="/admin" />} />
+          </Route>
           <Route path="/hive-apps" element={<HiveAppsLayout />}>
             <Route index element={<HiveAppsBrowse />} />
             <Route path="app/:appId" element={<HiveAppDetailPage />} />

@@ -170,7 +170,7 @@
             "Username probe, dorks, DNS, Wayback, PDF export"
           ],
           "links": [
-            { "label": "Intel gathering overview", "url": "https://aibhive.com/intel-gathering" },
+            { "label": "Open Intel Agent on web", "url": "https://aibhive.com/app/research" },
             { "label": "Get mobile app", "url": "https://aibhive.com/download.html" }
           ]
         }

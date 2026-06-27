@@ -130,6 +130,8 @@ const defaultNotes = {
     'v1.7.2 — Fixes home chat keyboard: dock stays above keyboard, full-screen composer clears nav bar and system controls.',
   '1.7.5':
     'v1.7.5 — Hero prompt update, community pool scroll fix, 50% Hive credit markup (was 20–30%).',
+  '1.7.7':
+    'v1.7.7 — Web App Command Center at /app, working Intel Agent + Grok research chat, APK publish fix.',
   '1.7.6':
     'v1.7.6 — Chat suggestions hide after first message, 30% Hive credit markup, build-complete export upsell + User Guide, Play Store ASO listing.',
 };

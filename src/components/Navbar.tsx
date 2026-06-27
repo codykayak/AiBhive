@@ -63,10 +63,20 @@ export default function Navbar() {
               </Link>
 
               <Link
+                to="/app"
+                className={cn(
+                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
+                  location.pathname.startsWith('/app') ? 'text-bee-amber' : 'text-slate-300'
+                )}
+              >
+                App
+              </Link>
+
+              <Link
                 to="/hive-apps"
                 className={cn(
                   'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
-                  location.pathname === '/hive-apps' ? 'text-bee-amber' : 'text-slate-300'
+                  location.pathname.startsWith('/hive-apps') ? 'text-bee-amber' : 'text-slate-300'
                 )}
               >
                 Hive Apps
