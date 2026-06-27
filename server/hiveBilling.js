@@ -27,7 +27,9 @@ export async function ensureHiveUser(db, userId) {
   const doc = {
     userId,
     planId: 'free',
-    creditBalanceUsd: Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 0),
+    creditBalanceUsd: String(userId).startsWith('web_')
+      ? Number(process.env.HIVE_WEB_WELCOME_CREDIT_USD ?? process.env.HIVE_WELCOME_CREDIT_USD ?? 2)
+      : Number(process.env.HIVE_WELCOME_CREDIT_USD ?? 0),
     monthlyAllowanceUsd: 0,
     monthlyUsageUsd: 0,
     lifetimeUsageUsd: 0,

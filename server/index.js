@@ -59,6 +59,12 @@ import {
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { runIntelResearchChat } from './intelResearchChat.js';
+import {
+  FREE_INTEL_TOOL_IDS,
+  resolveResearchDomain,
+  runFreeIntelBatch,
+  runFreeIntelTool,
+} from './intelFreeTools.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
@@ -520,6 +526,18 @@ app.post('/api/intel-gathering/firecrawl', express.json(), async (req, res) => {
 });
 
 /** Hive Cloud Intel — SerpAPI / Firecrawl via server keys (never hits google.com directly). */
+app.get('/api/intel-gathering/tool-registry', (_req, res) => {
+  res.json({
+    freeTools: FREE_INTEL_TOOL_IDS.map((id) => ({
+      id,
+      tier: 'free',
+      name: id.replace(/_/g, ' '),
+    })),
+    cloudTools: INTEL_CLOUD_TOOL_IDS,
+    costsUsd: Object.fromEntries(INTEL_CLOUD_TOOL_IDS.map((id) => [id, intelToolCostUsd(id)])),
+  });
+});
+
 app.get('/api/intel-gathering/cloud-tools', (_req, res) => {
   res.json({
     tools: INTEL_CLOUD_TOOL_IDS,
@@ -536,6 +554,7 @@ app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => 
     if (!INTEL_CLOUD_TOOL_IDS.includes(toolId)) {
       return res.status(400).json({ error: 'Unsupported cloud tool' });
     }
+    await ensureHiveUser(db, userId);
     const result = await runIntelCloudTool(db, { checkTokenBudget, recordTokenUsage }, {
       userId,
       toolId,
@@ -551,6 +570,43 @@ app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => 
   } catch (error) {
     console.error('[intel/cloud-tool]', error);
     res.status(500).json({ error: 'Intel cloud tool failed' });
+  }
+});
+
+/** Free OSINT tools — server-side (no browser CORS), no Hive credits (osint_on_device). */
+app.post('/api/intel-gathering/run-free', express.json(), async (req, res) => {
+  try {
+    const { userId, toolId, toolIds, params } = req.body ?? {};
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+    const targetType = params?.targetType || 'company';
+    const company = String(params?.company || params?.label || '').trim();
+    const domain = resolveResearchDomain(company, targetType, params?.domain);
+    const ctx = {
+      targetType,
+      domain,
+      company,
+      userIntent: params?.userIntent || '',
+      region: params?.restrictToRegion
+        ? { restrictToRegion: true, location: params?.location || '' }
+        : undefined,
+    };
+
+    if (Array.isArray(toolIds) && toolIds.length) {
+      const ids = toolIds.filter((id) => FREE_INTEL_TOOL_IDS.includes(id));
+      const results = await runFreeIntelBatch(ids, ctx);
+      return res.json({ ok: true, results, domain });
+    }
+
+    if (!toolId || !FREE_INTEL_TOOL_IDS.includes(toolId)) {
+      return res.status(400).json({ error: 'Invalid free toolId' });
+    }
+    const out = await runFreeIntelTool(toolId, ctx);
+    return res.json({ ok: true, toolId, status: 'done', ...out, domain });
+  } catch (error) {
+    console.error('[intel/run-free]', error);
+    return res.status(500).json({ error: error.message || 'Free OSINT tool failed' });
   }
 });
 

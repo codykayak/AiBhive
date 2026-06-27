@@ -1,533 +1,641 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
+  Bot,
   CheckCircle2,
-  ChevronRight,
-  ExternalLink,
+  ChevronDown,
+  ChevronUp,
   Loader2,
+  Play,
   Radar,
-  Send,
-  Shield,
   Sparkles,
+  Trash2,
   XCircle,
 } from 'lucide-react';
-import { brandFor } from '../../lib/hiveAppBranding';
 import WebPlansStrip from '../app/WebPlansStrip';
+import { brandFor } from '../../lib/hiveAppBranding';
 import {
-  buildDorkUrl,
-  CLOUD_TOOLS,
   DEFAULT_INTENT,
-  fetchCloudToolsMeta,
+  WEB_OSINT_TOOLS,
+  buildTargetContext,
+  defaultToolsForTargetType,
+  formatFallbackBrief,
+  isCloudTool,
   resolveDomain,
   runCloudTool,
+  runFreeToolsBatch,
   sendIntelChat,
-  TARGET_TYPES,
-  type ChatTurn,
-  type CloudToolId,
+  type FreeToolId,
   type IntelTargetType,
+  type IntelWebCase,
   type ToolRunResult,
 } from '../../lib/intelWebApi';
 import {
   createIntelWebCase,
+  deleteIntelWebCase,
   listIntelWebCases,
   updateIntelWebCase,
-  type IntelWebCase,
 } from '../../lib/intelWebStorage';
 
-type Props = { expanded?: boolean };
+const TARGET_TYPES: { id: IntelTargetType; label: string; placeholder: string; hint: string }[] = [
+  {
+    id: 'company',
+    label: 'Company',
+    placeholder: 'Acme Corporation',
+    hint: 'Business name — we find their site & leadership',
+  },
+  {
+    id: 'domain',
+    label: 'Website',
+    placeholder: 'example.com',
+    hint: 'Domain or URL — DNS, tech stack, site content',
+  },
+  {
+    id: 'person',
+    label: 'Person',
+    placeholder: 'Jane Smith',
+    hint: 'Full name — social dorks, username probe',
+  },
+];
 
-function toolLabel(id: CloudToolId) {
-  return CLOUD_TOOLS.find((t) => t.id === id)?.name ?? id;
+type Props = {
+  expanded?: boolean;
+};
+
+type ChatLine = { id: string; role: 'user' | 'ai'; content: string };
+
+function toolLabel(toolId: string): string {
+  return WEB_OSINT_TOOLS.find((t) => t.id === toolId)?.name ?? toolId.replace(/_/g, ' ');
 }
 
-/** Full Intel Agent — mirrors mobile Research / Intel Agent on the web. */
-export default function ResearchWebApp({ expanded }: Props) {
-  const brand = brandFor('purple');
-  const chatEndRef = useRef<HTMLDivElement>(null);
+function statusIcon(status: ToolRunResult['status']) {
+  if (status === 'done') return <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />;
+  if (status === 'error') return <XCircle className="w-4 h-4 text-red-400 shrink-0" />;
+  return <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" />;
+}
 
+/** Web Intel Agent — free server OSINT + optional cloud tools + Grok chat (same pricing as mobile). */
+export default function ResearchWebApp({ expanded }: Props) {
+  const brand = brandFor('cyan');
+  const [cases, setCases] = useState<IntelWebCase[]>(() => listIntelWebCases());
+  const [activeCaseId, setActiveCaseId] = useState<string | null>(() => listIntelWebCases()[0]?.id ?? null);
   const [targetType, setTargetType] = useState<IntelTargetType>('company');
   const [targetLabel, setTargetLabel] = useState('');
   const [userIntent, setUserIntent] = useState(DEFAULT_INTENT);
-  const [restrictRegion, setRestrictRegion] = useState(false);
-  const [regionLocation, setRegionLocation] = useState('');
-  const [radiusMiles, setRadiusMiles] = useState('50');
-  const [enabledTools, setEnabledTools] = useState<CloudToolId[]>(() =>
-    CLOUD_TOOLS.filter((t) => t.defaultOn).map((t) => t.id)
-  );
-  const [toolCosts, setToolCosts] = useState<Record<string, number>>({});
+  const [enabledTools, setEnabledTools] = useState(() => defaultToolsForTargetType('company'));
   const [running, setRunning] = useState(false);
-  const [runStatus, setRunStatus] = useState('');
-  const [activeCase, setActiveCase] = useState<IntelWebCase | null>(null);
-  const [recentCases, setRecentCases] = useState<IntelWebCase[]>([]);
-  const [error, setError] = useState('');
-
+  const [runProgress, setRunProgress] = useState('');
+  const [chatLines, setChatLines] = useState<ChatLine[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [chatHistory, setChatHistory] = useState<ChatTurn[]>([
-    {
-      role: 'ai',
-      content:
-        'I\'m your Intel research assistant (Grok when available, otherwise Hive Cloud). Set a target above and tap **Run Intel Agent**, or ask me anything about OSINT, due diligence, or how AiBhive research works.',
-    },
-  ]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatProvider, setChatProvider] = useState<string | null>(null);
+  const [chatBusy, setChatBusy] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const [resultsOpen, setResultsOpen] = useState(true);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const activeTarget = TARGET_TYPES.find((t) => t.id === targetType)!;
-  const domain = resolveDomain(targetLabel, targetType);
+  const activeCase = useMemo(
+    () => cases.find((c) => c.id === activeCaseId) ?? null,
+    [cases, activeCaseId],
+  );
+
+  const availableTools = useMemo(
+    () => WEB_OSINT_TOOLS.filter((t) => t.targets.includes(targetType)),
+    [targetType],
+  );
+
+  const resolvedDomain = useMemo(
+    () => resolveDomain(targetLabel, targetType),
+    [targetLabel, targetType],
+  );
 
   const refreshCases = useCallback(() => {
-    setRecentCases(listIntelWebCases().slice(0, 5));
+    setCases(listIntelWebCases());
   }, []);
 
   useEffect(() => {
-    refreshCases();
-    void fetchCloudToolsMeta().then((m) => {
-      if (m?.costsUsd) setToolCosts(m.costsUsd);
-    });
-  }, [refreshCases]);
+    if (activeCase) {
+      setTargetType(activeCase.target.type);
+      setTargetLabel(activeCase.target.label);
+      setUserIntent(activeCase.target.userIntent || DEFAULT_INTENT);
+      setEnabledTools(activeCase.enabledTools);
+      if (activeCase.brief) {
+        setChatLines([{ id: 'brief', role: 'ai', content: activeCase.brief }]);
+      } else {
+        setChatLines([]);
+      }
+    }
+  }, [activeCaseId]); // eslint-disable-line react-hooks/exhaustive-deps -- load case when selection changes
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, chatLoading]);
+  }, [chatLines, chatBusy]);
 
-  const toggleTool = (id: CloudToolId) => {
+  const onTargetTypeChange = (next: IntelTargetType) => {
+    setTargetType(next);
+    setEnabledTools(defaultToolsForTargetType(next));
+  };
+
+  const toggleTool = (id: (typeof enabledTools)[number]) => {
     setEnabledTools((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]));
   };
 
-  const buildTargetContext = (c?: IntelWebCase | null) => {
-    const t = c?.target ?? {
-      type: targetType,
-      label: targetLabel,
-      domain,
-      userIntent,
-      region:
-        restrictRegion && regionLocation.trim()
-          ? { location: regionLocation.trim(), radiusMiles: parseInt(radiusMiles, 10) || 50 }
-          : undefined,
-    };
-    const results = c?.toolResults ?? activeCase?.toolResults ?? [];
-    const dump = results
-      .filter((r) => r.status === 'done' && r.data)
-      .map((r) => `### ${toolLabel(r.toolId)}\n${r.summary}\n${r.data?.slice(0, 6000)}`)
-      .join('\n\n');
-    return `Target type: ${t.type}\nLabel: ${t.label}\nDomain: ${t.domain || domain || 'n/a'}\nIntent: ${t.userIntent || userIntent}\n${
-      t.region ? `Region: ${t.region.location} (${t.region.radiusMiles} mi)` : ''
-    }\n\nTOOL RESULTS:\n${dump || '(none yet)'}`;
+  const handleNewCase = () => {
+    setActiveCaseId(null);
+    setTargetLabel('');
+    setUserIntent(DEFAULT_INTENT);
+    setTargetType('company');
+    setEnabledTools(defaultToolsForTargetType('company'));
+    setChatLines([]);
   };
 
-  const runAgent = async () => {
-    if (!targetLabel.trim()) {
-      setError('Enter a company, website, or person to research.');
-      return;
+  const handleDeleteCase = (id: string) => {
+    deleteIntelWebCase(id);
+    const next = listIntelWebCases();
+    setCases(next);
+    if (activeCaseId === id) {
+      setActiveCaseId(next[0]?.id ?? null);
     }
-    if (!enabledTools.length) {
-      setError('Enable at least one cloud research module.');
-      return;
-    }
+  };
 
-    setError('');
-    setRunning(true);
-    setRunStatus('Creating case…');
+  const runInvestigation = async () => {
+    const label = targetLabel.trim();
+    if (!label) return;
+    if (!enabledTools.length) return;
 
-    const region =
-      restrictRegion && regionLocation.trim()
-        ? { location: regionLocation.trim(), radiusMiles: Math.min(100, Math.max(30, parseInt(radiusMiles, 10) || 50)) }
-        : undefined;
-
-    let intelCase = createIntelWebCase({
-      target: {
-        type: targetType,
-        label: targetLabel.trim(),
-        domain: domain || undefined,
-        userIntent: userIntent.trim(),
-        region,
-      },
-      enabledTools,
-    });
-    intelCase = updateIntelWebCase(intelCase.id, { status: 'running', toolResults: [] })!;
-    setActiveCase(intelCase);
-
-    const params = {
-      company: targetLabel.trim(),
-      domain: domain || '',
-      userIntent: userIntent.trim(),
-      targetType,
-      url: domain ? `https://${domain}` : '',
-      restrictToRegion: !!region,
-      location: region?.location ?? '',
-      radiusMiles: region?.radiusMiles ?? 50,
+    const domain = resolvedDomain;
+    const region = activeCase?.target.region;
+    const target = {
+      type: targetType,
+      label,
+      domain: domain || undefined,
+      userIntent: userIntent.trim() || DEFAULT_INTENT,
+      region,
     };
 
-    const results: ToolRunResult[] = [];
+    let caseId = activeCaseId;
+    let caseRecord: IntelWebCase;
+
+    if (!caseId) {
+      caseRecord = createIntelWebCase({ target, enabledTools: [...enabledTools] });
+      caseId = caseRecord.id;
+      setActiveCaseId(caseId);
+      refreshCases();
+    } else {
+      caseRecord = updateIntelWebCase(caseId, {
+        target,
+        enabledTools: [...enabledTools],
+        status: 'running',
+        toolResults: [],
+        brief: undefined,
+        error: undefined,
+      })!;
+      refreshCases();
+    }
+
+    setRunning(true);
+    setRunProgress('Running free OSINT tools on server…');
+    setChatLines([]);
+
+    const freeIds = enabledTools.filter((id): id is FreeToolId => !isCloudTool(id));
+    const cloudIds = enabledTools.filter(isCloudTool);
+    const runOpts = {
+      targetType,
+      label,
+      domain,
+      userIntent: target.userIntent,
+      region,
+    };
+
+    const allResults: ToolRunResult[] = [];
 
     try {
-      for (const toolId of enabledTools) {
-        setRunStatus(`Running ${toolLabel(toolId)}…`);
-        if (toolId === 'firecrawl_scrape' && !domain) {
-          results.push({ toolId, status: 'skipped', error: 'No domain for scrape' });
-          continue;
-        }
-        const result = await runCloudTool(toolId, params);
-        results.push(result);
-        intelCase = updateIntelWebCase(intelCase.id, { toolResults: [...results] })!;
-        setActiveCase({ ...intelCase });
+      if (freeIds.length) {
+        const freeResults = await runFreeToolsBatch(freeIds, runOpts);
+        allResults.push(...freeResults);
+        updateIntelWebCase(caseId, { toolResults: [...allResults], status: 'running' });
+        refreshCases();
       }
 
-      setRunStatus('Synthesizing intelligence brief…');
-      const synthPrompt = `Synthesize an intelligence brief from the tool results for target "${targetLabel.trim()}". Include executive summary, key findings (bullets), data gaps, and recommended next steps.`;
+      for (const toolId of cloudIds) {
+        setRunProgress(`Cloud: ${toolLabel(toolId)}…`);
+        const result = await runCloudTool(toolId, runOpts);
+        allResults.push(result);
+        updateIntelWebCase(caseId, { toolResults: [...allResults], status: 'running' });
+        refreshCases();
+      }
 
-      const synth = await sendIntelChat({
-        message: synthPrompt,
-        history: [],
-        targetContext: buildTargetContext({ ...intelCase, toolResults: results }),
-      });
+      setRunProgress('Grok is synthesizing your intel brief…');
+      const targetContext = buildTargetContext(target, allResults);
+      let brief: string;
+      try {
+        const briefRes = await sendIntelChat({
+          message:
+            'Synthesize a complete intelligence brief from the tool results. Use: Executive summary, Key findings (bullets), Recommended next steps. Cite which tools supported each finding.',
+          targetContext,
+        });
+        brief = briefRes.text;
+      } catch (chatErr) {
+        brief = formatFallbackBrief(target, allResults);
+        if (allResults.some((r) => r.status === 'done')) {
+          brief += `\n\n---\n_Grok synthesis unavailable: ${chatErr instanceof Error ? chatErr.message : 'Chat failed'}. Brief generated from free OSINT results above._`;
+        } else {
+          throw chatErr;
+        }
+      }
 
-      setChatProvider(synth.provider);
-      intelCase = updateIntelWebCase(intelCase.id, {
+      updateIntelWebCase(caseId, {
         status: 'complete',
-        toolResults: results,
-        brief: synth.text,
-      })!;
-      setActiveCase(intelCase);
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          content: `**Intelligence brief — ${targetLabel.trim()}**\n\n${synth.text}`,
-        },
-      ]);
+        toolResults: allResults,
+        brief,
+      });
       refreshCases();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Research run failed';
-      setError(msg);
-      updateIntelWebCase(intelCase.id, { status: 'error', error: msg, toolResults: results });
+      setChatLines([{ id: `brief-${Date.now()}`, role: 'ai', content: brief }]);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Investigation failed';
+      const partial =
+        allResults.length > 0
+          ? `## Partial results\n\n${allResults
+              .map((r) => `- **${toolLabel(r.toolId)}**: ${r.summary || r.error || r.status}`)
+              .join('\n')}`
+          : undefined;
+      updateIntelWebCase(caseId, {
+        status: allResults.length ? 'complete' : 'error',
+        toolResults: allResults,
+        brief: partial,
+        error: msg,
+      });
+      refreshCases();
+      if (partial) {
+        setChatLines([
+          { id: 'partial', role: 'ai', content: `${partial}\n\n_Synthesis note: ${msg}_` },
+        ]);
+      }
     } finally {
       setRunning(false);
-      setRunStatus('');
+      setRunProgress('');
     }
   };
 
   const sendChat = async () => {
-    const text = chatInput.trim();
-    if (!text || chatLoading) return;
+    if (!activeCase || !chatInput.trim() || chatBusy || !activeCase.brief) return;
+
+    const userLine: ChatLine = { id: `u-${Date.now()}`, role: 'user', content: chatInput.trim() };
+    const nextLines = [...chatLines, userLine];
+    setChatLines(nextLines);
     setChatInput('');
-    setChatLoading(true);
-    setError('');
-    const userTurn: ChatTurn = { role: 'user', content: text };
-    setChatHistory((prev) => [...prev, userTurn]);
+    setChatBusy(true);
 
     try {
+      const targetContext = buildTargetContext(activeCase.target, activeCase.toolResults);
+      const history = nextLines.slice(0, -1).map((l) => ({
+        role: l.role,
+        content: l.content,
+      }));
       const reply = await sendIntelChat({
-        message: text,
-        history: chatHistory.filter((m) => m.role === 'user' || m.role === 'ai').slice(-10),
-        targetContext: buildTargetContext(activeCase),
+        message: userLine.content,
+        history,
+        targetContext,
       });
-      setChatProvider(reply.provider);
-      setChatHistory((prev) => [...prev, { role: 'ai', content: reply.text }]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Chat failed';
-      setError(msg);
-      setChatHistory((prev) => [...prev, { role: 'ai', content: `⚠️ ${msg}` }]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const loadCase = (c: IntelWebCase) => {
-    setActiveCase(c);
-    setTargetType(c.target.type);
-    setTargetLabel(c.target.label);
-    setUserIntent(c.target.userIntent || DEFAULT_INTENT);
-    if (c.target.region) {
-      setRestrictRegion(true);
-      setRegionLocation(c.target.region.location);
-      setRadiusMiles(String(c.target.radiusMiles));
-    }
-    setEnabledTools(c.enabledTools);
-    if (c.brief) {
-      setChatHistory([
+      setChatLines((prev) => [...prev, { id: `a-${Date.now()}`, role: 'ai', content: reply.text }]);
+    } catch (e) {
+      setChatLines((prev) => [
+        ...prev,
         {
+          id: `err-${Date.now()}`,
           role: 'ai',
-          content: `Loaded case **${c.target.label}**.\n\n${c.brief}`,
+          content: e instanceof Error ? e.message : 'Chat failed',
         },
       ]);
+    } finally {
+      setChatBusy(false);
     }
   };
 
-  const dorkQuery =
-    targetType === 'person'
-      ? `"${targetLabel}" site:linkedin.com OR site:twitter.com`
-      : targetType === 'domain'
-        ? `site:${domain || targetLabel} about contact`
-        : `"${targetLabel}" leadership news contact`;
-
   return (
-    <div className={`space-y-6 ${expanded ? '' : 'max-w-6xl mx-auto'}`}>
-      <WebPlansStrip />
-
-      <div
-        className="rounded-2xl border p-5 md:p-6"
-        style={{ borderColor: `${brand.primary}44`, backgroundColor: `${brand.primary}08` }}
-      >
-        <div className="flex gap-4 items-start">
+    <div
+      className={`flex flex-col rounded-2xl border overflow-hidden ${expanded ? 'min-h-[640px]' : ''}`}
+      style={{ borderColor: brand.primary + '44', backgroundColor: brand.surface }}
+    >
+      {/* Hero */}
+      <div className="p-5 md:p-6 border-b border-white/10" style={{ backgroundColor: brand.primarySoft }}>
+        <div className="flex items-start gap-4">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ backgroundColor: brand.primarySoft }}
+            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: brand.primary + '33' }}
           >
             <Radar className="w-6 h-6" style={{ color: brand.primary }} />
           </div>
-          <div>
-            <h2 className="text-xl font-black" style={{ color: brand.accentText }}>
-              AI-directed OSINT
-            </h2>
-            <p className="text-sm mt-1 leading-relaxed" style={{ color: `${brand.accentText}aa` }}>
-              Same Intel Agent as the AiBhive app — plan the search, run Hive Cloud tools, get an
-              exportable brief. Google dorks open in your browser (we never scrape Google directly).
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand.primary }}>
+              Intel Agent
+            </p>
+            <h2 className="text-xl font-black text-white mt-0.5">AI-directed OSINT research</h2>
+            <p className="text-sm text-slate-400 mt-1 leading-relaxed">
+              Free tools run on our server (same as mobile). Cloud search uses Hive credits — skipped if balance is
+              low. Grok synthesizes your brief.
             </p>
           </div>
-        </div>
-        <div className="mt-4 flex items-start gap-2 rounded-xl border border-white/10 bg-black/20 p-3 text-xs text-slate-400">
-          <Shield className="w-4 h-4 shrink-0 text-bee-amber mt-0.5" />
-          Authorized research only — public data for legitimate business, security, and journalistic use.
+          {expanded ? (
+            <Link
+              to="/app"
+              className="shrink-0 text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-white/10"
+            >
+              ← App hub
+            </Link>
+          ) : null}
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Intel agent controls */}
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Target</p>
-            <div className="flex flex-wrap gap-2">
-              {TARGET_TYPES.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTargetType(t.id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-                    targetType === t.id
-                      ? 'text-bee-black'
-                      : 'bg-white/5 text-slate-400 hover:text-white'
-                  }`}
-                  style={targetType === t.id ? { backgroundColor: brand.primary } : undefined}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-slate-500">{activeTarget.hint}</p>
-            <input
-              value={targetLabel}
-              onChange={(e) => setTargetLabel(e.target.value)}
-              placeholder={activeTarget.placeholder}
-              className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-bee-amber/40"
-            />
-            <textarea
-              value={userIntent}
-              onChange={(e) => setUserIntent(e.target.value)}
-              rows={3}
-              className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-bee-amber/40 resize-none"
-              placeholder="What do you want to learn?"
-            />
+      <div className="p-5 md:p-6 space-y-5 flex-1 overflow-y-auto">
+        {expanded ? <WebPlansStrip /> : null}
 
-            <label className="flex items-center gap-2 text-sm text-slate-300">
-              <input
-                type="checkbox"
-                checked={restrictRegion}
-                onChange={(e) => setRestrictRegion(e.target.checked)}
-                className="rounded border-white/20"
-              />
-              Regional filter (city + radius)
-            </label>
-            {restrictRegion ? (
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  value={regionLocation}
-                  onChange={(e) => setRegionLocation(e.target.value)}
-                  placeholder="Miami, FL"
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white text-sm"
-                />
-                <select
-                  value={radiusMiles}
-                  onChange={(e) => setRadiusMiles(e.target.value)}
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white text-sm"
-                >
-                  {['30', '50', '75', '100'].map((m) => (
-                    <option key={m} value={m}>
-                      {m} mi
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 pt-2">
-              Hive Cloud modules
-            </p>
-            {CLOUD_TOOLS.map((tool) => (
-              <label
-                key={tool.id}
-                className="flex items-start gap-3 rounded-xl border border-white/10 p-3 cursor-pointer hover:border-white/20"
+        <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+          {/* Cases sidebar */}
+          <aside className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Cases</p>
+              <button
+                type="button"
+                onClick={handleNewCase}
+                className="text-xs font-bold text-bee-amber hover:underline"
               >
-                <input
-                  type="checkbox"
-                  checked={enabledTools.includes(tool.id)}
-                  onChange={() => toggleTool(tool.id)}
-                  className="mt-1"
-                />
-                <div>
-                  <p className="text-white text-sm font-bold">{tool.name}</p>
-                  <p className="text-slate-500 text-xs">{tool.description}</p>
-                  {toolCosts[tool.id] != null ? (
-                    <p className="text-bee-amber text-xs mt-0.5">~${toolCosts[tool.id].toFixed(3)} / run</p>
-                  ) : null}
-                </div>
-              </label>
-            ))}
-
-            <a
-              href={buildDorkUrl(dorkQuery)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-bee-amber hover:underline"
-            >
-              Open Google dork in browser
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-
-            <button
-              type="button"
-              disabled={running}
-              onClick={() => void runAgent()}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-extrabold text-bee-black disabled:opacity-50"
-              style={{ backgroundColor: brand.primary }}
-            >
-              {running ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  {runStatus || 'Running…'}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Run Intel Agent
-                </>
-              )}
-            </button>
-
-            {error ? (
-              <p className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-xl p-3">
-                {error}
-              </p>
-            ) : null}
-          </div>
-
-          {activeCase?.toolResults?.length ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
-              <p className="text-white font-bold text-sm">Tool results</p>
-              {activeCase.toolResults.map((r) => (
-                <div key={r.toolId} className="flex items-start gap-2 text-sm">
-                  {r.status === 'done' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
-                  ) : r.status === 'skipped' ? (
-                    <ChevronRight className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white font-semibold">{toolLabel(r.toolId)}</p>
-                    <p className="text-slate-500 text-xs">{r.summary || r.error || r.status}</p>
-                  </div>
-                </div>
-              ))}
+                + New
+              </button>
             </div>
-          ) : null}
-
-          {recentCases.length > 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="text-white font-bold text-sm mb-3">Recent cases</p>
-              <div className="space-y-2">
-                {recentCases.map((c) => (
+            {cases.length === 0 ? (
+              <p className="text-sm text-slate-500 px-1">No cases yet.</p>
+            ) : (
+              <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                {cases.map((c) => (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => loadCase(c)}
-                    className="w-full text-left rounded-xl border border-white/5 bg-black/20 px-4 py-3 hover:border-bee-amber/30 transition-colors"
+                    onClick={() => setActiveCaseId(c.id)}
+                    className={`w-full text-left rounded-xl border px-3 py-2 text-sm transition-colors group ${
+                      c.id === activeCaseId
+                        ? 'border-bee-amber/50 bg-bee-amber/10'
+                        : 'border-white/10 hover:bg-white/5'
+                    }`}
                   >
-                    <p className="text-white text-sm font-bold truncate">{c.target.label}</p>
-                    <p className="text-slate-500 text-xs capitalize">{c.status} · {c.target.type}</p>
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="font-semibold text-white truncate">{c.target.label || 'Untitled'}</span>
+                      <button
+                        type="button"
+                        className="text-slate-500 hover:text-red-400 shrink-0 opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCase(c.id);
+                        }}
+                        aria-label="Delete case"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex gap-1 mt-1">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
+                        {c.target.type}
+                      </span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          c.status === 'complete'
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : c.status === 'error'
+                              ? 'bg-red-500/20 text-red-300'
+                              : 'bg-white/10 text-slate-400'
+                        }`}
+                      >
+                        {c.status}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
-            </div>
-          ) : null}
-        </div>
+            )}
+          </aside>
 
-        {/* Large Grok chat */}
-        <div className="flex flex-col rounded-2xl border border-white/10 bg-[#070a0f] overflow-hidden min-h-[520px] lg:min-h-[640px]">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
-            <div>
-              <p className="text-white font-black">Research chat</p>
-              <p className="text-slate-500 text-xs mt-0.5">
-                {chatProvider === 'grok' ? 'Powered by Grok (Hive Cloud)' : 'Powered by Hive Cloud AI'}
+          <div className="space-y-4 min-w-0">
+            {/* Target */}
+            <section className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
+              <p className="text-sm font-bold text-white">Investigation target</p>
+              <div className="flex flex-wrap gap-2">
+                {TARGET_TYPES.map((tt) => (
+                  <button
+                    key={tt.id}
+                    type="button"
+                    onClick={() => onTargetTypeChange(tt.id)}
+                    className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                      targetType === tt.id
+                        ? 'bg-bee-amber text-bee-black'
+                        : 'bg-white/5 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500">
+                {TARGET_TYPES.find((t) => t.id === targetType)?.hint}
               </p>
-            </div>
-            <Sparkles className="w-5 h-5 text-bee-amber" />
-          </div>
+              <input
+                value={targetLabel}
+                onChange={(e) => setTargetLabel(e.target.value)}
+                placeholder={TARGET_TYPES.find((t) => t.id === targetType)?.placeholder}
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white placeholder:text-slate-600 focus:outline-none focus:border-bee-amber/50"
+                onKeyDown={(e) => e.key === 'Enter' && !running && runInvestigation()}
+              />
+              {resolvedDomain && targetType !== 'domain' ? (
+                <p className="text-xs text-slate-500">
+                  Resolved domain: <span className="text-slate-300">{resolvedDomain}</span>
+                </p>
+              ) : null}
+              <textarea
+                value={userIntent}
+                onChange={(e) => setUserIntent(e.target.value)}
+                rows={2}
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-bee-amber/50 resize-y"
+                placeholder="What do you want to learn?"
+              />
+              <button
+                type="button"
+                onClick={runInvestigation}
+                disabled={running || !targetLabel.trim() || !enabledTools.length}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-extrabold text-sm hover:bg-bee-yellow disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {running ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Running…
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    Run intel
+                  </>
+                )}
+              </button>
+              {runProgress ? (
+                <p className="text-sm text-slate-400 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 animate-pulse text-bee-amber" />
+                  {runProgress}
+                </p>
+              ) : null}
+            </section>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-[360px] max-h-[480px] lg:max-h-[520px]">
-            {chatHistory.map((m, i) => (
+            {/* Tools */}
+            <section className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between p-4 text-left"
+                onClick={() => setToolsOpen((o) => !o)}
+              >
+                <span className="text-sm font-bold text-white">
+                  OSINT tools ({enabledTools.length}/{availableTools.length})
+                </span>
+                {toolsOpen ? (
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                )}
+              </button>
+              {toolsOpen ? (
+                <div className="px-4 pb-4 grid sm:grid-cols-2 gap-2">
+                  {availableTools.map((tool) => (
+                    <label
+                      key={tool.id}
+                      className="flex items-start gap-2 rounded-lg border border-white/10 p-2.5 cursor-pointer hover:bg-white/5"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={enabledTools.includes(tool.id)}
+                        onChange={() => toggleTool(tool.id)}
+                        className="mt-1 accent-amber-500"
+                      />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-sm font-semibold text-white">{tool.name}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                              tool.tier === 'free'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-amber-500/20 text-amber-300'
+                            }`}
+                          >
+                            {tool.tier === 'free' ? 'Free' : 'Credits'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">{tool.description}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            {/* Results */}
+            {(activeCase?.toolResults?.length ?? 0) > 0 ? (
+              <section className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between p-4 text-left"
+                  onClick={() => setResultsOpen((o) => !o)}
+                >
+                  <span className="text-sm font-bold text-white">
+                    Tool results ({activeCase?.toolResults?.length})
+                  </span>
+                  {resultsOpen ? (
+                    <ChevronUp className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+                {resultsOpen ? (
+                  <div className="px-4 pb-4 space-y-2 max-h-52 overflow-y-auto">
+                    {activeCase?.toolResults?.map((r) => (
+                      <div key={r.toolId} className="flex gap-2 text-sm border border-white/10 rounded-lg p-2.5">
+                        {statusIcon(r.status)}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-white">{toolLabel(r.toolId)}</p>
+                          <p className="text-xs text-slate-400">
+                            {r.summary || r.error || r.status}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {/* Grok chat */}
+            <section
+              className="rounded-xl border p-4 space-y-3"
+              style={{ borderColor: brand.primary + '55', backgroundColor: 'rgba(0,0,0,0.25)' }}
+            >
+              <div className="flex items-center gap-2">
+                <Bot className="w-5 h-5" style={{ color: brand.primary }} />
+                <p className="text-sm font-bold text-white">Grok intel chat</p>
+              </div>
+              <p className="text-xs text-slate-500">
+                Large follow-up chat — same Hive credit pricing as the mobile app.
+              </p>
               <div
-                key={i}
-                className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                  m.role === 'user'
-                    ? 'ml-8 bg-bee-amber/15 border border-bee-amber/25 text-white'
-                    : 'mr-4 bg-white/[0.04] border border-white/10 text-slate-200'
+                className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto ${
+                  expanded ? 'min-h-[360px] max-h-[50vh]' : 'min-h-[200px] max-h-64'
                 }`}
               >
-                {m.content.split('**').map((chunk, j) =>
-                  j % 2 === 1 ? (
-                    <strong key={j} className="text-white font-bold">
-                      {chunk}
-                    </strong>
-                  ) : (
-                    chunk
-                  )
+                {!chatLines.length ? (
+                  <p className="text-sm text-slate-500 text-center py-10">
+                    Run an investigation to generate an intel brief, then ask Grok follow-ups here.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {chatLines.map((m) => (
+                      <div
+                        key={m.id}
+                        className={`rounded-xl px-3 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${
+                          m.role === 'user'
+                            ? 'bg-bee-amber/20 text-white ml-6 border border-bee-amber/30'
+                            : 'bg-white/[0.04] text-slate-200 mr-6 border border-white/10'
+                        }`}
+                      >
+                        {m.content}
+                      </div>
+                    ))}
+                    {chatBusy ? (
+                      <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Grok is thinking…
+                      </div>
+                    ) : null}
+                    <div ref={chatEndRef} />
+                  </div>
                 )}
               </div>
-            ))}
-            {chatLoading ? (
-              <div className="flex items-center gap-2 text-slate-400 text-sm">
-                <Loader2 className="w-4 h-4 animate-spin text-bee-amber" />
-                Thinking…
-              </div>
-            ) : null}
-            <div ref={chatEndRef} />
-          </div>
-
-          <div className="p-4 border-t border-white/10 bg-black/30">
-            <div className="flex flex-col gap-3">
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask Grok about findings, risks, next steps… (Enter to send, Shift+Enter for newline)"
+                rows={expanded ? 5 : 3}
+                disabled={!activeCase?.brief || chatBusy}
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-bee-amber/50 resize-y disabled:opacity-50 min-h-[100px]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     void sendChat();
                   }
                 }}
-                rows={4}
-                placeholder="Ask Grok anything about your target, OSINT strategy, or next research steps…"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3 text-white text-sm outline-none focus:border-bee-amber/40 resize-none min-h-[100px]"
               />
-              <button
-                type="button"
-                disabled={chatLoading || !chatInput.trim()}
-                onClick={() => void sendChat()}
-                className="self-end inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-extrabold disabled:opacity-50"
-              >
-                <Send className="w-4 h-4" />
-                Send
-              </button>
-            </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => void sendChat()}
+                  disabled={!activeCase?.brief || chatBusy || !chatInput.trim()}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-sm hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {chatBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Send to Grok
+                </button>
+              </div>
+            </section>
           </div>
         </div>
       </div>
