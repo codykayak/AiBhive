@@ -3,10 +3,10 @@
   "versionCode": 45,
   "sourceVersion": "1.7.5",
   "releaseNotes": "v1.7.5 — Hero prompt update, community pool scroll fix, 50% Hive credit markup (was 20–30%).",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782524105577%2Ftaylored-mobile.apk.gz?alt=media&token=26e7bfbb-1b5d-4124-bfb9-87791b6cab07",
-  "publishedAt": "2026-06-27T01:35:08.008Z",
+  "downloadUrl": "https://aibhive.com/api/download/apk",
+  "fullApkUrl": "https://aibhive.com/api/download/apk",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782525276462%2Ftaylored-mobile.apk.gz?alt=media&token=1ad65598-49b4-4bda-a47e-25ba0539c11a",
+  "publishedAt": "2026-06-27T01:54:45.082Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=dd7cda0f-d5a4-47c6-a812-8faa7aa2f417"
 }
