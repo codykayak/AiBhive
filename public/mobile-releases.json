@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.7.4",
-  "versionCode": 44,
-  "sourceVersion": "1.7.4",
-  "releaseNotes": "v1.7.4 — In-app update uses /api/download/apk (always latest). Chat toolbar keyboard lift. Hive Labs in store.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=b3a6988d-5296-403c-8b0b-fb9056474707",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=b3a6988d-5296-403c-8b0b-fb9056474707",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782479365695%2Ftaylored-mobile.apk.gz?alt=media&token=7fcdf7bb-05ba-4589-9e66-5cb7934bc952",
-  "publishedAt": "2026-06-26T13:09:27.816Z",
+  "shippedNativeVersion": "1.7.5",
+  "versionCode": 45,
+  "sourceVersion": "1.7.5",
+  "releaseNotes": "v1.7.5 — Hero prompt update, community pool scroll fix, 50% Hive credit markup (was 20–30%).",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782524105577%2Ftaylored-mobile.apk.gz?alt=media&token=26e7bfbb-1b5d-4124-bfb9-87791b6cab07",
+  "publishedAt": "2026-06-27T01:35:08.008Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=b3a6988d-5296-403c-8b0b-fb9056474707"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=3edaea44-f048-4261-b1ed-afd522d6f768"
 }
