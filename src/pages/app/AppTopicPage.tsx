@@ -156,7 +156,7 @@ export default function AppTopicPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-6">
             <Link
-              to="/app/build"
+              to="/hive-apps/build"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-bee-amber text-bee-black font-extrabold"
             >
               Build with Hive Magic

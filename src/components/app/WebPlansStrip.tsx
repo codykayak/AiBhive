@@ -57,7 +57,7 @@ export default function WebPlansStrip() {
       <p className="text-slate-500 text-xs mt-4">
         BYOK: bring your own Grok/Gemini keys in the mobile app Settings. Web uses Hive Cloud (Grok when
         configured server-side).{' '}
-        <Link to="/app/build" className="text-bee-amber hover:underline">
+        <Link to="/hive-apps/build" className="text-bee-amber hover:underline">
           Build custom tools ~$1
         </Link>
       </p>

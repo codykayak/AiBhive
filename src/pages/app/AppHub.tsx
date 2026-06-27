@@ -85,7 +85,7 @@ export default function AppHub() {
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link
-                to="/app/build"
+                to="/hive-apps/build"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-bee-amber text-bee-black font-extrabold text-base hover:bg-bee-yellow transition-colors shadow-[0_0_32px_rgba(245,158,11,0.25)]"
               >
                 <Wand2 className="w-5 h-5" />
@@ -93,7 +93,7 @@ export default function AppHub() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                to="/app/admin"
+                to="/admin"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold hover:border-bee-amber/40 transition-colors"
               >
                 <LayoutDashboard className="w-5 h-5 text-bee-amber" />
@@ -269,7 +269,7 @@ export default function AppHub() {
             <h2 className="text-2xl font-black text-white">Working apps — try now</h2>
             <p className="text-slate-500 text-sm mt-1">From the community pool. Install free, run in browser.</p>
           </div>
-          <Link to="/app/apps" className="text-bee-amber font-bold text-sm hover:underline inline-flex items-center gap-1">
+          <Link to="/hive-apps" className="text-bee-amber font-bold text-sm hover:underline inline-flex items-center gap-1">
             Browse all apps <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -288,7 +288,7 @@ export default function AppHub() {
         ) : (
           <div className="rounded-2xl border border-dashed border-white/10 p-12 text-center">
             <p className="text-white font-bold">Be the first to share an app</p>
-            <Link to="/app/build" className="inline-block mt-4 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-bold">
+            <Link to="/hive-apps/build" className="inline-block mt-4 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-bold">
               Build now
             </Link>
           </div>
@@ -299,7 +299,7 @@ export default function AppHub() {
       <section className="border-t border-white/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid sm:grid-cols-2 gap-4">
           <Link
-            to="/app/build"
+            to="/hive-apps/build"
             className="flex items-center gap-4 rounded-2xl bg-bee-amber/10 border border-bee-amber/30 p-6 hover:bg-bee-amber/15 transition-colors"
           >
             <Globe className="w-8 h-8 text-bee-amber shrink-0" />

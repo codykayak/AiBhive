@@ -61,6 +61,7 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
+              <li><Link to="/app" className="text-slate-400 hover:text-bee-amber transition-colors">App hub</Link></li>
               <li><Link to="/hive-apps" className="text-slate-400 hover:text-bee-amber transition-colors">Hive Apps</Link></li>
               <li><Link to="/about" className="text-slate-400 hover:text-bee-amber transition-colors">About</Link></li>
               <li><Link to="/faq" className="text-slate-400 hover:text-bee-amber transition-colors">FAQ</Link></li>

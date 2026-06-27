@@ -25,10 +25,10 @@ export const APP_STOCK_IMAGES = {
 
 export const APP_NAV = [
   { label: 'Overview', path: '/app' },
-  { label: 'Build', path: '/app/build' },
-  { label: 'My Apps', path: '/app/apps' },
+  { label: 'Build', path: '/hive-apps/build' },
+  { label: 'My Apps', path: '/hive-apps' },
   { label: 'Research', path: '/app/research' },
-  { label: 'Admin Center', path: '/app/admin' },
+  { label: 'Admin Center', path: '/admin' },
 ] as const;
 
 export const APP_TOPICS = [
@@ -74,7 +74,7 @@ export const APP_PILLARS = [
   {
     title: 'Build',
     body: 'Describe any app in plain English. Hive Magic builds it in seconds.',
-    href: '/app/build',
+    href: '/hive-apps/build',
     cta: 'Start building',
   },
   {
@@ -193,8 +193,8 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
         a: 'Yes — BYOK in Settings. Or use Hive credits for a fully managed cloud stack.',
       },
     ],
-    primaryCta: { label: 'Open Admin Command Center', href: '/app/admin?tab=auto-social' },
-    secondaryCta: { label: 'Build a custom social hub', href: '/app/build' },
+    primaryCta: { label: 'Open Admin Command Center', href: '/admin?tab=auto-social' },
+    secondaryCta: { label: 'Build a custom social hub', href: '/hive-apps/build' },
   },
   'phone-intelligence': {
     slug: 'phone-intelligence',
@@ -265,7 +265,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
       },
     ],
     primaryCta: { label: 'See phone integration guide', href: '/solutions/phone-systems-ai-integration' },
-    secondaryCta: { label: 'Build phone admin panel', href: '/app/build' },
+    secondaryCta: { label: 'Build phone admin panel', href: '/hive-apps/build' },
   },
   'lead-generation': {
     slug: 'lead-generation',
@@ -336,7 +336,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
       },
     ],
     primaryCta: { label: 'Explore lead gen solutions', href: '/solutions/ai-lead-generation-automation' },
-    secondaryCta: { label: 'Build my pipeline app', href: '/app/build' },
+    secondaryCta: { label: 'Build my pipeline app', href: '/hive-apps/build' },
   },
   productivity: {
     slug: 'productivity',
@@ -406,7 +406,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
         a: 'You never touch code unless you want to. Complex custom UX can escalate to a Cursor cloud build (~$4+).',
       },
     ],
-    primaryCta: { label: 'Build your first app', href: '/app/build' },
-    secondaryCta: { label: 'Browse community apps', href: '/app/apps' },
+    primaryCta: { label: 'Build your first app', href: '/hive-apps/build' },
+    secondaryCta: { label: 'Browse community apps', href: '/hive-apps' },
   },
 };

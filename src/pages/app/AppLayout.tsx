@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
-import { LayoutGrid, Download, ArrowRight } from 'lucide-react';
+import { LayoutGrid, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { APP_NAV } from './appContent';
 
@@ -62,7 +62,9 @@ export default function AppLayout() {
   );
 }
 
-/** Shortcuts that redirect into existing working routes */
+/** Shortcuts that redirect into existing working routes (preserves ?query) */
 export function AppRedirect({ to }: { to: string }) {
-  return <Navigate to={to} replace />;
+  const { search } = useLocation();
+  const dest = to.includes('?') ? to : `${to}${search}`;
+  return <Navigate to={dest} replace />;
 }
