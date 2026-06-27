@@ -37,7 +37,7 @@ function buildCloudSearchQuery(params) {
   return appendRegionalSuffix(base, params);
 }
 
-/** Raw API cost (before 20% markup). */
+/** Raw API cost (before 50% markup). */
 const SERP_RAW_USD = 0.02;
 const FIRECRAWL_SEARCH_RAW_USD = 0.03;
 const FIRECRAWL_SCRAPE_RAW_USD = 0.02;

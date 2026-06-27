@@ -128,8 +128,8 @@ const defaultNotes = {
     'v1.7.1 — Fixes APK publish (correct signed v1.7.0 build was not uploaded). Same features as 1.7.0.',
   '1.7.2':
     'v1.7.2 — Fixes home chat keyboard: dock stays above keyboard, full-screen composer clears nav bar and system controls.',
-  '1.7.4':
-    'v1.7.4 — In-app update uses /api/download/apk (always latest). Chat toolbar keyboard lift. Hive Labs in store.',
+  '1.7.5':
+    'v1.7.5 — Hero prompt update, community pool scroll fix, 50% Hive credit markup (was 20–30%).',
 };
 if (defaultNotes[version]) {
   manifest.releaseNotes = defaultNotes[version];

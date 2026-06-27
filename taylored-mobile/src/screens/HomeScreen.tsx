@@ -7,8 +7,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
+import { TAB_BAR_TOTAL_HEIGHT } from '../navigation/TabNavigator';
 import {
   HomeAssistantChat,
   getAssistantDockHeight,
@@ -31,9 +33,11 @@ const COMMUNITY_STEPS = [
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const { isDesktop } = useResponsiveLayout();
   const dockHeight = getAssistantDockHeight(windowHeight);
+  const scrollBottomPad = dockHeight + TAB_BAR_TOTAL_HEIGHT + Math.max(insets.bottom, 12) + spacing.xl;
   const [assistantExpanded, setAssistantExpanded] = useState(false);
   const [pendingAsk, setPendingAsk] = useState<string | undefined>();
   const [recentIntel, setRecentIntel] = useState<IntelCase[]>([]);
@@ -70,7 +74,7 @@ export default function HomeScreen() {
         <ScreenScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, { paddingBottom: scrollBottomPad }]}
           keyboardShouldPersistTaps="handled"
         >
           {showHeroVideo ? (

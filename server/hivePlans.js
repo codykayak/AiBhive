@@ -1,10 +1,10 @@
 /**
  * AiBhive subscription plans and token pricing.
- * Token usage is billed at raw API cost × TOKEN_MARKUP (30% markup = 1.3×).
+ * Token usage is billed at raw API cost × TOKEN_MARKUP (50% markup = 1.5×).
  */
 
-/** 30% markup on all Hive-metered token/API usage (AiBhive Tokens) */
-export const TOKEN_MARKUP = Number(process.env.HIVE_TOKEN_MARKUP ?? 1.3);
+/** 50% markup on all Hive-metered token/API usage (AiBhive Tokens) */
+export const TOKEN_MARKUP = Number(process.env.HIVE_TOKEN_MARKUP ?? 1.5);
 
 export const PLAN_IDS = ['free', 'starter', 'pro', 'unlimited'];
 
@@ -50,7 +50,7 @@ export const PLANS = {
       '$5 AiBhive Tokens (pay-as-you-go)',
       'Full usage tracking in app',
       'Hive Cloud intel (Firecrawl / SerpAPI)',
-      'Token usage at cost + 30%',
+      'Token usage at cost + 50%',
     ],
   },
   pro: {
@@ -67,7 +67,7 @@ export const PLANS = {
       '$20/mo AiBhive Token allowance',
       'Hive Cloud intel included',
       'Priority builds & usage dashboard',
-      'Overage at cost + 30%',
+      'Overage at cost + 50%',
     ],
   },
   unlimited: {
@@ -84,7 +84,7 @@ export const PLANS = {
       '$75/mo marked-up allowance (fair-use ~$120)',
       'Best for teams & heavy research',
       'Custom tool builds included in allowance',
-      'Overage at cost + 30%',
+      'Overage at cost + 50%',
     ],
   },
 };

@@ -171,7 +171,7 @@ Apps you build are **saved to the cloud** (`hive_apps` in Firestore). They stay 
 ## AiBhive Tokens & pricing
 
 - **Free:** Job tools, on-device research, BYOK chat (user's own Grok/Gemini/etc. keys) — no token charge.
-- **AiBhive Tokens:** Currency for Hive Cloud AI, web search (Firecrawl, SerpAPI), and metered server features. Sold as credits or included in plans. **30% markup** on raw API cost.
+- **AiBhive Tokens:** Currency for Hive Cloud AI, web search (Firecrawl, SerpAPI), and metered server features. Sold as credits or included in plans. **50% markup** on raw API cost.
 - **Starter ($5 once):** $5 token pool
 - **Pro ($20/mo):** ~$20/mo token allowance
 - **Unlimited ($50/mo):** ~$75/mo allowance for power users

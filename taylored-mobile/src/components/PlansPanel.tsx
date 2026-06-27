@@ -22,7 +22,7 @@ function priceLabel(plan: HivePlan): string {
 
 export function PlansPanel({ usage, currentPlanId = 'free', onRefresh }: Props) {
   const [plans, setPlans] = useState<HivePlan[]>([]);
-  const [markup, setMarkup] = useState(1.2);
+  const [markup, setMarkup] = useState(1.5);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
 
