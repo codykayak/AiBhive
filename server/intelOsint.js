@@ -13,11 +13,17 @@ function appendRegionalSuffix(baseQuery, params) {
 }
 
 function buildCloudSearchQuery(params) {
-  const company = params.company || '';
+  const company = params.company || params.label || '';
   const domain = params.domain || '';
   const userIntent = params.userIntent || '';
   const targetType = params.targetType || 'company';
   let base = '';
+
+  if (targetType === 'discovery' || targetType === 'keyword') {
+    const query = userIntent.trim() || company.trim();
+    base = query || 'business research';
+    return appendRegionalSuffix(base, params);
+  }
 
   if (targetType === 'person') {
     base = userIntent.trim()

@@ -254,6 +254,8 @@ export async function runFreeIntelTool(toolId, ctx) {
         person: ctx.targetType === 'person' ? company : undefined,
         targetType: ctx.targetType,
         region: ctx.region,
+        query: ctx.userIntent || company,
+        userIntent: ctx.userIntent,
       });
       const lines = pack.map(
         (d, i) => `${i + 1}. ${d.label}\n   Query: ${d.query}\n   Open: ${d.googleUrl}`

@@ -1,6 +1,21 @@
 import { getOrCreateWebHiveUserId } from './hiveWebUser';
 
-export type IntelTargetType = 'company' | 'domain' | 'person';
+export type IntelTargetType = 'company' | 'domain' | 'person' | 'discovery';
+
+export type IntelChatMessage = {
+  id: string;
+  role: 'user' | 'ai';
+  content: string;
+  createdAt: string;
+};
+
+export type UploadedResearchDoc = {
+  id: string;
+  name: string;
+  chars: number;
+  text: string;
+  uploadedAt: string;
+};
 
 export type FreeToolId =
   | 'dns_records'
@@ -49,6 +64,8 @@ export type IntelWebCase = {
   enabledTools: OsintToolId[];
   toolResults: ToolRunResult[];
   brief?: string;
+  chatMessages?: IntelChatMessage[];
+  uploadedDocuments?: UploadedResearchDoc[];
   error?: string;
 };
 
@@ -87,15 +104,43 @@ export const WEB_OSINT_TOOLS: {
   { id: 'email_harvest', name: 'Email Harvest', description: 'Emails on public homepage', tier: 'free', defaultOn: true, targets: ['company', 'domain'], needsDomain: true },
   { id: 'robots_sitemap', name: 'Robots & Sitemap', description: 'robots.txt and sitemap.xml', tier: 'free', defaultOn: true, targets: ['company', 'domain'], needsDomain: true },
   { id: 'wayback_snapshot', name: 'Wayback Machine', description: 'Internet Archive snapshot', tier: 'free', defaultOn: true, targets: ['company', 'domain'], needsDomain: true },
-  { id: 'google_dorks', name: 'Google Dork Pack', description: 'Curated queries — open in browser', tier: 'free', defaultOn: true, targets: ['company', 'domain', 'person'] },
+  { id: 'google_dorks', name: 'Google Dork Pack', description: 'Curated queries — open in browser', tier: 'free', defaultOn: true, targets: ['company', 'domain', 'person', 'discovery'] },
   { id: 'username_probe', name: 'Username Probe', description: 'GitHub, Reddit, Medium, etc.', tier: 'free', defaultOn: true, targets: ['person'] },
-  { id: 'firecrawl_search', name: 'Deep web search', description: 'Firecrawl (Hive Cloud credits)', tier: 'cloud', defaultOn: true, targets: ['company', 'domain', 'person'] },
-  { id: 'serp_search', name: 'Quick factual search', description: 'SerpAPI (Hive Cloud credits)', tier: 'cloud', defaultOn: false, targets: ['company', 'domain', 'person'] },
+  { id: 'firecrawl_search', name: 'Deep web search', description: 'Firecrawl (Hive Cloud credits)', tier: 'cloud', defaultOn: true, targets: ['company', 'domain', 'person', 'discovery'] },
+  { id: 'serp_search', name: 'Quick factual search', description: 'SerpAPI (Hive Cloud credits)', tier: 'cloud', defaultOn: true, targets: ['company', 'domain', 'person', 'discovery'] },
   { id: 'firecrawl_scrape', name: 'Site scrape', description: 'Full page markdown (needs domain)', tier: 'cloud', defaultOn: false, targets: ['company', 'domain'], needsDomain: true },
 ];
 
 export function defaultToolsForTargetType(targetType: IntelTargetType): OsintToolId[] {
+  if (targetType === 'discovery') {
+    return ['google_dorks', 'firecrawl_search', 'serp_search'];
+  }
   return WEB_OSINT_TOOLS.filter((t) => t.defaultOn && t.targets.includes(targetType)).map((t) => t.id);
+}
+
+const DISCOVERY_RE =
+  /\b(find|list|search for|companies|businesses|defunct|closed|bankrupt|out of business|shut down|inactive|dissolved|ceased operations|no longer operating|went out of business|liquidat)\b/i;
+
+export function isDiscoveryQuery(label: string, userIntent = ''): boolean {
+  const combined = `${label} ${userIntent}`.trim();
+  if (!combined) return false;
+  if (/^[a-z0-9][-a-z0-9.]*\.[a-z]{2,}$/i.test(label.trim())) return false;
+  return DISCOVERY_RE.test(combined) || /\b(more than|at least|over)\s+\d+\s+(year|month)/i.test(combined);
+}
+
+export function inferIntelTargetType(label: string, userIntent = ''): IntelTargetType {
+  const trimmed = label.trim();
+  if (!trimmed && userIntent.trim()) {
+    return isDiscoveryQuery('', userIntent) ? 'discovery' : 'company';
+  }
+  if (isDiscoveryQuery(trimmed, userIntent)) return 'discovery';
+  if (/^[a-z0-9][-a-z0-9.]*\.[a-z]{2,}$/i.test(trimmed) || /^https?:\/\//i.test(trimmed)) return 'domain';
+  if (/linkedin\.com\/in\//i.test(trimmed) || /^@[a-z0-9._-]+$/i.test(trimmed)) return 'person';
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  if (words.length >= 2 && words.length <= 4 && !/\b(inc|llc|ltd|corp|company|group|holdings)\b/i.test(trimmed)) {
+    return 'person';
+  }
+  return 'company';
 }
 
 export function isCloudTool(id: OsintToolId): id is CloudToolId {
@@ -215,6 +260,7 @@ export async function sendIntelChat(opts: {
   message: string;
   history?: ChatTurn[];
   targetContext?: string;
+  documentContext?: string;
 }): Promise<{ text: string; provider: string; chargedUsd?: number }> {
   const userId = getOrCreateWebHiveUserId();
   const res = await fetch('/api/intel-gathering/chat', {
@@ -225,6 +271,7 @@ export async function sendIntelChat(opts: {
       message: opts.message,
       history: opts.history || [],
       targetContext: opts.targetContext,
+      documentContext: opts.documentContext,
     }),
   });
   const data = await res.json();
@@ -245,6 +292,7 @@ export async function sendIntelChat(opts: {
 }
 
 export function resolveDomain(label: string, targetType: IntelTargetType): string {
+  if (targetType === 'discovery') return '';
   const trimmed = label.trim();
   if (targetType === 'domain') {
     return trimmed.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
@@ -262,17 +310,55 @@ export function resolveDomain(label: string, targetType: IntelTargetType): strin
 export const DEFAULT_INTENT =
   'I want to know everything there is to know about this target — leadership, tech stack, public contacts, infrastructure, and reputation.';
 
+export function buildDocumentContext(docs: UploadedResearchDoc[]): string {
+  if (!docs.length) return '';
+  return docs
+    .map((d) => `### ${d.name} (${d.chars} chars)\n${d.text.slice(0, 12000)}`)
+    .join('\n\n');
+}
+
+export async function parseResearchDocument(file: File): Promise<UploadedResearchDoc> {
+  const base64 = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || '');
+      const comma = result.indexOf(',');
+      resolve(comma >= 0 ? result.slice(comma + 1) : result);
+    };
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+  const res = await fetch('/api/intel-gathering/parse-document', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: file.name, mimeType: file.type, base64 }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.ok) throw new Error(data.error || 'Document upload failed');
+  return {
+    id: `doc_${Date.now()}`,
+    name: data.name || file.name,
+    chars: data.chars || data.text.length,
+    text: data.text,
+    uploadedAt: new Date().toISOString(),
+  };
+}
+
 export function buildTargetContext(
   target: IntelWebCase['target'],
-  results: ToolRunResult[]
+  results: ToolRunResult[],
+  docs: UploadedResearchDoc[] = []
 ): string {
   const dump = results
-    .filter((r) => r.status === 'done' && r.data)
-    .map((r) => `### ${r.toolId}\n${r.summary}\n${r.data?.slice(0, 6000)}`)
+    .filter((r) => r.status === 'done' && (r.data || r.summary))
+    .map((r) => `### ${r.toolId}\n${r.summary || ''}\n${r.data?.slice(0, 6000) || ''}`)
     .join('\n\n');
+  const docBlock = buildDocumentContext(docs);
   return `Target type: ${target.type}\nLabel: ${target.label}\nDomain: ${target.domain || 'n/a'}\nIntent: ${target.userIntent || ''}\n${
     target.region ? `Region: ${target.region.location} (${target.region.radiusMiles} mi)` : ''
-  }\n\nTOOL RESULTS:\n${dump || '(none)'}`;
+  }\n\nTOOL RESULTS:\n${dump || '(none)'}${
+    docBlock ? `\n\nUPLOADED DOCUMENTS:\n${docBlock}` : ''
+  }`;
 }
 
 /** Markdown brief from tool results when Grok chat is unavailable (no credits / API down). */

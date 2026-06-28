@@ -10,6 +10,10 @@ const DORK_TEMPLATES = [
   { label: 'Company news', template: '"{company}" (news OR funding OR acquisition){region}', targets: ['company'] },
   { label: 'Reviews & reputation', template: '"{company}" (review OR complaint OR lawsuit){region}', targets: ['company'] },
   { label: 'Job postings', template: '"{company}" (careers OR hiring){region}', targets: ['company'] },
+  { label: 'Defunct / closed businesses', template: '"{query}" (closed OR "out of business" OR bankrupt OR dissolved OR "ceased operations"){region}', targets: ['discovery'] },
+  { label: 'Business closure news', template: '{query} ("shut down" OR liquidation OR "filed for bankruptcy"){region}', targets: ['discovery'] },
+  { label: 'Inactive company lists', template: '{query} (defunct OR inactive OR "no longer operating") site:.gov OR site:.org{region}', targets: ['discovery'] },
+  { label: 'Industry closure reports', template: '{query} ("went out of business" OR "closed permanently"){region}', targets: ['discovery'] },
 ];
 
 function regionalSuffix(region) {
@@ -22,21 +26,23 @@ export function buildDorkPack(opts) {
   const domain = String(opts.domain || '').replace(/^https?:\/\//, '').split('/')[0];
   const company = opts.company || domain;
   const person = opts.person || company;
+  const query = opts.query || opts.userIntent || company || domain;
   const targetType = opts.targetType || (domain ? 'domain' : 'company');
   const regionSuffix = regionalSuffix(opts.region);
 
   return DORK_TEMPLATES.filter((t) => t.targets.includes(targetType))
     .map((t) => {
-      let query = t.template
+      let q = t.template
         .replace(/\{domain\}/g, domain)
         .replace(/\{company\}/g, company)
         .replace(/\{person\}/g, person)
+        .replace(/\{query\}/g, query)
         .replace(/\{region\}/g, regionSuffix)
         .trim();
       return {
         label: t.label,
-        query,
-        googleUrl: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+        query: q,
+        googleUrl: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
       };
     })
     .filter((d) => d.query && !d.query.includes('{'));

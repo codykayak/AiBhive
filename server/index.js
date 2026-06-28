@@ -65,6 +65,8 @@ import {
   runFreeIntelBatch,
   runFreeIntelTool,
 } from './intelFreeTools.js';
+import { inferIntelTargetType } from './intelDiscovery.js';
+import { extractDocumentText } from './intelDocuments.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
@@ -580,14 +582,20 @@ app.post('/api/intel-gathering/run-free', express.json(), async (req, res) => {
     if (!userId) {
       return res.status(400).json({ error: 'userId required' });
     }
-    const targetType = params?.targetType || 'company';
-    const company = String(params?.company || params?.label || '').trim();
-    const domain = resolveResearchDomain(company, targetType, params?.domain);
+    const label = String(params?.company || params?.label || '').trim();
+    const userIntent = String(params?.userIntent || label || '').trim();
+    const targetType =
+      params?.targetType && params.targetType !== 'company'
+        ? params.targetType
+        : inferIntelTargetType(label, userIntent);
+    const company = label || userIntent;
+    const domain =
+      targetType === 'discovery' ? '' : resolveResearchDomain(company, targetType, params?.domain);
     const ctx = {
       targetType,
       domain,
       company,
-      userIntent: params?.userIntent || '',
+      userIntent,
       region: params?.restrictToRegion
         ? { restrictToRegion: true, location: params?.location || '' }
         : undefined,
@@ -610,10 +618,23 @@ app.post('/api/intel-gathering/run-free', express.json(), async (req, res) => {
   }
 });
 
-/** Intel Agent Grok/Gemini chat — same Hive credit pricing as mobile cloud intel. */
-app.post('/api/intel-gathering/chat', express.json({ limit: '512kb' }), async (req, res) => {
+/** Parse uploaded .txt / .pdf for Grok research analysis */
+app.post('/api/intel-gathering/parse-document', express.json({ limit: '8mb' }), async (req, res) => {
   try {
-    const { userId, message, history, systemInstruction, targetContext } = req.body ?? {};
+    const { name, mimeType, base64 } = req.body ?? {};
+    if (!base64) return res.status(400).json({ error: 'base64 required' });
+    const text = await extractDocumentText({ name, mimeType, base64 });
+    return res.json({ ok: true, name: name || 'document', text, chars: text.length });
+  } catch (error) {
+    console.error('[intel/parse-document]', error);
+    return res.status(400).json({ error: error.message || 'Document parse failed' });
+  }
+});
+
+/** Intel Agent Grok/Gemini chat — same Hive credit pricing as mobile cloud intel. */
+app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req, res) => {
+  try {
+    const { userId, message, history, systemInstruction, targetContext, documentContext } = req.body ?? {};
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
     if (!resolvedUserId || !message?.trim()) {
@@ -627,6 +648,8 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '512kb' }), async (r
       message: message.trim(),
       history: history || [],
       systemInstruction: sys,
+      targetContext,
+      documentContext,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;

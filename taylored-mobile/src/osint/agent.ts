@@ -58,7 +58,9 @@ function defaultPlan(enabledTools: OsintToolId[], targetType: IntelCase['target'
     }));
   return {
     focusAreas:
-      targetType === 'person'
+      targetType === 'discovery'
+        ? ['web search', 'closure signals', 'list building']
+        : targetType === 'person'
         ? ['public profiles', 'social signals', 'regional mentions']
         : targetType === 'domain'
           ? ['infrastructure', 'public web presence', 'technology']

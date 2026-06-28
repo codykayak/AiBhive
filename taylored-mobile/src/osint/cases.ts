@@ -89,9 +89,16 @@ export function resolveDomainFromTarget(label: string, explicit?: string, target
 }
 
 /** Guess target mode from a free-form label (home assistant, quick start). */
-export function inferTargetTypeFromLabel(label: string): IntelTargetType {
+export function inferTargetTypeFromLabel(label: string, userIntent = ''): IntelTargetType {
+  const combined = `${label} ${userIntent}`.trim().toLowerCase();
   const trimmed = label.trim();
-  if (!trimmed) return 'company';
+  if (!trimmed && userIntent.trim()) {
+    if (/\b(find|list|defunct|closed|bankrupt|out of business|shut down)\b/.test(combined)) return 'discovery';
+    return 'company';
+  }
+  if (/\b(find|list|search for|companies|businesses|defunct|closed|bankrupt|out of business|shut down|inactive|dissolved)\b/.test(combined)) {
+    return 'discovery';
+  }
   if (/^[a-z0-9][-a-z0-9.]*\.[a-z]{2,}$/i.test(trimmed) || /^https?:\/\//i.test(trimmed)) {
     return 'domain';
   }

@@ -20,7 +20,7 @@ export type HomeAssistantAction = {
   buildSummary?: string;
   buildMessage?: string;
   intelIntent?: string;
-  intelTargetType?: 'company' | 'domain' | 'person';
+  intelTargetType?: 'company' | 'domain' | 'person' | 'discovery';
   intelRegion?: string;
   intelRadiusMiles?: number;
   suggestedToolName?: string;
@@ -41,8 +41,12 @@ function parseJsonBlock(text: string): HomeAssistantAction {
   const end = raw.lastIndexOf('}');
   const jsonSlice = start >= 0 && end > start ? raw.slice(start, end + 1) : raw;
   const parsed = JSON.parse(jsonSlice) as Partial<HomeAssistantAction>;
+  const reply = String(parsed.reply || '').trim();
+  if (!reply) {
+    throw new Error('Missing reply field');
+  }
   return {
-    reply: String(parsed.reply || 'How can I help you today?'),
+    reply,
     intent: (parsed.intent as HomeAssistantIntent) || 'chat',
     needsWebSearch: !!parsed.needsWebSearch,
     webSearchQuery: parsed.webSearchQuery || '',
@@ -57,6 +61,20 @@ function parseJsonBlock(text: string): HomeAssistantAction {
     offerTokens: !!parsed.offerTokens,
     tokenReason: parsed.tokenReason || '',
   };
+}
+
+function salvageReply(text: string): string {
+  const replyMatch = text.match(/"reply"\s*:\s*"((?:\\.|[^"\\])*)"/);
+  if (replyMatch) {
+    try {
+      return JSON.parse(`"${replyMatch[1]}"`);
+    } catch {
+      return replyMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    }
+  }
+  const stripped = text.replace(/```[\s\S]*?```/g, '').trim();
+  if (stripped && !stripped.startsWith('{')) return stripped;
+  return '';
 }
 
 export type HomeAssistantMode = 'plan' | 'build';
@@ -151,7 +169,7 @@ export async function sendHomeAssistantTurnViaHiveCloud(
     attachment?: HiveAttachment;
     mode?: HomeAssistantMode;
   } = {}
-): Promise<{ ok: true; raw: string } | { ok: false; needPayment?: boolean; amountUsd?: number; error?: string }> {
+): Promise<{ ok: true; raw: string; action?: HomeAssistantAction } | { ok: false; needPayment?: boolean; amountUsd?: number; error?: string }> {
   try {
     const userId = await getOrCreateHiveUserId();
     const systemInstruction = await buildSystemPrompt(userMessage, options.mode);
@@ -180,7 +198,7 @@ export async function sendHomeAssistantTurnViaHiveCloud(
     if (!res.ok) {
       return { ok: false, error: data.error || `Hive chat failed (${res.status})` };
     }
-    return { ok: true, raw: String(data.text || '') };
+    return { ok: true, raw: String(data.text || data.reply || ''), action: data.action as HomeAssistantAction | undefined };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Hive chat unavailable' };
   }
@@ -190,8 +208,16 @@ async function parseAssistantRaw(raw: string): Promise<HomeAssistantAction> {
   try {
     return parseJsonBlock(raw);
   } catch {
+    const salvaged = salvageReply(raw);
+    if (salvaged) {
+      return {
+        reply: salvaged,
+        intent: 'chat',
+        buildStage: 'none',
+      };
+    }
     return {
-      reply: raw.replace(/```[\s\S]*?```/g, '').trim() || 'I\'m here to help — try asking about jobs, research, or building a tool.',
+      reply: 'I\'m here to help — try asking about jobs, research, or building a tool.',
       intent: 'chat',
       buildStage: 'none',
     };
@@ -272,6 +298,9 @@ export async function sendHomeAssistantTurn(
     const cloud = await sendHomeAssistantTurnViaHiveCloud(history, userMessage, options);
     if (cloud.ok) {
       raw = cloud.raw;
+      if (cloud.action?.reply) {
+        return finalizeHomeAssistantTurn(cloud.action, history, userMessage, byokConfig ?? null, mode);
+      }
     } else if (byokConfig?.apiKey?.trim()) {
       const systemInstruction = await buildSystemPrompt(userMessage, mode);
       const enrichedMessage = options.webSearchContext

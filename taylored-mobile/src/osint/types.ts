@@ -1,4 +1,4 @@
-export type IntelTargetType = 'company' | 'domain' | 'person';
+export type IntelTargetType = 'company' | 'domain' | 'person' | 'discovery';
 
 /** Optional geographic filter for web search modules (Firecrawl / Serp). */
 export type IntelRegionFilter = {

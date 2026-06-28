@@ -43,6 +43,7 @@ import { useSpeechToText } from '../hooks/useSpeechToText';
 import { pickHiveReferenceImage, type HiveAttachment } from '../lib/hiveAttachments';
 import { useToast } from '../contexts/ToastContext';
 import { fetchQuickInsights } from '../lib/proactiveAssistant';
+import { loadHomeAssistantHistory, saveHomeAssistantHistory } from '../lib/homeAssistantHistory';
 
 type ChatMessage = {
   id: string;
@@ -182,6 +183,7 @@ export function HomeAssistantChat({
   const [pendingAttachment, setPendingAttachment] = useState<HiveAttachment | null>(null);
   const [mode, setMode] = useState<ComposerMode>('build');
   const [insightBullets, setInsightBullets] = useState<string[]>([]);
+  const [pendingAction, setPendingAction] = useState<HomeAssistantAction | null>(null);
   const pendingInitial = useRef(initialQuery?.trim() || '');
 
   const scrollEnd = useCallback(() => {
@@ -198,6 +200,24 @@ export function HomeAssistantChat({
     },
     [scrollEnd]
   );
+
+  useEffect(() => {
+    void loadHomeAssistantHistory().then((saved) => {
+      if (saved?.length) {
+        setMessages([
+          { id: 'welcome', role: 'ai', content: WELCOME, at: new Date().toISOString() },
+          ...saved,
+        ]);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const toSave = messages.filter((m) => m.id !== 'welcome');
+    if (toSave.length) {
+      void saveHomeAssistantHistory(toSave);
+    }
+  }, [messages]);
 
   const handleAction = useCallback(
     async (action: HomeAssistantAction, buildTask?: HiveTask) => {
@@ -262,6 +282,12 @@ export function HomeAssistantChat({
         appendAi(action.reply);
         navigation.navigate('HiveBuild', { prefill: action.buildMessage || action.buildSummary });
         return;
+      }
+
+      if (action.buildStage === 'propose' && (action.buildMessage || action.buildSummary)) {
+        setPendingAction(action);
+      } else {
+        setPendingAction(null);
       }
 
       if (action.intent === 'tool') {
@@ -431,6 +457,41 @@ export function HomeAssistantChat({
     onModeChange: setMode,
   };
 
+  const renderPendingActions = () => {
+    if (!pendingAction || loading) return null;
+    return (
+      <View style={styles.pendingRow}>
+        {pendingAction.buildStage === 'propose' && (pendingAction.buildMessage || pendingAction.buildSummary) ? (
+          <TouchableOpacity
+            style={styles.pendingBtnPrimary}
+            onPress={() => {
+              setPendingAction(null);
+              navigation.navigate('HiveBuild', {
+                prefill: pendingAction.buildMessage || pendingAction.buildSummary,
+              });
+            }}
+          >
+            <Text style={styles.pendingBtnPrimaryText}>Build this</Text>
+          </TouchableOpacity>
+        ) : null}
+        {pendingAction.intent === 'research' || pendingAction.intelIntent ? (
+          <TouchableOpacity
+            style={styles.pendingBtn}
+            onPress={() => {
+              setPendingAction(null);
+              navigation.navigate('IntelAgent', { prefillIntent: pendingAction.intelIntent || input });
+            }}
+          >
+            <Text style={styles.pendingBtnText}>Run research</Text>
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity style={styles.pendingBtnGhost} onPress={() => setPendingAction(null)}>
+          <Text style={styles.pendingBtnGhostText}>Dismiss</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const isFloating = variant === 'floating';
 
   const homePanel = (
@@ -469,6 +530,7 @@ export function HomeAssistantChat({
       </ScrollView>
 
       <View style={[styles.dockComposerWrap, { height: dockComposerHeight }]}>
+        {renderPendingActions()}
         <ChatComposerBox {...composerProps} inputRef={dockInputRef} minHeight={dockComposerHeight} />
       </View>
     </View>
@@ -549,6 +611,7 @@ export function HomeAssistantChat({
               )}
 
               <View style={[styles.modalComposerWrap, { height: modalComposerHeight }]}>
+                {renderPendingActions()}
                 <ChatComposerBox
                   {...composerProps}
                   inputRef={modalInputRef}
@@ -714,4 +777,29 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(245, 158, 11, 0.35)',
   },
   insightChipText: { color: colors.amberLight, fontSize: 12, fontWeight: '700' },
+  pendingRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  pendingBtnPrimary: {
+    backgroundColor: colors.amber,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  pendingBtnPrimaryText: { color: '#0f172a', fontWeight: '800', fontSize: 12 },
+  pendingBtn: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  pendingBtnText: { color: colors.amberLight, fontWeight: '700', fontSize: 12 },
+  pendingBtnGhost: { paddingHorizontal: 10, paddingVertical: 8 },
+  pendingBtnGhostText: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
 });

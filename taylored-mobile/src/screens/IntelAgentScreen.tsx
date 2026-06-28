@@ -26,6 +26,7 @@ const TARGET_TYPES: { id: IntelTargetType; label: string; hint: string; placehol
   { id: 'company', label: 'Company', hint: 'Business name — we find their site & leadership', placeholder: 'Acme Corporation' },
   { id: 'domain', label: 'Website', hint: 'Domain or URL — DNS, tech stack, site content', placeholder: 'example.com' },
   { id: 'person', label: 'Person', hint: 'Full name — social, LinkedIn dorks, username probe', placeholder: 'Jane Smith' },
+  { id: 'discovery', label: 'Discovery', hint: 'List/search queries — defunct businesses, market scans', placeholder: 'Companies closed 2+ years in Texas' },
 ];
 
 export default function IntelAgentScreen() {

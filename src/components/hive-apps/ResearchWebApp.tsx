@@ -5,11 +5,13 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  FileText,
   Loader2,
   Play,
   Radar,
   Sparkles,
   Trash2,
+  Upload,
   XCircle,
 } from 'lucide-react';
 import WebPlansStrip from '../app/WebPlansStrip';
@@ -18,17 +20,23 @@ import {
   DEFAULT_INTENT,
   WEB_OSINT_TOOLS,
   buildTargetContext,
+  buildDocumentContext,
   defaultToolsForTargetType,
   formatFallbackBrief,
+  inferIntelTargetType,
   isCloudTool,
+  isDiscoveryQuery,
+  parseResearchDocument,
   resolveDomain,
   runCloudTool,
   runFreeToolsBatch,
   sendIntelChat,
   type FreeToolId,
+  type IntelChatMessage,
   type IntelTargetType,
   type IntelWebCase,
   type ToolRunResult,
+  type UploadedResearchDoc,
 } from '../../lib/intelWebApi';
 import {
   createIntelWebCase,
@@ -55,6 +63,12 @@ const TARGET_TYPES: { id: IntelTargetType; label: string; placeholder: string; h
     label: 'Person',
     placeholder: 'Jane Smith',
     hint: 'Full name — social dorks, username probe',
+  },
+  {
+    id: 'discovery',
+    label: 'Discovery',
+    placeholder: 'Find companies closed for 2+ years in Florida',
+    hint: 'List/search queries — uses web search + dorks (best for defunct businesses, market scans)',
   },
 ];
 
@@ -90,6 +104,9 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [chatBusy, setChatBusy] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(true);
   const [resultsOpen, setResultsOpen] = useState(true);
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedResearchDoc[]>([]);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const activeCase = useMemo(
@@ -117,13 +134,42 @@ export default function ResearchWebApp({ expanded }: Props) {
       setTargetLabel(activeCase.target.label);
       setUserIntent(activeCase.target.userIntent || DEFAULT_INTENT);
       setEnabledTools(activeCase.enabledTools);
-      if (activeCase.brief) {
+      setUploadedDocs(activeCase.uploadedDocuments ?? []);
+      if (activeCase.chatMessages?.length) {
+        setChatLines(
+          activeCase.chatMessages.map((m) => ({ id: m.id, role: m.role, content: m.content })),
+        );
+      } else if (activeCase.brief) {
         setChatLines([{ id: 'brief', role: 'ai', content: activeCase.brief }]);
       } else {
         setChatLines([]);
       }
     }
-  }, [activeCaseId]); // eslint-disable-line react-hooks/exhaustive-deps -- load case when selection changes
+  }, [activeCaseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!targetLabel.trim() && !userIntent.trim()) return;
+    const inferred = inferIntelTargetType(targetLabel, userIntent);
+    if (inferred === 'discovery' && targetType !== 'discovery') {
+      setTargetType('discovery');
+      setEnabledTools(defaultToolsForTargetType('discovery'));
+    }
+  }, [targetLabel, userIntent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const persistChat = useCallback(
+    (lines: ChatLine[], docs = uploadedDocs) => {
+      if (!activeCaseId) return;
+      const chatMessages: IntelChatMessage[] = lines.map((l) => ({
+        id: l.id,
+        role: l.role,
+        content: l.content,
+        createdAt: new Date().toISOString(),
+      }));
+      updateIntelWebCase(activeCaseId, { chatMessages, uploadedDocuments: docs });
+      refreshCases();
+    },
+    [activeCaseId, uploadedDocs, refreshCases],
+  );
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -145,6 +191,26 @@ export default function ResearchWebApp({ expanded }: Props) {
     setTargetType('company');
     setEnabledTools(defaultToolsForTargetType('company'));
     setChatLines([]);
+    setUploadedDocs([]);
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (!file || uploadBusy) return;
+    setUploadBusy(true);
+    try {
+      const doc = await parseResearchDocument(file);
+      const next = [...uploadedDocs, doc];
+      setUploadedDocs(next);
+      if (activeCaseId) {
+        updateIntelWebCase(activeCaseId, { uploadedDocuments: next });
+        refreshCases();
+      }
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploadBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleDeleteCase = (id: string) => {
@@ -157,17 +223,22 @@ export default function ResearchWebApp({ expanded }: Props) {
   };
 
   const runInvestigation = async () => {
-    const label = targetLabel.trim();
+    const label = targetLabel.trim() || userIntent.trim();
     if (!label) return;
     if (!enabledTools.length) return;
 
-    const domain = resolvedDomain;
+    const effectiveType =
+      targetType === 'discovery' || isDiscoveryQuery(targetLabel, userIntent)
+        ? 'discovery'
+        : targetType;
+    const domain = resolveDomain(targetLabel, effectiveType);
+    const intentText = userIntent.trim() || label;
     const region = activeCase?.target.region;
     const target = {
-      type: targetType,
-      label,
+      type: effectiveType,
+      label: effectiveType === 'discovery' ? intentText.slice(0, 240) : targetLabel.trim() || label,
       domain: domain || undefined,
-      userIntent: userIntent.trim() || DEFAULT_INTENT,
+      userIntent: intentText,
       region,
     };
 
@@ -198,8 +269,8 @@ export default function ResearchWebApp({ expanded }: Props) {
     const freeIds = enabledTools.filter((id): id is FreeToolId => !isCloudTool(id));
     const cloudIds = enabledTools.filter(isCloudTool);
     const runOpts = {
-      targetType,
-      label,
+      targetType: effectiveType,
+      label: target.label,
       domain,
       userIntent: target.userIntent,
       region,
@@ -224,31 +295,43 @@ export default function ResearchWebApp({ expanded }: Props) {
       }
 
       setRunProgress('Grok is synthesizing your intel brief…');
-      const targetContext = buildTargetContext(target, allResults);
+      const targetContext = buildTargetContext(target, allResults, uploadedDocs);
+      const briefPrompt =
+        effectiveType === 'discovery'
+          ? 'Synthesize a research brief listing entities/companies matching the query. For each finding include: name, status evidence, date signals, source tool, confidence (high/medium/low). If results are thin, say what was searched and recommend next steps.'
+          : 'Synthesize a complete intelligence brief from the tool results. Use: Executive summary, Key findings (bullets), Recommended next steps. Cite which tools supported each finding.';
       let brief: string;
       try {
         const briefRes = await sendIntelChat({
-          message:
-            'Synthesize a complete intelligence brief from the tool results. Use: Executive summary, Key findings (bullets), Recommended next steps. Cite which tools supported each finding.',
+          message: briefPrompt,
           targetContext,
+          documentContext: buildDocumentContext(uploadedDocs),
         });
         brief = briefRes.text;
       } catch (chatErr) {
         brief = formatFallbackBrief(target, allResults);
         if (allResults.some((r) => r.status === 'done')) {
-          brief += `\n\n---\n_Grok synthesis unavailable: ${chatErr instanceof Error ? chatErr.message : 'Chat failed'}. Brief generated from free OSINT results above._`;
+          brief += `\n\n---\n_Grok synthesis unavailable: ${chatErr instanceof Error ? chatErr.message : 'Chat failed'}. Brief generated from OSINT results above._`;
         } else {
           throw chatErr;
         }
       }
 
+      const initialLines = [{ id: `brief-${Date.now()}`, role: 'ai' as const, content: brief }];
       updateIntelWebCase(caseId, {
         status: 'complete',
         toolResults: allResults,
         brief,
+        chatMessages: initialLines.map((l) => ({
+          id: l.id,
+          role: l.role,
+          content: l.content,
+          createdAt: new Date().toISOString(),
+        })),
+        uploadedDocuments: uploadedDocs,
       });
       refreshCases();
-      setChatLines([{ id: `brief-${Date.now()}`, role: 'ai', content: brief }]);
+      setChatLines(initialLines);
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Investigation failed';
       const partial =
@@ -285,7 +368,11 @@ export default function ResearchWebApp({ expanded }: Props) {
     setChatBusy(true);
 
     try {
-      const targetContext = buildTargetContext(activeCase.target, activeCase.toolResults);
+      const targetContext = buildTargetContext(
+        activeCase.target,
+        activeCase.toolResults,
+        activeCase.uploadedDocuments ?? uploadedDocs,
+      );
       const history = nextLines.slice(0, -1).map((l) => ({
         role: l.role,
         content: l.content,
@@ -294,17 +381,22 @@ export default function ResearchWebApp({ expanded }: Props) {
         message: userLine.content,
         history,
         targetContext,
+        documentContext: buildDocumentContext(activeCase.uploadedDocuments ?? uploadedDocs),
       });
-      setChatLines((prev) => [...prev, { id: `a-${Date.now()}`, role: 'ai', content: reply.text }]);
+      const withReply = [...nextLines, { id: `a-${Date.now()}`, role: 'ai' as const, content: reply.text }];
+      setChatLines(withReply);
+      persistChat(withReply);
     } catch (e) {
-      setChatLines((prev) => [
-        ...prev,
+      const withErr = [
+        ...nextLines,
         {
           id: `err-${Date.now()}`,
-          role: 'ai',
+          role: 'ai' as const,
           content: e instanceof Error ? e.message : 'Chat failed',
         },
-      ]);
+      ];
+      setChatLines(withErr);
+      persistChat(withErr);
     } finally {
       setChatBusy(false);
     }
@@ -575,8 +667,39 @@ export default function ResearchWebApp({ expanded }: Props) {
                 <p className="text-sm font-bold text-white">Grok intel chat</p>
               </div>
               <p className="text-xs text-slate-500">
-                Large follow-up chat — same Hive credit pricing as the mobile app.
+                Large follow-up chat — same Hive credit pricing as the mobile app. Upload .txt or .pdf
+                exports from your research for Grok to analyze alongside OSINT results.
               </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.pdf,text/plain,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleFileUpload(file);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadBusy}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/15 text-xs font-bold text-white hover:bg-white/5 disabled:opacity-50"
+                >
+                  {uploadBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  Upload .txt / .pdf
+                </button>
+                {uploadedDocs.map((d) => (
+                  <span
+                    key={d.id}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 text-xs text-slate-300"
+                  >
+                    <FileText className="w-3 h-3" />
+                    {d.name} ({d.chars.toLocaleString()} chars)
+                  </span>
+                ))}
+              </div>
               <div
                 className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto ${
                   expanded ? 'min-h-[360px] max-h-[50vh]' : 'min-h-[200px] max-h-64'

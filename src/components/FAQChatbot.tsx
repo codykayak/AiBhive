@@ -4,22 +4,47 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, Loader2 } from 'lucide-react';
 import codyChatIcon from '../../cody/src/cody_m_sims.png';
 
+const WELCOME = "Hi, I'm Cody, your AI assistant. How can I help?";
+
+const FAQ_STORAGE_KEY = 'aibhive_faq_chat_v1';
+
 type ChatMessage = { text: string; isUser: boolean };
 
-const WELCOME = "Hi, I'm Cody, your AI assistant. How can I help?";
+function loadFaqMessages(): ChatMessage[] {
+  try {
+    const raw = localStorage.getItem(FAQ_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ChatMessage[];
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return [{ text: WELCOME, isUser: false }];
+}
+
+function saveFaqMessages(messages: ChatMessage[]) {
+  try {
+    localStorage.setItem(FAQ_STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+  } catch {
+    // ignore
+  }
+}
 
 export default function FAQChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { text: WELCOME, isUser: false },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadFaqMessages);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (messages.length > 1) saveFaqMessages(messages);
+  }, [messages]);
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;

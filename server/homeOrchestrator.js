@@ -8,6 +8,7 @@ import { GoogleGenAI } from '@google/genai';
 import * as hiveUsage from './hiveUsage.js';
 import { runIntelCloudTool } from './intelOsint.js';
 import { HOME_ASSISTANT_KNOWLEDGE } from './homeAssistantKnowledgeBundled.js';
+import { parseHomeAssistantJson } from './assistantJson.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOME_CHAT_MODEL = process.env.HOME_ASSIST_MODEL || 'gemini-2.5-flash';
@@ -128,6 +129,8 @@ export async function runHomeAssistantChat(db, userId, opts) {
       return { ok: false, error: 'No response from Hive AI.' };
     }
 
+    const parsed = parseHomeAssistantJson(text);
+
     const charge = await hiveUsage.recordTokenUsage(db, userId, {
       rawCostUsd: HOME_CHAT_RAW_COST,
       feature: 'home_assist_chat',
@@ -137,7 +140,13 @@ export async function runHomeAssistantChat(db, userId, opts) {
       return { ok: false, needPayment: true, amountUsd: charge.amountUsd ?? 0.02 };
     }
 
-    return { ok: true, text, chargedUsd: charge.chargedUsd ?? 0 };
+    return {
+      ok: true,
+      text: parsed.ok ? parsed.reply : parsed.reply,
+      reply: parsed.ok ? parsed.reply : parsed.reply,
+      action: parsed.ok ? parsed.action : { reply: parsed.reply, intent: 'chat', buildStage: 'none' },
+      chargedUsd: charge.chargedUsd ?? 0,
+    };
   } catch (err) {
     console.error('[hive/home-assist/chat]', err.message || err);
     return { ok: false, error: err.message || 'Hive chat failed.' };

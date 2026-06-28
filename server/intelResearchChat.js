@@ -71,13 +71,22 @@ export async function runIntelResearchChat(db, userId, opts) {
     .filter((t) => t?.content?.trim() && (t.role === 'user' || t.role === 'ai'))
     .slice(-12);
 
+  const contextBlock = [
+    opts.targetContext ? `[RESEARCH CONTEXT]\n${String(opts.targetContext).slice(0, 14000)}` : '',
+    opts.documentContext ? `[UPLOADED DOCUMENTS]\n${String(opts.documentContext).slice(0, 16000)}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  const userMessage = contextBlock ? `${message}\n\n${contextBlock}` : message;
+
   const systemInstruction = String(opts.systemInstruction || DEFAULT_SYSTEM).slice(0, 12000);
   const provider = grokKey() ? 'grok' : 'gemini';
 
   try {
     let text = '';
     if (provider === 'grok') {
-      const messages = buildGrokMessages(systemInstruction, history, message);
+      const messages = buildGrokMessages(systemInstruction, history, userMessage);
       text = await grokChatMessages(grokKey(), GROK_MODEL, messages);
     } else {
       const gemini = getGemini();
@@ -91,7 +100,7 @@ export async function runIntelResearchChat(db, userId, opts) {
           parts: [{ text: String(turn.content).trim() }],
         });
       }
-      contents.push({ role: 'user', parts: [{ text: message }] });
+      contents.push({ role: 'user', parts: [{ text: userMessage }] });
       const response = await gemini.models.generateContent({
         model: GEMINI_MODEL,
         contents,

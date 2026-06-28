@@ -2,7 +2,7 @@ import type { IntelTargetType, OsintToolDef, OsintToolId } from '../types';
 
 const ALL_TARGETS: IntelTargetType[] = ['company', 'domain', 'person'];
 const SITE_TARGETS: IntelTargetType[] = ['company', 'domain'];
-const SEARCH_TARGETS: IntelTargetType[] = ['company', 'domain', 'person'];
+const SEARCH_TARGETS: IntelTargetType[] = ['company', 'domain', 'person', 'discovery'];
 
 export const OSINT_TOOLS: OsintToolDef[] = [
   {
@@ -186,6 +186,9 @@ export function defaultEnabledToolIds(): OsintToolId[] {
 
 /** Sensible default modules per target mode. */
 export function defaultToolsForTargetType(targetType: IntelTargetType): OsintToolId[] {
+  if (targetType === 'discovery') {
+    return ['google_dorks', 'firecrawl_search', 'serp_search'];
+  }
   return OSINT_TOOLS.filter((t) => t.defaultEnabled && t.applicableTargets.includes(targetType)).map(
     (t) => t.id
   );
