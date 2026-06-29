@@ -3,6 +3,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Sparkles, Wand2, Loader2, CheckCircle2, Rocket } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import { AssistantTopSpacer } from '../../components/HomeAssistantWeb';
+import WebPlansStrip from '../../components/app/WebPlansStrip';
+import WebBuildSettingsStrip from '../../components/app/WebBuildSettingsStrip';
+import BuildPlatformStrip from '../../components/BuildPlatformStrip';
 import {
   approveHiveTask,
   createHiveTask,
@@ -35,7 +38,7 @@ export default function HiveAppsBuildPage() {
       id: 'welcome',
       role: 'ai',
       content:
-        'Describe the app you want in plain English. I will quote a price, you approve, and Hive Magic builds it — right here in the browser.',
+        'Describe the app you want in plain English. I will quote a price, you approve, and Bhive Builder builds it — right here in the browser.',
     },
   ]);
   const [busy, setBusy] = useState(false);
@@ -130,7 +133,7 @@ export default function HiveAppsBuildPage() {
     try {
       const task = await approveHiveTask(activeTask.id);
       setActiveTask(task);
-      appendAi('Approved — Hive Magic is building your app. This page updates automatically.');
+      appendAi('Approved — Bhive Builder is building your app. This page updates automatically.');
       startPoll(task.id);
     } catch (e) {
       appendAi(e instanceof Error ? e.message : 'Could not approve build.');
@@ -151,16 +154,17 @@ export default function HiveAppsBuildPage() {
     <>
       <SEO
         title="Build a Hive App — AiBhive"
-        description="Describe an app in plain English. Approve the quote and Hive Magic builds it in your browser — same flow as mobile."
+        description="Describe an app in plain English. Approve the quote and Bhive Builder builds it in your browser — same flow as mobile."
       />
+      <div className="min-h-screen bg-[#070a0f] flex flex-col">
       <AssistantTopSpacer />
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 md:py-10">
+      <div className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 md:py-10">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-bee-amber/10 mb-3">
             <Wand2 className="w-7 h-7 text-bee-amber" />
           </div>
-          <h1 className="text-3xl font-black text-white">Build with Hive Magic</h1>
+          <h1 className="text-3xl font-black text-white">Build with Bhive Builder</h1>
           <p className="text-slate-400 mt-2 text-sm">
             Full build loop in the browser {online ? '· Hive online' : '· connecting…'}
           </p>
@@ -275,6 +279,13 @@ export default function HiveAppsBuildPage() {
             ← Back to My Apps
           </Link>
         </p>
+
+        <div className="mt-12 space-y-8">
+          <WebBuildSettingsStrip />
+          <WebPlansStrip />
+        </div>
+      </div>
+      <BuildPlatformStrip />
       </div>
     </>
   );

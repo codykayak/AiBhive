@@ -20,7 +20,7 @@ export default function NotFound() {
           >
             <LayoutGrid className="w-5 h-5 text-bee-amber shrink-0" />
             <div>
-              <p className="text-white font-bold text-sm">App command center</p>
+              <p className="text-white font-bold text-sm">AiBhive Apps</p>
               <p className="text-slate-500 text-xs">/app</p>
             </div>
           </Link>

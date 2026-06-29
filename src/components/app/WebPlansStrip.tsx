@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import { fetchHivePlans, type HivePlansResponse } from '../../lib/intelWebApi';
 
-/** Same Hive credit plans + markup as the mobile app. */
+/** Hive credit plans — same tiers as mobile. */
 export default function WebPlansStrip() {
   const [plans, setPlans] = useState<HivePlansResponse | null>(null);
 
@@ -13,7 +13,6 @@ export default function WebPlansStrip() {
 
   if (!plans) return null;
 
-  const markupPct = Math.round((plans.tokenMarkup - 1) * 100);
   const paid = plans.plans.filter((p) => p.priceUsd > 0);
 
   return (
@@ -25,7 +24,7 @@ export default function WebPlansStrip() {
             Hive credits · same as mobile
           </p>
           <p className="text-white font-bold mt-1">
-            Cloud research billed at API cost + {markupPct}% · On-device tools free
+            Simple cloud pricing for research and builds · On-device tools free
           </p>
         </div>
         <a
@@ -55,10 +54,10 @@ export default function WebPlansStrip() {
         ))}
       </div>
       <p className="text-slate-500 text-xs mt-4">
-        BYOK: bring your own Grok/Gemini keys in the mobile app Settings. Web uses Hive Cloud (Grok when
-        configured server-side).{' '}
+        BYOK: bring your own LLM keys in Settings — you pay your vendor; AiBhive adds a small platform
+        pass-through on orchestration.{' '}
         <Link to="/hive-apps/build" className="text-bee-amber hover:underline">
-          Build custom tools ~$1
+          Build custom tools with Bhive Builder
         </Link>
       </p>
     </div>

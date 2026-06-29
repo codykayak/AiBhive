@@ -29,8 +29,8 @@ const EXAMPLE_TOOL_ICONS = {
 } as const;
 
 const PILLARS = [
-  { title: 'Do', sub: 'Jobs, applications, Auto-Bot Resume', icon: Briefcase, href: `/hive-apps/run/${EXAMPLE_APP_IDS.jobTracker}` },
-  { title: 'Build', sub: 'Hive Magic — apps from plain English', icon: Wand2, href: '/hive-apps/build' },
+  { title: 'Do', sub: 'Auto-Bot Resume & job tools', icon: Sparkles, href: `/hive-apps/run/${EXAMPLE_APP_IDS.resumeBot}` },
+  { title: 'Build', sub: 'Bhive Builder — apps from plain English', icon: Wand2, href: '/hive-apps/build' },
   { title: 'Research', sub: 'AI-directed OSINT on any target', icon: Radar, href: `/hive-apps/run/${EXAMPLE_APP_IDS.research}` },
 ];
 

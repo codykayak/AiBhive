@@ -93,7 +93,7 @@ function statusIcon(status: ToolRunResult['status']) {
   return <Loader2 className="w-4 h-4 animate-spin text-slate-400 shrink-0" />;
 }
 
-/** Web Intel Agent — free server OSINT + optional cloud tools + Grok chat (same pricing as mobile). */
+/** Web Intel Agent — free server OSINT + optional cloud tools + AI chat (same pricing as mobile). */
 export default function ResearchWebApp({ expanded }: Props) {
   const brand = brandFor('cyan');
   const [searchParams] = useSearchParams();
@@ -312,7 +312,7 @@ export default function ResearchWebApp({ expanded }: Props) {
         refreshCases();
       }
 
-      setRunProgress('Grok is filtering raw OSINT for relevant findings…');
+      setRunProgress('Filtering raw OSINT for relevant findings…');
       const docCtx = buildDocumentContext(uploadedDocs);
       let brief: string;
       try {
@@ -326,7 +326,7 @@ export default function ResearchWebApp({ expanded }: Props) {
       } catch (chatErr) {
         brief = formatFallbackBrief(target, allResults);
         if (allResults.some((r) => r.status === 'done')) {
-          brief += `\n\n---\n_Grok synthesis unavailable: ${chatErr instanceof Error ? chatErr.message : 'Chat failed'}. Brief generated from OSINT results above._`;
+          brief += `\n\n---\n_AI synthesis unavailable: ${chatErr instanceof Error ? chatErr.message : 'Chat failed'}. Brief generated from OSINT results above._`;
         } else {
           throw chatErr;
         }
@@ -460,7 +460,7 @@ export default function ResearchWebApp({ expanded }: Props) {
             <h2 className="text-xl font-black text-white mt-0.5">AI-directed OSINT research</h2>
             <p className="text-sm text-slate-400 mt-1 leading-relaxed">
               Free tools run on our server (same as mobile). Cloud search uses Hive credits — skipped if balance is
-              low. Grok synthesizes your brief.
+              low. AI synthesizes your brief.
             </p>
           </div>
           {expanded ? (
@@ -486,7 +486,7 @@ export default function ResearchWebApp({ expanded }: Props) {
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-bee-amber" />
               <p className="text-sm font-black text-bee-amber uppercase tracking-widest">Key findings</p>
-              <span className="text-xs text-slate-500 ml-auto">Grok filtered raw OSINT for your inquiry</span>
+              <span className="text-xs text-slate-500 ml-auto">Filtered for your inquiry</span>
             </div>
             <div className="text-sm md:text-base text-slate-100 whitespace-pre-wrap leading-relaxed max-h-[40vh] overflow-y-auto">
               {briefContent}
@@ -749,7 +749,7 @@ export default function ResearchWebApp({ expanded }: Props) {
               </section>
             ) : null}
 
-            {/* Grok chat — right column on desktop when expanded */}
+            {/* AI chat — right column on desktop when expanded */}
             <section
               className={`rounded-xl border p-4 space-y-3 ${
                 expanded ? 'xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-10rem)] xl:flex xl:flex-col' : ''
@@ -758,11 +758,11 @@ export default function ResearchWebApp({ expanded }: Props) {
             >
               <div className="flex items-center gap-2">
                 <Bot className="w-5 h-5" style={{ color: brand.primary }} />
-                <p className="text-sm font-bold text-white">Grok intel chat</p>
+                <p className="text-sm font-bold text-white">Intel follow-up chat</p>
               </div>
               <p className="text-xs text-slate-500">
                 Large follow-up chat — same Hive credit pricing as the mobile app. Upload .txt or .pdf
-                exports from your research for Grok to analyze alongside OSINT results.
+                exports from your research for AI to analyze alongside OSINT results.
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <input
@@ -801,7 +801,7 @@ export default function ResearchWebApp({ expanded }: Props) {
               >
                 {!chatLines.length ? (
                   <p className="text-sm text-slate-500 text-center py-10">
-                    Run an investigation to generate an intel brief, then ask Grok follow-ups here.
+                    Run an investigation to generate an intel brief, then ask AI follow-ups here.
                   </p>
                 ) : (
                   <div className="space-y-3">
@@ -820,7 +820,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                     {chatBusy ? (
                       <div className="flex items-center gap-2 text-slate-400 text-sm">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Grok is thinking…
+                        Thinking…
                       </div>
                     ) : null}
                     <div ref={chatEndRef} />
@@ -830,7 +830,7 @@ export default function ResearchWebApp({ expanded }: Props) {
               <textarea
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask Grok about findings, risks, next steps… (Enter to send, Shift+Enter for newline)"
+                placeholder="Ask about findings, risks, next steps… (Enter to send, Shift+Enter for newline)"
                 rows={expanded ? 5 : 3}
                 disabled={!activeCase?.brief || chatBusy}
                 className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-bee-amber/50 resize-y disabled:opacity-50 min-h-[100px]"
@@ -849,7 +849,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white font-bold text-sm hover:bg-white/15 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {chatBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  Send to Grok
+                  Send
                 </button>
               </div>
             </section>

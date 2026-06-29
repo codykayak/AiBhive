@@ -8,8 +8,8 @@ export default function ResearchPage() {
     <>
       <SEO
         title="Research — Intel Agent | AiBhive App"
-        description="AI-directed OSINT on companies, websites, and people. Grok filters raw tool output into inquiry-relevant findings."
-        keywords="OSINT research, company intelligence, AI research agent, Grok research, AiBhive intel"
+        description="AI-directed OSINT on companies, websites, and people. AI filters raw tool output into inquiry-relevant findings."
+        keywords="OSINT research, company intelligence, AI research agent, AI research, AiBhive intel"
       />
       <AssistantTopSpacer />
       <ResearchWebApp expanded />

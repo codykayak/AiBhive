@@ -1,6 +1,18 @@
 export const faqs = [
   {
-    "question": "What agentic automation does AiBHive build for businesses?",
+    question: 'What is Bhive Builder?',
+    answer: 'Bhive Builder is AiBhive\'s app factory on web and mobile — describe mobile apps, web apps, sites, or dashboards in plain English, approve a quote, and we ship it. Try it at /hive-apps/build or /app.'
+  },
+  {
+    question: 'How does BYOK pricing work?',
+    answer: 'Bring Your Own Keys means you connect your LLM and search providers in Settings. You pay your vendor directly for model usage; AiBhive adds a small platform pass-through on orchestration and build infrastructure — similar to dev tools that mark up LLM costs for convenience. Simple Hive credits remain available if you prefer not to manage keys.'
+  },
+  {
+    question: 'What is Mock Up Real Estate?',
+    answer: 'A static demo property dashboard at /hive-apps/run/example-mock-realestate showing 1,200 rental units, cash-on-cash charts, vacancy trends, after-hours triage, email automation, and placeholder connectors for Yardi, RealPage, and AppFolio — illustrative only, no live APIs.'
+  },
+  {
+    question: 'What agentic automation does AiBHive build for businesses?',
     "answer": "We design custom multi-agent systems for lead generation, customer operations, document and ERP sync, workflow orchestration, medical and legal compliance, real estate speed-to-lead, and phone/SMS missed-call intelligence. Each category has a detailed solution page—start from the Solutions menu or book a consultation at /book-consultation."
   },
   {

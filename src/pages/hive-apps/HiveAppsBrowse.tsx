@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Play, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/SEO';
-import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
+import BuildPlatformStrip from '../../components/BuildPlatformStrip';
 import HiveAppLivePanel from '../../components/hive-apps/HiveAppLivePanel';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
 import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
@@ -310,6 +310,7 @@ export default function HiveAppsBrowse() {
           catalogSection
         )}
       </div>
+      <BuildPlatformStrip />
     </>
   );
 }

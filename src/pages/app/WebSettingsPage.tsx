@@ -50,7 +50,7 @@ export default function WebSettingsPage() {
             <Key className="w-5 h-5 text-bee-amber" />
             <p className="text-white font-bold">Bring your own keys (BYOK)</p>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Grok, Gemini, Claude, and Firecrawl keys live in the mobile app Settings. Web uses Hive Cloud by default.
+              AI, Gemini, Claude, and Firecrawl keys live in the mobile app Settings. Web uses Hive Cloud by default.
             </p>
             <a href="/api/download/apk" className="text-bee-amber text-sm font-bold hover:underline">
               Get the Android app →
@@ -70,11 +70,11 @@ export default function WebSettingsPage() {
           <div>
             <p className="text-white font-bold">Tip</p>
             <p className="text-slate-300 text-sm mt-1 leading-relaxed">
-              Use the Hive Assistant (bottom-right or top bar on research/build pages) for the same orchestration as
+              Use the Bhive Builder (bottom-right or top bar on research/build pages) for the same orchestration as
               mobile — research, install community tools, or start a build.
             </p>
             <Link to="/app" className="inline-block mt-3 text-bee-amber font-bold text-sm hover:underline">
-              Open App Command Center
+              Open AiBhive Apps
             </Link>
           </div>
         </div>

@@ -24,7 +24,7 @@ export default function AppTopicPage() {
           className="inline-flex items-center gap-2 text-slate-500 hover:text-bee-amber text-sm font-bold mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to App Command Center
+          Back to AiBhive Apps
         </Link>
 
         <header className="grid lg:grid-cols-2 gap-10 items-center mb-16">
@@ -152,14 +152,14 @@ export default function AppTopicPage() {
         <div className="rounded-3xl bg-gradient-to-r from-bee-amber/20 to-transparent border border-bee-amber/25 p-8 md:p-10 text-center">
           <p className="text-white font-black text-2xl">Ready to build it?</p>
           <p className="text-slate-400 mt-2 max-w-lg mx-auto">
-            No coding — describe your command center and AiBhive ships the app. BYOK or use our APIs.
+            No coding — describe your dashboard and AiBhive ships the app. BYOK or use our APIs.
           </p>
           <div className="flex flex-wrap justify-center gap-3 mt-6">
             <Link
               to="/hive-apps/build"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-bee-amber text-bee-black font-extrabold"
             >
-              Build with Hive Magic
+              Build with Bhive Builder
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link

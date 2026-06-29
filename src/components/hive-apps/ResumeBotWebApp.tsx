@@ -168,7 +168,7 @@ export default function ResumeBotWebApp({ expanded }: Props) {
   if (step === 'results' && kit) {
     return (
       <div
-        className={`flex flex-col ${expanded ? 'min-h-[520px]' : ''}`}
+        className={`flex flex-col ${expanded ? 'min-h-[calc(100vh-12rem)]' : ''}`}
         style={{ ['--brand-primary' as string]: brand.primary }}
       >
         <div className="flex items-center gap-2 mb-4">
@@ -202,8 +202,16 @@ export default function ResumeBotWebApp({ expanded }: Props) {
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border overflow-hidden ${expanded ? 'min-h-[520px]' : ''}`}
-      style={{ borderColor: brand.primarySoft, backgroundColor: '#0b0f14' }}
+      className={`flex flex-col overflow-hidden ${
+        expanded
+          ? 'min-h-[calc(100vh-12rem)]'
+          : 'rounded-2xl border min-h-[520px]'
+      }`}
+      style={
+        expanded
+          ? { ['--brand-primary' as string]: brand.primary }
+          : { borderColor: brand.primarySoft, backgroundColor: '#0b0f14' }
+      }
     >
       <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2" style={{ backgroundColor: brand.primarySoft }}>
         <Sparkles className="w-5 h-5" style={{ color: brand.primary }} />

@@ -339,7 +339,7 @@ export default function DynamicAppRunner({ app, compact, expanded, className = '
   const previewId = `preview-${app.id}`;
 
   return (
-    <div className={`rounded-2xl overflow-hidden border border-white/10 bg-[#0b0f14] ${className}`}>
+    <div className={`rounded-2xl overflow-hidden bg-[#0b0f14] ${expanded ? 'border-0 rounded-none bg-transparent' : 'border border-white/10'} ${className}`}>
       <div
         className="px-4 py-4 flex items-center gap-3"
         style={{ background: `linear-gradient(135deg, ${brand.gradientFrom}, ${brand.gradientTo})` }}

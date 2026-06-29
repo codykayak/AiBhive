@@ -35,13 +35,14 @@ export default function AboutContact() {
             </header>
             <div className="space-y-8 text-slate-400 text-xl leading-relaxed">
               <p>
-                AiBhive is a multi-agent AI hub built for creators, professionals, and accuracy freaks. 
-                We believe that in a world of generic AI, precision is the ultimate differentiator.
+                AiBhive is a multi-agent AI hub for creators, professionals, and teams who need precision —
+                plus <strong className="text-white">Bhive Builder</strong>, our app factory for mobile apps, web apps,
+                sites, and admin dashboards without code.
               </p>
               <p>
                 Our "Hive" architecture mimics a biological beehive, where specialized agents work in 
-                unison to solve complex transcription and translation tasks. Whether it's high-stakes 
-                legal jargon or nuanced medical terminology, the Hive ensures nothing is lost in translation.
+                unison to solve complex transcription, translation, and automation tasks. Whether it's high-stakes 
+                legal jargon or a custom property-management dashboard, the Hive ensures nothing is lost in translation.
               </p>
               <div className="flex items-center p-6 glass-card rounded-[2rem] border-bee-amber/20 bg-bee-amber/5">
                 <div className="bg-bee-amber/20 p-4 rounded-2xl mr-6">
