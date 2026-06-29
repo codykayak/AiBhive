@@ -7,6 +7,7 @@ import { SEO } from './components/SEO';
 import HomeAssistantWeb from './components/HomeAssistantWeb';
 import SiteGuideTour from './components/SiteGuideTour';
 import { AssistantDockProvider } from './context/AssistantDockContext';
+import ScrollToTop from './components/ScrollToTop';
 import AppLayout, { AppRedirect } from './pages/app/AppLayout';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -156,6 +157,7 @@ function AppShell() {
 export default function App() {
   return (
     <Router>
+      <ScrollToTop />
       <AppShell />
     </Router>
   );

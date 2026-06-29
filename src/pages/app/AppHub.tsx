@@ -94,12 +94,6 @@ export default function AppHub() {
                 Start building free
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link
-                to="/hive-apps/run/example-mock-realestate"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold hover:border-bee-amber/40 transition-colors"
-              >
-                See demo dashboard
-              </Link>
             </div>
           </motion.div>
 

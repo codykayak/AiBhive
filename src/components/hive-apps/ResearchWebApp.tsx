@@ -116,6 +116,7 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
 
   const activeCase = useMemo(
     () => cases.find((c) => c.id === activeCaseId) ?? null,
@@ -189,7 +190,10 @@ export default function ResearchWebApp({ expanded }: Props) {
   );
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!chatLines.length && !chatBusy) return;
+    const el = chatMessagesRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
   }, [chatLines, chatBusy]);
 
   const onTargetTypeChange = (next: IntelTargetType) => {
@@ -795,6 +799,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                 ))}
               </div>
               <div
+                ref={chatMessagesRef}
                 className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto flex-1 ${
                   expanded ? 'min-h-[280px] max-h-[50vh] xl:max-h-none xl:flex-1' : 'min-h-[200px] max-h-64'
                 }`}
