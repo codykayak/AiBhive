@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Bot,
   CheckCircle2,
@@ -32,6 +32,7 @@ import {
   runCloudTool,
   runFreeToolsBatch,
   sendIntelChat,
+  synthesizeIntelFindings,
   type FailureToolOffer,
   type FreeToolId,
   type IntelChatMessage,
@@ -95,6 +96,8 @@ function statusIcon(status: ToolRunResult['status']) {
 /** Web Intel Agent — free server OSINT + optional cloud tools + Grok chat (same pricing as mobile). */
 export default function ResearchWebApp({ expanded }: Props) {
   const brand = brandFor('cyan');
+  const [searchParams] = useSearchParams();
+  const intentPrefill = searchParams.get('intent')?.trim() || '';
   const [cases, setCases] = useState<IntelWebCase[]>(() => listIntelWebCases());
   const [activeCaseId, setActiveCaseId] = useState<string | null>(() => listIntelWebCases()[0]?.id ?? null);
   const [targetType, setTargetType] = useState<IntelTargetType>('company');
@@ -132,6 +135,15 @@ export default function ResearchWebApp({ expanded }: Props) {
   const refreshCases = useCallback(() => {
     setCases(listIntelWebCases());
   }, []);
+
+  useEffect(() => {
+    if (!intentPrefill) return;
+    setUserIntent(intentPrefill);
+    if (isDiscoveryQuery('', intentPrefill)) {
+      setTargetType('discovery');
+      setEnabledTools(defaultToolsForTargetType('discovery'));
+    }
+  }, [intentPrefill]);
 
   useEffect(() => {
     if (activeCase) {
@@ -300,18 +312,15 @@ export default function ResearchWebApp({ expanded }: Props) {
         refreshCases();
       }
 
-      setRunProgress('Grok is synthesizing your intel brief…');
-      const targetContext = buildTargetContext(target, allResults, uploadedDocs);
-      const briefPrompt =
-        effectiveType === 'discovery'
-          ? 'Synthesize a research brief listing entities/companies matching the query. For each finding include: name, status evidence, date signals, source tool, confidence (high/medium/low). If results are thin, say what was searched and recommend next steps.'
-          : 'Synthesize a complete intelligence brief from the tool results. Use: Executive summary, Key findings (bullets), Recommended next steps. Cite which tools supported each finding.';
+      setRunProgress('Grok is filtering raw OSINT for relevant findings…');
+      const docCtx = buildDocumentContext(uploadedDocs);
       let brief: string;
       try {
-        const briefRes = await sendIntelChat({
-          message: briefPrompt,
-          targetContext,
-          documentContext: buildDocumentContext(uploadedDocs),
+        const briefRes = await synthesizeIntelFindings({
+          target,
+          toolResults: allResults,
+          userIntent: target.userIntent,
+          documentContext: docCtx,
         });
         brief = briefRes.text;
       } catch (chatErr) {
@@ -422,10 +431,18 @@ export default function ResearchWebApp({ expanded }: Props) {
     }
   };
 
+  const canRun = Boolean(targetLabel.trim() || userIntent.trim()) && enabledTools.length > 0;
+
+  const briefContent = chatLines.find((l) => l.role === 'ai')?.content || activeCase?.brief;
+
   return (
     <div
-      className={`flex flex-col rounded-2xl border overflow-hidden ${expanded ? 'min-h-[640px]' : ''}`}
-      style={{ borderColor: brand.primary + '44', backgroundColor: brand.surface }}
+      className={`flex flex-col overflow-hidden ${
+        expanded
+          ? 'min-h-[calc(100vh-8rem)] bg-[#050810] border-0 rounded-none'
+          : 'rounded-2xl border min-h-[640px]'
+      }`}
+      style={expanded ? undefined : { borderColor: brand.primary + '44', backgroundColor: brand.surface }}
     >
       {/* Hero */}
       <div className="p-5 md:p-6 border-b border-white/10" style={{ backgroundColor: brand.primarySoft }}>
@@ -457,10 +474,27 @@ export default function ResearchWebApp({ expanded }: Props) {
         </div>
       </div>
 
-      <div className="p-5 md:p-6 space-y-5 flex-1 overflow-y-auto">
-        {expanded ? <WebPlansStrip /> : null}
+      <div className={`flex-1 overflow-y-auto ${expanded ? 'p-4 md:p-6' : 'p-5 md:p-6 space-y-5'}`}>
+        {expanded ? (
+          <div className="mb-5">
+            <WebPlansStrip />
+          </div>
+        ) : null}
 
-        <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+        {expanded && briefContent ? (
+          <section className="mb-4 rounded-2xl border border-bee-amber/30 bg-bee-amber/5 p-5 md:p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-bee-amber" />
+              <p className="text-sm font-black text-bee-amber uppercase tracking-widest">Key findings</p>
+              <span className="text-xs text-slate-500 ml-auto">Grok filtered raw OSINT for your inquiry</span>
+            </div>
+            <div className="text-sm md:text-base text-slate-100 whitespace-pre-wrap leading-relaxed max-h-[40vh] overflow-y-auto">
+              {briefContent}
+            </div>
+          </section>
+        ) : null}
+
+        <div className={`grid gap-5 ${expanded ? 'xl:grid-cols-[220px_1fr_380px]' : 'lg:grid-cols-[220px_1fr]'}`}>
           {/* Cases sidebar */}
           <aside className="space-y-2">
             <div className="flex items-center justify-between px-1">
@@ -476,49 +510,50 @@ export default function ResearchWebApp({ expanded }: Props) {
             {cases.length === 0 ? (
               <p className="text-sm text-slate-500 px-1">No cases yet.</p>
             ) : (
-              <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+              <div className={`space-y-1 pr-1 ${expanded ? 'max-h-[calc(100vh-14rem)] overflow-y-auto sticky top-4' : 'max-h-48 overflow-y-auto'}`}>
                 {cases.map((c) => (
-                  <button
+                  <div
                     key={c.id}
-                    type="button"
-                    onClick={() => setActiveCaseId(c.id)}
-                    className={`w-full text-left rounded-xl border px-3 py-2 text-sm transition-colors group ${
+                    className={`relative rounded-xl border transition-colors group ${
                       c.id === activeCaseId
                         ? 'border-bee-amber/50 bg-bee-amber/10'
                         : 'border-white/10 hover:bg-white/5'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-1">
-                      <span className="font-semibold text-white truncate">{c.target.label || 'Untitled'}</span>
-                      <button
-                        type="button"
-                        className="text-slate-500 hover:text-red-400 shrink-0 opacity-0 group-hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCase(c.id);
-                        }}
-                        aria-label="Delete case"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <div className="flex gap-1 mt-1">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
-                        {c.target.type}
+                    <button
+                      type="button"
+                      onClick={() => setActiveCaseId(c.id)}
+                      className="w-full text-left px-3 py-2 text-sm"
+                    >
+                      <span className="font-semibold text-white truncate block pr-6">
+                        {c.target.label || 'Untitled'}
                       </span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          c.status === 'complete'
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : c.status === 'error'
-                              ? 'bg-red-500/20 text-red-300'
-                              : 'bg-white/10 text-slate-400'
-                        }`}
-                      >
-                        {c.status}
-                      </span>
-                    </div>
-                  </button>
+                      <div className="flex gap-1 mt-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-slate-400">
+                          {c.target.type}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded ${
+                            c.status === 'complete'
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : c.status === 'error'
+                                ? 'bg-red-500/20 text-red-300'
+                                : 'bg-white/10 text-slate-400'
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className="absolute top-2 right-2 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100"
+                      onClick={() => handleDeleteCase(c.id)}
+                      aria-label="Delete case"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -569,7 +604,7 @@ export default function ResearchWebApp({ expanded }: Props) {
               <button
                 type="button"
                 onClick={runInvestigation}
-                disabled={running || !targetLabel.trim() || !enabledTools.length}
+                disabled={running || !canRun}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-bee-amber text-bee-black font-extrabold text-sm hover:bg-bee-yellow disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {running ? (
@@ -660,7 +695,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                   )}
                 </button>
                 {resultsOpen ? (
-                  <div className="px-4 pb-4 space-y-2 max-h-52 overflow-y-auto">
+                  <div className={`px-4 pb-4 space-y-2 overflow-y-auto ${expanded ? 'max-h-64' : 'max-h-52'}`}>
                     {activeCase?.toolResults?.map((r) => (
                       <div key={r.toolId} className="flex gap-2 text-sm border border-white/10 rounded-lg p-2.5">
                         {statusIcon(r.status)}
@@ -714,9 +749,11 @@ export default function ResearchWebApp({ expanded }: Props) {
               </section>
             ) : null}
 
-            {/* Grok chat */}
+            {/* Grok chat — right column on desktop when expanded */}
             <section
-              className="rounded-xl border p-4 space-y-3"
+              className={`rounded-xl border p-4 space-y-3 ${
+                expanded ? 'xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-10rem)] xl:flex xl:flex-col' : ''
+              }`}
               style={{ borderColor: brand.primary + '55', backgroundColor: 'rgba(0,0,0,0.25)' }}
             >
               <div className="flex items-center gap-2">
@@ -758,8 +795,8 @@ export default function ResearchWebApp({ expanded }: Props) {
                 ))}
               </div>
               <div
-                className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto ${
-                  expanded ? 'min-h-[360px] max-h-[50vh]' : 'min-h-[200px] max-h-64'
+                className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto flex-1 ${
+                  expanded ? 'min-h-[280px] max-h-[50vh] xl:max-h-none xl:flex-1' : 'min-h-[200px] max-h-64'
                 }`}
               >
                 {!chatLines.length ? (

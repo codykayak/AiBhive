@@ -256,6 +256,42 @@ export async function runCloudTool(
   };
 }
 
+/** Grok filters raw OSINT output — returns only inquiry-relevant findings. */
+export async function synthesizeIntelFindings(opts: {
+  target: IntelWebCase['target'];
+  toolResults: ToolRunResult[];
+  userIntent?: string;
+  documentContext?: string;
+}): Promise<{ text: string; provider: string; chargedUsd?: number }> {
+  const userId = getOrCreateWebHiveUserId();
+  const res = await fetch('/api/intel-gathering/synthesize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId,
+      target: opts.target,
+      toolResults: opts.toolResults,
+      userIntent: opts.userIntent || opts.target.userIntent,
+      documentContext: opts.documentContext,
+    }),
+  });
+  const data = await res.json();
+  if (res.status === 402) {
+    throw new Error(
+      data.error ||
+        `Need Hive credits (~$${(data.amountUsd ?? 0.02).toFixed(2)}). Free tool results are still available below.`
+    );
+  }
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || 'Synthesis failed.');
+  }
+  return {
+    text: data.text,
+    provider: data.provider || 'grok',
+    chargedUsd: data.chargedUsd,
+  };
+}
+
 export async function sendIntelChat(opts: {
   message: string;
   history?: ChatTurn[];

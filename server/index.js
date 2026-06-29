@@ -59,6 +59,7 @@ import {
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { runIntelResearchChat } from './intelResearchChat.js';
+import { runIntelSynthesis } from './intelSynthesize.js';
 import {
   FREE_INTEL_TOOL_IDS,
   resolveResearchDomain,
@@ -660,6 +661,33 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
   } catch (error) {
     console.error('[intel/chat]', error);
     return res.status(500).json({ error: 'Intel chat failed.' });
+  }
+});
+
+/** Grok synthesis — filter raw OSINT noise; return inquiry-relevant findings only. */
+app.post('/api/intel-gathering/synthesize', express.json({ limit: '4mb' }), async (req, res) => {
+  try {
+    const { userId, target, toolResults, userIntent, documentContext } = req.body ?? {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || !target) {
+      return res.status(400).json({ error: 'userId and target required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runIntelSynthesis(db, resolvedUserId, {
+      target,
+      toolResults: toolResults || [],
+      userIntent,
+      documentContext,
+    });
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 502;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (error) {
+    console.error('[intel/synthesize]', error);
+    return res.status(500).json({ error: 'Intel synthesis failed.' });
   }
 });
 

@@ -11,7 +11,7 @@ export default function AppLayout() {
       <div className="sticky top-20 z-40 border-b border-white/5 bg-[#050810]/95 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            <Link to="/app" className="flex items-center gap-3 shrink-0 group">
+            <Link to="/app" className="flex items-center gap-3 shrink-0 group" data-tour="app-hub">
               <div className="w-11 h-11 rounded-2xl bg-bee-amber flex items-center justify-center shadow-[0_0_24px_rgba(245,158,11,0.25)]">
                 <LayoutGrid className="w-5 h-5 text-bee-black" />
               </div>
@@ -33,6 +33,7 @@ export default function AppLayout() {
                   <Link
                     key={item.path}
                     to={item.path}
+                    data-tour={'tourId' in item ? item.tourId : undefined}
                     className={cn(
                       'px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors',
                       active

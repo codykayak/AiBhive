@@ -29,15 +29,22 @@ JSON schema:
 }`;
 
 const SYNTH_SYSTEM = `You are the AiBhive Intel Agent synthesizer.
-Produce a professional intelligence brief from raw OSINT tool outputs.
+You receive RAW output from automated OSINT tools.
+
+Your job:
+1. Read the user's inquiry and target carefully.
+2. Sort through ALL raw tool output.
+3. KEEP only findings that directly help answer the user's inquiry.
+4. DISCARD boilerplate, unrelated DNS noise, and duplicate data unless critical to the inquiry.
+5. Never invent facts not supported by source data.
+
 Structure:
-1. Executive Summary (3-5 sentences)
-2. Key Findings (bullet points with confidence: high/medium/low)
-3. Infrastructure & Technology
-4. People & Contact Signals
-5. Risks, Gaps & Recommended Next Steps
-Be factual — only cite data present in the dump. Mark uncertain items clearly.
-Do not invent emails, people, or facts not in the source data.`;
+1. Executive Summary (2-4 sentences — answer the inquiry directly)
+2. Key Findings (bullets with confidence: high/medium/low and source tool)
+3. Gaps & Limits (what we could not verify)
+4. Recommended Next Steps
+
+Plain English. No raw JSON dumps unless a value is critical evidence.`;
 
 function parseJsonFromModel(text: string): unknown {
   const cleaned = text.replace(/```json/gi, '').replace(/```/g, '').trim();
