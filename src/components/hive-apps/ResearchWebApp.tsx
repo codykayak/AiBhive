@@ -23,6 +23,7 @@ import {
   buildDocumentContext,
   defaultToolsForTargetType,
   formatFallbackBrief,
+  fetchFailureToolOffer,
   inferIntelTargetType,
   isCloudTool,
   isDiscoveryQuery,
@@ -31,6 +32,7 @@ import {
   runCloudTool,
   runFreeToolsBatch,
   sendIntelChat,
+  type FailureToolOffer,
   type FreeToolId,
   type IntelChatMessage,
   type IntelTargetType,
@@ -38,6 +40,8 @@ import {
   type ToolRunResult,
   type UploadedResearchDoc,
 } from '../../lib/intelWebApi';
+import { getOrCreateWebHiveUserId } from '../../lib/hiveWebUser';
+import { installToolkitApp } from '../../lib/hiveStoreApi';
 import {
   createIntelWebCase,
   deleteIntelWebCase,
@@ -106,6 +110,7 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [resultsOpen, setResultsOpen] = useState(true);
   const [uploadedDocs, setUploadedDocs] = useState<UploadedResearchDoc[]>([]);
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -265,6 +270,7 @@ export default function ResearchWebApp({ expanded }: Props) {
     setRunning(true);
     setRunProgress('Running free OSINT tools on server…');
     setChatLines([]);
+    setFailureOffer(null);
 
     const freeIds = enabledTools.filter((id): id is FreeToolId => !isCloudTool(id));
     const cloudIds = enabledTools.filter(isCloudTool);
@@ -332,6 +338,15 @@ export default function ResearchWebApp({ expanded }: Props) {
       });
       refreshCases();
       setChatLines(initialLines);
+
+      const meaningful = allResults.filter((r) => r.status === 'done' && (r.data || r.summary)).length;
+      if (meaningful < 2) {
+        const offer = await fetchFailureToolOffer(
+          target.userIntent,
+          'Research returned limited results from the tools we ran.'
+        );
+        if (offer) setFailureOffer(offer);
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Investigation failed';
       const partial =
@@ -352,6 +367,11 @@ export default function ResearchWebApp({ expanded }: Props) {
           { id: 'partial', role: 'ai', content: `${partial}\n\n_Synthesis note: ${msg}_` },
         ]);
       }
+      const offer = await fetchFailureToolOffer(
+        userIntent.trim() || targetLabel.trim(),
+        msg
+      );
+      if (offer) setFailureOffer(offer);
     } finally {
       setRunning(false);
       setRunProgress('');
@@ -654,6 +674,43 @@ export default function ResearchWebApp({ expanded }: Props) {
                     ))}
                   </div>
                 ) : null}
+              </section>
+            ) : null}
+
+            {failureOffer ? (
+              <section className="rounded-xl border border-bee-amber/30 bg-bee-amber/10 p-4 space-y-3">
+                <p className="text-sm font-bold text-bee-amber">What to do next</p>
+                <p className="text-sm text-slate-200 whitespace-pre-wrap">{failureOffer.reply}</p>
+                {failureOffer.guideSteps?.map((step, i) => (
+                  <p key={i} className="text-xs text-slate-400">
+                    {i + 1}. {step.replace(/\*\*/g, '')}
+                  </p>
+                ))}
+                <div className="flex flex-wrap gap-2">
+                  {failureOffer.toolkitApp?.id ? (
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-xl bg-bee-amber text-bee-black text-sm font-extrabold"
+                      onClick={async () => {
+                        const userId = getOrCreateWebHiveUserId();
+                        const installed = await installToolkitApp(failureOffer.toolkitApp!.id, userId);
+                        if (installed?.app) {
+                          window.location.href = `/hive-apps/run/${installed.sourceAppId || installed.app.id}`;
+                        }
+                      }}
+                    >
+                      Install {failureOffer.toolkitApp.title}
+                    </button>
+                  ) : null}
+                  {failureOffer.offerBuild ? (
+                    <Link
+                      to="/hive-apps/build"
+                      className="px-4 py-2 rounded-xl border border-white/20 text-white text-sm font-bold"
+                    >
+                      Build custom tool
+                    </Link>
+                  ) : null}
+                </div>
               </section>
             ) : null}
 

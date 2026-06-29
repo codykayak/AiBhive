@@ -35,6 +35,7 @@ import { dingFeatureReady } from '../lib/notifications';
 import { createIntelCase, inferTargetTypeFromLabel, resolveDomainFromTarget } from '../osint/cases';
 import { defaultToolsForTargetType } from '../osint/tools/registry';
 import { normalizeRadiusMiles } from '../osint/regionalQuery';
+import { installToolkitApp } from '../lib/hiveUserApps';
 import { HiveLogo } from './HiveLogo';
 import { HOME_INTRO_TAGLINE } from './HomeHeroVideo';
 import { ChatComposerBox, type ComposerMode } from './ChatComposerBox';
@@ -284,6 +285,12 @@ export function HomeAssistantChat({
         return;
       }
 
+      if (action.intent === 'toolkit_offer') {
+        appendAi(action.reply);
+        setPendingAction(action);
+        return;
+      }
+
       if (action.buildStage === 'propose' && (action.buildMessage || action.buildSummary)) {
         setPendingAction(action);
       } else {
@@ -459,35 +466,74 @@ export function HomeAssistantChat({
 
   const renderPendingActions = () => {
     if (!pendingAction || loading) return null;
+    const guide = pendingAction.guideSteps?.length ? (
+      <View style={styles.guideBox}>
+        {pendingAction.guideSteps.map((step, i) => (
+          <Text key={i} style={styles.guideStep}>
+            {i + 1}. {step.replace(/\*\*/g, '')}
+          </Text>
+        ))}
+      </View>
+    ) : null;
+
     return (
-      <View style={styles.pendingRow}>
-        {pendingAction.buildStage === 'propose' && (pendingAction.buildMessage || pendingAction.buildSummary) ? (
-          <TouchableOpacity
-            style={styles.pendingBtnPrimary}
-            onPress={() => {
-              setPendingAction(null);
-              navigation.navigate('HiveBuild', {
-                prefill: pendingAction.buildMessage || pendingAction.buildSummary,
-              });
-            }}
-          >
-            <Text style={styles.pendingBtnPrimaryText}>Build this</Text>
+      <View style={styles.pendingWrap}>
+        {guide}
+        <View style={styles.pendingRow}>
+          {pendingAction.toolkitAppId ? (
+            <TouchableOpacity
+              style={styles.pendingBtnPrimary}
+              onPress={async () => {
+                const appId = pendingAction.toolkitAppId!;
+                setPendingAction(null);
+                const installed = await installToolkitApp(appId);
+                if (installed) {
+                  appendAi(
+                    `**${installed.title}** is in My Apps — open it to run your task.\n\nNeed changes? Use **Tweak or Customize** in Apps.`
+                  );
+                  navigation.navigate('DynamicApp', { appId: installed.id, app: installed });
+                } else {
+                  appendAi('Install did not complete — open **Apps → Community Toolkit** to try again.');
+                  navigation.navigate('Apps');
+                }
+              }}
+            >
+              <Text style={styles.pendingBtnPrimaryText}>
+                Install {pendingAction.toolkitTitle || 'free app'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {(pendingAction.offerBuild ||
+            pendingAction.buildStage === 'propose' ||
+            pendingAction.intent === 'build') &&
+          (pendingAction.buildMessage || pendingAction.buildSummary || pendingAction.offerBuild) ? (
+            <TouchableOpacity
+              style={styles.pendingBtn}
+              onPress={() => {
+                setPendingAction(null);
+                navigation.navigate('HiveBuild', {
+                  prefill: pendingAction.buildMessage || pendingAction.buildSummary || input,
+                });
+              }}
+            >
+              <Text style={styles.pendingBtnText}>Build custom</Text>
+            </TouchableOpacity>
+          ) : null}
+          {pendingAction.intent === 'research' || pendingAction.intelIntent ? (
+            <TouchableOpacity
+              style={styles.pendingBtn}
+              onPress={() => {
+                setPendingAction(null);
+                navigation.navigate('IntelAgent', { prefillIntent: pendingAction.intelIntent || input });
+              }}
+            >
+              <Text style={styles.pendingBtnText}>Run research</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity style={styles.pendingBtnGhost} onPress={() => setPendingAction(null)}>
+            <Text style={styles.pendingBtnGhostText}>Dismiss</Text>
           </TouchableOpacity>
-        ) : null}
-        {pendingAction.intent === 'research' || pendingAction.intelIntent ? (
-          <TouchableOpacity
-            style={styles.pendingBtn}
-            onPress={() => {
-              setPendingAction(null);
-              navigation.navigate('IntelAgent', { prefillIntent: pendingAction.intelIntent || input });
-            }}
-          >
-            <Text style={styles.pendingBtnText}>Run research</Text>
-          </TouchableOpacity>
-        ) : null}
-        <TouchableOpacity style={styles.pendingBtnGhost} onPress={() => setPendingAction(null)}>
-          <Text style={styles.pendingBtnGhostText}>Dismiss</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -784,6 +830,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.xs,
   },
+  pendingWrap: {
+    paddingTop: spacing.xs,
+  },
+  guideBox: {
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: 12,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.2)',
+  },
+  guideStep: { color: colors.textMuted, fontSize: 11, lineHeight: 16, marginBottom: 4 },
   pendingBtnPrimary: {
     backgroundColor: colors.amber,
     paddingHorizontal: 14,

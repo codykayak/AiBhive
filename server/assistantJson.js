@@ -72,6 +72,12 @@ export function parseHomeAssistantJson(text) {
         suggestedToolName: parsed.suggestedToolName || '',
         offerTokens: !!parsed.offerTokens,
         tokenReason: parsed.tokenReason || '',
+        toolkitAppId: parsed.toolkitAppId || '',
+        toolkitTitle: parsed.toolkitTitle || '',
+        toolkitSummary: parsed.toolkitSummary || '',
+        toolkitIsExample: !!parsed.toolkitIsExample,
+        guideSteps: Array.isArray(parsed.guideSteps) ? parsed.guideSteps : [],
+        offerBuild: !!parsed.offerBuild,
       },
     };
   } catch {

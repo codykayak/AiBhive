@@ -66,6 +66,7 @@ import {
   runFreeIntelTool,
 } from './intelFreeTools.js';
 import { inferIntelTargetType } from './intelDiscovery.js';
+import { getFailureToolOffer } from './homeAssistOrchestrate.js';
 import { extractDocumentText } from './intelDocuments.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
@@ -659,6 +660,24 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
   } catch (error) {
     console.error('[intel/chat]', error);
     return res.status(500).json({ error: 'Intel chat failed.' });
+  }
+});
+
+/** When built-in tools cannot complete a task — offer community install or custom build. */
+app.post('/api/hive/orchestrate/failure-offer', express.json(), async (req, res) => {
+  try {
+    const { userId, query, reason } = req.body ?? {};
+    const authUser = await verifyHiveAuth(req);
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || !query?.trim()) {
+      return res.status(400).json({ error: 'userId and query required.' });
+    }
+    await ensureHiveUser(db, resolvedUserId);
+    const offer = await getFailureToolOffer(db, query.trim(), String(reason || '').trim());
+    return res.json(offer);
+  } catch (err) {
+    console.error('[hive/orchestrate/failure-offer]', err);
+    return res.status(500).json({ error: err.message || 'Failure offer failed.' });
   }
 });
 
@@ -1342,6 +1361,7 @@ app.post('/api/hive/home-assist/chat', express.json({ limit: '2mb' }), async (re
       history: history || [],
       message: message.trim(),
       systemInstruction: systemInstruction || '',
+      failureContext: req.body?.failureContext || '',
       attachment:
         attachmentBase64 && typeof attachmentBase64 === 'string'
           ? {

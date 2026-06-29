@@ -8,7 +8,7 @@ import { createHiveTask, getOrCreateHiveUserId, type HiveTask } from './hiveApi'
 
 const HIVE_API_BASE = 'https://aibhive.com';
 
-export type HomeAssistantIntent = 'chat' | 'jobs' | 'research' | 'build' | 'tool';
+export type HomeAssistantIntent = 'chat' | 'jobs' | 'research' | 'build' | 'tool' | 'toolkit_offer';
 export type HomeBuildStage = 'discover' | 'propose' | 'confirm' | 'none';
 
 export type HomeAssistantAction = {
@@ -26,6 +26,20 @@ export type HomeAssistantAction = {
   suggestedToolName?: string;
   offerTokens?: boolean;
   tokenReason?: string;
+  toolkitAppId?: string;
+  toolkitTitle?: string;
+  toolkitSummary?: string;
+  toolkitIsExample?: boolean;
+  guideSteps?: string[];
+  offerBuild?: boolean;
+};
+
+export type FailureToolOffer = {
+  ok: boolean;
+  reply: string;
+  toolkitApp?: { id: string; title: string; tagline?: string; summary?: string; isExample?: boolean } | null;
+  offerBuild?: boolean;
+  guideSteps?: string[];
 };
 
 export type HomeAssistantTurnResult = {
@@ -60,6 +74,12 @@ function parseJsonBlock(text: string): HomeAssistantAction {
     suggestedToolName: parsed.suggestedToolName || '',
     offerTokens: !!parsed.offerTokens,
     tokenReason: parsed.tokenReason || '',
+    toolkitAppId: parsed.toolkitAppId || undefined,
+    toolkitTitle: parsed.toolkitTitle || undefined,
+    toolkitSummary: parsed.toolkitSummary || undefined,
+    toolkitIsExample: !!parsed.toolkitIsExample,
+    guideSteps: Array.isArray(parsed.guideSteps) ? parsed.guideSteps : undefined,
+    offerBuild: !!parsed.offerBuild,
   };
 }
 
@@ -299,7 +319,8 @@ export async function sendHomeAssistantTurn(
     if (cloud.ok) {
       raw = cloud.raw;
       if (cloud.action?.reply) {
-        return finalizeHomeAssistantTurn(cloud.action, history, userMessage, byokConfig ?? null, mode);
+        const merged = { ...cloud.action, reply: cloud.action.reply } as HomeAssistantAction;
+        return finalizeHomeAssistantTurn(merged, history, userMessage, byokConfig ?? null, mode);
       }
     } else if (byokConfig?.apiKey?.trim()) {
       const systemInstruction = await buildSystemPrompt(userMessage, mode);
@@ -361,4 +382,21 @@ export async function sendHomeAssistantTurn(
 
   const action = await parseAssistantRaw(raw);
   return finalizeHomeAssistantTurn(action, history, userMessage, byokConfig ?? null, mode);
+}
+
+/** When research/build fails — community install or custom build offer. */
+export async function fetchFailureToolOffer(query: string, reason?: string): Promise<FailureToolOffer | null> {
+  try {
+    const userId = await getOrCreateHiveUserId();
+    const res = await fetch(`${HIVE_API_BASE}/api/hive/orchestrate/failure-offer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, query, reason }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return null;
+    return data as FailureToolOffer;
+  } catch {
+    return null;
+  }
 }

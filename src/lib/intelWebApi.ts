@@ -417,3 +417,27 @@ export function formatFallbackBrief(
 
   return lines.join('\n');
 }
+
+export type FailureToolOffer = {
+  ok: boolean;
+  reply: string;
+  toolkitApp?: { id: string; title: string; tagline?: string; summary?: string; isExample?: boolean } | null;
+  offerBuild?: boolean;
+  guideSteps?: string[];
+};
+
+export async function fetchFailureToolOffer(query: string, reason?: string): Promise<FailureToolOffer | null> {
+  const userId = getOrCreateWebHiveUserId();
+  try {
+    const res = await fetch('/api/hive/orchestrate/failure-offer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, query, reason }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) return null;
+    return data as FailureToolOffer;
+  } catch {
+    return null;
+  }
+}
