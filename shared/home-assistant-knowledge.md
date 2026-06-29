@@ -200,7 +200,7 @@ Always respond with **valid JSON only** (no markdown fences):
 ```json
 {
   "reply": "Your conversational message to the user (markdown ok inside string)",
-  "intent": "chat" | "jobs" | "research" | "build" | "tool",
+  "intent": "chat" | "jobs" | "research" | "build" | "tool" | "toolkit_offer",
   "needsWebSearch": false,
   "webSearchQuery": "",
   "buildStage": "discover" | "propose" | "confirm" | "none",
@@ -218,7 +218,7 @@ Always respond with **valid JSON only** (no markdown fences):
 
 **Fields:**
 - `reply` — always required; this is what the user sees.
-- `intent` — primary routing: `jobs`, `research`, `build`, `tool` (open existing app), or `chat`.
+- `intent` — primary routing: `jobs`, `research`, `build`, `tool` (open existing app), `toolkit_offer` (server may set when community match found), or `chat`.
 - `needsWebSearch` + `webSearchQuery` — when true, the app will run Hive Cloud search and send results back to you in a follow-up turn.
 - `buildStage`: `discover` (asking questions), `propose` (summarized plan, awaiting yes/tweak), `confirm` (user approved — include `buildMessage` with full spec for the Hive), `none`.
 - `buildMessage` — only when `buildStage` is `confirm`; detailed plain-English spec for the build agent.

@@ -32,6 +32,8 @@ import { formatRegionLabel } from '../osint/regionalQuery';
 import { buildJsonExport, buildRawDump, buildShareSummary } from '../osint/export';
 import { shareIntelPdf } from '../osint/pdfExport';
 import { getToolDef } from '../osint/tools/registry';
+import { fetchFailureToolOffer, type FailureToolOffer } from '../lib/homeAssistant';
+import { installToolkitApp } from '../lib/hiveUserApps';
 import type { AgentProgressEvent, IntelCase, ToolRunResult } from '../osint/types';
 
 function StatusIcon({ status }: { status: ToolRunResult['status'] }) {
@@ -50,6 +52,7 @@ export default function IntelCaseScreen() {
   const [running, setRunning] = useState(false);
   const [expandedTool, setExpandedTool] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
+  const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
   const autoStarted = useRef(false);
 
   const load = useCallback(async () => {
@@ -85,10 +88,24 @@ export default function IntelCaseScreen() {
     if (!caseId || running) return;
     setRunning(true);
     setStatusMessage('Starting Intel Agent…');
+    setFailureOffer(null);
     try {
       const result = await runIntelAgent(caseId, onProgress);
       setIntelCase(result);
+      const done = result.toolResults.filter((r) => r.status === 'done').length;
+      const query = result.target.userIntent || result.target.label;
+      if (done < 2 || !result.aiBrief?.trim()) {
+        const offer = await fetchFailureToolOffer(
+          query,
+          'Research returned limited results from the tools we ran.'
+        );
+        if (offer) setFailureOffer(offer);
+      }
     } catch (err) {
+      const c = await getIntelCase(caseId);
+      const query = c?.target.userIntent || c?.target.label || '';
+      const offer = await fetchFailureToolOffer(query, 'Research could not complete with built-in tools.');
+      if (offer) setFailureOffer(offer);
       Alert.alert('Agent error', err instanceof Error ? err.message : 'Research failed');
     } finally {
       setRunning(false);
@@ -261,6 +278,49 @@ export default function IntelCaseScreen() {
           </>
         )}
 
+        {failureOffer ? (
+          <GlassCard style={styles.offerCard}>
+            <Text style={styles.offerTitle}>Next step</Text>
+            <Text style={styles.offerBody}>{failureOffer.reply}</Text>
+            {failureOffer.guideSteps?.map((step, i) => (
+              <Text key={i} style={styles.offerStep}>
+                {i + 1}. {step.replace(/\*\*/g, '')}
+              </Text>
+            ))}
+            <View style={styles.offerActions}>
+              {failureOffer.toolkitApp?.id ? (
+                <TouchableOpacity
+                  style={styles.offerBtnPrimary}
+                  onPress={async () => {
+                    const installed = await installToolkitApp(failureOffer.toolkitApp!.id);
+                    if (installed) {
+                      navigation.navigate('DynamicApp', { appId: installed.id, app: installed });
+                    } else {
+                      navigation.navigate('Apps');
+                    }
+                  }}
+                >
+                  <Text style={styles.offerBtnPrimaryText}>
+                    Install {failureOffer.toolkitApp.title}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {failureOffer.offerBuild ? (
+                <TouchableOpacity
+                  style={styles.offerBtnSecondary}
+                  onPress={() =>
+                    navigation.navigate('HiveBuild', {
+                      prefill: intelCase.target.userIntent || intelCase.target.label,
+                    })
+                  }
+                >
+                  <Text style={styles.offerBtnSecondaryText}>Build custom tool</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </GlassCard>
+        ) : null}
+
         {intelCase.status === 'complete' && !running && (
           <PrimaryButton
             label="Re-run research"
@@ -290,6 +350,26 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
   },
   agentMeta: { color: colors.textMuted, fontSize: 12 },
+  offerCard: { marginTop: spacing.md, padding: spacing.md, gap: 8 },
+  offerTitle: { color: colors.amberLight, fontWeight: '900', fontSize: 13 },
+  offerBody: { color: colors.text, fontSize: 13, lineHeight: 20 },
+  offerStep: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
+  offerActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: spacing.sm },
+  offerBtnPrimary: {
+    backgroundColor: colors.amber,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.lg,
+  },
+  offerBtnPrimaryText: { color: '#0f172a', fontWeight: '800', fontSize: 13 },
+  offerBtnSecondary: {
+    borderWidth: 1,
+    borderColor: colors.amber + '66',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: radii.lg,
+  },
+  offerBtnSecondaryText: { color: colors.amberLight, fontWeight: '700', fontSize: 13 },
   progressCard: {
     flexDirection: 'row',
     alignItems: 'center',

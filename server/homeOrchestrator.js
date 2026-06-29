@@ -9,6 +9,7 @@ import * as hiveUsage from './hiveUsage.js';
 import { runIntelCloudTool } from './intelOsint.js';
 import { HOME_ASSISTANT_KNOWLEDGE } from './homeAssistantKnowledgeBundled.js';
 import { parseHomeAssistantJson } from './assistantJson.js';
+import { enrichHomeAssistantAction } from './homeAssistOrchestrate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOME_CHAT_MODEL = process.env.HOME_ASSIST_MODEL || 'gemini-2.5-flash';
@@ -130,6 +131,10 @@ export async function runHomeAssistantChat(db, userId, opts) {
     }
 
     const parsed = parseHomeAssistantJson(text);
+    let action = parsed.ok ? parsed.action : { reply: parsed.reply, intent: 'chat', buildStage: 'none' };
+    action = await enrichHomeAssistantAction(db, message, action, {
+      failureContext: opts.failureContext,
+    });
 
     const charge = await hiveUsage.recordTokenUsage(db, userId, {
       rawCostUsd: HOME_CHAT_RAW_COST,
@@ -142,9 +147,9 @@ export async function runHomeAssistantChat(db, userId, opts) {
 
     return {
       ok: true,
-      text: parsed.ok ? parsed.reply : parsed.reply,
-      reply: parsed.ok ? parsed.reply : parsed.reply,
-      action: parsed.ok ? parsed.action : { reply: parsed.reply, intent: 'chat', buildStage: 'none' },
+      text: action.reply,
+      reply: action.reply,
+      action,
       chargedUsd: charge.chargedUsd ?? 0,
     };
   } catch (err) {
