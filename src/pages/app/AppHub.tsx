@@ -9,9 +9,6 @@ import {
   Wand2,
   Shield,
   Zap,
-  LayoutDashboard,
-  Globe,
-  Smartphone,
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import {
@@ -21,16 +18,18 @@ import {
   BYOK_FEATURES,
 } from './appContent';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
+import { EXAMPLE_APP_IDS } from '../../lib/hiveExampleApps';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
+import FlipHeroWords from '../../components/FlipHeroWords';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
 const GALLERY = [
   { src: APP_STOCK_IMAGES.mobileApps, alt: 'Mobile app interfaces on phone', tag: 'Mobile apps' },
   { src: APP_STOCK_IMAGES.websiteDashboard, alt: 'Analytics website dashboard', tag: 'Web dashboards' },
-  { src: APP_STOCK_IMAGES.adminPanel, alt: 'Admin command center on laptop', tag: 'Admin centers' },
+  { src: APP_STOCK_IMAGES.adminPanel, alt: 'Admin dashboard on laptop', tag: 'Admin dashboards' },
   { src: APP_STOCK_IMAGES.webAppMock, alt: 'Modern web application', tag: 'Web apps' },
   { src: APP_STOCK_IMAGES.teamCollab, alt: 'Team collaborating on product', tag: 'Team tools' },
-  { src: APP_STOCK_IMAGES.heroCommandCenter, alt: 'Data command center screens', tag: 'Command center' },
+  { src: APP_STOCK_IMAGES.heroCommandCenter, alt: 'Data dashboard screens', tag: 'Dashboards' },
 ];
 
 export default function AppHub() {
@@ -38,10 +37,15 @@ export default function AppHub() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStoreCatalog({ limit: 6 })
+    fetchStoreCatalog({ limit: 12 })
       .then((catalog) => {
-        const pool = catalog.featured?.length ? catalog.featured : catalog.examples || [];
-        setFeatured(pool.slice(0, 3));
+        const pool = catalog.examples?.length ? catalog.examples : catalog.featured || [];
+        const resume = pool.find((a) => a.id === EXAMPLE_APP_IDS.resumeBot);
+        const mock = pool.find((a) => a.id === EXAMPLE_APP_IDS.mockRealestate);
+        const rest = pool.filter(
+          (a) => a.id !== EXAMPLE_APP_IDS.resumeBot && a.id !== EXAMPLE_APP_IDS.mockRealestate
+        );
+        setFeatured([resume, mock, ...rest].filter(Boolean).slice(0, 3) as HiveAppSpec[]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -49,13 +53,12 @@ export default function AppHub() {
   return (
     <>
       <SEO
-        title="AiBhive App — Build Your AI Admin Command Center"
-        description="No coding. Speak what you want — custom apps, admin panels, social automation, phone intelligence, and lead pipelines. BYOK or Hive credits. Works on aibhive.com/app and Android."
-        keywords="AI app builder, admin command center, BYOK AI, no-code automation, AiBhive app, custom business tools"
+        title="AiBhive App — Build Mobile Apps, Web Apps & Sites"
+        description="No coding. Speak what you want — Bhive Builder ships custom apps, web dashboards, and automation. BYOK or Hive credits."
+        keywords="AI app builder, Bhive Builder, BYOK AI, no-code automation, AiBhive app, custom business tools"
       />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/5">
+      <section className="relative overflow-hidden border-b border-white/5" data-tour="app-hub">
         <div className="absolute inset-0">
           <img
             src={APP_STOCK_IMAGES.heroCommandCenter}
@@ -75,13 +78,12 @@ export default function AppHub() {
               <Sparkles className="w-3.5 h-3.5" />
               Live on web & mobile
             </p>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.05]">
-              Build your own{' '}
-              <span className="text-bee-amber">admin command center.</span>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-[1.08]">
+              Build your own <FlipHeroWords />
             </h1>
             <p className="mt-6 text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl">
-              No coding — just speak what you would like and we build it. Bring your own API keys or use
-              ours. Custom apps, workflows, and automation hubs in seconds.
+              No coding — describe what you want and Bhive Builder ships it. Bring your own API keys or use Hive
+              credits. Custom apps, workflows, and dashboards in seconds.
             </p>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link
@@ -93,11 +95,10 @@ export default function AppHub() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                to="/admin"
+                to="/hive-apps/run/example-mock-realestate"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-white/15 bg-white/5 text-white font-bold hover:border-bee-amber/40 transition-colors"
               >
-                <LayoutDashboard className="w-5 h-5 text-bee-amber" />
-                Open admin center
+                See demo dashboard
               </Link>
             </div>
           </motion.div>
@@ -126,7 +127,6 @@ export default function AppHub() {
         </div>
       </section>
 
-      {/* BYOK */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div>
@@ -134,8 +134,8 @@ export default function AppHub() {
               Your keys. <span className="text-bee-amber">Our stack.</span> Your choice.
             </h2>
             <p className="text-slate-400 mt-4 text-lg leading-relaxed">
-              Power users connect Grok, Gemini, or OpenAI directly. Everyone else can use AiBhive Tokens
-              for cloud AI, search, and builds at API cost + 30%.
+              Power users connect their own LLM and search providers. Everyone else can use Hive credits for a
+              simple, predictable experience — no spreadsheet required.
             </p>
             <div className="mt-8 space-y-4">
               {BYOK_FEATURES.map((f) => (
@@ -148,6 +148,9 @@ export default function AppHub() {
                 </div>
               ))}
             </div>
+            <Link to="/app/settings" className="inline-block mt-6 text-bee-amber font-bold text-sm hover:underline">
+              Advanced settings →
+            </Link>
           </div>
           <div className="relative rounded-3xl overflow-hidden border border-white/10 aspect-[4/3]">
             <img
@@ -157,14 +160,19 @@ export default function AppHub() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050810] via-transparent to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
-              <p className="text-white font-black text-xl">Admin command center</p>
-              <p className="text-slate-300 text-sm mt-1">Social · Phone · Leads · Custom ops — one hub</p>
+              <p className="text-white font-black text-xl">Mock Up Real Estate</p>
+              <p className="text-slate-300 text-sm mt-1">1,200 units · automation · PMS-ready demo</p>
+              <Link
+                to="/hive-apps/run/example-mock-realestate"
+                className="inline-block mt-3 text-bee-amber font-bold text-sm hover:underline"
+              >
+                Open demo →
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Pillars */}
       <section className="border-y border-white/5 bg-white/[0.02]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <h2 className="text-2xl md:text-3xl font-black text-white mb-8">Do · Build · Research</h2>
@@ -194,13 +202,11 @@ export default function AppHub() {
         </div>
       </section>
 
-      {/* Topic cards */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl md:text-4xl font-black text-white">Automation playbooks</h2>
           <p className="text-slate-400 mt-3">
-            Deep dives on the four workflows teams ask for most — each ready to deploy from your command
-            center.
+            Deep dives on the workflows teams ask for most — each ready to deploy with Bhive Builder.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-5">
@@ -240,13 +246,11 @@ export default function AppHub() {
         </div>
       </section>
 
-      {/* Gallery */}
       <section className="border-t border-white/5 bg-[#070a0f]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <h2 className="text-2xl font-black text-white mb-2">Apps & websites you can ship</h2>
           <p className="text-slate-500 text-sm mb-8">
-            Stock previews — swap in your screenshots anytime. Every style below is buildable from plain
-            English.
+            Every style below is buildable from plain English with Bhive Builder.
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {GALLERY.map((g) => (
@@ -262,12 +266,11 @@ export default function AppHub() {
         </div>
       </section>
 
-      {/* Community apps */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-black text-white">Working apps — try now</h2>
-            <p className="text-slate-500 text-sm mt-1">From the community pool. Install free, run in browser.</p>
+            <p className="text-slate-500 text-sm mt-1">Featured: Auto-Bot Resume · from the community hive.</p>
           </div>
           <Link to="/hive-apps" className="text-bee-amber font-bold text-sm hover:underline inline-flex items-center gap-1">
             Browse all apps <ArrowRight className="w-4 h-4" />
@@ -293,32 +296,6 @@ export default function AppHub() {
             </Link>
           </div>
         )}
-      </section>
-
-      {/* Platform strip */}
-      <section className="border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid sm:grid-cols-2 gap-4">
-          <Link
-            to="/hive-apps/build"
-            className="flex items-center gap-4 rounded-2xl bg-bee-amber/10 border border-bee-amber/30 p-6 hover:bg-bee-amber/15 transition-colors"
-          >
-            <Globe className="w-8 h-8 text-bee-amber shrink-0" />
-            <div>
-              <p className="text-white font-extrabold">Build on the web</p>
-              <p className="text-slate-400 text-sm">Hive Magic — describe, approve, use</p>
-            </div>
-          </Link>
-          <a
-            href="/api/download/apk"
-            className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-6 hover:border-bee-amber/30 transition-colors"
-          >
-            <Smartphone className="w-8 h-8 text-bee-amber shrink-0" />
-            <div>
-              <p className="text-white font-extrabold">Full experience on Android</p>
-              <p className="text-slate-400 text-sm">Download AiBhive APK</p>
-            </div>
-          </a>
-        </div>
       </section>
     </>
   );

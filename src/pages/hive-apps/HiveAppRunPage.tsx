@@ -5,6 +5,7 @@ import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
 import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
 import { AssistantTopSpacer } from '../../components/HomeAssistantWeb';
+import BuildPlatformStrip from '../../components/BuildPlatformStrip';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
 /** Full-screen in-browser app runner — polls for spec updates after tweaks/builds. */
@@ -113,17 +114,12 @@ export default function HiveAppRunPage() {
           )}
         </div>
       </header>
-      <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         <div key={`${app.id}-${version}`}>
           {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
         </div>
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Auto-refreshes when the app spec changes ·{' '}
-          <Link to={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">
-            {app.isExample ? 'Save to My Apps' : 'Install to customize'}
-          </Link>
-        </p>
       </main>
+      <BuildPlatformStrip />
     </div>
   );
 }

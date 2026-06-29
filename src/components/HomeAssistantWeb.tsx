@@ -29,7 +29,7 @@ import { getOrCreateWebHiveUserId } from '../lib/hiveWebUser';
 import { useAssistantDock, TOP_BAR_HEIGHT } from '../context/AssistantDockContext';
 
 const WELCOME =
-  "Hi — I'm your AiBhive assistant. Ask me to research a target, build a tool, track jobs, or install something from the community hive.";
+  "Hi — I'm Bhive Builder. Ask me to research a target, build a tool, track jobs, or install something from the community hive.";
 
 const QUICK = [
   { label: 'Research a company', text: 'Research Acme Corp — leadership, tech stack, and public contacts' },
@@ -157,7 +157,7 @@ export default function HomeAssistantWeb() {
           appendAi(
             result.needPayment
               ? `This needs Hive credits (~$${(result.amountUsd ?? 0.02).toFixed(2)}). Visit /app/settings to learn about plans.`
-              : result.error || 'Assistant is reconnecting — try again.'
+              : result.error || 'Bhive Builder is reconnecting — try again.'
           );
           return;
         }
@@ -330,7 +330,7 @@ export default function HomeAssistantWeb() {
               className="inline-flex items-center gap-2 shrink-0 text-bee-amber font-bold text-sm"
             >
               <Bot className="w-5 h-5" />
-              Hive Assistant
+              Bhive Builder
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
             {!expanded ? (
@@ -349,7 +349,7 @@ export default function HomeAssistantWeb() {
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask the assistant…"
+                  placeholder="Ask Bhive Builder…"
                   className="flex-1 rounded-lg bg-white/5 border border-white/10 px-3 py-1.5 text-sm text-white focus:outline-none focus:border-bee-amber/40"
                 />
                 <button type="submit" disabled={loading || !input.trim()} className="text-bee-amber p-1.5">
@@ -393,7 +393,7 @@ export default function HomeAssistantWeb() {
             <div className="p-4 border-b border-bee-amber/20 flex justify-between items-center bg-bee-amber/10">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-bee-amber" />
-                <span className="text-white font-bold">Hive Assistant</span>
+                <span className="text-white font-bold">Bhive Builder</span>
               </div>
               <button type="button" onClick={() => setOpen(false)} className="text-slate-400 hover:text-white p-1">
                 <X className="w-5 h-5" />
@@ -409,7 +409,7 @@ export default function HomeAssistantWeb() {
         className="flex items-center gap-2 px-5 py-3.5 rounded-full bg-bee-amber text-bee-black font-extrabold shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:bg-bee-yellow transition-colors"
       >
         <MessageCircle className="w-5 h-5" />
-        Ask Hive
+        Ask Bhive
       </button>
     </div>,
     document.body

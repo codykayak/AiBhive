@@ -69,13 +69,13 @@ export type AppTopicSlug = (typeof APP_TOPICS)[number]['slug'];
 export const APP_PILLARS = [
   {
     title: 'Do',
-    body: 'Job tracker, applications, Auto-Bot Resume — ship productivity today.',
-    href: '/hive-apps/run/example-job-tracker',
-    cta: 'Open Job Tracker',
+    body: 'Auto-Bot Resume — tailored cover letters and resume kits per job.',
+    href: '/hive-apps/run/example-resume-bot',
+    cta: 'Open Auto-Bot Resume',
   },
   {
     title: 'Build',
-    body: 'Describe any app in plain English. Hive Magic builds it in seconds.',
+    body: 'Describe any app in plain English. Bhive Builder ships it in seconds.',
     href: '/hive-apps/build',
     cta: 'Start building',
   },
@@ -90,15 +90,15 @@ export const APP_PILLARS = [
 export const BYOK_FEATURES = [
   {
     title: 'Bring your own API keys',
-    body: 'Connect Grok, Gemini, OpenAI, or others in Settings. Your keys, your models, your spend.',
+    body: 'Connect your LLM and search providers in Settings. Your keys, your models — AiBhive adds a simple platform pass-through on orchestration.',
   },
   {
     title: 'Or use Hive credits',
-    body: 'Prefer simplicity? AiBhive Tokens cover cloud AI, search, and builds at API cost + 30%.',
+    body: 'Prefer simplicity? Hive credits cover cloud AI, search, and builds with straightforward pricing.',
   },
   {
     title: 'No coding required',
-    body: 'Speak or type what you want — admin panels, trackers, workflows. We build and ship it.',
+    body: 'Speak or type what you want — dashboards, trackers, workflows. Bhive Builder ships it.',
   },
 ] as const;
 
@@ -127,7 +127,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     seo: {
       title: 'Automated AI Social Media — AiBhive App',
       description:
-        'Plan posts, generate on-brand copy, schedule across channels, and review performance from one AI admin command center. BYOK or Hive credits.',
+        'Plan posts, generate on-brand copy, schedule across channels, and review performance from one AI admin dashboard. BYOK or Hive credits.',
       keywords:
         'automated social media AI, AI content scheduler, social media automation, AiBhive admin center',
     },
@@ -135,7 +135,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     title: 'Automated AI',
     highlight: 'social media.',
     subtitle:
-      'One command center to brainstorm, draft, schedule, and learn what works — without juggling five disconnected tools.',
+      'One dashboard to brainstorm, draft, schedule, and learn what works — without juggling five disconnected tools.',
     heroImage: APP_STOCK_IMAGES.socialMedia,
     heroAlt: 'Social media content planning on laptop',
     stats: [
@@ -147,7 +147,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     intro: [
       'Most teams still copy-paste between ChatGPT, Canva, and a scheduler — then wonder why posts feel generic and off-brand.',
       'AiBhive treats social as a **built-in workflow**: describe your voice, audience, and cadence once. Your admin center generates drafts, routes them for approval, and publishes on schedule.',
-      'Use **your API keys** for full control, or **Hive credits** for a managed stack. No developers required — just tell the assistant what you want next.',
+      'Use **your API keys** for full control, or **Hive credits** for a managed stack. No developers required — just tell Bhive Builder what you want next.',
     ],
     sections: [
       {
@@ -183,7 +183,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
       'Connect social accounts or export-ready copy packs',
       'Set approval rules for promos vs evergreen',
       'Enable Auto Social in Admin → monitor queue',
-      'Ask the assistant: "Draft 7 LinkedIn posts for our launch"',
+      'Ask Bhive Builder: "Draft 7 LinkedIn posts for our launch"',
     ],
     faqs: [
       {
@@ -195,7 +195,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
         a: 'Yes — BYOK in Settings. Or use Hive credits for a fully managed cloud stack.',
       },
     ],
-    primaryCta: { label: 'Open Admin Command Center', href: '/admin?tab=auto-social' },
+    primaryCta: { label: 'Start building', href: '/hive-apps/build' },
     secondaryCta: { label: 'Build a custom social hub', href: '/hive-apps/build' },
   },
   'phone-intelligence': {
@@ -241,7 +241,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
       },
       {
         heading: 'Admin you can speak into',
-        body: 'Change scripts, hours, or routing by chatting with the assistant — no ticket to engineering.',
+        body: 'Change scripts, hours, or routing by chatting with Bhive Builder — no ticket to engineering.',
       },
     ],
     pipeline: [
@@ -294,7 +294,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     intro: [
       'Buying lists and blasting templates is dead. Buyers expect relevance, speed, and context.',
       'AiBhive pipelines **monitor signals** (permits, MLS, job posts, intent feeds), **score fit**, **personalize outreach**, and **book** only when a human should take the call.',
-      'Describe your ICP in plain English — we build the tracker, admin views, and automation in your command center.',
+      'Describe your ICP in plain English — we build the tracker, admin views, and automation in your dashboard.',
     ],
     sections: [
       {
@@ -365,11 +365,11 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     intro: [
       'Productivity is not another chat tab — it is **tools that match how you actually work**.',
       'AiBhive is an app factory: job trackers, expense logs, client portals, internal dashboards, approval queues. Describe once; use immediately inside AiBhive or export to web/APK/Play Store.',
-      'Combine **Do · Build · Research** in one command center. Bring **your APIs** or use **ours**.',
+      'Combine **Do · Build · Research** in one place. Bring **your APIs** or use **ours**.',
     ],
     sections: [
       {
-        heading: 'Admin command centers',
+        heading: 'Admin dashboards',
         body: 'Unified hubs for social, phone, leads, documents, and custom ops — built from conversation, not Jira tickets.',
         bullets: [
           'Role-friendly screens your team actually opens',
@@ -394,7 +394,7 @@ export const TOPIC_PAGES: Record<AppTopicSlug, TopicPageConfig> = {
     ],
     checklist: [
       'Try the Build tab with one real workflow you hate in spreadsheets',
-      'Install example tools: Job Tracker, Resume, Research',
+      'Install example tools: Auto-Bot Resume, Research, Mock Up Real Estate',
       'Browse community apps before rebuilding duplicates',
       'Open Admin for social, RAG, and automation modules',
     ],

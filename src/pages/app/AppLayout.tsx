@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { LayoutGrid, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { APP_NAV } from './appContent';
+import BuildPlatformStrip from '../../components/BuildPlatformStrip';
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -18,7 +19,7 @@ export default function AppLayout() {
               <div>
                 <p className="text-bee-amber text-[10px] font-bold uppercase tracking-[0.2em]">AiBhive</p>
                 <p className="text-white font-black text-lg leading-tight group-hover:text-bee-amber transition-colors">
-                  App Command Center
+                  AiBhive Apps
                 </p>
               </div>
             </Link>
@@ -59,6 +60,7 @@ export default function AppLayout() {
       </div>
 
       <Outlet />
+      <BuildPlatformStrip />
     </div>
   );
 }

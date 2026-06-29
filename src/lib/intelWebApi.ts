@@ -256,7 +256,7 @@ export async function runCloudTool(
   };
 }
 
-/** Grok filters raw OSINT output — returns only inquiry-relevant findings. */
+/** AI filters raw OSINT output — returns only inquiry-relevant findings. */
 export async function synthesizeIntelFindings(opts: {
   target: IntelWebCase['target'];
   toolResults: ToolRunResult[];
@@ -287,7 +287,7 @@ export async function synthesizeIntelFindings(opts: {
   }
   return {
     text: data.text,
-    provider: data.provider || 'grok',
+    provider: data.provider || 'ai',
     chargedUsd: data.chargedUsd,
   };
 }
@@ -397,7 +397,7 @@ export function buildTargetContext(
   }`;
 }
 
-/** Markdown brief from tool results when Grok chat is unavailable (no credits / API down). */
+/** Markdown brief from tool results when AI chat is unavailable (no credits / API down). */
 export function formatFallbackBrief(
   target: IntelWebCase['target'],
   results: ToolRunResult[]
@@ -447,7 +447,7 @@ export function formatFallbackBrief(
     '### Recommended next steps',
     '',
     '- Review raw tool output above',
-    '- Add Hive credits for deep web search (Firecrawl) or Grok synthesis',
+    '- Add Hive credits for deep web search (Firecrawl) or AI synthesis',
     '- Use Google dork pack links to continue manual research',
   );
 

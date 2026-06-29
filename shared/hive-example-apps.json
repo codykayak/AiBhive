@@ -100,7 +100,7 @@
         "title": "Full version",
         "type": "info",
         "config": {
-          "body": "This web runner uses Hive Cloud AI — the same Auto-Bot Resume engine as the AiBhive mobile app.",
+          "body": "This web runner uses Bhive Cloud AI — the same Auto-Bot Resume engine as the AiBhive mobile app.",
           "bullets": [
             "Job URL scrape + screenshot support",
             "Cover letter, tailored resume, cold email",
@@ -172,6 +172,35 @@
           "links": [
             { "label": "Open Intel Agent on web", "url": "https://aibhive.com/app/research" },
             { "label": "Get mobile app", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-mock-realestate",
+    "title": "Mock Up Real Estate",
+    "tagline": "Demo property command center",
+    "summary": "Static admin dashboard for 1,200 rental units — cash-on-cash, vacancy, after-hours triage, email automation, and PMS plug-in placeholders.",
+    "theme": "green",
+    "icon": "building",
+    "category": "dashboards",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive demo from My Apps — charts, automation stats, and Yardi / RealPage / AppFolio connector mockups.",
+          "bullets": [
+            "1,200 rental properties portfolio view",
+            "Cash-on-cash and vacancy analytics",
+            "After-hours triage & email automation flows"
+          ],
+          "links": [
+            { "label": "Run full demo", "url": "https://aibhive.com/hive-apps/run/example-mock-realestate" }
           ]
         }
       }

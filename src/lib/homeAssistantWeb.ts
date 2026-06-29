@@ -47,7 +47,7 @@ export async function preloadHomeAssistantKnowledge(): Promise<string> {
 async function buildSystemPrompt(userMessage?: string): Promise<string> {
   const knowledge = await preloadHomeAssistantKnowledge();
   return [
-    'You are the AiBhive home assistant — the user\'s smart operator for the whole app on the web.',
+    'You are Bhive Builder — the user\'s smart operator for building apps and navigating AiBhive on the web.',
     '--- HOME ASSISTANT KNOWLEDGE ---',
     knowledge.slice(0, 20000),
     '--- WEB CONTEXT ---',
@@ -146,7 +146,7 @@ export async function sendHomeAssistantTurn(
       };
     }
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Assistant unavailable' };
+    return { ok: false, error: err instanceof Error ? err.message : 'Bhive Builder unavailable' };
   }
 }
 

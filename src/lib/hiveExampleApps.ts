@@ -4,9 +4,10 @@ import rawExamples from '../../shared/hive-example-apps.json';
 const EXAMPLES = rawExamples as HiveAppSpec[];
 
 export const EXAMPLE_APP_IDS = {
-  jobTracker: 'example-job-tracker',
   resumeBot: 'example-resume-bot',
+  jobTracker: 'example-job-tracker',
   research: 'example-research',
+  mockRealestate: 'example-mock-realestate',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
@@ -29,18 +30,23 @@ export function getLocalExampleApp(appId: string): HiveAppSpec | null {
 
 export const EXAMPLE_TOOLS = [
   {
-    id: EXAMPLE_APP_IDS.jobTracker,
-    title: 'Job Tracker',
-    sub: 'Applications, status, and follow-ups',
-  },
-  {
     id: EXAMPLE_APP_IDS.resumeBot,
     title: 'Auto-Bot Resume',
     sub: 'Tailored resume & cover letter',
   },
   {
+    id: EXAMPLE_APP_IDS.jobTracker,
+    title: 'Job Tracker',
+    sub: 'Applications, status, and follow-ups',
+  },
+  {
     id: EXAMPLE_APP_IDS.research,
     title: 'Research',
     sub: 'Intel on companies and people',
+  },
+  {
+    id: EXAMPLE_APP_IDS.mockRealestate,
+    title: 'Mock Up Real Estate',
+    sub: 'Demo property dashboard',
   },
 ] as const;

@@ -92,6 +92,21 @@ Multi-agent SWARM for accuracy; 90+ languages; MP3, MP4, WAV, M4A, TXT, DOCX, PD
 
 Use cases: /use-cases/podcasters, /use-cases/youtubers, /use-cases/legal-transcription, /use-cases/medical-transcription
 
+=== AiBhive APP PLATFORM (Bhive Builder) ===
+
+Web app hub: /app
+Build apps: /hive-apps/build (Bhive Builder — describe, approve, ship)
+My Apps store: /hive-apps
+Research / Intel Agent: /app/research
+Settings (BYOK + credits): /app/settings
+Demo property dashboard: /hive-apps/run/example-mock-realestate (Mock Up Real Estate — static demo)
+
+Bhive Builder replaces older "Hive Magic" branding. Users describe apps in plain English; most simple apps ~$1.
+
+BYOK (Bring Your Own Keys): Users connect their LLM/search API keys in Settings (mobile today, web expanding). They pay their vendor for model usage; AiBhive adds a modest platform pass-through on orchestration/build infrastructure — similar to dev tools that mark up LLM API costs for convenience. Hive credits remain for users who want simplicity.
+
+Featured example apps: Auto-Bot Resume (/hive-apps/run/example-resume-bot), Research (/app/research), Mock Up Real Estate demo.
+
 === ANSWER RULES ===
 - Default to agentic/B2B knowledge when the question is ambiguous.
 - Link to the most relevant /solutions/... page for automation topics.
