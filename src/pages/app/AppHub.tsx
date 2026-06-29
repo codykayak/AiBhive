@@ -21,6 +21,8 @@ import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
 import { EXAMPLE_APP_IDS } from '../../lib/hiveExampleApps';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import FlipHeroWords from '../../components/FlipHeroWords';
+import DirectAnswer from '../../components/DirectAnswer';
+import { SITE_TAGLINE } from '../../constants/site';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
 const GALLERY = [
@@ -54,7 +56,7 @@ export default function AppHub() {
     <>
       <SEO
         title="AiBhive App — Build Mobile Apps, Web Apps & Sites"
-        description="No coding. Speak what you want — Bhive Builder ships custom apps, web dashboards, and automation. BYOK or Hive credits."
+        description={`${SITE_TAGLINE} No coding — Bhive Builder ships custom apps. BYOK or Hive credits.`}
         keywords="AI app builder, Bhive Builder, BYOK AI, no-code automation, AiBhive app, custom business tools"
       />
 
@@ -85,6 +87,11 @@ export default function AppHub() {
               No coding — describe what you want and Bhive Builder ships it. Bring your own API keys or use Hive
               credits. Custom apps, workflows, and dashboards in seconds.
             </p>
+            <DirectAnswer>
+              AiBhive App is the web hub for Bhive Builder (describe-and-ship apps), Hive Apps (free community
+              tools), and sample apps like Auto-Bot Resume and Mock Up Real Estate—no login wall for browsing
+              guides at aibhive.com/tools.
+            </DirectAnswer>
             <div className="flex flex-wrap gap-3 mt-10">
               <Link
                 to="/hive-apps/build"

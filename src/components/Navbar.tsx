@@ -12,6 +12,7 @@ import {
 const aboutLinks = [
   { name: 'About Us', path: '/about' },
   { name: 'FAQ', path: '/faq' },
+  { name: 'AI Tool Guides', path: '/tools' },
 ];
 
 function isPathInList(pathname: string, links: readonly { path: string }[]) {

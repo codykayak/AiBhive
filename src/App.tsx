@@ -37,6 +37,8 @@ const AppHub = lazy(() => import('./pages/app/AppHub'));
 const AppTopicPage = lazy(() => import('./pages/app/AppTopicPage'));
 const WebSettingsPage = lazy(() => import('./pages/app/WebSettingsPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const ToolsHubPage = lazy(() => import('./pages/tools/ToolsHubPage'));
+const RealEstateAiToolsPage = lazy(() => import('./pages/tools/RealEstateAiToolsPage'));
 const HiveAppsLayout = lazy(() => import('./pages/hive-apps/HiveAppsLayout'));
 const HiveAppsBrowse = lazy(() => import('./pages/hive-apps/HiveAppsBrowse'));
 const HiveAppDetailPage = lazy(() => import('./pages/hive-apps/HiveAppDetailPage'));
@@ -71,6 +73,8 @@ function AnimatedRoutes() {
             <Route path="/grow" element={<GrowGlobally />} />
             <Route path="/about" element={<AboutContact />} />
             <Route path="/faq" element={<FAQ />} />
+            <Route path="/tools" element={<ToolsHubPage />} />
+            <Route path="/tools/real-estate-ai" element={<RealEstateAiToolsPage />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/test" element={<TestGetStarted />} />

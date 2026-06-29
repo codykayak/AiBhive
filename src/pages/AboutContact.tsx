@@ -1,6 +1,8 @@
 import { motion } from 'motion/react';
 import { Mail, MessageSquare, HelpCircle, Hexagon, Shield, Users, Globe, Zap, Cpu, Lock } from 'lucide-react';
 import { SEO } from '../components/SEO';
+import DirectAnswer from '../components/DirectAnswer';
+import { SITE_TAGLINE } from '../constants/site';
 
 const faqs = [
   { q: "What makes AiBhive different from standard AI?", a: "We use a multi-agent 'Hive' approach. Instead of one AI pass, multiple specialized agents (General, Legal, Medical) cross-verify the output to ensure human-level accuracy." },
@@ -14,9 +16,9 @@ export default function AboutContact() {
   return (
     <main className="py-24">
       <SEO 
-        title="About AiBhive - The Science of Multi-Agent AI | Contact Us"
-        description="Learn about AiBhive's mission to revolutionize transcription and voice cloning through our unique Hive architecture. Contact our team for enterprise AI solutions."
-        keywords="about AiBhive, multi-agent AI, AI transcription company, voice cloning technology, AI contact, AiBhive mission"
+        title="About AiBhive - AI App Factory & Multi-Agent Automation | Contact Us"
+        description={`${SITE_TAGLINE} Learn about Bhive Builder, Hive Apps, and our multi-agent Hive architecture.`}
+        keywords="about AiBhive, Bhive Builder, AI app factory, multi-agent AI, AiBhive contact"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-32 items-center">
@@ -34,6 +36,7 @@ export default function AboutContact() {
               </h1>
             </header>
             <div className="space-y-8 text-slate-400 text-xl leading-relaxed">
+              <DirectAnswer>{SITE_TAGLINE}</DirectAnswer>
               <p>
                 AiBhive is a multi-agent AI hub for creators, professionals, and teams who need precision —
                 plus <strong className="text-white">Bhive Builder</strong>, our app factory for mobile apps, web apps,
