@@ -18,6 +18,7 @@ import {
   Building2,
   Smartphone,
 } from 'lucide-react';
+import { SITE_TAGLINE } from '../constants/site';
 import backgroundLogo from '../aibhive_background.png';
 import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
 import orchestrationImg from '../1775559497156.png';
@@ -137,11 +138,16 @@ export default function Home() {
   return (
     <main className="relative">
       <SEO
-        title="AiBHive — AI App Factory, Community Apps & Enterprise Agentic AI"
-        description="Build your first app for $1–$5 in plain English. Browse the Hive Apps community pool, or deploy custom agentic workflows for enterprise operations."
-        keywords="AiBhive, Hive Apps, AI app builder, community apps, agentic AI, B2B automation, autonomous workflows, enterprise AI agents"
+        title="AiBhive — AI App Factory, Community Apps & Enterprise Agentic AI"
+        description={SITE_TAGLINE}
+        keywords="AiBhive, Bhive Builder, AI app builder, real estate AI, agentic AI, Hive Apps, no-code apps, enterprise automation"
         type="WebSite"
       />
+
+      {/* Crawlable definition — first screen for humans and LLMs */}
+      <div className="sr-only">
+        <p>{SITE_TAGLINE}</p>
+      </div>
 
       {/* ——— SECTION 1: HERO ——— */}
       <section className="relative py-24 md:py-32 lg:py-40 overflow-hidden min-h-[85vh] flex items-center">
@@ -176,7 +182,7 @@ export default function Home() {
             transition={{ duration: 0.5 }}
             className="text-bee-amber font-semibold text-sm uppercase tracking-widest mb-6"
           >
-            AiBHive · Enterprise Agentic AI
+            AiBhive · Enterprise Agentic AI
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -191,12 +197,10 @@ export default function Home() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.12 }}
-            className="text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl mx-auto mb-10 font-medium"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-lg sm:text-xl text-slate-200 leading-relaxed max-w-3xl mx-auto mb-10 font-medium"
           >
-            <strong className="text-white font-semibold">AiBHive</strong> deploys custom,
-            autonomous agentic workflows that integrate seamlessly into your current tech stack to
-            handle lead generation, data entry, and customer operations—no supervision required.
+            {SITE_TAGLINE}
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 16 }}

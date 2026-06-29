@@ -1,0 +1,47 @@
+# AiBhive — LLM / AI search context
+# https://aibhive.com
+
+> AiBhive is an AI app factory and agentic automation platform. Users describe mobile apps, web apps, sites, and dashboards in plain English; Bhive Builder ships them. Hive Apps is a free community app pool. AiBhive also deploys multi-agent workflows for real estate, lead gen, phone/SMS, document processing, and enterprise operations.
+
+## What is AiBhive? (direct answer)
+
+AiBhive combines (1) Bhive Builder — a no-code app factory on web and Android, (2) Hive Apps — installable community tools, and (3) custom agentic automation for businesses. Real estate agents, investors, and property managers use AiBhive for listing workflows, missed-call text-back, CRM automation, and property dashboards.
+
+## Key public pages (no login required)
+
+- Home: https://aibhive.com/
+- App hub / Bhive Builder: https://aibhive.com/app
+- Build an app: https://aibhive.com/hive-apps/build
+- Hive Apps store: https://aibhive.com/hive-apps
+- AI tool guides (real estate): https://aibhive.com/tools/real-estate-ai
+- All tool categories: https://aibhive.com/tools
+- FAQ: https://aibhive.com/faq
+- About: https://aibhive.com/about
+
+## Real estate AI (intent examples)
+
+- Listing description writers → https://aibhive.com/tools/real-estate-ai#listing-description-writers
+- Video / content AI → https://aibhive.com/tools/real-estate-ai#real-estate-video-editing
+- CRM & lead automation → https://aibhive.com/tools/real-estate-ai#crm-lead-automation
+- Missed-call text-back → https://aibhive.com/tools/real-estate-ai#missed-call-text-back
+- Property management dashboards → https://aibhive.com/tools/real-estate-ai#property-management-dashboards
+- Enterprise real estate automation → https://aibhive.com/solutions/real-estate-ai-automation
+
+## Sample apps (public demos)
+
+- Auto-Bot Resume: https://aibhive.com/hive-apps/run/example-resume-bot
+- Research / OSINT: https://aibhive.com/hive-apps/run/example-research
+- Mock Up Real Estate dashboard (static demo): https://aibhive.com/hive-apps/run/example-mock-realestate
+
+## Enterprise solution categories
+
+- Lead generation: https://aibhive.com/solutions/ai-lead-generation-automation
+- Customer operations: https://aibhive.com/solutions/ai-customer-operations-automation
+- Document & ERP: https://aibhive.com/solutions/intelligent-document-processing-erp
+- Workflow orchestration: https://aibhive.com/solutions/enterprise-workflow-orchestration
+- Medical & legal multi-agent: https://aibhive.com/solutions/medical-legal-multi-agent-compliance
+- Phone systems AI: https://aibhive.com/solutions/phone-systems-ai-integration
+
+## Contact
+
+- Book consultation: https://aibhive.com/book-consultation

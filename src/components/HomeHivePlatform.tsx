@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import {
   ArrowRight,
   Briefcase,
+  Building2,
   Download,
   Radar,
   Share2,
@@ -26,6 +27,7 @@ const EXAMPLE_TOOL_ICONS = {
   [EXAMPLE_APP_IDS.jobTracker]: Briefcase,
   [EXAMPLE_APP_IDS.resumeBot]: Sparkles,
   [EXAMPLE_APP_IDS.research]: Radar,
+  [EXAMPLE_APP_IDS.mockRealestate]: Building2,
 } as const;
 
 const PILLARS = [
@@ -177,7 +179,7 @@ export default function HomeHivePlatform() {
           <h3 className="text-white font-bold text-lg md:text-xl mb-4 px-1">Example tools</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
             {EXAMPLE_TOOLS.map((tool) => {
-              const Icon = EXAMPLE_TOOL_ICONS[tool.id];
+              const Icon = EXAMPLE_TOOL_ICONS[tool.id as keyof typeof EXAMPLE_TOOL_ICONS] ?? Sparkles;
               return (
                 <Link
                   key={tool.id}

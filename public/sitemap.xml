@@ -115,6 +115,30 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://aibhive.com/app</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://aibhive.com/hive-apps/build</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://aibhive.com/tools</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://aibhive.com/tools/real-estate-ai</loc>
+    <lastmod>2026-06-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://aibhive.com/hive-apps</loc>
     <lastmod>2026-06-23</lastmod>
     <changefreq>weekly</changefreq>

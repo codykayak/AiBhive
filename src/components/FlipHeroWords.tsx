@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 
-const WORDS = ['Mobile Apps', 'Web Apps', 'Web Site', 'Download Source Code'];
+const WORDS = ['Mobile Apps', 'Web Apps', 'Web Site', 'Source Code'];
 
 export default function FlipHeroWords() {
   const [index, setIndex] = useState(0);

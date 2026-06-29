@@ -45,6 +45,7 @@ export default function HiveAppsBuildPage() {
   const [activeTask, setActiveTask] = useState<HiveTask | null>(null);
   const [online, setOnline] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const bootRef = useRef(false);
 
@@ -53,8 +54,10 @@ export default function HiveAppsBuildPage() {
   }, []);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [lines, activeTask]);
+    const el = messagesRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [lines, activeTask, busy]);
 
   const appendAi = useCallback((content: string) => {
     setLines((prev) => [...prev, { id: newId(), role: 'ai', content }]);
@@ -171,7 +174,7 @@ export default function HiveAppsBuildPage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-black/30 flex flex-col min-h-[420px] max-h-[min(70vh,640px)]">
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div ref={messagesRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {lines.map((m) => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
