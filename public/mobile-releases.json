@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.7.5",
-  "versionCode": 45,
-  "sourceVersion": "1.7.5",
-  "releaseNotes": "v1.7.5 — Hero prompt update, community pool scroll fix, 50% Hive credit markup (was 20–30%).",
+  "shippedNativeVersion": "1.7.7",
+  "versionCode": 47,
+  "sourceVersion": "1.7.7",
+  "releaseNotes": "v1.7.7 — Web App Command Center at /app, working Intel Agent + Grok research chat, APK publish fix.",
   "downloadUrl": "https://aibhive.com/api/download/apk",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782525276462%2Ftaylored-mobile.apk.gz?alt=media&token=1ad65598-49b4-4bda-a47e-25ba0539c11a",
-  "publishedAt": "2026-06-27T01:54:45.082Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782727991809%2Ftaylored-mobile.apk.gz?alt=media&token=07e6da5d-6c93-4b56-a0be-9ba769bcb4dc",
+  "publishedAt": "2026-06-29T10:13:15.996Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=dd7cda0f-d5a4-47c6-a812-8faa7aa2f417"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=9cb70973-ae4e-4362-b289-989c187f5560"
 }
