@@ -654,7 +654,7 @@ export function HomeAssistantChat({
                     );
                   })}
                 </View>
-              )}
+              ) : null}
 
               <View style={[styles.modalComposerWrap, { height: modalComposerHeight }]}>
                 {renderPendingActions()}
