@@ -1,36 +1,60 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ChevronLeft, Maximize2 } from 'lucide-react';
+import { ChevronLeft, Maximize2, RefreshCw } from 'lucide-react';
 import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
 import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
+import { AssistantTopSpacer } from '../../components/HomeAssistantWeb';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
-/** Full-screen in-browser app runner — minimal chrome. */
+/** Full-screen in-browser app runner — polls for spec updates after tweaks/builds. */
 export default function HiveAppRunPage() {
   const { appId = '' } = useParams();
   const [app, setApp] = useState<HiveAppSpec | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [version, setVersion] = useState(0);
+  const lastUpdatedRef = useRef<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const loadApp = useCallback(
+    async (silent = false) => {
+      if (!appId) return;
+      if (!silent) {
+        setLoading(true);
+        setError('');
+      }
+      try {
+        const a = await fetchToolkitApp(appId);
+        if (!a) {
+          setError('App not found.');
+          setApp(null);
+        } else {
+          const updated = (a as HiveAppSpec & { updatedAt?: string }).updatedAt;
+          if (updated && updated !== lastUpdatedRef.current) {
+            lastUpdatedRef.current = updated;
+            setVersion((v) => v + 1);
+          }
+          setApp(a);
+        }
+      } catch {
+        if (!silent) setError('Could not load this app.');
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [appId]
+  );
 
   useEffect(() => {
-    if (!appId) {
-      setLoading(false);
-      setError('No app selected.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    fetchToolkitApp(appId)
-      .then((a) => {
-        setApp(a);
-        if (!a) setError('App not found.');
-      })
-      .catch(() => setError('Could not load this app.'))
-      .finally(() => setLoading(false));
-  }, [appId]);
+    void loadApp();
+    pollRef.current = setInterval(() => void loadApp(true), 8000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [loadApp]);
 
-  if (loading) {
+  if (loading && !app) {
     return (
       <div className="min-h-screen bg-[#070a0f] flex items-center justify-center text-slate-400">
         Loading…
@@ -53,6 +77,7 @@ export default function HiveAppRunPage() {
 
   return (
     <div className="min-h-screen bg-[#070a0f] flex flex-col">
+      <AssistantTopSpacer />
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#070a0f]/95 backdrop-blur">
         <Link
           to={app.isExample ? `/hive-apps?app=${app.id}` : `/hive-apps/app/${app.id}`}
@@ -61,27 +86,39 @@ export default function HiveAppRunPage() {
           <ChevronLeft className="w-4 h-4" />
           {app.title}
         </Link>
-        {!app.isExample ? (
-          <Link
-            to={`/hive-apps/app/${app.id}`}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void loadApp()}
             className="p-2 rounded-lg hover:bg-white/5 text-slate-400"
-            title="App details"
+            title="Refresh app"
           >
-            <Maximize2 className="w-4 h-4" />
-          </Link>
-        ) : (
-          <Link
-            to={`/hive-apps/app/${app.id}`}
-            className="text-xs font-bold text-bee-amber hover:underline"
-          >
-            Details
-          </Link>
-        )}
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          {!app.isExample ? (
+            <Link
+              to={`/hive-apps/app/${app.id}`}
+              className="p-2 rounded-lg hover:bg-white/5 text-slate-400"
+              title="App details"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </Link>
+          ) : (
+            <Link
+              to={`/hive-apps/app/${app.id}`}
+              className="text-xs font-bold text-bee-amber hover:underline"
+            >
+              Details
+            </Link>
+          )}
+        </div>
       </header>
       <main className="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
+        <div key={`${app.id}-${version}`}>
+          {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
+        </div>
         <p className="text-center text-slate-600 text-xs mt-6">
-          Data saved in this browser only ·{' '}
+          Auto-refreshes when the app spec changes ·{' '}
           <Link to={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">
             {app.isExample ? 'Save to My Apps' : 'Install to customize'}
           </Link>

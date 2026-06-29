@@ -24,10 +24,12 @@ export const APP_STOCK_IMAGES = {
 } as const;
 
 export const APP_NAV = [
-  { label: 'Overview', path: '/app' },
-  { label: 'Build', path: '/hive-apps/build' },
-  { label: 'My Apps', path: '/hive-apps' },
-  { label: 'Research', path: '/app/research' },
+  { label: 'Overview', path: '/app', tourId: 'app-hub' },
+  { label: 'Build', path: '/hive-apps/build', tourId: 'nav-build' },
+  { label: 'My Apps', path: '/hive-apps', tourId: 'nav-apps' },
+  { label: 'Research', path: '/app/research', tourId: 'nav-research' },
+  { label: 'Jobs', path: '/app/jobs', tourId: 'nav-jobs' },
+  { label: 'Settings', path: '/app/settings', tourId: 'nav-settings' },
   { label: 'Admin Center', path: '/admin' },
 ] as const;
 
