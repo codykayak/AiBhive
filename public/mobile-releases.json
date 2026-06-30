@@ -5,8 +5,8 @@
   "releaseNotes": "v1.7.7 — Web App Command Center at /app, working Intel Agent + Grok research chat, APK publish fix.",
   "downloadUrl": "https://aibhive.com/api/download/apk",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782727991809%2Ftaylored-mobile.apk.gz?alt=media&token=07e6da5d-6c93-4b56-a0be-9ba769bcb4dc",
-  "publishedAt": "2026-06-29T10:13:15.996Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1782820140639%2Ftaylored-mobile.apk.gz?alt=media&token=6384049e-c32e-4811-b5d8-b803730beb1f",
+  "publishedAt": "2026-06-30T11:49:09.556Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=9cb70973-ae4e-4362-b289-989c187f5560"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=0715505b-6b25-4fab-a3a6-13f175d98e03"
 }
