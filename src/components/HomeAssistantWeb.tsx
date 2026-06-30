@@ -91,7 +91,7 @@ export default function HomeAssistantWeb() {
       }
       if (action.intent === 'jobs') {
         appendAi(action.reply);
-        navigate('/hive-apps/run/example-job-tracker');
+        navigate('/hive-apps/run/example-job-hunter');
         return;
       }
       if (action.intent === 'build' && action.buildStage === 'confirm' && action.buildMessage?.trim()) {

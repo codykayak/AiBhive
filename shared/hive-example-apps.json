@@ -51,6 +51,7 @@
             "Research tab runs OSINT on companies"
           ],
           "links": [
+            { "label": "Job Hunter Bot", "url": "https://aibhive.com/hive-apps/run/example-job-hunter" },
             { "label": "Get the mobile app", "url": "https://aibhive.com/download.html" }
           ]
         }
@@ -172,6 +173,65 @@
           "links": [
             { "label": "Open Intel Agent on web", "url": "https://aibhive.com/app/research" },
             { "label": "Get mobile app", "url": "https://aibhive.com/download.html" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-job-hunter",
+    "title": "Job Hunter Bot",
+    "tagline": "10 jobs/day · cover letters · resume match",
+    "summary": "Set wage, experience, location, and keywords — the bot returns 10 matched jobs with links, suggested resume profile, and auto-generated cover letters.",
+    "theme": "blue",
+    "icon": "target",
+    "category": "lists",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Job Hunter",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive runner for criteria, multiple resume profiles, and 10 daily job matches with cover letters.",
+          "bullets": [
+            "Hourly/yearly wage filters",
+            "Remote + location + keywords",
+            "Picks tech vs real estate resume"
+          ],
+          "links": [
+            { "label": "Run Job Hunter", "url": "https://aibhive.com/hive-apps/run/example-job-hunter" },
+            { "label": "Job Tracker", "url": "https://aibhive.com/hive-apps/run/example-job-tracker" }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "example-social-post-hunter",
+    "title": "Social Post Hunter",
+    "tagline": "Find posts · reply · research · auto-social",
+    "summary": "Discover 10 relevant social threads by topic, copy AI replies and image prompts, research trends, and connect to AiBhive Auto Social.",
+    "theme": "purple",
+    "icon": "rocket",
+    "category": "guides",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Social Hunter",
+        "type": "info",
+        "config": {
+          "body": "Multi-tab workspace: post finder, topic research, Auto Social admin link, and image API settings.",
+          "bullets": [
+            "10 posts with paste-ready replies",
+            "Copy image prompts for AI art",
+            "Research + Auto Social tab"
+          ],
+          "links": [
+            { "label": "Run Social Hunter", "url": "https://aibhive.com/hive-apps/run/example-social-post-hunter" }
           ]
         }
       }

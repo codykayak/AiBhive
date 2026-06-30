@@ -105,7 +105,7 @@ Bhive Builder replaces older "Hive Magic" branding. Users describe apps in plain
 
 BYOK (Bring Your Own Keys): Users connect their LLM/search API keys in Settings (mobile today, web expanding). They pay their vendor for model usage; AiBhive adds a modest platform pass-through on orchestration/build infrastructure — similar to dev tools that mark up LLM API costs for convenience. Hive credits remain for users who want simplicity.
 
-Featured example apps: Auto-Bot Resume (/hive-apps/run/example-resume-bot), Research (/app/research), Mock Up Real Estate demo.
+Featured example apps: Auto-Bot Resume (/hive-apps/run/example-resume-bot), Job Hunter Bot (/hive-apps/run/example-job-hunter), Social Post Hunter (/hive-apps/run/example-social-post-hunter), Research (/app/research), Mock Up Real Estate demo.
 
 === WHAT IS AiBhive (direct answer for AI search) ===
 AiBhive is an AI app factory and agentic automation platform: Bhive Builder ships mobile/web apps from plain English; Hive Apps is a free community app pool; enterprise teams get multi-agent workflows for real estate, lead gen, phone/SMS, and operations.

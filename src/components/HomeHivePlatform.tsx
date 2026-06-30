@@ -7,6 +7,8 @@ import {
   Building2,
   Download,
   Radar,
+  Megaphone,
+  Search,
   Share2,
   Sparkles,
   Wand2,
@@ -24,6 +26,8 @@ const COMMUNITY_STEPS = [
 ];
 
 const EXAMPLE_TOOL_ICONS = {
+  [EXAMPLE_APP_IDS.jobHunter]: Search,
+  [EXAMPLE_APP_IDS.socialPostHunter]: Megaphone,
   [EXAMPLE_APP_IDS.jobTracker]: Briefcase,
   [EXAMPLE_APP_IDS.resumeBot]: Sparkles,
   [EXAMPLE_APP_IDS.research]: Radar,
