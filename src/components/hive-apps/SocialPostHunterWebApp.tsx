@@ -25,6 +25,16 @@ import {
   type SocialHunterCriteria,
   type SocialPostResult,
 } from '../../lib/socialHunterApi';
+import AppQuickStart from './AppQuickStart';
+
+const SOCIAL_HUNTER_STEPS = [
+  'On Find posts, enter topics (comma-separated), pick platforms and date range, then tap Find 10 posts.',
+  'Select a post → Sign in & open post (opens the thread in a new tab on LinkedIn, Reddit, X, etc.).',
+  'Tap Copy reply → paste your response on that platform. Use Copy image prompt for a companion graphic in your AI art tool.',
+  'Research tab — run a topic brief for hooks and post ideas before you engage.',
+  'Auto Social tab — sign in with your admin Google account to preview the queue and open the full Auto Social scheduler.',
+  'Image API tab — optionally save your image provider key in this browser for future in-app generation (copy prompts works today).',
+];
 
 type Props = { expanded?: boolean };
 type Tab = 'posts' | 'research' | 'auto-social' | 'settings';
@@ -137,6 +147,8 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
           Discover 10 relevant threads, copy AI replies, research topics, and manage Auto Social from one workspace.
         </p>
       </header>
+
+      <AppQuickStart appId="social-hunter" accent="violet" steps={SOCIAL_HUNTER_STEPS} />
 
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-2">
         {(
