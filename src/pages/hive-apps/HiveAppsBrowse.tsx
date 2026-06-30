@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Play, Sparkles, Wrench, Share2, ArrowRight } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import BuildPlatformStrip from '../../components/BuildPlatformStrip';
+import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import HiveAppLivePanel from '../../components/hive-apps/HiveAppLivePanel';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
 import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
