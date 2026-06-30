@@ -17,6 +17,14 @@ export const faqs = [
     answer: 'A static demo property dashboard at /hive-apps/run/example-mock-realestate showing 1,200 rental units, cash-on-cash charts, vacancy trends, after-hours triage, email automation, and placeholder connectors for Yardi, RealPage, and AppFolio — illustrative only, no live APIs.'
   },
   {
+    question: 'How do I use Job Hunter Bot?',
+    answer: 'Open /hive-apps/run/example-job-hunter. On the Criteria tab, set keywords, pay range, experience, location (or Remote), and how recently jobs were posted. On My resumes, keep the Tech and Real estate profiles or upload PDFs. Tap Find 10 jobs today — the Results tab lists matches with links, a suggested resume, and a copy-ready cover letter. Open the listing to apply, paste the cover letter, and use Full kit or Job Tracker for deeper follow-up.'
+  },
+  {
+    question: 'How do I use Social Post Hunter?',
+    answer: 'Open /hive-apps/run/example-social-post-hunter. On Find posts, enter topics, choose platforms and a date range, then tap Find 10 posts. Select a post, sign in if needed, open the thread, and copy the AI reply to paste on that platform. Use Research for topic briefs, Auto Social (admin sign-in) to open the scheduler, and Image API to save an image provider key for future in-app generation.'
+  },
+  {
     question: 'What agentic automation does AiBHive build for businesses?',
     "answer": "We design custom multi-agent systems for lead generation, customer operations, document and ERP sync, workflow orchestration, medical and legal compliance, real estate speed-to-lead, and phone/SMS missed-call intelligence. Each category has a detailed solution page—start from the Solutions menu or book a consultation at /book-consultation."
   },

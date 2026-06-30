@@ -196,9 +196,9 @@
         "config": {
           "body": "Open the full interactive runner for criteria, multiple resume profiles, and 10 daily job matches with cover letters.",
           "bullets": [
-            "Hourly/yearly wage filters",
-            "Remote + location + keywords",
-            "Picks tech vs real estate resume"
+            "Criteria tab: keywords, pay range, experience, location, and how recently jobs were posted",
+            "My resumes: keep Tech and Real estate profiles or upload PDFs for smarter matching",
+            "Tap Find 10 jobs today → Results tab shows links, match scores, resume pick, and cover letters"
           ],
           "links": [
             { "label": "Run Job Hunter", "url": "https://aibhive.com/hive-apps/run/example-job-hunter" },
@@ -226,9 +226,9 @@
         "config": {
           "body": "Multi-tab workspace: post finder, topic research, Auto Social admin link, and image API settings.",
           "bullets": [
-            "10 posts with paste-ready replies",
-            "Copy image prompts for AI art",
-            "Research + Auto Social tab"
+            "Find posts: enter topics, pick platforms and date range, then tap Find 10 posts",
+            "Copy reply and paste on LinkedIn, Reddit, or X; use Copy image prompt for companion graphics",
+            "Research tab for topic briefs; Auto Social tab links to the admin scheduler"
           ],
           "links": [
             { "label": "Run Social Hunter", "url": "https://aibhive.com/hive-apps/run/example-social-post-hunter" }

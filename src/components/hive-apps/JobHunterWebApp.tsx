@@ -22,6 +22,15 @@ import {
   type JobHunterResult,
   type ResumeProfile,
 } from '../../lib/jobHunterApi';
+import AppQuickStart from './AppQuickStart';
+
+const JOB_HUNTER_STEPS = [
+  'Open the Criteria tab — enter keywords (comma-separated), pay range, experience, location or Remote, and how recently jobs were posted.',
+  'Open My resumes — keep Tech and Real estate profiles or upload PDFs so the bot knows which resume fits each job.',
+  'Tap Find 10 jobs today — results appear on the Results tab with match scores and a suggested resume.',
+  'Pick a job → Open listing (apply on the employer site) → Copy cover letter and paste into the application.',
+  'Need a deeper tailored kit? Tap Full kit to open Auto-Bot Resume, or Job Tracker to save applications.',
+];
 
 type Props = { expanded?: boolean };
 type Tab = 'search' | 'resumes' | 'results';
@@ -110,6 +119,8 @@ export default function JobHunterWebApp({ expanded }: Props) {
           Set criteria, get 10 matched listings with links, resume pick, and paste-ready cover letters.
         </p>
       </header>
+
+      <AppQuickStart appId="job-hunter" accent="sky" steps={JOB_HUNTER_STEPS} />
 
       <div className="flex flex-wrap gap-2 border-b border-white/10 pb-2">
         {(

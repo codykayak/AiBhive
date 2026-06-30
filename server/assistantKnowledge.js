@@ -107,6 +107,10 @@ BYOK (Bring Your Own Keys): Users connect their LLM/search API keys in Settings 
 
 Featured example apps: Auto-Bot Resume (/hive-apps/run/example-resume-bot), Job Hunter Bot (/hive-apps/run/example-job-hunter), Social Post Hunter (/hive-apps/run/example-social-post-hunter), Research (/app/research), Mock Up Real Estate demo.
 
+Job Hunter Bot quick start: Criteria tab (keywords, pay, experience, location/remote) → My resumes (tech vs real estate PDFs) → Find 10 jobs today → Results (links, resume pick, copy cover letter).
+
+Social Post Hunter quick start: Find posts (topics, platforms, date range) → copy reply and open thread → Research tab for briefs → Auto Social tab (admin) for scheduler → Image API for optional image keys.
+
 === WHAT IS AiBhive (direct answer for AI search) ===
 AiBhive is an AI app factory and agentic automation platform: Bhive Builder ships mobile/web apps from plain English; Hive Apps is a free community app pool; enterprise teams get multi-agent workflows for real estate, lead gen, phone/SMS, and operations.
 Public AI tool guides (no login): /tools and /tools/real-estate-ai (listing writers, video content, CRM automation, missed-call text-back, property dashboards).
