@@ -5,6 +5,8 @@ const EXAMPLES = rawExamples as HiveAppSpec[];
 
 export const EXAMPLE_APP_IDS = {
   resumeBot: 'example-resume-bot',
+  jobHunter: 'example-job-hunter',
+  socialPostHunter: 'example-social-post-hunter',
   jobTracker: 'example-job-tracker',
   research: 'example-research',
   mockRealestate: 'example-mock-realestate',
@@ -29,6 +31,16 @@ export function getLocalExampleApp(appId: string): HiveAppSpec | null {
 }
 
 export const EXAMPLE_TOOLS = [
+  {
+    id: EXAMPLE_APP_IDS.jobHunter,
+    title: 'Job Hunter Bot',
+    sub: '10 jobs · cover letters · resume match',
+  },
+  {
+    id: EXAMPLE_APP_IDS.socialPostHunter,
+    title: 'Social Post Hunter',
+    sub: 'Find posts · reply · auto-social',
+  },
   {
     id: EXAMPLE_APP_IDS.resumeBot,
     title: 'Auto-Bot Resume',

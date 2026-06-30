@@ -35,8 +35,16 @@ function findExampleMatch(query) {
       boost: ['research', 'osint', 'intel', 'investigate', 'company', 'defunct', 'closed', 'business'],
     },
     {
+      id: 'example-job-hunter',
+      boost: ['hunter', 'search', 'listings', 'cover', 'letter', 'daily', 'criteria'],
+    },
+    {
+      id: 'example-social-post-hunter',
+      boost: ['social', 'post', 'linkedin', 'reply', 'engage', 'content'],
+    },
+    {
       id: 'example-resume-bot',
-      boost: ['resume', 'cover', 'application', 'job', 'hiring', 'interview'],
+      boost: ['resume', 'cover', 'application', 'hiring', 'interview'],
     },
     {
       id: 'example-job-tracker',

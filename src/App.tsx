@@ -94,7 +94,9 @@ function AnimatedRoutes() {
             <Route path="/research" element={<AppRedirect to="/app/research" />} />
             <Route path="/app/build" element={<AppRedirect to="/hive-apps/build" />} />
             <Route path="/app/apps" element={<AppRedirect to="/hive-apps" />} />
-            <Route path="/app/jobs" element={<AppRedirect to="/hive-apps/run/example-job-tracker" />} />
+            <Route path="/app/jobs" element={<AppRedirect to="/hive-apps/run/example-job-hunter" />} />
+            <Route path="/app/job-hunter" element={<AppRedirect to="/hive-apps/run/example-job-hunter" />} />
+            <Route path="/app/social-hunter" element={<AppRedirect to="/hive-apps/run/example-social-post-hunter" />} />
             <Route path="/app/mock-realestate" element={<AppRedirect to="/hive-apps/run/example-mock-realestate" />} />
             <Route path="/app/admin" element={<AppRedirect to="/admin" />} />
             <Route path="/app" element={<AppLayout />}>

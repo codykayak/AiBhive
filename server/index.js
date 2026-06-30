@@ -72,6 +72,8 @@ import { extractDocumentText } from './intelDocuments.js';
 import { getHomeAssistantKnowledgeMarkdown, runHomeAssistantWebSearch, runHomeAssistantChat } from './homeOrchestrator.js';
 import { runProactiveDailyBrief, runProactiveInsights } from './proactiveBrief.js';
 import { generateResumeKit } from './resumeBot.js';
+import { runJobHunterSearch } from './jobHunter.js';
+import { runSocialPostSearch, runTopicResearchBrief } from './socialHunter.js';
 import multer from 'multer';
 import nodemailer from 'nodemailer';
 import { Storage } from '@google-cloud/storage';
@@ -409,6 +411,63 @@ app.post('/api/hive/resume/generate', express.json({ limit: '12mb' }), async (re
   } catch (err) {
     console.error('[hive/resume/generate]', err);
     return res.status(500).json({ error: err.message || 'Resume generation failed.' });
+  }
+});
+
+app.post('/api/hive/job-hunter/search', express.json(), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    const { userId, criteria, resumes } = req.body || {};
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) return res.status(400).json({ ok: false, error: 'userId required.' });
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runJobHunterSearch(db, resolvedUserId, criteria || {}, resumes || []);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 400;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/job-hunter/search]', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Job search failed.' });
+  }
+});
+
+app.post('/api/hive/social-hunter/search', express.json(), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    const { userId, criteria } = req.body || {};
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) return res.status(400).json({ ok: false, error: 'userId required.' });
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runSocialPostSearch(db, resolvedUserId, criteria || {});
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 400;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/social-hunter/search]', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Post search failed.' });
+  }
+});
+
+app.post('/api/hive/social-hunter/research', express.json(), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    const { userId, topics } = req.body || {};
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId) return res.status(400).json({ ok: false, error: 'userId required.' });
+    await ensureHiveUser(db, resolvedUserId);
+    const result = await runTopicResearchBrief(db, resolvedUserId, topics);
+    if (!result.ok) {
+      const status = result.needPayment ? 402 : 400;
+      return res.status(status).json(result);
+    }
+    return res.json(result);
+  } catch (err) {
+    console.error('[hive/social-hunter/research]', err);
+    return res.status(500).json({ ok: false, error: err.message || 'Research failed.' });
   }
 });
 
