@@ -85,6 +85,7 @@ import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 import { processOcr } from './ocr.js';
 
+dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -475,6 +476,34 @@ app.post('/api/hive/social-hunter/research', express.json(), async (req, res) =>
 });
 
 app.use(express.json());
+
+// Lightweight health check for local dev / sandbox smoke tests
+app.get('/api/health', async (_req, res) => {
+  let firestoreOk = false;
+  let firestoreError = null;
+  try {
+    const probe = db.collection('leads').limit(1).get();
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore probe timed out (check GOOGLE_APPLICATION_CREDENTIALS)')), 3000)
+    );
+    await Promise.race([probe, timeout]);
+    firestoreOk = true;
+  } catch (err) {
+    firestoreError = err.message || String(err);
+  }
+  return res.json({
+    ok: true,
+    uptimeSec: Math.round(process.uptime()),
+    port: Number(process.env.PORT) || 8080,
+    env: {
+      gemini: Boolean(process.env.GEMINI_API_KEY),
+      grok: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
+      stripe: Boolean(process.env.STRIPE_SECRET_KEY),
+      googleCredentials: Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+    },
+    firestore: { ok: firestoreOk, error: firestoreError },
+  });
+});
 
 // --- Admin API (uses named Firestore DB — same as checkout) ---
 const DEFAULT_ADMIN_EMAILS = [
