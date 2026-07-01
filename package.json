@@ -17,7 +17,8 @@
     "start": "node server/index.js",
     "sync:mission": "node scripts/sync-hive-mission.mjs",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test:homework-ocr": "node scripts/test-homework-ocr-upload.mjs"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",

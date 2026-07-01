@@ -2,6 +2,21 @@ import type { User } from 'firebase/auth';
 
 const apiBase = import.meta.env.VITE_API_URL ?? '';
 
+function parseApiError(text: string, status: number): string {
+  try {
+    const json = JSON.parse(text);
+    return json.error ?? text;
+  } catch {
+    if (text.includes('Payload Too Large') || status === 413) {
+      return 'Upload too large — try fewer pages per batch.';
+    }
+    if (text.trimStart().startsWith('<!')) {
+      return `Request failed (${status}). If this persists, restart the dev server.`;
+    }
+    return text;
+  }
+}
+
 export async function adminFetch(
   path: string,
   user: User,
@@ -25,13 +40,7 @@ export async function adminJson<T>(
   const res = await adminFetch(path, user, options);
   if (!res.ok) {
     const text = await res.text();
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.error ?? text;
-    } catch {
-      /* plain text */
-    }
+    const message = parseApiError(text, res.status);
     const err = new Error(message || `Request failed (${res.status})`);
     (err as Error & { status: number }).status = res.status;
     throw err;
@@ -53,13 +62,7 @@ export async function adminFormData<T>(
   });
   if (!res.ok) {
     const text = await res.text();
-    let message = text;
-    try {
-      const json = JSON.parse(text);
-      message = json.error ?? text;
-    } catch {
-      /* plain text */
-    }
+    const message = parseApiError(text, res.status);
     const err = new Error(message || `Request failed (${res.status})`);
     (err as Error & { status: number }).status = res.status;
     throw err;

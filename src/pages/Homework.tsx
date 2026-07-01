@@ -378,9 +378,8 @@ export default function Homework() {
               Upload page photos for OCR
             </h2>
             <p className="text-slate-400 text-sm mb-6">
-              Photograph or scan your reference material — up to <strong className="text-slate-300">{MAX_PAGES_PER_BATCH} pages per batch</strong>.
-              OCR runs automatically and saves straight into your private RAG library. No copy-paste needed.
-              For 200+ pages, run multiple batches.
+              Photograph or scan your reference material — upload <strong className="text-slate-300">10–50 pages at a time</strong> (auto-batched).
+              Larger sets are split, OCR&apos;d, and saved to RAG automatically. No copy-paste.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-4">
@@ -430,7 +429,7 @@ export default function Homework() {
             >
               <ImageIcon className="w-10 h-10 text-bee-amber mx-auto mb-3" />
               <p className="text-white font-medium mb-1">Drop page images here or click to browse</p>
-              <p className="text-slate-500 text-sm">JPEG, PNG, HEIC — {ocrFiles.length}/{MAX_PAGES_PER_BATCH} selected</p>
+              <p className="text-slate-500 text-sm">JPEG, PNG, HEIC — {ocrFiles.length} selected (max {MAX_PAGES_PER_BATCH} per run)</p>
             </div>
 
             {ocrFiles.length > 0 && (
