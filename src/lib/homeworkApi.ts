@@ -7,6 +7,8 @@ export type HomeworkDocument = {
   chars: number;
   mimeType?: string | null;
   originalFilename?: string | null;
+  source?: 'ocr' | 'upload' | 'paste';
+  pageCount?: number | null;
   active: boolean;
   createdBy?: string | null;
   createdAt?: string | null;
@@ -70,9 +72,13 @@ export async function deleteHomeworkDocument(user: User, id: string): Promise<vo
 
 export async function completeHomeworkAssignment(
   user: User,
-  opts: { assignmentText?: string; file?: File }
+  opts: { assignmentText?: string; file?: File; customPrompt?: string }
 ): Promise<CompleteResponse> {
   const body: Record<string, string> = {};
+
+  if (opts.customPrompt?.trim()) {
+    body.customPrompt = opts.customPrompt.trim();
+  }
 
   if (opts.assignmentText?.trim()) {
     body.assignmentText = opts.assignmentText.trim();

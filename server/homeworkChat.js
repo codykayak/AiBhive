@@ -23,8 +23,9 @@ function grokKey() {
 /**
  * @param {string} assignmentText
  * @param {string} ragContext
+ * @param {string} [customPrompt] - user's personal instructions for style, tone, approach
  */
-export async function completeHomeworkAssignment(assignmentText, ragContext) {
+export async function completeHomeworkAssignment(assignmentText, ragContext, customPrompt) {
   const assignment = String(assignmentText || '').trim();
   if (!assignment) return { ok: false, error: 'Assignment text is required.' };
 
@@ -34,14 +35,20 @@ export async function completeHomeworkAssignment(assignmentText, ragContext) {
   }
 
   const contextBlock = String(ragContext || '').trim();
+  const personalInstructions = String(customPrompt || '').trim();
   const userMessage = [
+    personalInstructions
+      ? `## Personal instructions (follow these for tone, style, and how to complete this assignment)\n${personalInstructions}\n`
+      : '',
     '## Assignment to complete',
     assignment,
     '',
     contextBlock
       ? `## Reference documents (RAG corpus)\nUse these as your sole factual source:\n\n${contextBlock.slice(0, 80000)}`
       : '## Reference documents\n(No reference documents uploaded yet — answer from general knowledge but note that no RAG corpus was provided.)',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   try {
     const messages = [

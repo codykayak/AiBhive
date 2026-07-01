@@ -16,6 +16,8 @@ function serializeDoc(doc) {
     chars: data.chars ?? data.text?.length ?? 0,
     mimeType: data.mimeType ?? null,
     originalFilename: data.originalFilename ?? null,
+    source: data.source ?? 'upload',
+    pageCount: data.pageCount ?? null,
     active: data.active !== false,
     createdBy: data.createdBy ?? null,
     createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? data.createdAt ?? null,
@@ -96,7 +98,7 @@ export function createHomeworkRagService({ db, gcsBucket }) {
     return getDocument(ref.id, createdBy);
   }
 
-  async function addTextDocument({ title, text }, createdBy) {
+  async function addTextDocument({ title, text, source = 'paste', pageCount = null }, createdBy) {
     if (!title?.trim()) throw new Error('Title is required.');
     const trimmed = String(text || '').trim();
     if (!trimmed) throw new Error('Text is required.');
@@ -110,6 +112,8 @@ export function createHomeworkRagService({ db, gcsBucket }) {
       mimeType: 'text/plain',
       originalFilename: null,
       storagePath: null,
+      source,
+      pageCount: pageCount ?? null,
       active: true,
       createdBy,
       createdAt: FieldValue.serverTimestamp(),
