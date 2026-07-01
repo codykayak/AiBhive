@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Briefcase, Wand2, Radar, ChevronRight, Download, Share2 } from 'lucide-react-native';
+import { Briefcase, Wand2, Radar, GraduationCap, ChevronRight, Download, Share2 } from 'lucide-react-native';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
 import { TAB_BAR_TOTAL_HEIGHT } from '../navigation/TabNavigator';
 import {
@@ -122,6 +122,15 @@ export default function HomeScreen() {
                   <View style={styles.actionCopy}>
                     <Text style={styles.actionTitle}>Research</Text>
                     <Text style={styles.actionSub}>Intel on companies, sites & people</Text>
+                  </View>
+                  <ChevronRight color={colors.textDim} size={20} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('HomeworkBot')}>
+                  <GraduationCap color={colors.amber} size={24} />
+                  <View style={styles.actionCopy}>
+                    <Text style={styles.actionTitle}>Homework Bot</Text>
+                    <Text style={styles.actionSub}>OCR pages → RAG library → Grok answers</Text>
                   </View>
                   <ChevronRight color={colors.textDim} size={20} />
                 </TouchableOpacity>

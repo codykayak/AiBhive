@@ -11,6 +11,11 @@ AiBhive is your pocket AI app factory — describe any tool in plain English and
 • Auto-Bot Resume — snap a job listing screenshot and get a tailored resume draft
 • Daily motivation and smart suggestions to keep you moving
 
+<b>Homework Bot</b>
+• OCR page photos into a private reference library (your data stays on your account)
+• Complete assignments with Grok grounded in your library
+• Export your full RAG corpus as TXT, Markdown, or PDF
+
 <b>Research & intelligence</b>
 • Intel Agent for company, domain, and people research
 • On-device OSINT plus optional Hive Cloud search

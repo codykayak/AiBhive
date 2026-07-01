@@ -1,4 +1,4 @@
-import { FolderKanban, Bot, Radar, type LucideIcon } from 'lucide-react-native';
+import { FolderKanban, Bot, Radar, GraduationCap, type LucideIcon } from 'lucide-react-native';
 
 export type BuiltInHiveApp = {
   id: string;
@@ -6,9 +6,9 @@ export type BuiltInHiveApp = {
   creator: string;
   tagline: string;
   desc: string;
-  route: 'JobTracker' | 'AutoBotResume' | 'IntelAgent';
+  route: 'JobTracker' | 'AutoBotResume' | 'IntelAgent' | 'HomeworkBot';
   icon: LucideIcon;
-  themeKey: 'tracker' | 'resume' | 'research';
+  themeKey: 'tracker' | 'resume' | 'research' | 'homework';
   primary: string;
   primarySoft: string;
   surface: string;
@@ -62,6 +62,21 @@ export const BUILT_IN_HIVE_APPS: BuiltInHiveApp[] = [
     surface: '#161024',
     bg: '#0d0818',
     accentText: '#c4b5fd',
+  },
+  {
+    id: 'builtin-homework-bot',
+    title: 'Homework Bot',
+    creator: 'aibhive',
+    tagline: 'OCR → private RAG → Grok',
+    desc: 'Upload reference pages, build a private library, and complete assignments grounded in your material.',
+    route: 'HomeworkBot',
+    icon: GraduationCap,
+    themeKey: 'homework',
+    primary: '#f59e0b',
+    primarySoft: 'rgba(245,158,11,0.16)',
+    surface: '#1a1408',
+    bg: '#100c04',
+    accentText: '#fcd34d',
   },
 ];
 
