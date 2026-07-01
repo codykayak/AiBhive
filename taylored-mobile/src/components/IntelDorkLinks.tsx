@@ -11,7 +11,7 @@ export function parseDorkLinks(data?: string): DorkLink[] {
   const blocks = data.split(/\n\n+/);
   for (const block of blocks) {
     const labelMatch = block.match(/^\d+\.\s*(.+)/m);
-    const urlMatch = block.match(/Open in browser:\s*(https:\/\/[^\s]+)/);
+    const urlMatch = block.match(/Open(?: in browser)?:\s*(https:\/\/[^\s]+)/);
     if (urlMatch) {
       links.push({
         label: labelMatch?.[1]?.split('\n')[0]?.trim() ?? 'Dork query',

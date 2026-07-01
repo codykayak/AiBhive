@@ -258,7 +258,8 @@ export async function runFreeIntelTool(toolId, ctx) {
         userIntent: ctx.userIntent,
       });
       const lines = pack.map(
-        (d, i) => `${i + 1}. ${d.label}\n   Query: ${d.query}\n   Open: ${d.googleUrl}`
+        (d, i) =>
+          `${i + 1}. ${d.label}\n   Query: ${d.query}\n   Open in browser: ${d.googleUrl}`
       );
       return {
         summary: `${pack.length} dork queries (open in browser)`,

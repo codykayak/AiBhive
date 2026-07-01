@@ -41,6 +41,7 @@ import {
   type ToolRunResult,
   type UploadedResearchDoc,
 } from '../../lib/intelWebApi';
+import IntelDorkLinks from './IntelDorkLinks';
 import { getOrCreateWebHiveUserId } from '../../lib/hiveWebUser';
 import { installToolkitApp } from '../../lib/hiveStoreApi';
 import {
@@ -111,6 +112,7 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [chatBusy, setChatBusy] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(true);
   const [resultsOpen, setResultsOpen] = useState(true);
+  const [expandedToolId, setExpandedToolId] = useState<string | null>(null);
   const [uploadedDocs, setUploadedDocs] = useState<UploadedResearchDoc[]>([]);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
@@ -463,8 +465,10 @@ export default function ResearchWebApp({ expanded }: Props) {
             </p>
             <h2 className="text-xl font-black text-white mt-0.5">AI-directed OSINT research</h2>
             <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-              Free tools run on our server (same as mobile). Cloud search uses Hive credits — skipped if balance is
-              low. AI synthesizes your brief.
+              Free tools run on our server (same as mobile). For discovery/list queries (defunct businesses,
+              market scans), enable <strong className="text-slate-300">Quick factual search</strong> or{' '}
+              <strong className="text-slate-300">Deep web search</strong> — they execute the dork queries via
+              SerpAPI/Firecrawl and return company names. Dork links alone are manual browser shortcuts.
             </p>
           </div>
           {expanded ? (
@@ -586,6 +590,15 @@ export default function ResearchWebApp({ expanded }: Props) {
               <p className="text-xs text-slate-500">
                 {TARGET_TYPES.find((t) => t.id === targetType)?.hint}
               </p>
+              {targetType === 'discovery' ? (
+                <div className="rounded-xl border border-bee-amber/30 bg-bee-amber/5 p-3 text-xs text-slate-300 leading-relaxed">
+                  <strong className="text-bee-amber">Discovery mode</strong> — Google dork links open
+                  searches in your browser (manual). For automatic company names and closure signals,
+                  keep <strong className="text-white">Quick factual search</strong> and{' '}
+                  <strong className="text-white">Deep web search</strong> enabled (Hive credits). Florida
+                  Sunbiz and DBPR queries are included when your inquiry mentions Florida.
+                </div>
+              ) : null}
               <input
                 value={targetLabel}
                 onChange={(e) => setTargetLabel(e.target.value)}
@@ -699,21 +712,62 @@ export default function ResearchWebApp({ expanded }: Props) {
                   )}
                 </button>
                 {resultsOpen ? (
-                  <div className={`px-4 pb-4 space-y-2 overflow-y-auto ${expanded ? 'max-h-64' : 'max-h-52'}`}>
-                    {activeCase?.toolResults?.map((r) => (
-                      <div key={r.toolId} className="flex gap-2 text-sm border border-white/10 rounded-lg p-2.5">
-                        {statusIcon(r.status)}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-white">{toolLabel(r.toolId)}</p>
-                          <p className="text-xs text-slate-400">
-                            {r.summary || r.error || r.status}
-                          </p>
+                  <div className={`px-4 pb-4 space-y-2 overflow-y-auto ${expanded ? 'max-h-[28rem]' : 'max-h-72'}`}>
+                    {activeCase?.toolResults?.map((r) => {
+                      const hasDetail = Boolean(r.data || r.error);
+                      const isExpanded = expandedToolId === r.toolId;
+                      return (
+                        <div key={r.toolId} className="text-sm border border-white/10 rounded-lg overflow-hidden">
+                          <button
+                            type="button"
+                            className="w-full flex gap-2 p-2.5 text-left hover:bg-white/5 disabled:cursor-default"
+                            onClick={() =>
+                              hasDetail
+                                ? setExpandedToolId(isExpanded ? null : r.toolId)
+                                : undefined
+                            }
+                            disabled={!hasDetail}
+                          >
+                            {statusIcon(r.status)}
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-white">{toolLabel(r.toolId)}</p>
+                              <p className="text-xs text-slate-400">
+                                {r.summary || r.error || r.status}
+                              </p>
+                              {r.status === 'skipped' && r.tier === 'cloud' ? (
+                                <p className="text-xs text-amber-300/90 mt-1">
+                                  Add Hive credits or upgrade your plan to run paid search tools.
+                                </p>
+                              ) : null}
+                            </div>
+                            {hasDetail ? (
+                              isExpanded ? (
+                                <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                              )
+                            ) : null}
+                          </button>
+                          {isExpanded && hasDetail ? (
+                            <pre className="px-3 pb-3 text-xs text-slate-300 whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto border-t border-white/10 bg-black/30 pt-2">
+                              {r.error ?? r.data}
+                            </pre>
+                          ) : null}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : null}
               </section>
+            ) : null}
+
+            {activeCase?.toolResults?.some((r) => r.toolId === 'google_dorks' && r.status === 'done') ? (
+              <IntelDorkLinks
+                data={
+                  activeCase.toolResults.find((r) => r.toolId === 'google_dorks' && r.status === 'done')
+                    ?.data
+                }
+              />
             ) : null}
 
             {failureOffer ? (
