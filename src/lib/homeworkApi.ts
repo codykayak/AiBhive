@@ -7,6 +7,8 @@ export type HomeworkDocument = {
   chars: number;
   mimeType?: string | null;
   originalFilename?: string | null;
+  source?: 'ocr' | 'upload' | 'paste';
+  pageCount?: number | null;
   active: boolean;
   createdBy?: string | null;
   createdAt?: string | null;

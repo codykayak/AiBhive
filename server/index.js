@@ -53,6 +53,7 @@ import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuil
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import { createHomeworkRagService } from './homeworkRag.js';
 import { completeHomeworkAssignment, extractAssignmentText } from './homeworkChat.js';
+import { runOcrOnImages } from './ocr.js';
 import {
   initSocialPostsService,
   handleSocialPostsRequest,
@@ -1044,6 +1045,42 @@ app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
     return res.status(500).json({ error: error.message || 'Homework completion failed' });
   }
 });
+
+app.post(
+  '/api/homework/ocr-ingest',
+  verifyAdmin,
+  express.json({ limit: '50mb' }),
+  async (req, res) => {
+    try {
+      const createdBy = req.user.email;
+      const { images, format, title } = req.body || {};
+      const pageCount = Array.isArray(images) ? images.length : 0;
+      const text = await runOcrOnImages(images, format || 'Markdown');
+      const batchTitle =
+        String(title || '').trim() ||
+        `OCR reference (${pageCount} page${pageCount === 1 ? '' : 's'})`;
+      const document = await homeworkRagService.addTextDocument(
+        { title: batchTitle, text, source: 'ocr', pageCount },
+        createdBy
+      );
+      return res.json({
+        ok: true,
+        document,
+        pageCount,
+        chars: text.length,
+      });
+    } catch (error) {
+      console.error('[homework/ocr-ingest] error:', error);
+      const status =
+        error.message?.includes('Maximum') ||
+        error.message?.includes('No images') ||
+        error.message?.includes('GEMINI')
+          ? 400
+          : 500;
+      return res.status(status).json({ error: error.message || 'OCR ingest failed' });
+    }
+  }
+);
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
