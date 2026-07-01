@@ -1035,7 +1035,8 @@ app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
     }
 
     const ragContext = await homeworkRagService.buildRagContext(createdBy);
-    const result = await completeHomeworkAssignment(assignmentText, ragContext);
+    const customPrompt = String(req.body?.customPrompt || '').trim();
+    const result = await completeHomeworkAssignment(assignmentText, ragContext, customPrompt);
     if (!result.ok) {
       return res.status(400).json({ error: result.error || 'Completion failed' });
     }

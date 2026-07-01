@@ -62,6 +62,7 @@ export default function Homework() {
   const [viewTitle, setViewTitle] = useState('');
 
   const [assignmentText, setAssignmentText] = useState('');
+  const [customPrompt, setCustomPrompt] = useState('');
   const [completing, setCompleting] = useState(false);
   const [answer, setAnswer] = useState('');
   const [answerMeta, setAnswerMeta] = useState<{ provider: string; model: string; hadRag: boolean } | null>(null);
@@ -231,6 +232,7 @@ export default function Homework() {
       const result = await completeHomeworkAssignment(user, {
         assignmentText: assignmentText.trim() || undefined,
         file,
+        customPrompt: customPrompt.trim() || undefined,
       });
       setAnswer(result.text);
       setAnswerMeta({
@@ -582,6 +584,17 @@ export default function Homework() {
             <p className="text-slate-400 text-sm mb-4">
               Paste the homework questions or upload a short assignment file. Reference material stays in the system.
             </p>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Custom instructions for Grok <span className="text-slate-500 font-normal">(optional)</span>
+            </label>
+            <textarea
+              placeholder="e.g. Write in first person, keep answers under 200 words each, use APA citations, sound like a college sophomore, focus on chapter 3 themes…"
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
+              rows={4}
+              className="w-full mb-4 px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 text-sm resize-y"
+            />
+            <label className="block text-sm font-medium text-slate-300 mb-2">Assignment</label>
             <textarea
               placeholder="Paste assignment questions here…"
               value={assignmentText}
