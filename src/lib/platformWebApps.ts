@@ -22,6 +22,16 @@ export const PLATFORM_WEB_APPS: PublishedWebApp[] = [
     kind: 'web_app',
     taskId: null,
   },
+  {
+    id: 'platform/homework-bot',
+    owner: 'aibhive',
+    slug: 'homework-bot',
+    title: 'Homework Bot',
+    summary: 'OCR reference pages into a private RAG library, then complete assignments with Grok.',
+    url: '/hive-apps/run/example-homework-bot',
+    kind: 'web_app',
+    taskId: null,
+  },
 ];
 
 export function platformAppAsCard(app: PublishedWebApp) {

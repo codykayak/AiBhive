@@ -20,6 +20,16 @@ export const PLATFORM_WEB_APPS = [
     url: '/get-started',
     kind: 'platform_app',
   },
+  {
+    id: 'platform/homework-bot',
+    owner: 'aibhive',
+    slug: 'homework-bot',
+    title: 'Homework Bot',
+    summary: 'OCR reference pages into a private RAG library, then complete assignments with Grok.',
+    taskId: null,
+    url: '/hive-apps/run/example-homework-bot',
+    kind: 'platform_app',
+  },
 ];
 
 export function listPlatformWebApps() {

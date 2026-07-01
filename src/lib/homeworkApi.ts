@@ -15,6 +15,18 @@ export type HomeworkDocument = {
   updatedAt?: string | null;
 };
 
+export class HomeworkPaymentRequiredError extends Error {
+  amountUsd: number;
+  suggestedPlan?: string;
+
+  constructor(message: string, amountUsd: number, suggestedPlan?: string) {
+    super(message);
+    this.name = 'HomeworkPaymentRequiredError';
+    this.amountUsd = amountUsd;
+    this.suggestedPlan = suggestedPlan;
+  }
+}
+
 type DocumentsResponse = { documents: HomeworkDocument[] };
 type DocumentViewResponse = { document: HomeworkDocument & { text: string } };
 type CompleteResponse = {
@@ -23,10 +35,76 @@ type CompleteResponse = {
   provider: string;
   model: string;
   hadRagContext: boolean;
+  chargedUsd?: number;
 };
 
+function parsePaymentError(text: string, status: number): HomeworkPaymentRequiredError | null {
+  if (status !== 402) return null;
+  try {
+    const data = JSON.parse(text);
+    return new HomeworkPaymentRequiredError(
+      data.error ||
+        `Need Hive credits (~$${(data.amountUsd ?? 0.05).toFixed(2)}). Add credits to continue.`,
+      data.amountUsd ?? 0.05,
+      data.suggestedPlan
+    );
+  } catch {
+    return new HomeworkPaymentRequiredError('Need Hive credits to continue.', 0.05);
+  }
+}
+
+async function homeworkJson<T>(path: string, user: User, options?: RequestInit): Promise<T> {
+  const res = await adminFetch(path, user, options);
+  if (!res.ok) {
+    const text = await res.text();
+    const payment = parsePaymentError(text, res.status);
+    if (payment) throw payment;
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      message = json.error ?? text;
+    } catch {
+      /* keep text */
+    }
+    const err = new Error(message || `Request failed (${res.status})`);
+    (err as Error & { status: number }).status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<T>;
+}
+
+async function homeworkFormData<T>(
+  path: string,
+  user: User,
+  formData: FormData,
+  method: 'POST' | 'PATCH' = 'POST'
+): Promise<T> {
+  const token = await user.getIdToken();
+  const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    const payment = parsePaymentError(text, res.status);
+    if (payment) throw payment;
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      message = json.error ?? text;
+    } catch {
+      /* keep text */
+    }
+    const err = new Error(message || `Request failed (${res.status})`);
+    (err as Error & { status: number }).status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<T>;
+}
+
 export async function listHomeworkDocuments(user: User): Promise<HomeworkDocument[]> {
-  const data = await adminJson<DocumentsResponse>('/api/homework/documents', user);
+  const data = await homeworkJson<DocumentsResponse>('/api/homework/documents', user);
   return data.documents ?? [];
 }
 
@@ -34,7 +112,7 @@ export async function viewHomeworkDocument(
   user: User,
   id: string
 ): Promise<HomeworkDocument & { text: string }> {
-  const data = await adminJson<DocumentViewResponse>(`/api/homework/documents/${id}/view`, user);
+  const data = await homeworkJson<DocumentViewResponse>(`/api/homework/documents/${id}/view`, user);
   return data.document;
 }
 
@@ -46,7 +124,7 @@ export async function uploadHomeworkDocument(
   const form = new FormData();
   form.append('file', file);
   if (title?.trim()) form.append('title', title.trim());
-  const data = await adminFormData<{ document: HomeworkDocument }>(
+  const data = await homeworkFormData<{ document: HomeworkDocument }>(
     '/api/homework/documents',
     user,
     form
@@ -59,7 +137,7 @@ export async function addHomeworkTextDocument(
   title: string,
   text: string
 ): Promise<HomeworkDocument> {
-  const data = await adminJson<{ document: HomeworkDocument }>('/api/homework/documents', user, {
+  const data = await homeworkJson<{ document: HomeworkDocument }>('/api/homework/documents', user, {
     method: 'POST',
     body: JSON.stringify({ title, text }),
   });
@@ -67,7 +145,7 @@ export async function addHomeworkTextDocument(
 }
 
 export async function deleteHomeworkDocument(user: User, id: string): Promise<void> {
-  await adminJson('/api/homework/documents/' + id, user, { method: 'DELETE' });
+  await homeworkJson('/api/homework/documents/' + id, user, { method: 'DELETE' });
 }
 
 export async function completeHomeworkAssignment(
@@ -100,7 +178,7 @@ export async function completeHomeworkAssignment(
     throw new Error('Provide assignment text or upload a file.');
   }
 
-  return adminJson<CompleteResponse>('/api/homework/complete', user, {
+  return homeworkJson<CompleteResponse>('/api/homework/complete', user, {
     method: 'POST',
     body: JSON.stringify(body),
   });
@@ -109,3 +187,6 @@ export async function completeHomeworkAssignment(
 export async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text);
 }
+
+// Re-export for homeworkOcr.ts
+export { homeworkFormData };

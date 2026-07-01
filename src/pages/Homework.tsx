@@ -11,6 +11,7 @@ import {
   Loader2,
   Lock,
   LogOut,
+  GraduationCap,
   ScanText,
   Sparkles,
   Trash2,
@@ -25,14 +26,17 @@ import {
   completeHomeworkAssignment,
   copyToClipboard,
   deleteHomeworkDocument,
+  HomeworkPaymentRequiredError,
   listHomeworkDocuments,
   uploadHomeworkDocument,
   viewHomeworkDocument,
   type HomeworkDocument,
 } from '../lib/homeworkApi';
 import { compressAndIngestImageFiles, type OcrFormat } from '../lib/homeworkOcr';
+import WebPlansStrip from '../components/app/WebPlansStrip';
 
 type Step = 'rag' | 'assign';
+export type HomeworkVariant = 'admin' | 'public';
 
 const OCR_FORMATS: OcrFormat[] = ['Markdown', 'Plain Text', 'Preserve Layout'];
 const MAX_PAGES_PER_BATCH = 100;
@@ -91,7 +95,8 @@ async function collectImageFilesFromDataTransfer(dataTransfer: DataTransfer): Pr
   return Array.from(dataTransfer.files).filter(isImageFile);
 }
 
-export default function Homework() {
+export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVariant }) {
+  const isPublic = variant === 'public';
   const [user, setUser] = useState<User | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +134,24 @@ export default function Homework() {
   const [dragActive, setDragActive] = useState(false);
   const dragDepthRef = useRef(0);
 
+  const verifyAdminAccess = useCallback(async (currentUser: User) => {
+    const token = await currentUser.getIdToken();
+    const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/admin/settings`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 403) {
+      setError('Access denied. Your Google account is not on the allowlist.');
+      await signOut(auth);
+      return false;
+    }
+    return res.ok;
+  }, []);
+
+  const formatError = (err: unknown, fallback: string) => {
+    if (err instanceof HomeworkPaymentRequiredError) return err.message;
+    return err instanceof Error ? err.message : fallback;
+  };
+
   const loadDocuments = useCallback(async (currentUser: User) => {
     setLoadingDocs(true);
     setError(null);
@@ -136,26 +159,25 @@ export default function Homework() {
       const docs = await listHomeworkDocuments(currentUser);
       setDocuments(docs);
     } catch (err: unknown) {
-      const status = err && typeof err === 'object' && 'status' in err ? (err as { status: number }).status : 0;
-      if (status === 403) {
-        setError('Access denied. Your Google account is not on the allowlist.');
-        await signOut(auth);
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to load documents');
-      }
+      setError(formatError(err, 'Failed to load documents'));
     } finally {
       setLoadingDocs(false);
     }
   }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((u) => {
+    const unsubscribe = auth.onAuthStateChanged(async (u) => {
       setUser(u);
       setLoadingAuth(false);
-      if (u) loadDocuments(u);
+      if (!u) return;
+      if (!isPublic) {
+        const allowed = await verifyAdminAccess(u);
+        if (!allowed) return;
+      }
+      loadDocuments(u);
     });
     return () => unsubscribe();
-  }, [loadDocuments]);
+  }, [isPublic, loadDocuments, verifyAdminAccess]);
 
   const handleLogin = async () => {
     setError(null);
@@ -261,7 +283,7 @@ export default function Homework() {
       setOcrStatus('');
       await loadDocuments(user);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'OCR failed');
+      setError(formatError(err, 'OCR failed'));
     } finally {
       setOcrBusy(false);
       setOcrProgress(0);
@@ -277,7 +299,7 @@ export default function Homework() {
       await uploadHomeworkDocument(user, file, file.name);
       await loadDocuments(user);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      setError(formatError(err, 'Upload failed'));
     } finally {
       setPdfBusy(false);
       if (pdfInputRef.current) pdfInputRef.current.value = '';
@@ -342,7 +364,7 @@ export default function Homework() {
         hadRag: result.hadRagContext,
       });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Completion failed');
+      setError(formatError(err, 'Completion failed'));
     } finally {
       setCompleting(false);
       if (assignmentFileRef.current) assignmentFileRef.current.value = '';
@@ -369,19 +391,49 @@ export default function Homework() {
 
   if (!user) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center py-24 px-4">
-        <SEO title="Private Access | AiBhive" description="Authorized access only." noIndex />
+      <div className={`${isPublic ? 'py-10' : 'min-h-[80vh]'} flex items-center justify-center py-24 px-4`}>
+        <SEO
+          title={isPublic ? 'Homework Bot | AiBhive Apps' : 'Private Access | AiBhive'}
+          description={
+            isPublic
+              ? 'Upload reference pages, build a private RAG library, and complete assignments with Grok.'
+              : 'Authorized access only.'
+          }
+          noIndex={!isPublic}
+        />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-10 max-w-md w-full rounded-3xl text-center border border-red-500/20"
+          className={cn(
+            'glass-card p-10 max-w-md w-full rounded-3xl text-center',
+            isPublic ? 'border border-bee-amber/20' : 'border border-red-500/20'
+          )}
         >
-          <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10 text-red-400" />
+          <div
+            className={cn(
+              'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6',
+              isPublic ? 'bg-bee-amber/10' : 'bg-red-500/10'
+            )}
+          >
+            {isPublic ? (
+              <GraduationCap className="w-10 h-10 text-bee-amber" />
+            ) : (
+              <Lock className="w-10 h-10 text-red-400" />
+            )}
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Restricted Area</h1>
-          <p className="text-slate-400 mb-2">This page is private and not indexed.</p>
-          <p className="text-slate-500 text-sm mb-8">Sign in with an authorized Google account.</p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {isPublic ? 'Homework Bot' : 'Restricted Area'}
+          </h1>
+          <p className="text-slate-400 mb-2">
+            {isPublic
+              ? 'Sign in to build your private reference library and complete assignments.'
+              : 'This page is private and not indexed.'}
+          </p>
+          <p className="text-slate-500 text-sm mb-8">
+            {isPublic
+              ? 'OCR and Grok completion use Hive credits. Your RAG files are private to your account.'
+              : 'Sign in with an authorized Google account.'}
+          </p>
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-start text-sm text-left">
               <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5" />
@@ -402,18 +454,43 @@ export default function Homework() {
 
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-      <SEO title="Homework | AiBhive" description="Private RAG workspace." noIndex />
+      <SEO
+        title={isPublic ? 'Homework Bot | AiBhive Apps' : 'Homework | AiBhive'}
+        description={
+          isPublic
+            ? 'OCR your reference pages into a private RAG library, then complete assignments with Grok.'
+            : 'Private RAG workspace.'
+        }
+        noIndex={!isPublic}
+      />
+
+      {isPublic && (
+        <div className="mb-8">
+          <WebPlansStrip />
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-xl bg-red-500/10 border border-red-500/20">
-              <Lock className="w-5 h-5 text-red-400" />
+            <div
+              className={cn(
+                'p-2 rounded-xl border',
+                isPublic ? 'bg-bee-amber/10 border-bee-amber/20' : 'bg-red-500/10 border-red-500/20'
+              )}
+            >
+              {isPublic ? (
+                <GraduationCap className="w-5 h-5 text-bee-amber" />
+              ) : (
+                <Lock className="w-5 h-5 text-red-400" />
+              )}
             </div>
-            <h1 className="text-3xl font-bold text-white">Homework</h1>
+            <h1 className="text-3xl font-bold text-white">{isPublic ? 'Homework Bot' : 'Homework'}</h1>
           </div>
           <p className="text-slate-400 text-sm">
-            Step 1: OCR your reference pages into RAG. Step 2: Grok completes the assignment from that library.
+            {isPublic
+              ? 'Your reference library is private to your account. OCR and completion use Hive credits.'
+              : 'Step 1: OCR your reference pages into RAG. Step 2: Grok completes the assignment from that library.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -842,4 +919,8 @@ export default function Homework() {
       )}
     </div>
   );
+}
+
+export default function Homework() {
+  return <HomeworkWorkspace variant="admin" />;
 }

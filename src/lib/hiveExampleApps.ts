@@ -10,6 +10,7 @@ export const EXAMPLE_APP_IDS = {
   jobTracker: 'example-job-tracker',
   research: 'example-research',
   mockRealestate: 'example-mock-realestate',
+  homeworkBot: 'example-homework-bot',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
@@ -55,6 +56,11 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.research,
     title: 'Research',
     sub: 'Intel on companies and people',
+  },
+  {
+    id: EXAMPLE_APP_IDS.homeworkBot,
+    title: 'Homework Bot',
+    sub: 'OCR pages → private RAG → Grok answers',
   },
   {
     id: EXAMPLE_APP_IDS.mockRealestate,

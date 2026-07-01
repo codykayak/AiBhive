@@ -1,5 +1,5 @@
 /**
- * Private homework RAG corpus — admin-only reference documents for assignment completion.
+ * Per-user homework RAG corpus — each user only sees documents they own (createdBy = uid).
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { extractDocumentText } from './intelDocuments.js';
@@ -28,33 +28,39 @@ function serializeDoc(doc) {
 export function createHomeworkRagService({ db, gcsBucket }) {
   const col = () => db.collection(COLLECTION);
 
-  async function listDocuments(createdBy) {
-    const snap = await col().where('createdBy', '==', createdBy).get();
+  async function listDocuments(ownerKeys) {
+    const keys = Array.isArray(ownerKeys) ? ownerKeys : [ownerKeys];
+    const snap = await col().where('createdBy', 'in', keys.slice(0, 10)).get();
     return snap.docs
       .map(serializeDoc)
       .sort((a, b) => String(a.title).localeCompare(String(b.title)));
   }
 
-  async function getDocument(id, createdBy) {
+  function ownsDocument(data, ownerKeys) {
+    const keys = Array.isArray(ownerKeys) ? ownerKeys : [ownerKeys];
+    return keys.includes(data.createdBy);
+  }
+
+  async function getDocument(id, ownerKeys) {
     const doc = await col().doc(id).get();
     if (!doc.exists) return null;
     const data = doc.data();
-    if (data.createdBy !== createdBy) return null;
+    if (!ownsDocument(data, ownerKeys)) return null;
     return serializeDoc(doc);
   }
 
-  async function getDocumentText(id, createdBy) {
+  async function getDocumentText(id, ownerKeys) {
     const doc = await col().doc(id).get();
     if (!doc.exists) throw new Error('Document not found.');
     const data = doc.data();
-    if (data.createdBy !== createdBy) throw new Error('Document not found.');
+    if (!ownsDocument(data, ownerKeys)) throw new Error('Document not found.');
     return {
       ...serializeDoc(doc),
       text: data.text ?? '',
     };
   }
 
-  async function addDocument({ title, buffer, mimeType, originalFilename }, createdBy) {
+  async function addDocument({ title, buffer, mimeType, originalFilename }, ownerId) {
     if (!title?.trim()) throw new Error('Title is required.');
     if (!buffer?.length) throw new Error('File is empty.');
 
@@ -75,7 +81,7 @@ export function createHomeworkRagService({ db, gcsBucket }) {
 
     const safeName = (originalFilename || 'document').replace(/[^a-zA-Z0-9._-]/g, '_');
     const ref = col().doc();
-    const storagePath = `homework/${createdBy}/${ref.id}/${safeName}`;
+    const storagePath = `homework/${ownerId}/${ref.id}/${safeName}`;
 
     await gcsBucket.file(storagePath).save(buffer, {
       metadata: { contentType: mimeType },
@@ -90,15 +96,15 @@ export function createHomeworkRagService({ db, gcsBucket }) {
       originalFilename: safeName,
       storagePath,
       active: true,
-      createdBy,
+      createdBy: ownerId,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return getDocument(ref.id, createdBy);
+    return getDocument(ref.id, ownerId);
   }
 
-  async function addTextDocument({ title, text, source = 'paste', pageCount = null }, createdBy) {
+  async function addTextDocument({ title, text, source = 'paste', pageCount = null }, ownerId) {
     if (!title?.trim()) throw new Error('Title is required.');
     const trimmed = String(text || '').trim();
     if (!trimmed) throw new Error('Text is required.');
@@ -115,20 +121,20 @@ export function createHomeworkRagService({ db, gcsBucket }) {
       source,
       pageCount: pageCount ?? null,
       active: true,
-      createdBy,
+      createdBy: ownerId,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    return getDocument(ref.id, createdBy);
+    return getDocument(ref.id, ownerId);
   }
 
-  async function deleteDocument(id, createdBy) {
+  async function deleteDocument(id, ownerKeys) {
     const ref = col().doc(id);
     const doc = await ref.get();
     if (!doc.exists) throw new Error('Document not found.');
     const data = doc.data();
-    if (data.createdBy !== createdBy) throw new Error('Document not found.');
+    if (!ownsDocument(data, ownerKeys)) throw new Error('Document not found.');
 
     if (data.storagePath) {
       try {
@@ -142,8 +148,9 @@ export function createHomeworkRagService({ db, gcsBucket }) {
     return { success: true };
   }
 
-  async function buildRagContext(createdBy) {
-    const snap = await col().where('createdBy', '==', createdBy).get();
+  async function buildRagContext(ownerKeys) {
+    const keys = Array.isArray(ownerKeys) ? ownerKeys : [ownerKeys];
+    const snap = await col().where('createdBy', 'in', keys.slice(0, 10)).get();
 
     if (snap.empty) return '';
 

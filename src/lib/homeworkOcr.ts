@@ -1,6 +1,5 @@
 import type { User } from 'firebase/auth';
-import { adminFormData } from './adminApi';
-import type { HomeworkDocument } from './homeworkApi';
+import { homeworkFormData, type HomeworkDocument } from './homeworkApi';
 
 export type OcrFormat = 'Markdown' | 'Plain Text' | 'Preserve Layout';
 
@@ -71,7 +70,7 @@ export async function ingestHomeworkOcrFiles(
   }
   form.append('format', opts.format || 'Markdown');
   if (opts.title?.trim()) form.append('title', opts.title.trim());
-  return adminFormData<OcrIngestResult>('/api/homework/ocr-ingest', user, form);
+  return homeworkFormData<OcrIngestResult>('/api/homework/ocr-ingest', user, form);
 }
 
 /**
