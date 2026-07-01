@@ -53,6 +53,14 @@ import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuil
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import { createHomeworkRagService } from './homeworkRag.js';
 import { completeHomeworkAssignment, extractAssignmentText } from './homeworkChat.js';
+import { verifyHomeworkUser, resolveHomeworkOwnerKeys } from './homeworkAuth.js';
+import {
+  homeworkOcrRawCost,
+  homeworkCompleteRawCost,
+  homeworkIngestRawCost,
+  requireHomeworkBudget,
+  chargeHomeworkUsage,
+} from './homeworkBilling.js';
 import { runOcrOnImages } from './ocr.js';
 import {
   initSocialPostsService,
@@ -224,6 +232,16 @@ function isAdminEmail(email) {
   return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase()));
 }
 
+function homeworkBillingExempt(homeworkUser) {
+  return isAdminEmail(homeworkUser?.email);
+}
+
+function homeworkOwnerContext(req) {
+  const ownerKeys = resolveHomeworkOwnerKeys(req.homeworkUser, isAdminEmail);
+  const ownerId = req.homeworkUser.uid;
+  return { ownerKeys, ownerId };
+}
+
 async function verifyAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -251,7 +269,7 @@ app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
 
 app.post(
   '/api/homework/ocr-ingest',
-  verifyAdmin,
+  verifyHomeworkUser,
   (req, res, next) => {
     homeworkOcrUpload.array('files', 50)(req, res, (err) => {
       if (err) {
@@ -268,28 +286,57 @@ app.post(
   },
   async (req, res) => {
     try {
-      const createdBy = req.user.email;
+      const { ownerKeys, ownerId } = homeworkOwnerContext(req);
+      const userId = req.homeworkUser.uid;
       const files = req.files || [];
       if (!files.length) {
         return res.status(400).json({ error: 'No image files uploaded.' });
       }
+
+      const pageCount = files.length;
+      const rawCost = homeworkOcrRawCost(pageCount);
+
+      if (!homeworkBillingExempt(req.homeworkUser)) {
+        await ensureHiveUser(db, userId);
+        const budget = await requireHomeworkBudget(db, userId, rawCost, 'homework_ocr');
+        if (!budget.ok) {
+          return res.status(402).json(budget);
+        }
+      }
+
       const format = req.body?.format || 'Markdown';
       const title = req.body?.title;
       const images = files.map((f) => f.buffer.toString('base64'));
-      const pageCount = images.length;
       const text = await runOcrOnImages(images, format);
       const batchTitle =
         String(title || '').trim() ||
         `OCR reference (${pageCount} page${pageCount === 1 ? '' : 's'})`;
       const document = await homeworkRagService.addTextDocument(
         { title: batchTitle, text, source: 'ocr', pageCount },
-        createdBy
+        ownerId
       );
+
+      let chargedUsd = 0;
+      if (!homeworkBillingExempt(req.homeworkUser)) {
+        const charge = await chargeHomeworkUsage(
+          db,
+          userId,
+          rawCost,
+          'homework_ocr',
+          `Homework OCR (${pageCount} pages)`
+        );
+        if (!charge.ok) {
+          return res.status(402).json(charge);
+        }
+        chargedUsd = charge.chargedUsd ?? 0;
+      }
+
       return res.json({
         ok: true,
         document,
         pageCount,
         chars: text.length,
+        chargedUsd,
       });
     } catch (error) {
       console.error('[homework/ocr-ingest] error:', error);
@@ -1041,10 +1088,11 @@ app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
   }
 });
 
-// --- Homework RAG (admin-only, private assignment completion) ---
-app.get('/api/homework/documents', verifyAdmin, async (req, res) => {
+// --- Homework RAG (per-user isolation; OCR/completion billed via Hive credits) ---
+app.get('/api/homework/documents', verifyHomeworkUser, async (req, res) => {
   try {
-    const documents = await homeworkRagService.listDocuments(req.user.email);
+    const { ownerKeys } = homeworkOwnerContext(req);
+    const documents = await homeworkRagService.listDocuments(ownerKeys);
     return res.json({ documents });
   } catch (error) {
     console.error('[homework/documents] GET error:', error);
@@ -1052,9 +1100,10 @@ app.get('/api/homework/documents', verifyAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/homework/documents/:id/view', verifyAdmin, async (req, res) => {
+app.get('/api/homework/documents/:id/view', verifyHomeworkUser, async (req, res) => {
   try {
-    const document = await homeworkRagService.getDocumentText(req.params.id, req.user.email);
+    const { ownerKeys } = homeworkOwnerContext(req);
+    const document = await homeworkRagService.getDocumentText(req.params.id, ownerKeys);
     return res.json({ document });
   } catch (error) {
     console.error('[homework/documents/view] error:', error);
@@ -1066,22 +1115,32 @@ app.get('/api/homework/documents/:id/view', verifyAdmin, async (req, res) => {
 
 app.post(
   '/api/homework/documents',
-  verifyAdmin,
+  verifyHomeworkUser,
   ragUpload.single('file'),
   async (req, res) => {
     try {
-      const createdBy = req.user.email;
+      const { ownerId } = homeworkOwnerContext(req);
+      const userId = req.homeworkUser.uid;
 
       if (req.body?.text?.trim()) {
         const document = await homeworkRagService.addTextDocument(
           { title: req.body.title || 'Untitled', text: req.body.text },
-          createdBy
+          ownerId
         );
         return res.json({ document });
       }
 
       if (!req.file) {
         return res.status(400).json({ error: 'Upload a file or provide text.' });
+      }
+
+      const rawCost = homeworkIngestRawCost();
+      if (!homeworkBillingExempt(req.homeworkUser)) {
+        await ensureHiveUser(db, userId);
+        const budget = await requireHomeworkBudget(db, userId, rawCost, 'homework_ingest');
+        if (!budget.ok) {
+          return res.status(402).json(budget);
+        }
       }
 
       const ext = path.extname(req.file.originalname || '').toLowerCase();
@@ -1104,9 +1163,25 @@ app.post(
           mimeType,
           originalFilename: req.file.originalname,
         },
-        createdBy
+        ownerId
       );
-      return res.json({ document });
+
+      let chargedUsd = 0;
+      if (!homeworkBillingExempt(req.homeworkUser)) {
+        const charge = await chargeHomeworkUsage(
+          db,
+          userId,
+          rawCost,
+          'homework_ingest',
+          `Homework document ingest (${title})`
+        );
+        if (!charge.ok) {
+          return res.status(402).json(charge);
+        }
+        chargedUsd = charge.chargedUsd ?? 0;
+      }
+
+      return res.json({ document, chargedUsd });
     } catch (error) {
       console.error('[homework/documents] POST error:', error);
       return res.status(400).json({ error: error.message || 'Failed to upload document' });
@@ -1114,9 +1189,10 @@ app.post(
   }
 );
 
-app.delete('/api/homework/documents/:id', verifyAdmin, async (req, res) => {
+app.delete('/api/homework/documents/:id', verifyHomeworkUser, async (req, res) => {
   try {
-    await homeworkRagService.deleteDocument(req.params.id, req.user.email);
+    const { ownerKeys } = homeworkOwnerContext(req);
+    await homeworkRagService.deleteDocument(req.params.id, ownerKeys);
     return res.json({ success: true });
   } catch (error) {
     console.error('[homework/documents] DELETE error:', error);
@@ -1124,9 +1200,10 @@ app.delete('/api/homework/documents/:id', verifyAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
+app.post('/api/homework/complete', verifyHomeworkUser, async (req, res) => {
   try {
-    const createdBy = req.user.email;
+    const { ownerKeys } = homeworkOwnerContext(req);
+    const userId = req.homeworkUser.uid;
     let assignmentText = String(req.body?.assignmentText || '').trim();
 
     if (!assignmentText && req.body?.assignmentBase64) {
@@ -1137,13 +1214,38 @@ app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
       });
     }
 
-    const ragContext = await homeworkRagService.buildRagContext(createdBy);
+    const rawCost = homeworkCompleteRawCost();
+    if (!homeworkBillingExempt(req.homeworkUser)) {
+      await ensureHiveUser(db, userId);
+      const budget = await requireHomeworkBudget(db, userId, rawCost, 'homework_complete');
+      if (!budget.ok) {
+        return res.status(402).json(budget);
+      }
+    }
+
+    const ragContext = await homeworkRagService.buildRagContext(ownerKeys);
     const customPrompt = String(req.body?.customPrompt || '').trim();
     const result = await completeHomeworkAssignment(assignmentText, ragContext, customPrompt);
     if (!result.ok) {
       return res.status(400).json({ error: result.error || 'Completion failed' });
     }
-    return res.json(result);
+
+    let chargedUsd = 0;
+    if (!homeworkBillingExempt(req.homeworkUser)) {
+      const charge = await chargeHomeworkUsage(
+        db,
+        userId,
+        rawCost,
+        'homework_complete',
+        'Homework assignment completion'
+      );
+      if (!charge.ok) {
+        return res.status(402).json(charge);
+      }
+      chargedUsd = charge.chargedUsd ?? 0;
+    }
+
+    return res.json({ ...result, chargedUsd });
   } catch (error) {
     console.error('[homework/complete] error:', error);
     return res.status(500).json({ error: error.message || 'Homework completion failed' });

@@ -265,5 +265,35 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-homework-bot",
+    "title": "Homework Bot",
+    "tagline": "OCR pages → private RAG → Grok answers",
+    "summary": "Upload page photos to build your own private reference library, then paste an assignment for Grok to complete using only your materials. Each account has an isolated RAG corpus — OCR and completion use Hive credits.",
+    "theme": "amber",
+    "icon": "book",
+    "category": "notes",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Homework Bot",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive runner to OCR reference pages, build a private RAG library, and complete assignments with Grok.",
+          "bullets": [
+            "Batch upload 10–100 page photos with drag-and-drop or folder select",
+            "Your RAG library is private — only you can see your documents",
+            "Grok completes assignments grounded in your reference material",
+            "OCR and completion use Hive credits (same pricing as mobile)"
+          ],
+          "links": [
+            { "label": "Run Homework Bot", "url": "https://aibhive.com/hive-apps/run/example-homework-bot" }
+          ]
+        }
+      }
+    ]
   }
 ]
