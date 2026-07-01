@@ -172,6 +172,35 @@ export function createHomeworkRagService({ db, gcsBucket }) {
     return blocks.join('\n\n');
   }
 
+  async function exportLibrary(ownerKeys) {
+    const keys = Array.isArray(ownerKeys) ? ownerKeys : [ownerKeys];
+    const snap = await col().where('createdBy', 'in', keys.slice(0, 10)).get();
+
+    const documents = snap.docs
+      .map((doc) => {
+        const data = doc.data();
+        if (data.active === false) return null;
+        const text = String(data.text || '').trim();
+        if (!text) return null;
+        return {
+          id: doc.id,
+          title: String(data.title || 'Untitled'),
+          text,
+          chars: text.length,
+          source: data.source ?? 'upload',
+          pageCount: data.pageCount ?? null,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.title.localeCompare(b.title));
+
+    return {
+      documentCount: documents.length,
+      totalChars: documents.reduce((sum, d) => sum + d.chars, 0),
+      documents,
+    };
+  }
+
   return {
     listDocuments,
     getDocument,
@@ -180,5 +209,6 @@ export function createHomeworkRagService({ db, gcsBucket }) {
     addTextDocument,
     deleteDocument,
     buildRagContext,
+    exportLibrary,
   };
 }
