@@ -17,6 +17,7 @@ import HiveExportOptionsScreen from '../screens/HiveExportOptionsScreen';
 import AppCustomizeScreen from '../screens/AppCustomizeScreen';
 import IntelCaseScreen from '../screens/IntelCaseScreen';
 import IntelAgentScreen from '../screens/IntelAgentScreen';
+import HomeworkBotScreen from '../screens/HomeworkBotScreen';
 import BuildScreen from '../screens/BuildScreen';
 import { HIVE_USER_APPS } from '../userApps';
 import { colors } from '../theme/colors';
@@ -38,6 +39,7 @@ const linking = {
       HiveBuild: 'build',
       IntelAgent: 'intel',
       IntelCase: 'intel/case/:caseId',
+      HomeworkBot: 'homework',
       UserApp: 'userApps/:slug',
       DynamicApp: 'app/:appId',
       HiveExportOptions: 'app/:appId/export',
@@ -90,6 +92,7 @@ export default function AppNavigator() {
         <Stack.Screen name="HiveBuild" component={BuildScreen} options={{ headerShown: false }} />
         <Stack.Screen name="IntelAgent" component={IntelAgentScreen} options={{ headerShown: false }} />
         <Stack.Screen name="IntelCase" component={IntelCaseScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="HomeworkBot" component={HomeworkBotScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
