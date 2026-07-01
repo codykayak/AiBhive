@@ -51,6 +51,8 @@ import { priceEstimate, getPricingConfig, getAutoApproveDefaultUsd } from './hiv
 import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
+import { createHomeworkRagService } from './homeworkRag.js';
+import { completeHomeworkAssignment, extractAssignmentText } from './homeworkChat.js';
 import {
   initSocialPostsService,
   handleSocialPostsRequest,
@@ -158,6 +160,7 @@ const bucketName = 'aibhive-media'; // Must be lowercase for GCS
 const gcsBucket = storage.bucket(bucketName);
 const ragSourcesService = createRagSourcesService({ db, gcsBucket });
 initRagSourcesService(ragSourcesService);
+const homeworkRagService = createHomeworkRagService({ db, gcsBucket });
 initSocialPostsService({ db, bucket: gcsBucket });
 startAutoposterScheduler();
 
@@ -931,6 +934,114 @@ app.delete('/api/admin/rag-sources/:id', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[admin/rag-sources/delete] error:', error);
     return res.status(400).json({ error: error.message || 'Failed to delete source' });
+  }
+});
+
+// --- Homework RAG (admin-only, private assignment completion) ---
+app.get('/api/homework/documents', verifyAdmin, async (req, res) => {
+  try {
+    const documents = await homeworkRagService.listDocuments(req.user.email);
+    return res.json({ documents });
+  } catch (error) {
+    console.error('[homework/documents] GET error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to list documents' });
+  }
+});
+
+app.get('/api/homework/documents/:id/view', verifyAdmin, async (req, res) => {
+  try {
+    const document = await homeworkRagService.getDocumentText(req.params.id, req.user.email);
+    return res.json({ document });
+  } catch (error) {
+    console.error('[homework/documents/view] error:', error);
+    return res.status(error.message === 'Document not found.' ? 404 : 500).json({
+      error: error.message || 'Failed to load document',
+    });
+  }
+});
+
+app.post(
+  '/api/homework/documents',
+  verifyAdmin,
+  ragUpload.single('file'),
+  async (req, res) => {
+    try {
+      const createdBy = req.user.email;
+
+      if (req.body?.text?.trim()) {
+        const document = await homeworkRagService.addTextDocument(
+          { title: req.body.title || 'Untitled', text: req.body.text },
+          createdBy
+        );
+        return res.json({ document });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'Upload a file or provide text.' });
+      }
+
+      const ext = path.extname(req.file.originalname || '').toLowerCase();
+      const mimeByExt = {
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.md': 'text/markdown',
+        '.csv': 'text/csv',
+      };
+      const mimeType =
+        mimeByExt[ext] ||
+        (req.file.mimetype && req.file.mimetype !== 'application/octet-stream'
+          ? req.file.mimetype
+          : 'text/plain');
+      const title = req.body.title || req.file.originalname;
+      const document = await homeworkRagService.addDocument(
+        {
+          title,
+          buffer: req.file.buffer,
+          mimeType,
+          originalFilename: req.file.originalname,
+        },
+        createdBy
+      );
+      return res.json({ document });
+    } catch (error) {
+      console.error('[homework/documents] POST error:', error);
+      return res.status(400).json({ error: error.message || 'Failed to upload document' });
+    }
+  }
+);
+
+app.delete('/api/homework/documents/:id', verifyAdmin, async (req, res) => {
+  try {
+    await homeworkRagService.deleteDocument(req.params.id, req.user.email);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[homework/documents] DELETE error:', error);
+    return res.status(400).json({ error: error.message || 'Failed to delete document' });
+  }
+});
+
+app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
+  try {
+    const createdBy = req.user.email;
+    let assignmentText = String(req.body?.assignmentText || '').trim();
+
+    if (!assignmentText && req.body?.assignmentBase64) {
+      assignmentText = await extractAssignmentText({
+        name: req.body.assignmentName || 'assignment.txt',
+        mimeType: req.body.assignmentMimeType || 'text/plain',
+        base64: req.body.assignmentBase64,
+      });
+    }
+
+    const ragContext = await homeworkRagService.buildRagContext(createdBy);
+    const result = await completeHomeworkAssignment(assignmentText, ragContext);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error || 'Completion failed' });
+    }
+    return res.json(result);
+  } catch (error) {
+    console.error('[homework/complete] error:', error);
+    return res.status(500).json({ error: error.message || 'Homework completion failed' });
   }
 });
 

@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /homework
+Disallow: /admin
 
 # AI / LLM crawlers — public marketing and tool guides are indexable
 User-agent: GPTBot
