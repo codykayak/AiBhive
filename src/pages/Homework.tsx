@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
 import { signInWithPopup, signOut, type User } from 'firebase/auth';
 import {
   AlertCircle,
@@ -36,6 +36,60 @@ type Step = 'rag' | 'assign';
 
 const OCR_FORMATS: OcrFormat[] = ['Markdown', 'Plain Text', 'Preserve Layout'];
 const MAX_PAGES_PER_BATCH = 100;
+const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i;
+
+function isImageFile(file: File): boolean {
+  if (file.type.startsWith('image/')) return true;
+  return IMAGE_EXTENSIONS.test(file.name);
+}
+
+async function collectImageFilesFromDataTransfer(dataTransfer: DataTransfer): Promise<File[]> {
+  const collected: File[] = [];
+
+  const traverseEntry = async (entry: FileSystemEntry): Promise<void> => {
+    if (entry.isFile) {
+      const file = await new Promise<File | null>((resolve) => {
+        (entry as FileSystemFileEntry).file(resolve, () => resolve(null));
+      });
+      if (file && isImageFile(file)) collected.push(file);
+      return;
+    }
+    if (!entry.isDirectory) return;
+
+    const reader = (entry as FileSystemDirectoryEntry).createReader();
+    await new Promise<void>((resolve) => {
+      const readBatch = () => {
+        reader.readEntries(
+          async (entries) => {
+            if (!entries.length) {
+              resolve();
+              return;
+            }
+            await Promise.all(entries.map(traverseEntry));
+            readBatch();
+          },
+          () => resolve()
+        );
+      };
+      readBatch();
+    });
+  };
+
+  const items = dataTransfer.items;
+  if (items?.length) {
+    const entries = Array.from(items)
+      .filter((item) => item.kind === 'file')
+      .map((item) => item.webkitGetAsEntry())
+      .filter((entry): entry is FileSystemEntry => entry !== null);
+
+    if (entries.length) {
+      await Promise.all(entries.map(traverseEntry));
+      if (collected.length) return collected;
+    }
+  }
+
+  return Array.from(dataTransfer.files).filter(isImageFile);
+}
 
 export default function Homework() {
   const [user, setUser] = useState<User | null>(null);
@@ -69,8 +123,11 @@ export default function Homework() {
   const [copied, setCopied] = useState(false);
 
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const assignmentFileRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState(false);
+  const dragDepthRef = useRef(0);
 
   const loadDocuments = useCallback(async (currentUser: User) => {
     setLoadingDocs(true);
@@ -117,8 +174,8 @@ export default function Homework() {
     setAnswerMeta(null);
   };
 
-  const addOcrFiles = (incoming: FileList | File[]) => {
-    const images = Array.from(incoming).filter((f) => f.type.startsWith('image/'));
+  const addOcrFiles = useCallback((incoming: FileList | File[]) => {
+    const images = Array.from(incoming).filter(isImageFile);
     if (!images.length) {
       setError('Select image files (photos or scans of your pages).');
       return;
@@ -132,6 +189,50 @@ export default function Homework() {
       }
       return merged;
     });
+  }, []);
+
+  const handleImageInputChange = (fileList: FileList | null) => {
+    if (fileList?.length) addOcrFiles(fileList);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const handleFolderInputChange = (fileList: FileList | null) => {
+    if (fileList?.length) addOcrFiles(fileList);
+    if (folderInputRef.current) folderInputRef.current.value = '';
+  };
+
+  const handleDragEnter = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (ocrBusy) return;
+    dragDepthRef.current += 1;
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current -= 1;
+    if (dragDepthRef.current <= 0) {
+      dragDepthRef.current = 0;
+      setDragActive(false);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepthRef.current = 0;
+    setDragActive(false);
+    if (ocrBusy) return;
+    const images = await collectImageFilesFromDataTransfer(e.dataTransfer);
+    if (images.length) addOcrFiles(images);
+    else setError('Drop image files or a folder of page photos.');
   };
 
   const removeOcrFile = (index: number) => {
@@ -405,38 +506,94 @@ export default function Homework() {
               </select>
             </div>
 
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              disabled={ocrBusy}
-              onChange={(e) => {
-                if (e.target.files?.length) addOcrFiles(e.target.files);
-              }}
-            />
-
             <div
               role="button"
               tabIndex={0}
               onKeyDown={(e) => e.key === 'Enter' && !ocrBusy && imageInputRef.current?.click()}
               onClick={() => !ocrBusy && imageInputRef.current?.click()}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
               className={cn(
-                'border-2 border-dashed border-white/15 rounded-2xl p-8 text-center transition-colors mb-4',
-                ocrBusy ? 'opacity-50 cursor-not-allowed' : 'hover:border-bee-amber/40 cursor-pointer'
+                'border-2 border-dashed rounded-2xl p-8 text-center transition-colors mb-4',
+                ocrBusy && 'opacity-50 cursor-not-allowed',
+                !ocrBusy && 'cursor-pointer',
+                dragActive
+                  ? 'border-bee-amber bg-bee-amber/10'
+                  : 'border-white/15 hover:border-bee-amber/40'
               )}
             >
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*,.heic,.heif"
+                multiple
+                className="hidden"
+                disabled={ocrBusy}
+                onChange={(e) => handleImageInputChange(e.target.files)}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <input
+                ref={folderInputRef}
+                type="file"
+                // @ts-expect-error webkitdirectory is supported in Chromium/Safari
+                webkitdirectory=""
+                directory=""
+                multiple
+                className="hidden"
+                disabled={ocrBusy}
+                onChange={(e) => handleFolderInputChange(e.target.files)}
+              />
               <ImageIcon className="w-10 h-10 text-bee-amber mx-auto mb-3" />
-              <p className="text-white font-medium mb-1">Drop page images here or click to browse</p>
-              <p className="text-slate-500 text-sm">JPEG, PNG, HEIC — {ocrFiles.length} selected (max {MAX_PAGES_PER_BATCH} per run)</p>
+              <p className="text-white font-medium mb-1">
+                {dragActive ? 'Drop to add pages' : 'Drop page images here or click to browse'}
+              </p>
+              <p className="text-slate-500 text-sm mb-4">
+                Select many at once in the file picker (Shift/Cmd+click) — JPEG, PNG, HEIC
+              </p>
+              <p className="text-slate-500 text-xs">
+                {ocrFiles.length} selected · max {MAX_PAGES_PER_BATCH} per OCR run
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                type="button"
+                disabled={ocrBusy}
+                onClick={() => imageInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm disabled:opacity-50"
+              >
+                <Upload className="w-4 h-4" />
+                Add more pages
+              </button>
+              <button
+                type="button"
+                disabled={ocrBusy}
+                onClick={() => folderInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm disabled:opacity-50"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Select folder
+              </button>
+              {ocrFiles.length > 0 && (
+                <button
+                  type="button"
+                  disabled={ocrBusy}
+                  onClick={() => setOcrFiles([])}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Clear all ({ocrFiles.length})
+                </button>
+              )}
             </div>
 
             {ocrFiles.length > 0 && (
-              <div className="mb-4 max-h-40 overflow-y-auto rounded-xl bg-black/20 p-3">
+              <div className="mb-4 max-h-48 overflow-y-auto rounded-xl bg-black/20 p-3">
                 <ul className="space-y-1 text-sm text-slate-400">
                   {ocrFiles.map((f, i) => (
-                    <li key={`${f.name}-${i}`} className="flex items-center justify-between gap-2">
+                    <li key={`${f.name}-${f.size}-${i}`} className="flex items-center justify-between gap-2">
                       <span className="truncate">
                         {i + 1}. {f.name}
                       </span>
