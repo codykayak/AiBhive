@@ -168,6 +168,24 @@ export async function fetchCloudToolsMeta(): Promise<Record<string, number>> {
   }
 }
 
+export type IntelCloudKeyStatus = {
+  firecrawl: boolean;
+  serpapi: boolean;
+  discoveryReady: boolean;
+  envVarNames: { firecrawl: string; serpapi: string };
+  setupHint: string | null;
+};
+
+export async function fetchIntelCloudStatus(): Promise<IntelCloudKeyStatus | null> {
+  try {
+    const res = await fetch('/api/intel-gathering/cloud-status');
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 function buildParams(
   targetType: IntelTargetType,
   label: string,
@@ -244,7 +262,17 @@ export async function runCloudTool(
     };
   }
   if (!res.ok || !data.ok) {
-    return { toolId, status: 'error', tier: 'cloud', error: data.error || 'Cloud tool failed' };
+    const err = data.error || 'Cloud tool failed';
+    const serverKeyMissing =
+      /FIRECRAWL_API_KEY|SERPAPI_KEY|not set on the server/i.test(err);
+    return {
+      toolId,
+      status: 'error',
+      tier: 'cloud',
+      error: serverKeyMissing
+        ? `${err} Discovery cannot return company lists until this is fixed on Cloud Run.`
+        : err,
+    };
   }
   return {
     toolId,

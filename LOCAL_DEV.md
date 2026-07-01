@@ -23,6 +23,28 @@ Open the app in your browser using Cursor’s **Ports** panel — forward port *
 
 Create **`.env.local`** in the repo root (gitignored). The backend loads `.env.local` then `.env`.
 
+| `FIRECRAWL_API_KEY` | Research Discovery — Deep web search | Must be on **Cloud Run** for production; also in `.env.local` for local dev |
+| `SERPAPI_KEY` | Research Discovery — Quick factual search | Same as Firecrawl — company list queries need at least one of these |
+
+### Cloud Run (production)
+
+Discovery mode cannot return company names unless the **server** has search API keys. GitHub deploy does **not** copy keys from your laptop — set them on the Cloud Run service:
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **Cloud Run** → your AiBhive service → **Edit & deploy new revision**
+2. **Variables & secrets** → add:
+   - `FIRECRAWL_API_KEY` = your Firecrawl key (exact name)
+   - `SERPAPI_KEY` = your SerpAPI key (recommended for Discovery)
+3. **Deploy** the new revision (saving alone without a new revision may not pick up env changes on some setups)
+
+Verify after deploy:
+
+```bash
+curl -s https://aibhive.com/api/intel-gathering/cloud-status
+# expect: "firecrawl": true, "serpapi": true, "discoveryReady": true
+```
+
+Or `GET /api/health` — `env.firecrawl` and `env.serpapi` should be `true`.
+
 | Variable | Required for | Notes |
 |----------|--------------|-------|
 | `GEMINI_API_KEY` | OCR, PDF text, most AI features | From [Google AI Studio](https://aistudio.google.com/apikey) |
@@ -83,6 +105,7 @@ Cloud agents follow the same rule: local smoke test → build → PR → you mer
 |---------|-----|
 | `Backend not reachable` | Run `npm run dev:start` or `npm run dev` |
 | `Could not load the default credentials` | Set `GOOGLE_APPLICATION_CREDENTIALS` in `.env.local` |
+| Discovery returns only dork links, Firecrawl errors | Check `curl https://aibhive.com/api/intel-gathering/cloud-status` — if `firecrawl`/`serpapi` are false, add `FIRECRAWL_API_KEY` and `SERPAPI_KEY` on Cloud Run and deploy a new revision |
 | `Firestore probe FAILED` | Check service account IAM on the named DB in `firebase-applet-config.json` |
 | Google sign-in popup blocked | Allow popups for `localhost` / forwarded Cursor URL |
 | Port 3000 in use | `npm run dev:stop` or kill the old process |

@@ -69,6 +69,7 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
+import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat } from './intelResearchChat.js';
 import { runIntelSynthesis } from './intelSynthesize.js';
 import {
@@ -662,6 +663,8 @@ app.get('/api/health', async (_req, res) => {
       grok: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
       stripe: Boolean(process.env.STRIPE_SECRET_KEY),
       googleCredentials: Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+      firecrawl: intelCloudKeyStatus().firecrawl,
+      serpapi: intelCloudKeyStatus().serpapi,
     },
     firestore: { ok: firestoreOk, error: firestoreError },
   });
@@ -712,9 +715,9 @@ app.post('/api/intel-gathering/firecrawl', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    const apiKey = process.env.FIRECRAWL_API_KEY;
+    const apiKey = process.env.FIRECRAWL_API_KEY || process.env.FIRECRAWL_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'Firecrawl API key is not configured' });
+      return res.status(500).json({ error: 'FIRECRAWL_API_KEY is not configured on the server' });
     }
 
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
@@ -759,7 +762,12 @@ app.get('/api/intel-gathering/cloud-tools', (_req, res) => {
   res.json({
     tools: INTEL_CLOUD_TOOL_IDS,
     costsUsd: Object.fromEntries(INTEL_CLOUD_TOOL_IDS.map((id) => [id, intelToolCostUsd(id)])),
+    keys: intelCloudKeyStatus(),
   });
+});
+
+app.get('/api/intel-gathering/cloud-status', (_req, res) => {
+  res.json(intelCloudKeyStatus());
 });
 
 app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => {
