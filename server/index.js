@@ -192,9 +192,87 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_123', {
 // Middleware
 app.use(cors());
 
+// --- Admin auth (needed before large-body homework OCR route) ---
+const DEFAULT_ADMIN_EMAILS = [
+  'codykayak@gmail.com',
+  'test@test.com',
+  'admin@aibhive.com',
+];
+
+function getAdminEmails() {
+  const fromEnv = process.env.ADMIN_EMAILS;
+  const parsed = fromEnv
+    ? fromEnv.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+    : [];
+  return [...new Set([...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase()), ...parsed])];
+}
+
+const ADMIN_EMAILS = getAdminEmails();
+
+function isAdminEmail(email) {
+  return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase()));
+}
+
+async function verifyAdmin(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: Missing token' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!isAdminEmail(decodedToken.email)) {
+      console.warn(`[admin] Unauthorized access attempt by ${decodedToken.email}`);
+      return res.status(403).json({ error: 'Forbidden: Admin access required' });
+    }
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error('[admin] Token verification failed:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+  }
+}
+
 // --- OCR API ---
-// This must be placed before the global express.json() to allow larger payloads
+// Must be registered before global express.json() (default 100kb) so large image payloads work.
 app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
+
+app.post(
+  '/api/homework/ocr-ingest',
+  express.json({ limit: '50mb' }),
+  verifyAdmin,
+  async (req, res) => {
+    try {
+      const createdBy = req.user.email;
+      const { images, format, title } = req.body || {};
+      const pageCount = Array.isArray(images) ? images.length : 0;
+      const text = await runOcrOnImages(images, format || 'Markdown');
+      const batchTitle =
+        String(title || '').trim() ||
+        `OCR reference (${pageCount} page${pageCount === 1 ? '' : 's'})`;
+      const document = await homeworkRagService.addTextDocument(
+        { title: batchTitle, text, source: 'ocr', pageCount },
+        createdBy
+      );
+      return res.json({
+        ok: true,
+        document,
+        pageCount,
+        chars: text.length,
+      });
+    } catch (error) {
+      console.error('[homework/ocr-ingest] error:', error);
+      const status =
+        error.message?.includes('Maximum') ||
+        error.message?.includes('No images') ||
+        error.message?.includes('GEMINI')
+          ? 400
+          : 500;
+      return res.status(status).json({ error: error.message || 'OCR ingest failed' });
+    }
+  }
+);
 
 // Webhook endpoint needs raw body
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -478,46 +556,6 @@ app.post('/api/hive/social-hunter/research', express.json(), async (req, res) =>
 app.use(express.json());
 
 // --- Admin API (uses named Firestore DB — same as checkout) ---
-const DEFAULT_ADMIN_EMAILS = [
-  'codykayak@gmail.com',
-  'test@test.com',
-  'admin@aibhive.com',
-];
-
-function getAdminEmails() {
-  const fromEnv = process.env.ADMIN_EMAILS;
-  const parsed = fromEnv
-    ? fromEnv.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
-    : [];
-  return [...new Set([...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase()), ...parsed])];
-}
-
-const ADMIN_EMAILS = getAdminEmails();
-
-function isAdminEmail(email) {
-  return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase()));
-}
-
-async function verifyAdmin(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing token' });
-  }
-
-  const idToken = authHeader.split('Bearer ')[1];
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    if (!isAdminEmail(decodedToken.email)) {
-      console.warn(`[admin] Unauthorized access attempt by ${decodedToken.email}`);
-      return res.status(403).json({ error: 'Forbidden: Admin access required' });
-    }
-    req.user = decodedToken;
-    next();
-  } catch (error) {
-    console.error('[admin] Token verification failed:', error);
-    return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-  }
-}
 
 app.get('/api/intel-gathering/dbpr', async (req, res) => {
   try {
@@ -1046,42 +1084,6 @@ app.post('/api/homework/complete', verifyAdmin, async (req, res) => {
     return res.status(500).json({ error: error.message || 'Homework completion failed' });
   }
 });
-
-app.post(
-  '/api/homework/ocr-ingest',
-  verifyAdmin,
-  express.json({ limit: '50mb' }),
-  async (req, res) => {
-    try {
-      const createdBy = req.user.email;
-      const { images, format, title } = req.body || {};
-      const pageCount = Array.isArray(images) ? images.length : 0;
-      const text = await runOcrOnImages(images, format || 'Markdown');
-      const batchTitle =
-        String(title || '').trim() ||
-        `OCR reference (${pageCount} page${pageCount === 1 ? '' : 's'})`;
-      const document = await homeworkRagService.addTextDocument(
-        { title: batchTitle, text, source: 'ocr', pageCount },
-        createdBy
-      );
-      return res.json({
-        ok: true,
-        document,
-        pageCount,
-        chars: text.length,
-      });
-    } catch (error) {
-      console.error('[homework/ocr-ingest] error:', error);
-      const status =
-        error.message?.includes('Maximum') ||
-        error.message?.includes('No images') ||
-        error.message?.includes('GEMINI')
-          ? 400
-          : 500;
-      return res.status(status).json({ error: error.message || 'OCR ingest failed' });
-    }
-  }
-);
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
