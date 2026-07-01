@@ -169,6 +169,16 @@ const ragUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024 },
 });
+
+/** Multipart homework OCR — avoids JSON/base64 payload limits (10–50 images per batch). */
+const homeworkOcrUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+    files: 50,
+    fieldSize: 4 * 1024 * 1024,
+  },
+});
 // Note: To automatically delete files after 72 hours,
 // Object Lifecycle Management should be configured on the 'aibhive-media' bucket
 // via the Google Cloud Console or gsutil:
@@ -240,14 +250,33 @@ app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
 
 app.post(
   '/api/homework/ocr-ingest',
-  express.json({ limit: '50mb' }),
   verifyAdmin,
+  (req, res, next) => {
+    homeworkOcrUpload.array('files', 50)(req, res, (err) => {
+      if (err) {
+        const msg =
+          err.code === 'LIMIT_FILE_SIZE'
+            ? 'An image exceeds 15MB. Use phone photos or JPEG — the app compresses before upload.'
+            : err.code === 'LIMIT_FILE_COUNT'
+              ? 'Maximum 50 images per upload batch.'
+              : err.message || 'Upload failed';
+        return res.status(400).json({ error: msg });
+      }
+      next();
+    });
+  },
   async (req, res) => {
     try {
       const createdBy = req.user.email;
-      const { images, format, title } = req.body || {};
-      const pageCount = Array.isArray(images) ? images.length : 0;
-      const text = await runOcrOnImages(images, format || 'Markdown');
+      const files = req.files || [];
+      if (!files.length) {
+        return res.status(400).json({ error: 'No image files uploaded.' });
+      }
+      const format = req.body?.format || 'Markdown';
+      const title = req.body?.title;
+      const images = files.map((f) => f.buffer.toString('base64'));
+      const pageCount = images.length;
+      const text = await runOcrOnImages(images, format);
       const batchTitle =
         String(title || '').trim() ||
         `OCR reference (${pageCount} page${pageCount === 1 ? '' : 's'})`;
