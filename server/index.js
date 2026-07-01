@@ -583,7 +583,14 @@ app.post('/api/hive/social-hunter/research', express.json(), async (req, res) =>
   }
 });
 
-app.use(express.json());
+// Default JSON parser — skip multipart OCR upload (multer handles that route).
+const defaultJsonParser = express.json({ limit: '2mb' });
+app.use((req, res, next) => {
+  if (req.method === 'POST' && req.path === '/api/homework/ocr-ingest') {
+    return next();
+  }
+  return defaultJsonParser(req, res, next);
+});
 
 // Lightweight health check for local dev / sandbox smoke tests
 app.get('/api/health', async (_req, res) => {
