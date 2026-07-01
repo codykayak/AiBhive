@@ -46,3 +46,12 @@ gcloud run deploy YOUR_SERVICE --source . --region YOUR_REGION --project gen-lan
 ```
 
 Use the service name and region from repo secrets `CLOUD_RUN_SERVICE` / `CLOUD_RUN_REGION`.
+
+**Research / Discovery** needs these env vars on the same Cloud Run service (exact names):
+
+| Variable | Purpose |
+|----------|---------|
+| `FIRECRAWL_API_KEY` | Deep web search (Firecrawl) |
+| `SERPAPI_KEY` | Quick factual search (SerpAPI) |
+
+After adding keys, deploy a new revision and verify: `curl -s https://aibhive.com/api/intel-gathering/cloud-status`

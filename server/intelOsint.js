@@ -4,6 +4,8 @@
  */
 import { applyTokenMarkup } from './hivePlans.js';
 import { buildDiscoverySearchQueries } from './intelDiscoverySearch.js';
+import { requireFirecrawlKey, requireSerpApiKey } from './intelCloudKeys.js';
+import { firecrawlWebSearch, firecrawlScrapePage } from './intelFirecrawl.js';
 
 function appendRegionalSuffix(baseQuery, params) {
   const restrict = params.restrictToRegion === '1' || params.restrictToRegion === true;
@@ -72,47 +74,12 @@ export function intelToolCostUsd(toolId) {
   return applyTokenMarkup(intelToolRawCostUsd(toolId));
 }
 
-async function firecrawlSearch(apiKey, query) {
-  const res = await fetch('https://api.firecrawl.dev/v1/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      query,
-      limit: 8,
-      scrapeOptions: { formats: ['markdown'] },
-    }),
-  });
-  if (!res.ok) throw new Error(`Firecrawl search failed (${res.status})`);
-  const json = await res.json();
-  const chunks = (json.data ?? []).map((item, i) => {
-    const body = item.markdown || item.description || '';
-    return `[${i + 1}] ${item.title ?? 'Result'}\nURL: ${item.url ?? 'n/a'}\n${String(body).slice(0, 2500)}`;
-  });
-  return {
-    summary: `${chunks.length} Firecrawl search results (Hive Cloud)`,
-    data: chunks.join('\n\n---\n\n').slice(0, 14000),
-  };
-}
-
-async function firecrawlScrape(apiKey, url) {
-  const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({ url, formats: ['markdown'] }),
-  });
-  if (!res.ok) throw new Error(`Firecrawl scrape failed (${res.status})`);
-  const json = await res.json();
-  const md = json?.data?.markdown ?? json?.markdown ?? '';
-  return {
-    summary: 'Page scraped via Firecrawl (Hive Cloud)',
-    data: String(md).slice(0, 14000),
-  };
+function discoverySearchLocation(params) {
+  return (
+    String(params.region?.location || params.location || '').trim() ||
+    String(params.userIntent || '').match(/\b(Orlando|Miami|Tampa|Jacksonville|Fort Lauderdale),\s*(Florida|FL)\b/i)?.[0] ||
+    (/\b(florida|\bfl\b)\b/i.test(String(params.userIntent || '')) ? 'Florida,United States' : '')
+  );
 }
 
 async function serpSearch(apiKey, query) {
@@ -160,22 +127,22 @@ export async function runIntelCloudTool(db, usage, opts) {
   const domain = params.domain || '';
   const userIntent = params.userIntent || '';
   const targetUrl = params.url || (domain ? `https://${domain}` : '');
+  const searchLocation = discoverySearchLocation(params);
 
   let result;
   try {
     switch (toolId) {
       case 'firecrawl_search': {
-        const apiKey = process.env.FIRECRAWL_API_KEY;
-        if (!apiKey) throw new Error('Hive Cloud Firecrawl not configured');
+        const apiKey = requireFirecrawlKey();
+        const searchOpts = { location: searchLocation, country: 'US' };
         if (targetType === 'discovery' && discoveryQueries.length) {
-          const queries = discoveryQueries.slice(0, 2);
+          const queries = discoveryQueries.slice(0, 3);
           const blocks = [];
           let total = 0;
           for (const q of queries) {
-            const partial = await firecrawlSearch(apiKey, q);
-            const count = (partial.data.match(/^\[/gm) || []).length;
-            total += count;
-            blocks.push(`### Search: ${q}\n${partial.data}`);
+            const partial = await firecrawlWebSearch(apiKey, q, searchOpts);
+            total += partial.count;
+            blocks.push(`### Search: ${q}\n${partial.summary}\n\n${partial.data}`);
           }
           result = {
             summary: `${total} Firecrawl hits across ${queries.length} discovery queries`,
@@ -183,20 +150,18 @@ export async function runIntelCloudTool(db, usage, opts) {
           };
         } else {
           const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
-          result = await firecrawlSearch(apiKey, query);
+          result = await firecrawlWebSearch(apiKey, query, searchOpts);
         }
         break;
       }
       case 'firecrawl_scrape': {
-        const apiKey = process.env.FIRECRAWL_API_KEY;
-        if (!apiKey) throw new Error('Hive Cloud Firecrawl not configured');
+        const apiKey = requireFirecrawlKey();
         if (!targetUrl) throw new Error('URL required for scrape');
-        result = await firecrawlScrape(apiKey, targetUrl);
+        result = await firecrawlScrapePage(apiKey, targetUrl);
         break;
       }
       case 'serp_search': {
-        const apiKey = process.env.SERPAPI_KEY;
-        if (!apiKey) throw new Error('Hive Cloud SerpAPI not configured');
+        const apiKey = requireSerpApiKey();
         if (targetType === 'discovery' && discoveryQueries.length) {
           const blocks = [];
           let total = 0;

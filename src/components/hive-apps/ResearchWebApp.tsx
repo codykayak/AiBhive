@@ -24,6 +24,7 @@ import {
   defaultToolsForTargetType,
   formatFallbackBrief,
   fetchFailureToolOffer,
+  fetchIntelCloudStatus,
   inferIntelTargetType,
   isCloudTool,
   isDiscoveryQuery,
@@ -35,6 +36,7 @@ import {
   synthesizeIntelFindings,
   type FailureToolOffer,
   type FreeToolId,
+  type IntelCloudKeyStatus,
   type IntelChatMessage,
   type IntelTargetType,
   type IntelWebCase,
@@ -116,6 +118,7 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [uploadedDocs, setUploadedDocs] = useState<UploadedResearchDoc[]>([]);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
+  const [cloudKeys, setCloudKeys] = useState<IntelCloudKeyStatus | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
@@ -137,6 +140,10 @@ export default function ResearchWebApp({ expanded }: Props) {
 
   const refreshCases = useCallback(() => {
     setCases(listIntelWebCases());
+  }, []);
+
+  useEffect(() => {
+    void fetchIntelCloudStatus().then(setCloudKeys);
   }, []);
 
   useEffect(() => {
@@ -591,12 +598,36 @@ export default function ResearchWebApp({ expanded }: Props) {
                 {TARGET_TYPES.find((t) => t.id === targetType)?.hint}
               </p>
               {targetType === 'discovery' ? (
-                <div className="rounded-xl border border-bee-amber/30 bg-bee-amber/5 p-3 text-xs text-slate-300 leading-relaxed">
-                  <strong className="text-bee-amber">Discovery mode</strong> — Google dork links open
-                  searches in your browser (manual). For automatic company names and closure signals,
-                  keep <strong className="text-white">Quick factual search</strong> and{' '}
-                  <strong className="text-white">Deep web search</strong> enabled (Hive credits). Florida
-                  Sunbiz and DBPR queries are included when your inquiry mentions Florida.
+                <div className="rounded-xl border border-bee-amber/30 bg-bee-amber/5 p-3 text-xs text-slate-300 leading-relaxed space-y-2">
+                  <p>
+                    <strong className="text-bee-amber">Discovery mode</strong> — Google dork links open
+                    searches in your browser (manual). For automatic company names and closure signals,
+                    keep <strong className="text-white">Quick factual search</strong> and{' '}
+                    <strong className="text-white">Deep web search</strong> enabled (Hive credits). Florida
+                    Sunbiz and DBPR queries are included when your inquiry mentions Florida.
+                  </p>
+                  {cloudKeys && !cloudKeys.discoveryReady ? (
+                    <p className="text-amber-200/90 border-t border-bee-amber/20 pt-2">
+                      <strong className="text-amber-300">Server search keys missing.</strong>{' '}
+                      {cloudKeys.setupHint} Required env vars:{' '}
+                      <code className="text-slate-200">{cloudKeys.envVarNames.firecrawl}</code>,{' '}
+                      <code className="text-slate-200">{cloudKeys.envVarNames.serpapi}</code>. Until
+                      these are set on Cloud Run, only manual dork links will work — no automatic company
+                      list.
+                    </p>
+                  ) : null}
+                  {cloudKeys?.discoveryReady && !cloudKeys.firecrawl ? (
+                    <p className="text-slate-400 border-t border-white/10 pt-2">
+                      SerpAPI is configured; Firecrawl ({cloudKeys.envVarNames.firecrawl}) is not — deep
+                      web search will fail until that key is added on Cloud Run.
+                    </p>
+                  ) : null}
+                  {cloudKeys?.discoveryReady && !cloudKeys.serpapi ? (
+                    <p className="text-slate-400 border-t border-white/10 pt-2">
+                      Firecrawl is configured; SerpAPI ({cloudKeys.envVarNames.serpapi}) is not — quick
+                      factual search will fail until that key is added on Cloud Run.
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
               <input
@@ -737,6 +768,14 @@ export default function ResearchWebApp({ expanded }: Props) {
                               {r.status === 'skipped' && r.tier === 'cloud' ? (
                                 <p className="text-xs text-amber-300/90 mt-1">
                                   Add Hive credits or upgrade your plan to run paid search tools.
+                                </p>
+                              ) : null}
+                              {r.status === 'error' &&
+                              r.tier === 'cloud' &&
+                              r.error &&
+                              /FIRECRAWL_API_KEY|SERPAPI_KEY|not set on the server/i.test(r.error) ? (
+                                <p className="text-xs text-red-300/90 mt-1">
+                                  Server API key not loaded — set on Cloud Run, then deploy a new revision.
                                 </p>
                               ) : null}
                             </div>
