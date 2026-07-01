@@ -18,6 +18,8 @@ interface SEOProps {
   jsonLd?: Record<string, unknown>[];
   /** Emit FAQPage schema (answers must also be visible in page HTML) */
   faqs?: FaqSchemaItem[];
+  /** Block search engines from indexing this page */
+  noIndex?: boolean;
 }
 
 export const SEO = ({
@@ -27,6 +29,7 @@ export const SEO = ({
   type = 'SoftwareApplication',
   jsonLd = [],
   faqs,
+  noIndex = false,
 }: SEOProps) => {
   const location = useLocation();
   const path = location.pathname === '/' ? '' : location.pathname;
@@ -79,6 +82,7 @@ export const SEO = ({
   return (
     <Helmet>
       <title>{title}</title>
+      {noIndex && <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />}
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
       <link rel="canonical" href={currentUrl} />

@@ -19,6 +19,7 @@ const AboutContact = lazy(() => import('./pages/AboutContact'));
 const GetStarted = lazy(() => import('./pages/GetStarted'));
 const FAQ = lazy(() => import('./pages/FAQ'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Homework = lazy(() => import('./pages/Homework'));
 const TestGetStarted = lazy(() => import('./pages/TestGetStarted'));
 const Podcasters = lazy(() => import('./pages/use-cases/Podcasters'));
 const YouTubers = lazy(() => import('./pages/use-cases/YouTubers'));
@@ -125,6 +126,8 @@ function AnimatedRoutes() {
 function AppShell() {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin');
+  const isHomeworkRoute = pathname.startsWith('/homework');
+  const isPrivateRoute = isAdminRoute || isHomeworkRoute;
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/hive-apps/run') ||
@@ -133,24 +136,25 @@ function AppShell() {
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        <SEO />
+        {!isPrivateRoute && <SEO />}
         <header className="fixed top-0 left-0 right-0 z-50">
           <Navbar />
         </header>
-        {!isAdminRoute && <HomeAssistantWeb />}
-        {!isAdminRoute && pathname.startsWith('/app') && <SiteGuideTour />}
+        {!isPrivateRoute && <HomeAssistantWeb />}
+        {!isPrivateRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main className={`flex-grow pt-20 ${hideFooter ? 'pb-4' : ''}`}>
-          {isAdminRoute ? (
+          {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/homework" element={<Homework />} />
               </Routes>
             </Suspense>
           ) : (
             <AnimatedRoutes />
           )}
         </main>
-        {!isAdminRoute && !hideFooter && (
+        {!isPrivateRoute && !hideFooter && (
           <footer className="relative z-10">
             <Footer />
           </footer>
