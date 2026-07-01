@@ -1,20 +1,32 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# AiBhive
 
-# Run and deploy your AI Studio app
+AI-powered transcription, document processing, Hive apps, and internal tools.
 
-This contains everything you need to run your app locally.
+## Local development
 
-View your app in AI Studio: https://ai.studio/apps/096b2204-b995-4572-bba4-45d4d32944cd
+**Test changes locally before opening a PR.**
 
-## Run Locally
+```bash
+npm install
+cp .env.example .env.local   # add your API keys
+npm run dev:start            # frontend :3000 + backend :3001
+npm run dev:check            # smoke test
+```
 
-**Prerequisites:**  Node.js
+Forward port **3000** in Cursor (or open http://127.0.0.1:3000) to use the app in your browser.
 
+Full setup (GCP credentials, env vars, troubleshooting): **[LOCAL_DEV.md](./LOCAL_DEV.md)**
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev servers (foreground) |
+| `npm run dev:start` | Dev servers in tmux (background) |
+| `npm run dev:check` | Health / smoke check |
+| `npm run build` | Production build |
+| `npm run lint` | TypeScript check |
+
+## Deploy
+
+Production runs on Cloud Run. Merges to `main-fixed` deploy via GitHub Actions.
