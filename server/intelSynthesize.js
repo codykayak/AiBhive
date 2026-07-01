@@ -43,7 +43,7 @@ function formatRawDump(toolResults) {
     .join('\n\n');
 }
 
-function buildSynthesisMessage(target, userIntent) {
+function buildSynthesisMessage(target, userIntent, toolResults = []) {
   const intent = String(userIntent || target?.userIntent || target?.label || '').trim();
   const label = String(target?.label || '').trim();
   const type = String(target?.type || 'company');
@@ -52,11 +52,19 @@ function buildSynthesisMessage(target, userIntent) {
     ? `\nRegion: ${target.region.location} (${target.region.radiusMiles || 50} mi)`
     : '';
 
+  const cloudSkipped = (toolResults || []).filter(
+    (r) => r.tier === 'cloud' && (r.status === 'skipped' || r.status === 'error')
+  );
+  const cloudNote =
+    type === 'discovery' && cloudSkipped.length
+      ? `\nIMPORTANT: Paid search tools did not run (${cloudSkipped.map((r) => r.toolId).join(', ')}). Only free dork links are available — tell the user to enable Hive credits for SerpAPI/Firecrawl, or open the dork links manually.`
+      : '';
+
   if (type === 'discovery') {
     return [
       'Discovery/list inquiry — extract only entities and signals matching the query.',
       `Inquiry: ${intent}`,
-      `Target label: ${label || intent.slice(0, 120)}${region}`,
+      `Target label: ${label || intent.slice(0, 120)}${region}${cloudNote}`,
     ].join('\n');
   }
 
@@ -77,7 +85,7 @@ export async function runIntelSynthesis(db, userId, opts) {
   const documentContext = String(opts.documentContext || '').slice(0, 16000);
 
   const rawDump = formatRawDump(toolResults);
-  const message = buildSynthesisMessage(target, userIntent);
+  const message = buildSynthesisMessage(target, userIntent, toolResults);
 
   const targetContext = [
     `USER INQUIRY: ${userIntent || target.label || 'General research'}`,

@@ -14,6 +14,8 @@ const DORK_TEMPLATES = [
   { label: 'Business closure news', template: '{query} ("shut down" OR liquidation OR "filed for bankruptcy"){region}', targets: ['discovery'] },
   { label: 'Inactive company lists', template: '{query} (defunct OR inactive OR "no longer operating") site:.gov OR site:.org{region}', targets: ['discovery'] },
   { label: 'Industry closure reports', template: '{query} ("went out of business" OR "closed permanently"){region}', targets: ['discovery'] },
+  { label: 'Florida Sunbiz dissolved', template: 'site:sunbiz.org dissolved inactive {query}{region}', targets: ['discovery'] },
+  { label: 'Florida DBPR inactive license', template: 'site:myfloridalicense.com inactive void {query}{region}', targets: ['discovery'] },
 ];
 
 function regionalSuffix(region) {

@@ -3,6 +3,7 @@
  * Never proxies requests to google.com; SerpAPI/Firecrawl only.
  */
 import { applyTokenMarkup } from './hivePlans.js';
+import { buildDiscoverySearchQueries } from './intelDiscoverySearch.js';
 
 function appendRegionalSuffix(baseQuery, params) {
   const restrict = params.restrictToRegion === '1' || params.restrictToRegion === true;
@@ -48,14 +49,19 @@ const SERP_RAW_USD = 0.02;
 const FIRECRAWL_SEARCH_RAW_USD = 0.03;
 const FIRECRAWL_SCRAPE_RAW_USD = 0.02;
 
-export function intelToolRawCostUsd(toolId) {
+export function intelToolRawCostUsd(toolId, opts = {}) {
+  const discoveryQueries = opts.discoveryQueryCount ?? 1;
   switch (toolId) {
     case 'firecrawl_search':
-      return FIRECRAWL_SEARCH_RAW_USD;
+      return opts.targetType === 'discovery'
+        ? FIRECRAWL_SEARCH_RAW_USD * Math.min(discoveryQueries, 2)
+        : FIRECRAWL_SEARCH_RAW_USD;
     case 'firecrawl_scrape':
       return FIRECRAWL_SCRAPE_RAW_USD;
     case 'serp_search':
-      return SERP_RAW_USD;
+      return opts.targetType === 'discovery'
+        ? SERP_RAW_USD * Math.min(discoveryQueries, 5)
+        : SERP_RAW_USD;
     default:
       return 0.02;
   }
@@ -128,7 +134,13 @@ async function serpSearch(apiKey, query) {
  */
 export async function runIntelCloudTool(db, usage, opts) {
   const { userId, toolId, params = {} } = opts;
-  const rawCost = intelToolRawCostUsd(toolId);
+  const targetType = params.targetType || 'company';
+  const discoveryQueries =
+    targetType === 'discovery' ? buildDiscoverySearchQueries(params) : [];
+  const rawCost = intelToolRawCostUsd(toolId, {
+    targetType,
+    discoveryQueryCount: discoveryQueries.length || 1,
+  });
   const markedUp = applyTokenMarkup(rawCost);
 
   const check = await usage.checkTokenBudget(db, userId, markedUp, 'hive_cloud_intel');
@@ -155,8 +167,24 @@ export async function runIntelCloudTool(db, usage, opts) {
       case 'firecrawl_search': {
         const apiKey = process.env.FIRECRAWL_API_KEY;
         if (!apiKey) throw new Error('Hive Cloud Firecrawl not configured');
-        const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
-        result = await firecrawlSearch(apiKey, query);
+        if (targetType === 'discovery' && discoveryQueries.length) {
+          const queries = discoveryQueries.slice(0, 2);
+          const blocks = [];
+          let total = 0;
+          for (const q of queries) {
+            const partial = await firecrawlSearch(apiKey, q);
+            const count = (partial.data.match(/^\[/gm) || []).length;
+            total += count;
+            blocks.push(`### Search: ${q}\n${partial.data}`);
+          }
+          result = {
+            summary: `${total} Firecrawl hits across ${queries.length} discovery queries`,
+            data: blocks.join('\n\n---\n\n').slice(0, 18000),
+          };
+        } else {
+          const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
+          result = await firecrawlSearch(apiKey, query);
+        }
         break;
       }
       case 'firecrawl_scrape': {
@@ -169,8 +197,23 @@ export async function runIntelCloudTool(db, usage, opts) {
       case 'serp_search': {
         const apiKey = process.env.SERPAPI_KEY;
         if (!apiKey) throw new Error('Hive Cloud SerpAPI not configured');
-        const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
-        result = await serpSearch(apiKey, query);
+        if (targetType === 'discovery' && discoveryQueries.length) {
+          const blocks = [];
+          let total = 0;
+          for (const q of discoveryQueries) {
+            const partial = await serpSearch(apiKey, q);
+            const count = (partial.data.match(/^\[/gm) || []).length;
+            total += count;
+            blocks.push(`### Search: ${q}\n${partial.summary}\n\n${partial.data}`);
+          }
+          result = {
+            summary: `${total} SerpAPI hits across ${discoveryQueries.length} discovery queries`,
+            data: blocks.join('\n\n---\n\n').slice(0, 18000),
+          };
+        } else {
+          const query = buildCloudSearchQuery({ company, domain, userIntent, ...params });
+          result = await serpSearch(apiKey, query);
+        }
         break;
       }
       default:
