@@ -5,6 +5,7 @@ import {
   ArrowRight,
   Check,
   Copy,
+  Download,
   Eye,
   FileText,
   Image as ImageIcon,
@@ -33,12 +34,18 @@ import {
   type HomeworkDocument,
 } from '../lib/homeworkApi';
 import { compressAndIngestImageFiles, type OcrFormat } from '../lib/homeworkOcr';
+import { downloadRagLibrary, type RagExportFormat } from '../lib/homeworkExport';
 import WebPlansStrip from '../components/app/WebPlansStrip';
 
 type Step = 'rag' | 'assign';
 export type HomeworkVariant = 'admin' | 'public';
 
 const OCR_FORMATS: OcrFormat[] = ['Markdown', 'Plain Text', 'Preserve Layout'];
+const EXPORT_FORMATS: { id: RagExportFormat; label: string }[] = [
+  { id: 'txt', label: 'TXT' },
+  { id: 'md', label: 'Markdown' },
+  { id: 'pdf', label: 'PDF' },
+];
 const MAX_PAGES_PER_BATCH = 100;
 const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i;
 
@@ -113,6 +120,8 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
   const [ocrStatus, setOcrStatus] = useState('');
 
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportFormat, setExportFormat] = useState<RagExportFormat>('txt');
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [viewOpen, setViewOpen] = useState(false);
@@ -317,6 +326,19 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
       setError(err instanceof Error ? err.message : 'Delete failed');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleExportLibrary = async () => {
+    if (!user || documents.length === 0) return;
+    setExportBusy(true);
+    setError(null);
+    try {
+      await downloadRagLibrary(user, exportFormat);
+    } catch (err: unknown) {
+      setError(formatError(err, 'Export failed'));
+    } finally {
+      setExportBusy(false);
     }
   };
 
@@ -739,10 +761,48 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
           </details>
 
           <div className="glass-card p-6 rounded-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Your RAG library</h2>
-              {loadingDocs && <Loader2 className="w-5 h-5 animate-spin text-slate-400" />}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-white">Your RAG library</h2>
+                {loadingDocs && <Loader2 className="w-5 h-5 animate-spin text-slate-400" />}
+              </div>
+              {documents.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value as RagExportFormat)}
+                    disabled={exportBusy}
+                    className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-sm"
+                    aria-label="Export format"
+                  >
+                    {EXPORT_FORMATS.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={exportBusy || documents.length === 0}
+                    onClick={handleExportLibrary}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-bee-amber/15 hover:bg-bee-amber/25 border border-bee-amber/30 text-bee-amber text-sm font-medium disabled:opacity-50"
+                  >
+                    {exportBusy ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    Download all
+                  </button>
+                </div>
+              )}
             </div>
+            {documents.length > 0 && (
+              <p className="text-slate-500 text-xs mb-4">
+                Export combines every document in your library into one file ({totalChars.toLocaleString()} chars
+                {totalPages > 0 ? ` · ${totalPages} OCR pages` : ''}).
+              </p>
+            )}
             {documents.length === 0 && !loadingDocs ? (
               <p className="text-slate-500 text-sm py-6 text-center">
                 No documents yet. Upload page images above — OCR will populate this automatically.

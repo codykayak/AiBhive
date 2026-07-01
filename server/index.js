@@ -1100,6 +1100,20 @@ app.get('/api/homework/documents', verifyHomeworkUser, async (req, res) => {
   }
 });
 
+app.get('/api/homework/documents/export', verifyHomeworkUser, async (req, res) => {
+  try {
+    const { ownerKeys } = homeworkOwnerContext(req);
+    const library = await homeworkRagService.exportLibrary(ownerKeys);
+    if (!library.documentCount) {
+      return res.status(400).json({ error: 'No documents in your RAG library to export.' });
+    }
+    return res.json({ ok: true, ...library });
+  } catch (error) {
+    console.error('[homework/documents/export] error:', error);
+    return res.status(500).json({ error: error.message || 'Failed to export library' });
+  }
+});
+
 app.get('/api/homework/documents/:id/view', verifyHomeworkUser, async (req, res) => {
   try {
     const { ownerKeys } = homeworkOwnerContext(req);
