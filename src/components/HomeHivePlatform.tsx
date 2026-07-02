@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   ArrowRight,
-  Briefcase,
   Building2,
   Download,
   Radar,
@@ -12,6 +11,7 @@ import {
   Share2,
   Sparkles,
   Wand2,
+  Atom,
   Flame,
   LayoutGrid,
 } from 'lucide-react';
@@ -29,7 +29,7 @@ const COMMUNITY_STEPS = [
 const EXAMPLE_TOOL_ICONS = {
   [EXAMPLE_APP_IDS.jobHunter]: Search,
   [EXAMPLE_APP_IDS.socialPostHunter]: Megaphone,
-  [EXAMPLE_APP_IDS.jobTracker]: Briefcase,
+  [EXAMPLE_APP_IDS.focusReactor]: Atom,
   [EXAMPLE_APP_IDS.resumeBot]: Sparkles,
   [EXAMPLE_APP_IDS.research]: Radar,
   [EXAMPLE_APP_IDS.mockRealestate]: Building2,

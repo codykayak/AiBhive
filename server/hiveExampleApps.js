@@ -41,8 +41,12 @@ function toPublicExample(app) {
   };
 }
 
+const HIDDEN_STORE_IDS = new Set(['example-job-tracker']);
+
 export function listExampleApps() {
-  const apps = loadExamples().map(toPublicExample);
+  const apps = loadExamples()
+    .filter((a) => !HIDDEN_STORE_IDS.has(a.id))
+    .map(toPublicExample);
   const resume = apps.find((a) => a.id === 'example-resume-bot');
   if (!resume) return apps;
   return [resume, ...apps.filter((a) => a.id !== 'example-resume-bot')];
