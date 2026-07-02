@@ -1,5 +1,6 @@
 import type { HiveAppSpec } from './hiveAppTypes';
 import rawExamples from '../../shared/hive-example-apps.json';
+import { HIDDEN_STORE_APP_IDS } from './focusReactor';
 
 const EXAMPLES = rawExamples as HiveAppSpec[];
 
@@ -12,14 +13,19 @@ export const EXAMPLE_APP_IDS = {
   mockRealestate: 'example-mock-realestate',
   homeworkBot: 'example-homework-bot',
   meetingBurn: 'example-meeting-burn',
+  focusReactor: 'example-focus-reactor',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
-  return EXAMPLES.map((app) => ({
+  const visible = EXAMPLES.filter((a) => !HIDDEN_STORE_APP_IDS.has(a.id));
+  const apps = visible.map((app) => ({
     ...app,
     pageCount: app.pages?.length ?? 0,
     isExample: true,
   }));
+  const resume = apps.find((a) => a.id === EXAMPLE_APP_IDS.resumeBot);
+  if (!resume) return apps;
+  return [resume, ...apps.filter((a) => a.id !== EXAMPLE_APP_IDS.resumeBot)];
 }
 
 export function getLocalExampleApp(appId: string): HiveAppSpec | null {
@@ -49,9 +55,9 @@ export const EXAMPLE_TOOLS = [
     sub: 'Find posts · reply · auto-social',
   },
   {
-    id: EXAMPLE_APP_IDS.jobTracker,
-    title: 'Job Tracker',
-    sub: 'Applications, status, and follow-ups',
+    id: EXAMPLE_APP_IDS.focusReactor,
+    title: 'Focus Reactor',
+    sub: 'Live particle core — charge up deep work',
   },
   {
     id: EXAMPLE_APP_IDS.research,

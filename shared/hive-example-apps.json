@@ -324,5 +324,34 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-focus-reactor",
+    "title": "Focus Reactor",
+    "tagline": "Live deep-work particle core",
+    "summary": "Ignite the reactor and watch 70+ particles orbit faster as your focus charge builds. Real-time RPM, heat, and focus units — pomodoro presets or free run.",
+    "theme": "purple",
+    "icon": "zap",
+    "category": "calculators",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Focus Reactor",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive runner with live canvas animation and session logging.",
+          "bullets": [
+            "Orbiting particle field speeds up as charge builds",
+            "25 / 45 / 90 min presets or free-run mode",
+            "RPM, heat, and focus-unit meters update in real time"
+          ],
+          "links": [
+            { "label": "Run Focus Reactor", "url": "https://aibhive.com/hive-apps/run/example-focus-reactor" }
+          ]
+        }
+      }
+    ]
   }
 ]
