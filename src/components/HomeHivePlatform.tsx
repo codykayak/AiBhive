@@ -12,6 +12,7 @@ import {
   Share2,
   Sparkles,
   Wand2,
+  Flame,
   LayoutGrid,
 } from 'lucide-react';
 import { fetchStoreCatalog } from '../lib/hiveStoreApi';
@@ -32,6 +33,7 @@ const EXAMPLE_TOOL_ICONS = {
   [EXAMPLE_APP_IDS.resumeBot]: Sparkles,
   [EXAMPLE_APP_IDS.research]: Radar,
   [EXAMPLE_APP_IDS.mockRealestate]: Building2,
+  [EXAMPLE_APP_IDS.meetingBurn]: Flame,
 } as const;
 
 const PILLARS = [
