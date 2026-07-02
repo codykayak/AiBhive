@@ -168,6 +168,42 @@ export async function fetchCloudToolsMeta(): Promise<Record<string, number>> {
   }
 }
 
+export type IntelLlmProvider = 'claude' | 'grok' | 'gemini';
+
+export type IntelLlmStatus = {
+  claude: boolean;
+  grok: boolean;
+  gemini: boolean;
+  models: { claude: string; grok: string; gemini: string };
+  defaultProvider: IntelLlmProvider;
+};
+
+const INTEL_LLM_KEY = 'aibhive_intel_llm';
+
+export function loadIntelLlmProvider(): IntelLlmProvider {
+  try {
+    const v = localStorage.getItem(INTEL_LLM_KEY);
+    if (v === 'claude' || v === 'grok' || v === 'gemini') return v;
+  } catch {
+    // ignore
+  }
+  return 'claude';
+}
+
+export function saveIntelLlmProvider(provider: IntelLlmProvider) {
+  localStorage.setItem(INTEL_LLM_KEY, provider);
+}
+
+export async function fetchIntelLlmStatus(): Promise<IntelLlmStatus | null> {
+  try {
+    const res = await fetch('/api/intel-gathering/llm-status');
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
 export type IntelCloudKeyStatus = {
   firecrawl: boolean;
   serpapi: boolean;
@@ -290,6 +326,7 @@ export async function synthesizeIntelFindings(opts: {
   toolResults: ToolRunResult[];
   userIntent?: string;
   documentContext?: string;
+  llmProvider?: IntelLlmProvider;
 }): Promise<{ text: string; provider: string; chargedUsd?: number }> {
   const userId = getOrCreateWebHiveUserId();
   const res = await fetch('/api/intel-gathering/synthesize', {
@@ -301,6 +338,7 @@ export async function synthesizeIntelFindings(opts: {
       toolResults: opts.toolResults,
       userIntent: opts.userIntent || opts.target.userIntent,
       documentContext: opts.documentContext,
+      llmProvider: opts.llmProvider,
     }),
   });
   const data = await res.json();
@@ -325,6 +363,7 @@ export async function sendIntelChat(opts: {
   history?: ChatTurn[];
   targetContext?: string;
   documentContext?: string;
+  llmProvider?: IntelLlmProvider;
 }): Promise<{ text: string; provider: string; chargedUsd?: number }> {
   const userId = getOrCreateWebHiveUserId();
   const res = await fetch('/api/intel-gathering/chat', {
@@ -336,6 +375,7 @@ export async function sendIntelChat(opts: {
       history: opts.history || [],
       targetContext: opts.targetContext,
       documentContext: opts.documentContext,
+      llmProvider: opts.llmProvider,
     }),
   });
   const data = await res.json();

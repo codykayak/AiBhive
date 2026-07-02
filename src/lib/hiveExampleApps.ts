@@ -33,6 +33,11 @@ export function getLocalExampleApp(appId: string): HiveAppSpec | null {
 
 export const EXAMPLE_TOOLS = [
   {
+    id: EXAMPLE_APP_IDS.resumeBot,
+    title: 'Auto-Bot Resume',
+    sub: 'Customized to the job posting - one click resume and cover letter.',
+  },
+  {
     id: EXAMPLE_APP_IDS.jobHunter,
     title: 'Job Hunter Bot',
     sub: '10 jobs · cover letters · resume match',
@@ -41,11 +46,6 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.socialPostHunter,
     title: 'Social Post Hunter',
     sub: 'Find posts · reply · auto-social',
-  },
-  {
-    id: EXAMPLE_APP_IDS.resumeBot,
-    title: 'Auto-Bot Resume',
-    sub: 'Tailored resume & cover letter',
   },
   {
     id: EXAMPLE_APP_IDS.jobTracker,

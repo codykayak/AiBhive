@@ -105,5 +105,6 @@ export async function runIntelSynthesis(db, userId, opts) {
     systemInstruction: INTEL_SYNTHESIS_SYSTEM,
     targetContext,
     documentContext,
+    llmProvider: opts.llmProvider,
   });
 }

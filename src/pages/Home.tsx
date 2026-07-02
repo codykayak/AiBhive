@@ -9,11 +9,6 @@ import {
   Headphones,
   Database,
   GitBranch,
-  Shield,
-  Zap,
-  Search,
-  Brain,
-  Workflow,
   Scale,
   Building2,
   Smartphone,
@@ -22,7 +17,6 @@ import { SITE_TAGLINE } from '../constants/site';
 import backgroundLogo from '../aibhive_background.png';
 import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
 import orchestrationImg from '../1775559497156.png';
-import terminologyImg from '../ai_translation_grow_podcast_youtube_audince.png';
 import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
@@ -84,45 +78,6 @@ function PrimaryCtaLink({ children, className = '' }: { children: ReactNode; cla
     </Link>
   );
 }
-
-const TERMINOLOGY = [
-  {
-    icon: Workflow,
-    term: 'Agentic Workflows',
-    definition:
-      'Multi-step autonomous task execution, independent planning, tool usage, and real-time self-correction.',
-  },
-  {
-    icon: Zap,
-    term: 'Autonomous Execution',
-    definition:
-      'System operates smoothly without requiring constant human prompt engineering or manual intervention.',
-  },
-  {
-    icon: Shield,
-    term: 'Human-in-the-Loop (HITL) Safety',
-    definition:
-      'High-stakes actions (such as sending invoices or launching email campaigns) halt automatically for human review and approval before execution.',
-  },
-  {
-    icon: Zap,
-    term: 'Event-Driven Automation',
-    definition:
-      'Workflows instantly trigger based on real-world actions, webhook updates, or incoming customer emails.',
-  },
-  {
-    icon: Search,
-    term: 'Semantic Search & RAG',
-    definition:
-      'Uses Retrieval-Augmented Generation to allow custom agents to query and understand private internal business documents and wikis with flawless accuracy.',
-  },
-  {
-    icon: Brain,
-    term: 'Cognitive Load Reduction',
-    definition:
-      'Automates complex mental grunt work so your human staff can focus entirely on creative growth and client retention.',
-  },
-] as const;
 
 function SectionDivider() {
   return (
@@ -212,7 +167,25 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <HomeHivePlatform />
+      <SectionDivider />
+
+      {/* ——— DIGITAL EMPLOYEES (below hero) ——— */}
+      <TechParallaxSection className="py-20 md:py-28 bg-bee-dark/40" intensity="subtle">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mb-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Your next hires are <span className="text-bee-amber">digital employees</span>
+            </h2>
+            <p className="text-lg text-slate-400 leading-relaxed">
+              We engineer autonomous agents for specific revenue and operations outcomes—not
+              generic software features. The data below shows why speed, recovery, and automation
+              matter across the problems AiBHive solves.
+            </p>
+          </div>
+
+          <DigitalEmployeesInfographics />
+        </div>
+      </TechParallaxSection>
 
       <SectionDivider />
 
@@ -327,65 +300,9 @@ export default function Home() {
 
       <SectionDivider />
 
-      {/* ——— SECTION 2: JOBS / CAPABILITIES ——— */}
-      <TechParallaxSection className="py-20 md:py-28 bg-bee-dark/40" intensity="subtle">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mb-10">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Your next hires are <span className="text-bee-amber">digital employees</span>
-            </h2>
-            <p className="text-lg text-slate-400 leading-relaxed">
-              We engineer autonomous agents for specific revenue and operations outcomes—not
-              generic software features. The data below shows why speed, recovery, and automation
-              matter across the problems AiBHive solves.
-            </p>
-          </div>
+      <HomeHivePlatform />
 
-          <DigitalEmployeesInfographics />
-        </div>
-      </TechParallaxSection>
-
-      <SectionDivider />
-
-      {/* ——— SECTION 3: TERMINOLOGY ——— */}
-      <TechParallaxSection className="py-20 md:py-28 bg-bee-black" intensity="medium">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row gap-12 lg:gap-16 items-start">
-            <div className="lg:w-1/2">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Built on an enterprise-grade agentic backbone
-              </h2>
-              <p className="text-lg text-slate-400 leading-relaxed mb-8">
-                The vocabulary your CTO and operations leaders expect—implemented in production, not
-                slideware.
-              </p>
-              <dl className="flex flex-col gap-4">
-                {TERMINOLOGY.map((item) => (
-                  <div
-                    key={item.term}
-                    className="tech-tile rounded-xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm"
-                  >
-                    <dt className="text-base font-bold text-white mb-2 flex items-start gap-2">
-                      <item.icon className="w-4 h-4 text-bee-amber flex-shrink-0 mt-0.5" aria-hidden />
-                      {item.term}
-                    </dt>
-                    <dd className="text-slate-400 text-sm leading-relaxed">{item.definition}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <div className="lg:w-1/2 w-full img-frame-sharp sticky top-28">
-              <img
-                src={terminologyImg}
-                alt="Global AI operations and semantic intelligence visualization"
-                className="w-full object-cover min-h-[400px] max-h-[640px]"
-              />
-            </div>
-          </div>
-        </div>
-      </TechParallaxSection>
-
-      {/* ——— SECTION 4: CTA BAR ——— */}
+      {/* ——— CTA BAR ——— */}
       <TechParallaxSection
         className="py-16 md:py-20 border-t border-bee-amber/20 bg-gradient-to-r from-bee-amber/10 via-bee-black to-bee-amber/10"
         intensity="strong"
