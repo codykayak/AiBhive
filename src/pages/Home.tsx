@@ -106,7 +106,7 @@ export default function Home() {
       </div>
 
       {/* ——— SECTION 1: HERO ——— */}
-      <section className="relative flex min-h-[85vh] flex-col overflow-hidden py-24 md:py-32 lg:py-40">
+      <section className="relative flex min-h-[85vh] flex-col overflow-hidden pt-24 md:pt-32 lg:pt-40 pb-0">
         <TechParallaxHeroLayers />
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-bee-black/80 via-bee-black/55 to-bee-black z-10" />
