@@ -26,6 +26,7 @@ import {
   type SocialPostResult,
 } from '../../lib/socialHunterApi';
 import AppQuickStart from './AppQuickStart';
+import { MissedSocialRadar } from './MissedSocialRadar';
 
 const SOCIAL_HUNTER_STEPS = [
   'On Find posts, enter topics (comma-separated), pick platforms and date range, then tap Find 10 posts.',
@@ -147,6 +148,8 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
           Discover 10 relevant threads, copy AI replies, research topics, and manage Auto Social from one workspace.
         </p>
       </header>
+
+      <MissedSocialRadar criteria={criteria} hunting={loading} postsLoaded={posts.length} />
 
       <AppQuickStart appId="social-hunter" accent="violet" steps={SOCIAL_HUNTER_STEPS} />
 
