@@ -27,12 +27,12 @@ function LogoStrip({ ariaHidden }: { ariaHidden?: boolean }) {
 export default function HeroLogoMarquee() {
   return (
     <div className="relative z-20 mt-auto w-full border-t border-white/5 bg-bee-black/50 backdrop-blur-md">
-      <p className="pointer-events-none pt-3 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+      <p className="pointer-events-none pt-2 pb-0 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">
         Built for the AI stack you already use
       </p>
 
-      <div className="hero-logo-marquee-mask relative overflow-hidden py-4 sm:py-5">
-        <ul className="hero-logo-marquee-track flex w-max list-none items-center">
+      <div className="hero-logo-marquee-mask relative overflow-hidden pt-2 pb-0">
+        <ul className="hero-logo-marquee-track m-0 flex w-max list-none items-center p-0">
           <LogoStrip />
           <LogoStrip ariaHidden />
         </ul>
