@@ -21,6 +21,7 @@ import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
 import HomeHivePlatform from '../components/HomeHivePlatform';
+import HeroLogoMarquee from '../components/HeroLogoMarquee';
 
 const CATEGORIES = [
   {
@@ -105,7 +106,7 @@ export default function Home() {
       </div>
 
       {/* ——— SECTION 1: HERO ——— */}
-      <section className="relative py-24 md:py-32 lg:py-40 overflow-hidden min-h-[85vh] flex items-center">
+      <section className="relative flex min-h-[85vh] flex-col overflow-hidden py-24 md:py-32 lg:py-40">
         <TechParallaxHeroLayers />
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-bee-black/80 via-bee-black/55 to-bee-black z-10" />
@@ -129,8 +130,9 @@ export default function Home() {
 
         <motion.div
           style={{ y: heroContentY }}
-          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 text-center w-full"
+          className="relative z-20 mx-auto flex w-full max-w-4xl flex-1 items-center px-4 text-center sm:px-6 lg:px-8"
         >
+          <div className="w-full">
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -164,7 +166,10 @@ export default function Home() {
           >
             <PrimaryCtaLink>Schedule an Automation Audit</PrimaryCtaLink>
           </motion.div>
+          </div>
         </motion.div>
+
+        <HeroLogoMarquee />
       </section>
 
       <SectionDivider />
