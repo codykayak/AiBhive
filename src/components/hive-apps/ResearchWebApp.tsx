@@ -44,6 +44,7 @@ import {
   type UploadedResearchDoc,
 } from '../../lib/intelWebApi';
 import IntelDorkLinks from './IntelDorkLinks';
+import IntelSourceDirectory from './IntelSourceDirectory';
 import { getOrCreateWebHiveUserId } from '../../lib/hiveWebUser';
 import { installToolkitApp } from '../../lib/hiveStoreApi';
 import {
@@ -137,6 +138,17 @@ export default function ResearchWebApp({ expanded }: Props) {
     () => resolveDomain(targetLabel, targetType),
     [targetLabel, targetType],
   );
+
+  const directoryTarget = useMemo(() => {
+    const label = targetLabel.trim() || userIntent.trim();
+    if (!label) return null;
+    return {
+      type: targetType,
+      label,
+      domain: resolvedDomain || undefined,
+      region: activeCase?.target.region,
+    };
+  }, [targetLabel, userIntent, targetType, resolvedDomain, activeCase?.target.region]);
 
   const refreshCases = useCallback(() => {
     setCases(listIntelWebCases());
@@ -470,12 +482,13 @@ export default function ResearchWebApp({ expanded }: Props) {
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: brand.primary }}>
               Intel Agent
             </p>
-            <h2 className="text-xl font-black text-white mt-0.5">AI-directed OSINT research</h2>
+            <h2 className="text-xl font-black text-white mt-0.5">Find out anything about any company</h2>
             <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-              Free tools run on our server (same as mobile). For discovery/list queries (defunct businesses,
-              market scans), enable <strong className="text-slate-300">Quick factual search</strong> or{' '}
-              <strong className="text-slate-300">Deep web search</strong> — they execute the dork queries via
-              SerpAPI/Firecrawl and return company names. Dork links alone are manual browser shortcuts.
+              Enter a target and get a <strong className="text-slate-300">methodical research playbook</strong>:
+              automated OSINT tools run on our server, plus a full directory of external sources —
+              registries, financials, court records, breach data and more — as pre-filled, click-to-open
+              links. Sources behind a <strong className="text-slate-300">sign-in or paywall</strong> are
+              flagged with a way in, so nothing stays hidden.
             </p>
           </div>
           {expanded ? (
@@ -674,6 +687,9 @@ export default function ResearchWebApp({ expanded }: Props) {
                 </p>
               ) : null}
             </section>
+
+            {/* Source directory — clickable links into every major source, incl. paywalled */}
+            {directoryTarget ? <IntelSourceDirectory target={directoryTarget} /> : null}
 
             {/* Tools */}
             <section className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
