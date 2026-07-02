@@ -295,5 +295,34 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-meeting-burn",
+    "title": "Meeting Burn",
+    "tagline": "Live meeting cost tracker",
+    "summary": "Start the clock and watch dollars tick up in real time. Set attendees and a blended hourly rate, share the burn when the meeting ends — free, runs in your browser.",
+    "theme": "pink",
+    "icon": "flame",
+    "category": "calculators",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Meeting Burn",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive runner to start a live cost clock for any meeting.",
+          "bullets": [
+            "Real-time $ counter — per second, per minute, total burn",
+            "Presets for startup, agency, enterprise, and executive rooms",
+            "Share or copy results — history saved in your browser"
+          ],
+          "links": [
+            { "label": "Run Meeting Burn", "url": "https://aibhive.com/hive-apps/run/example-meeting-burn" }
+          ]
+        }
+      }
+    ]
   }
 ]
