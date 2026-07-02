@@ -1,9 +1,10 @@
 /**
- * Intel Agent chat for web — Grok when configured, else Gemini.
+ * Intel Agent chat for web — Claude (Research), Grok, or Gemini fallback.
  * Billed via Hive credits (30% markup).
  */
 import { GoogleGenAI } from '@google/genai';
 import { grokChatMessages } from './socialPosts/grokProvider.js';
+import { anthropicApiKey, claudeChatMessages, intelClaudeModel } from './anthropicProvider.js';
 import * as hiveUsage from './hiveUsage.js';
 import { applyTokenMarkup } from './hivePlans.js';
 
@@ -31,6 +32,49 @@ function getGemini() {
 
 function grokKey() {
   return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+}
+
+/** Which Intel LLM backends are configured on the server. */
+export function intelLlmStatus() {
+  return {
+    claude: Boolean(anthropicApiKey()),
+    grok: Boolean(grokKey()),
+    gemini: Boolean(process.env.GEMINI_API_KEY),
+    models: {
+      claude: intelClaudeModel(),
+      grok: GROK_MODEL,
+      gemini: GEMINI_MODEL,
+    },
+    defaultProvider: process.env.INTEL_LLM_PROVIDER || (anthropicApiKey() ? 'claude' : grokKey() ? 'grok' : 'gemini'),
+  };
+}
+
+function providerAvailable(id) {
+  if (id === 'claude') return Boolean(anthropicApiKey());
+  if (id === 'grok') return Boolean(grokKey());
+  if (id === 'gemini') return Boolean(process.env.GEMINI_API_KEY);
+  return false;
+}
+
+function resolveIntelProvider(requested) {
+  const pref = String(requested || process.env.INTEL_LLM_PROVIDER || '').trim().toLowerCase();
+  const tryOrder =
+    pref === 'claude'
+      ? ['claude', 'grok', 'gemini']
+      : pref === 'grok'
+        ? ['grok', 'claude', 'gemini']
+        : pref === 'gemini'
+          ? ['gemini', 'claude', 'grok']
+          : anthropicApiKey()
+            ? ['claude', 'grok', 'gemini']
+            : grokKey()
+              ? ['grok', 'claude', 'gemini']
+              : ['gemini', 'claude', 'grok'];
+
+  for (const id of tryOrder) {
+    if (providerAvailable(id)) return id;
+  }
+  return null;
 }
 
 function buildGrokMessages(systemInstruction, history, message) {
@@ -81,11 +125,30 @@ export async function runIntelResearchChat(db, userId, opts) {
   const userMessage = contextBlock ? `${message}\n\n${contextBlock}` : message;
 
   const systemInstruction = String(opts.systemInstruction || DEFAULT_SYSTEM).slice(0, 12000);
-  const provider = grokKey() ? 'grok' : 'gemini';
+  const provider = resolveIntelProvider(opts.llmProvider);
+
+  if (!provider) {
+    return {
+      ok: false,
+      error:
+        'No Intel AI provider configured. Add ANTHROPIC_API_KEY, XAI_API_KEY, or GEMINI_API_KEY on the server.',
+    };
+  }
 
   try {
     let text = '';
-    if (provider === 'grok') {
+    if (provider === 'claude') {
+      const messages = buildGrokMessages(systemInstruction, history, userMessage).filter(
+        (m) => m.role !== 'system'
+      );
+      text = await claudeChatMessages(
+        anthropicApiKey(),
+        intelClaudeModel(),
+        messages,
+        systemInstruction,
+        2400
+      );
+    } else if (provider === 'grok') {
       const messages = buildGrokMessages(systemInstruction, history, userMessage);
       text = await grokChatMessages(grokKey(), GROK_MODEL, messages);
     } else {
@@ -129,7 +192,12 @@ export async function runIntelResearchChat(db, userId, opts) {
       ok: true,
       text,
       provider,
-      model: provider === 'grok' ? GROK_MODEL : GEMINI_MODEL,
+      model:
+        provider === 'claude'
+          ? intelClaudeModel()
+          : provider === 'grok'
+            ? GROK_MODEL
+            : GEMINI_MODEL,
       chargedUsd: charge.chargedUsd ?? markedEstimate,
       budget: charge.budget,
     };

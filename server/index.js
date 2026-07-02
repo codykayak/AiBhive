@@ -70,7 +70,7 @@ import {
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
-import { runIntelResearchChat } from './intelResearchChat.js';
+import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
 import { runIntelSynthesis } from './intelSynthesize.js';
 import {
   FREE_INTEL_TOOL_IDS,
@@ -665,6 +665,7 @@ app.get('/api/health', async (_req, res) => {
       googleCredentials: Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS),
       firecrawl: intelCloudKeyStatus().firecrawl,
       serpapi: intelCloudKeyStatus().serpapi,
+      anthropic: intelLlmStatus().claude,
     },
     firestore: { ok: firestoreOk, error: firestoreError },
   });
@@ -770,6 +771,10 @@ app.get('/api/intel-gathering/cloud-status', (_req, res) => {
   res.json(intelCloudKeyStatus());
 });
 
+app.get('/api/intel-gathering/llm-status', (_req, res) => {
+  res.json(intelLlmStatus());
+});
+
 app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => {
   try {
     const { userId, toolId, params } = req.body ?? {};
@@ -857,7 +862,8 @@ app.post('/api/intel-gathering/parse-document', express.json({ limit: '8mb' }), 
 /** Intel Agent Grok/Gemini chat — same Hive credit pricing as mobile cloud intel. */
 app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req, res) => {
   try {
-    const { userId, message, history, systemInstruction, targetContext, documentContext } = req.body ?? {};
+    const { userId, message, history, systemInstruction, targetContext, documentContext, llmProvider } =
+      req.body ?? {};
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
     if (!resolvedUserId || !message?.trim()) {
@@ -873,6 +879,7 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
       systemInstruction: sys,
       targetContext,
       documentContext,
+      llmProvider,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;
@@ -888,7 +895,7 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
 /** Grok synthesis — filter raw OSINT noise; return inquiry-relevant findings only. */
 app.post('/api/intel-gathering/synthesize', express.json({ limit: '4mb' }), async (req, res) => {
   try {
-    const { userId, target, toolResults, userIntent, documentContext } = req.body ?? {};
+    const { userId, target, toolResults, userIntent, documentContext, llmProvider } = req.body ?? {};
     const authUser = await verifyHiveAuth(req);
     const resolvedUserId = authUser?.uid || userId;
     if (!resolvedUserId || !target) {
@@ -900,6 +907,7 @@ app.post('/api/intel-gathering/synthesize', express.json({ limit: '4mb' }), asyn
       toolResults: toolResults || [],
       userIntent,
       documentContext,
+      llmProvider,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;

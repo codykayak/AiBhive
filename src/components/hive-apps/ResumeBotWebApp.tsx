@@ -217,7 +217,7 @@ export default function ResumeBotWebApp({ expanded }: Props) {
         <Sparkles className="w-5 h-5" style={{ color: brand.primary }} />
         <div>
           <p className="text-white font-bold text-sm">Auto-Bot Resume</p>
-          <p className="text-slate-400 text-xs">AI-tailored kit — same as the mobile app</p>
+          <p className="text-slate-400 text-xs">Customized to the job posting - one click resume and cover letter.</p>
         </div>
       </div>
 

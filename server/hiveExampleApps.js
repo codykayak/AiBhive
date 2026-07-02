@@ -42,7 +42,10 @@ function toPublicExample(app) {
 }
 
 export function listExampleApps() {
-  return loadExamples().map(toPublicExample);
+  const apps = loadExamples().map(toPublicExample);
+  const resume = apps.find((a) => a.id === 'example-resume-bot');
+  if (!resume) return apps;
+  return [resume, ...apps.filter((a) => a.id !== 'example-resume-bot')];
 }
 
 export function getExampleApp(appId) {

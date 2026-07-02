@@ -25,18 +25,23 @@ import {
   formatFallbackBrief,
   fetchFailureToolOffer,
   fetchIntelCloudStatus,
+  fetchIntelLlmStatus,
   inferIntelTargetType,
   isCloudTool,
   isDiscoveryQuery,
+  loadIntelLlmProvider,
   parseResearchDocument,
   resolveDomain,
   runCloudTool,
   runFreeToolsBatch,
+  saveIntelLlmProvider,
   sendIntelChat,
   synthesizeIntelFindings,
   type FailureToolOffer,
   type FreeToolId,
   type IntelCloudKeyStatus,
+  type IntelLlmProvider,
+  type IntelLlmStatus,
   type IntelChatMessage,
   type IntelTargetType,
   type IntelWebCase,
@@ -120,6 +125,8 @@ export default function ResearchWebApp({ expanded }: Props) {
   const [uploadBusy, setUploadBusy] = useState(false);
   const [failureOffer, setFailureOffer] = useState<FailureToolOffer | null>(null);
   const [cloudKeys, setCloudKeys] = useState<IntelCloudKeyStatus | null>(null);
+  const [llmStatus, setLlmStatus] = useState<IntelLlmStatus | null>(null);
+  const [llmProvider, setLlmProvider] = useState<IntelLlmProvider>(() => loadIntelLlmProvider());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
@@ -156,6 +163,17 @@ export default function ResearchWebApp({ expanded }: Props) {
 
   useEffect(() => {
     void fetchIntelCloudStatus().then(setCloudKeys);
+    void fetchIntelLlmStatus().then((status) => {
+      setLlmStatus(status);
+      if (!status) return;
+      const saved = loadIntelLlmProvider();
+      if (status[saved]) return;
+      const fallback = (['claude', 'grok', 'gemini'] as const).find((p) => status[p]);
+      if (fallback) {
+        setLlmProvider(fallback);
+        saveIntelLlmProvider(fallback);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -346,6 +364,7 @@ export default function ResearchWebApp({ expanded }: Props) {
           toolResults: allResults,
           userIntent: target.userIntent,
           documentContext: docCtx,
+          llmProvider,
         });
         brief = briefRes.text;
       } catch (chatErr) {
@@ -436,6 +455,7 @@ export default function ResearchWebApp({ expanded }: Props) {
         history,
         targetContext,
         documentContext: buildDocumentContext(activeCase.uploadedDocuments ?? uploadedDocs),
+        llmProvider,
       });
       const withReply = [...nextLines, { id: `a-${Date.now()}`, role: 'ai' as const, content: reply.text }];
       setChatLines(withReply);
@@ -490,6 +510,40 @@ export default function ResearchWebApp({ expanded }: Props) {
               links. Sources behind a <strong className="text-slate-300">sign-in or paywall</strong> are
               flagged with a way in, so nothing stays hidden.
             </p>
+            {llmStatus ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-slate-500">Intel AI model:</span>
+                {(['claude', 'grok', 'gemini'] as const).map((id) => {
+                  const labels = {
+                    claude: `Claude (${llmStatus.models.claude})`,
+                    grok: `Grok (${llmStatus.models.grok})`,
+                    gemini: `Gemini (${llmStatus.models.gemini})`,
+                  };
+                  const available = llmStatus[id];
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      disabled={!available}
+                      onClick={() => {
+                        setLlmProvider(id);
+                        saveIntelLlmProvider(id);
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors ${
+                        llmProvider === id
+                          ? 'bg-bee-amber text-bee-black border-bee-amber'
+                          : available
+                            ? 'border-white/15 text-slate-300 hover:border-bee-amber/40'
+                            : 'border-white/5 text-slate-600 cursor-not-allowed'
+                      }`}
+                      title={available ? labels[id] : `${labels[id]} — not configured on server`}
+                    >
+                      {labels[id]}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
           </div>
           {expanded ? (
             <Link
