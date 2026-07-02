@@ -777,18 +777,27 @@ app.get('/api/intel-gathering/llm-status', (_req, res) => {
 
 app.post('/api/intel-gathering/cloud-tool', express.json(), async (req, res) => {
   try {
+    const authUser = await verifyHiveAuth(req);
     const { userId, toolId, params } = req.body ?? {};
-    if (!userId || !toolId) {
+    const resolvedUserId = authUser?.uid || userId;
+    if (!resolvedUserId || !toolId) {
       return res.status(400).json({ error: 'userId and toolId are required' });
     }
     if (!INTEL_CLOUD_TOOL_IDS.includes(toolId)) {
       return res.status(400).json({ error: 'Unsupported cloud tool' });
     }
-    await ensureHiveUser(db, userId);
+    await ensureHiveUser(db, resolvedUserId);
+    if (authUser?.email) {
+      await db.collection('hive_users').doc(resolvedUserId).set(
+        { email: authUser.email, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    }
     const result = await runIntelCloudTool(db, { checkTokenBudget, recordTokenUsage }, {
-      userId,
+      userId: resolvedUserId,
       toolId,
       params: params ?? {},
+      email: authUser?.email,
     });
     if (!result.ok && (result.needPayment || result.needUpgrade)) {
       return res.status(402).json(result);
@@ -870,6 +879,12 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
       return res.status(400).json({ error: 'userId and message required.' });
     }
     await ensureHiveUser(db, resolvedUserId);
+    if (authUser?.email) {
+      await db.collection('hive_users').doc(resolvedUserId).set(
+        { email: authUser.email, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    }
     const sys = targetContext
       ? `${systemInstruction || ''}\n\nCURRENT RESEARCH TARGET:\n${String(targetContext).slice(0, 4000)}`
       : systemInstruction;
@@ -880,6 +895,7 @@ app.post('/api/intel-gathering/chat', express.json({ limit: '2mb' }), async (req
       targetContext,
       documentContext,
       llmProvider,
+      email: authUser?.email,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;
@@ -902,12 +918,19 @@ app.post('/api/intel-gathering/synthesize', express.json({ limit: '4mb' }), asyn
       return res.status(400).json({ error: 'userId and target required.' });
     }
     await ensureHiveUser(db, resolvedUserId);
+    if (authUser?.email) {
+      await db.collection('hive_users').doc(resolvedUserId).set(
+        { email: authUser.email, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    }
     const result = await runIntelSynthesis(db, resolvedUserId, {
       target,
       toolResults: toolResults || [],
       userIntent,
       documentContext,
       llmProvider,
+      email: authUser?.email,
     });
     if (!result.ok) {
       const status = result.needPayment ? 402 : 502;

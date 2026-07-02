@@ -353,5 +353,35 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-house-flip",
+    "title": "House Flip Calculator",
+    "tagline": "Deal profit reactor with live charts",
+    "summary": "Model purchase, ARV, rehab, and holding costs — watch net profit, ROI, cost breakdown charts, ARV sensitivity, and a live deal score reactor.",
+    "theme": "amber",
+    "icon": "home",
+    "category": "calculators",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "House Flip Calculator",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive runner with live profit counter, Recharts cost stack, and deal score canvas.",
+          "bullets": [
+            "Purchase, ARV, rehab, holding, and closing cost inputs",
+            "Bar, pie, and ARV sensitivity line charts",
+            "70% rule max offer + deal score reactor",
+            "Save deals locally and share results"
+          ],
+          "links": [
+            { "label": "Run House Flip Calculator", "url": "https://aibhive.com/hive-apps/run/example-house-flip" }
+          ]
+        }
+      }
+    ]
   }
 ]

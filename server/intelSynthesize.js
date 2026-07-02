@@ -106,5 +106,6 @@ export async function runIntelSynthesis(db, userId, opts) {
     targetContext,
     documentContext,
     llmProvider: opts.llmProvider,
+    email: opts.email,
   });
 }

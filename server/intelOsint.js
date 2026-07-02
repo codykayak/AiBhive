@@ -110,7 +110,9 @@ export async function runIntelCloudTool(db, usage, opts) {
   });
   const markedUp = applyTokenMarkup(rawCost);
 
-  const check = await usage.checkTokenBudget(db, userId, markedUp, 'hive_cloud_intel');
+  const check = await usage.checkTokenBudget(db, userId, markedUp, 'hive_cloud_intel', {
+    email: opts.email,
+  });
   if (!check.ok) {
     return {
       ok: false,
@@ -196,6 +198,7 @@ export async function runIntelCloudTool(db, usage, opts) {
     feature: 'hive_cloud_intel',
     summary: `Intel cloud: ${toolId}`,
     taskId: `intel-${toolId}-${Date.now()}`,
+    email: opts.email,
   });
 
   if (!charge.ok) {
