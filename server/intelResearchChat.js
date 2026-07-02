@@ -101,7 +101,9 @@ export async function runIntelResearchChat(db, userId, opts) {
 
   const markedEstimate = applyTokenMarkup(CHAT_RAW_COST);
 
-  const budget = await hiveUsage.checkTokenBudget(db, userId, markedEstimate, 'hive_cloud_intel');
+  const budget = await hiveUsage.checkTokenBudget(db, userId, markedEstimate, 'hive_cloud_intel', {
+    email: opts.email,
+  });
   if (!budget.ok) {
     return {
       ok: false,
@@ -182,6 +184,7 @@ export async function runIntelResearchChat(db, userId, opts) {
       rawCostUsd: CHAT_RAW_COST,
       feature: 'hive_cloud_intel',
       summary: `Intel chat (${provider})`,
+      email: opts.email,
     });
 
     if (!charge.ok) {

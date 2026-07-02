@@ -7,6 +7,7 @@ import MockRealEstateCommandCenter from './MockRealEstateCommandCenter';
 import HomeworkBotWebApp from './HomeworkBotWebApp';
 import MeetingBurnWebApp from './MeetingBurnWebApp';
 import FocusReactorWebApp from './FocusReactorWebApp';
+import HouseFlipCalculatorWebApp from './HouseFlipCalculatorWebApp';
 
 /** Example apps that use a full interactive host instead of generic spec pages. */
 export const ENHANCED_EXAMPLE_APPS: Record<string, ComponentType<{ expanded?: boolean }>> = {
@@ -18,6 +19,7 @@ export const ENHANCED_EXAMPLE_APPS: Record<string, ComponentType<{ expanded?: bo
   'example-homework-bot': HomeworkBotWebApp,
   'example-meeting-burn': MeetingBurnWebApp,
   'example-focus-reactor': FocusReactorWebApp,
+  'example-house-flip': HouseFlipCalculatorWebApp,
 };
 
 export function getEnhancedExampleApp(appId: string) {

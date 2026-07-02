@@ -14,6 +14,7 @@ export const EXAMPLE_APP_IDS = {
   homeworkBot: 'example-homework-bot',
   meetingBurn: 'example-meeting-burn',
   focusReactor: 'example-focus-reactor',
+  houseFlip: 'example-house-flip',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
@@ -78,5 +79,10 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.mockRealestate,
     title: 'Mock Up Real Estate',
     sub: 'Demo property dashboard',
+  },
+  {
+    id: EXAMPLE_APP_IDS.houseFlip,
+    title: 'House Flip Calculator',
+    sub: 'ARV · rehab · live profit charts',
   },
 ] as const;

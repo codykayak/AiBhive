@@ -8,6 +8,7 @@ import {
   isFreeFeature,
   TOKEN_MARKUP,
 } from './hivePlans.js';
+import { isHiveBillingExempt } from './hiveAdmin.js';
 
 function monthBounds(from = new Date()) {
   const start = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -38,7 +39,12 @@ export async function ensureUsagePeriod(db, userId) {
 }
 
 /** @param {import('firebase-admin/firestore').Firestore} db */
-export async function checkTokenBudget(db, userId, markedUpCostUsd, featureId) {
+export async function checkTokenBudget(db, userId, markedUpCostUsd, featureId, opts = {}) {
+  if (await isHiveBillingExempt(db, { userId, email: opts.email })) {
+    const user = userId ? ((await db.collection('hive_users').doc(userId).get()).data() ?? {}) : {};
+    return { ok: true, budget: computeUsageBudget(user), adminExempt: true };
+  }
+
   if (featureId && isFreeFeature(featureId)) {
     const user = (await db.collection('hive_users').doc(userId).get()).data() ?? {};
     return { ok: true, budget: computeUsageBudget(user), free: true };
@@ -70,7 +76,11 @@ export async function checkTokenBudget(db, userId, markedUpCostUsd, featureId) {
 
 /** @param {import('firebase-admin/firestore').Firestore} db */
 export async function recordTokenUsage(db, userId, opts) {
-  const { rawCostUsd, feature, summary, taskId } = opts;
+  const { rawCostUsd, feature, summary, taskId, email } = opts;
+  if (await isHiveBillingExempt(db, { userId, email })) {
+    return { ok: true, chargedUsd: 0, adminExempt: true };
+  }
+
   if (feature && isFreeFeature(feature)) {
     return { ok: true, chargedUsd: 0, free: true };
   }
