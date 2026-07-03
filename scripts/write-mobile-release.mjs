@@ -134,6 +134,8 @@ const defaultNotes = {
     'v1.7.7 — Web App Command Center at /app, working Intel Agent + Grok research chat, APK publish fix.',
   '1.7.8':
     'v1.7.8 — Social Post Hunter, enhanced House Flip Calculator, and Homework Bot sign-in fix. New built-in apps open enhanced web runners in-app; legacy flip calculators redirect to the new deal reactor.',
+  '1.7.9':
+    'v1.7.9 — Research fix: Firecrawl and SerpAPI run via Hive Cloud credits (no personal API keys needed). AI briefs use server synthesis; Job Tracker company research uses Hive Cloud too.',
   '1.7.6':
     'v1.7.6 — Chat suggestions hide after first message, 30% Hive credit markup, build-complete export upsell + User Guide, Play Store ASO listing.',
 };

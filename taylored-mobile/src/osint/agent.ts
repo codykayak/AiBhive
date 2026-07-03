@@ -1,5 +1,6 @@
 import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/ai';
 import { getSerpApiKey } from '../lib/settings';
+import { synthesizeIntelViaServer } from '../lib/intelCloud';
 import { resolveDomainFromTarget, updateIntelCase } from './cases';
 import { buildRawDump } from './export';
 import { formatRegionLabel } from './regionalQuery';
@@ -120,7 +121,10 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpKey = await getSerpApiKey();
-  const hiveCloud = await loadUseHiveCloudIntel();
+  let hiveCloud = await loadUseHiveCloudIntel();
+  if (!firecrawlKey && !serpKey) {
+    hiveCloud = true;
+  }
 
   if (!llm) {
     return defaultPlan(intelCase.enabledTools, intelCase.target.type);
@@ -155,9 +159,30 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
 
 async function synthesizeBrief(intelCase: IntelCase, rawDump: string): Promise<string> {
   const llm = await getActiveLlmConfig();
+
+  const serverResult = await synthesizeIntelViaServer({
+    target: intelCase.target,
+    toolResults: intelCase.toolResults,
+    userIntent: intelCase.target.userIntent,
+  });
+  if (serverResult.ok && serverResult.text.trim()) {
+    return serverResult.text;
+  }
+  if (serverResult.ok === false && serverResult.needPayment) {
+    return [
+      `AI brief needs Hive credits (~$${(serverResult.amountUsd ?? 0.02).toFixed(2)}). Add credits in Settings.`,
+      '',
+      'Raw tool results are still available below and in export.',
+      '',
+      `Tools completed: ${intelCase.toolResults.filter((r) => r.status === 'done').length}`,
+    ].join('\n');
+  }
+
   if (!llm) {
     return [
-      'AI brief unavailable — add an AI provider API key in Settings.',
+      serverResult.ok === false
+        ? `AI brief unavailable (${serverResult.error}).`
+        : 'AI brief unavailable — add Hive credits or an AI provider key in Settings.',
       '',
       'Raw data has been collected. Review the tool results below or export as TXT.',
       '',
@@ -198,7 +223,10 @@ export async function runIntelAgent(
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpapiKey = await getSerpApiKey();
-  const useHiveCloud = await loadUseHiveCloudIntel();
+  let useHiveCloud = await loadUseHiveCloudIntel();
+  if (!firecrawlKey && !serpapiKey) {
+    useHiveCloud = true;
+  }
   const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain, intelCase.target.type);
   const company = intelCase.target.label;
   const username =

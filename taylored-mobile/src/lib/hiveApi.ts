@@ -47,7 +47,7 @@ export type HiveStatus = {
   message: string;
 };
 
-async function authHeaders(): Promise<Record<string, string>> {
+export async function authHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const user = auth.currentUser;
   if (user) {

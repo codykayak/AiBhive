@@ -15,7 +15,7 @@ import { AppThemeShell, AppThemeScroll } from '../components/AppThemeShell';
 import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { GlassCard, PrimaryButton } from '../components/ui';
 import { colors, radii, spacing } from '../theme/colors';
-import { getActiveLlmConfig } from '../lib/ai';
+import { fetchIntelCloudStatus, type IntelCloudKeyStatus } from '../lib/intelCloud';
 import { loadUseHiveCloudIntel, saveUseHiveCloudIntel } from '../osint/preferences';
 import { OSINT_TOOLS, defaultToolsForTargetType, isToolApplicable } from '../osint/tools/registry';
 import { createIntelCase, estimateRunSeconds, listIntelCases, resolveDomainFromTarget } from '../osint/cases';
@@ -43,9 +43,9 @@ export default function IntelAgentScreen() {
   );
   const [enabledTools, setEnabledTools] = useState<OsintToolId[]>(() => defaultToolsForTargetType('company'));
   const [recentCases, setRecentCases] = useState<IntelCase[]>([]);
-  const [agentReady, setAgentReady] = useState(false);
   const [starting, setStarting] = useState(false);
   const [useHiveCloud, setUseHiveCloud] = useState(true);
+  const [cloudKeys, setCloudKeys] = useState<IntelCloudKeyStatus | null>(null);
   const [restrictToRegion, setRestrictToRegion] = useState(false);
   const [regionLocation, setRegionLocation] = useState('');
   const [radiusMiles, setRadiusMiles] = useState('50');
@@ -59,14 +59,14 @@ export default function IntelAgentScreen() {
   };
 
   const refresh = useCallback(async () => {
-    const [cases, llm, hiveCloud] = await Promise.all([
+    const [cases, hiveCloud, keys] = await Promise.all([
       listIntelCases(),
-      getActiveLlmConfig(),
       loadUseHiveCloudIntel(),
+      fetchIntelCloudStatus(),
     ]);
     setRecentCases(cases.slice(0, 5));
-    setAgentReady(!!llm);
     setUseHiveCloud(hiveCloud);
+    setCloudKeys(keys);
   }, []);
 
   useEffect(() => {
@@ -86,13 +86,6 @@ export default function IntelAgentScreen() {
     }
     if (!enabledTools.length) {
       Alert.alert('Select tools', 'Enable at least one research module.');
-      return;
-    }
-    if (!agentReady) {
-      Alert.alert(
-        'Hive credits',
-        'Research uses Hive credits by default. Add credits in Settings, or add your own API key under AI providers if you prefer.'
-      );
       return;
     }
 
@@ -148,14 +141,14 @@ export default function IntelAgentScreen() {
               </Text>
             </View>
           </View>
-          {!agentReady && (
+          {!cloudKeys?.discoveryReady && (
             <TouchableOpacity
               style={[styles.warnBanner, { borderColor: theme.primary + '55' }]}
               onPress={() => navigation.navigate('Main', { screen: 'Settings' })}
             >
               <Shield color={theme.primary} size={16} />
               <Text style={[styles.warnText, { color: theme.accentText }]}>
-                Uses Hive credits by default — add credits or your own API key in Settings
+                Server search is reconnecting — free tools still run; deep search may be limited briefly.
               </Text>
             </TouchableOpacity>
           )}
@@ -169,7 +162,9 @@ export default function IntelAgentScreen() {
             />
           </View>
           <Text style={[styles.cloudHint, { color: theme.accentText + '88' }]}>
-            Cloud tools use credits when you lack your own API keys. Never scrapes Google directly.
+            {useHiveCloud
+              ? 'Deep web search uses your Hive credits — no Firecrawl or SerpAPI keys needed.'
+              : 'Hive Cloud is off — add your own Firecrawl/SerpAPI keys in Settings for paid search tools.'}
           </Text>
         </GlassCard>
 
@@ -277,7 +272,9 @@ export default function IntelAgentScreen() {
                 <Text style={styles.toolName}>{tool.name}</Text>
                 <Text style={styles.toolDesc}>{tool.description}</Text>
                 {tool.tier === 'api_key' && (
-                  <Text style={styles.apiBadge}>API key optional — Settings</Text>
+                  <Text style={styles.apiBadge}>
+                    {useHiveCloud ? 'Uses Hive credits — no API key needed' : 'API key or Hive Cloud required'}
+                  </Text>
                 )}
               </View>
               <Switch
