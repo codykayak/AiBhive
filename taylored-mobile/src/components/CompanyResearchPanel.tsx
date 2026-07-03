@@ -14,7 +14,7 @@ import {
 import { Mail, Phone, MapPin } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { GlassCard } from '../components/ui';
-import { getActiveLlmConfig, getFirecrawlApiKey, sendChatMessage } from '../lib/ai';
+import { getActiveLlmConfig, sendChatMessage } from '../lib/ai';
 import { saveCompanyIntel, type CompanyContact, type JobApplication } from '../lib/jobs';
 import { searchCompanyIntel } from '../lib/jobIntel';
 import { colors, radii, spacing } from '../theme/colors';
@@ -36,13 +36,11 @@ export function CompanyResearchPanel({ job, onUpdated }: Props) {
     setLoading(true);
     try {
       const llm = await getActiveLlmConfig();
-      const firecrawlKey = await getFirecrawlApiKey();
       if (!llm) {
-        Alert.alert('API key required', 'Enable a provider in Settings and add an API key.');
-        return;
-      }
-      if (!firecrawlKey) {
-        Alert.alert('Research key required', 'Add a Firecrawl API key in Settings for company research.');
+        Alert.alert(
+          'Hive credits',
+          'Company research uses Hive credits for web search. Add an AI provider key in Settings for contact extraction, or use Intel Agent for full server-side briefs.'
+        );
         return;
       }
 
@@ -71,7 +69,9 @@ export function CompanyResearchPanel({ job, onUpdated }: Props) {
       });
 
       if (!rawSearchResults) {
-        setSummary(`We found "${companyName}" but could not pull live results. Try again.`);
+        setSummary(
+          `We found "${companyName}" but could not pull live results. Check Hive credits in Settings and try again.`
+        );
         setContacts([]);
         return;
       }
