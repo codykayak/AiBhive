@@ -27,14 +27,16 @@ import {
 } from '../../lib/socialHunterApi';
 import AppQuickStart from './AppQuickStart';
 import { MissedSocialRadar } from './MissedSocialRadar';
+import { includesReddit, platformSafetyLabel, REDDIT_SAFE_TIPS } from '../../lib/socialPlatformSafety';
 
 const SOCIAL_HUNTER_STEPS = [
   'On Find posts, enter topics (comma-separated), pick platforms and date range, then tap Find 10 posts.',
-  'Select a post → Sign in & open post (opens the thread in a new tab on LinkedIn, Reddit, X, etc.).',
-  'Tap Copy reply → paste your response on that platform. Use Copy image prompt for a companion graphic in your AI art tool.',
+  'Discovery is search-only (snippets) — AiBhive never logs into your Reddit or social accounts.',
+  'Select a post → open the thread in a new tab. Copy the draft reply, edit it heavily, then post manually.',
+  'On Reddit especially: personalize every comment, space replies out, and avoid link-dropping or copy-paste spam.',
   'Research tab — run a topic brief for hooks and post ideas before you engage.',
-  'Auto Social tab — sign in with your admin Google account to preview the queue and open the full Auto Social scheduler.',
-  'Image API tab — optionally save your image provider key in this browser for future in-app generation (copy prompts works today).',
+  'Auto Social tab — sign in with your admin Google account to preview the queue (Facebook, Instagram, X only).',
+  'Image API tab — optionally save your image provider key in this browser for future in-app generation.',
 ];
 
 type Props = { expanded?: boolean };
@@ -214,6 +216,16 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
                 </button>
               ))}
             </div>
+            {includesReddit(criteria.platforms) && (
+              <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2.5 text-xs text-orange-100/90 leading-relaxed">
+                <p className="font-bold text-orange-200 mb-1">Reddit-safe discovery</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  {REDDIT_SAFE_TIPS.slice(0, 3).map((tip) => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <label className="block text-xs font-bold text-slate-400">Audience</label>
             <input
               className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-white text-sm"
@@ -254,7 +266,14 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
             </div>
             {selected ? (
               <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-3 overflow-y-auto">
-                {demo && note && <p className="text-amber-300/90 text-xs">{note}</p>}
+                {(demo && note) || note ? (
+                  <p className="text-amber-300/90 text-xs">{note}</p>
+                ) : null}
+                {platformSafetyLabel(selected.platform) && (
+                  <p className="text-orange-200/90 text-xs rounded-lg border border-orange-500/25 bg-orange-500/10 px-3 py-2">
+                    {platformSafetyLabel(selected.platform)}
+                  </p>
+                )}
                 <h2 className="text-lg font-bold text-white">{selected.title}</h2>
                 <p className="text-slate-400 text-sm">{selected.snippet}</p>
                 <p className="text-slate-500 text-xs">{selected.author} · {selected.date}</p>
@@ -265,14 +284,19 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-violet-500 text-white text-sm font-bold"
                   >
-                    <ExternalLink className="w-4 h-4" /> Sign in & open post
+                    <ExternalLink className="w-4 h-4" /> Open thread
                   </a>
                   <button
                     type="button"
                     onClick={() => void copyText(selected.suggestedReply, 'reply')}
                     className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-white/15 text-sm"
                   >
-                    <Copy className="w-4 h-4" /> {copied === 'reply' ? 'Copied!' : 'Copy reply'}
+                    <Copy className="w-4 h-4" />{' '}
+                    {copied === 'reply'
+                      ? 'Copied!'
+                      : selected.platform.toLowerCase().includes('reddit')
+                        ? 'Copy draft reply'
+                        : 'Copy reply'}
                   </button>
                   <button
                     type="button"
@@ -284,7 +308,9 @@ export default function SocialPostHunterWebApp({ expanded }: Props) {
                 </div>
                 <p className="text-xs text-slate-500">{selected.engagementTip}</p>
                 <section>
-                  <h3 className="text-xs font-bold text-violet-300 uppercase mb-1">Suggested reply</h3>
+                  <h3 className="text-xs font-bold text-violet-300 uppercase mb-1">
+                    {selected.platform.toLowerCase().includes('reddit') ? 'Draft reply (edit before posting)' : 'Suggested reply'}
+                  </h3>
                   <div className="text-sm text-slate-200 whitespace-pre-wrap rounded-lg bg-white/[0.04] p-3 border border-white/10">
                     {selected.suggestedReply}
                   </div>
