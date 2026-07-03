@@ -4,7 +4,6 @@ import { synthesizeIntelViaServer } from '../lib/intelCloud';
 import { resolveDomainFromTarget, updateIntelCase } from './cases';
 import { buildRawDump } from './export';
 import { formatRegionLabel } from './regionalQuery';
-import { loadUseHiveCloudIntel } from './preferences';
 import { toolDelay } from './safeFetch';
 import { OSINT_TOOLS, getToolDef, isToolApplicable } from './tools/registry';
 import { canRunTool, runOsintTool } from './tools/runners';
@@ -121,10 +120,7 @@ export async function planResearch(intelCase: IntelCase): Promise<AgentPlan> {
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpKey = await getSerpApiKey();
-  let hiveCloud = await loadUseHiveCloudIntel();
-  if (!firecrawlKey && !serpKey) {
-    hiveCloud = true;
-  }
+  let hiveCloud = true;
 
   if (!llm) {
     return defaultPlan(intelCase.enabledTools, intelCase.target.type);
@@ -223,10 +219,7 @@ export async function runIntelAgent(
   const llm = await getActiveLlmConfig();
   const firecrawlKey = await getFirecrawlApiKey();
   const serpapiKey = await getSerpApiKey();
-  let useHiveCloud = await loadUseHiveCloudIntel();
-  if (!firecrawlKey && !serpapiKey) {
-    useHiveCloud = true;
-  }
+  const useHiveCloud = true;
   const domain = resolveDomainFromTarget(intelCase.target.label, intelCase.target.domain, intelCase.target.type);
   const company = intelCase.target.label;
   const username =

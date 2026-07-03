@@ -1,6 +1,5 @@
 import { getFirecrawlApiKey } from './ai';
 import { runIntelCloudTool } from './intelCloud';
-import { loadUseHiveCloudIntel } from '../osint/preferences';
 
 import { appendRegionalSuffix } from '../osint/regionalQuery';
 
@@ -63,9 +62,6 @@ export async function scrapeJobPosting(jobUrl: string): Promise<string | null> {
       // fall through to Hive Cloud
     }
   }
-
-  const useHiveCloud = (await loadUseHiveCloudIntel()) || !firecrawlKey;
-  if (!useHiveCloud) return null;
 
   const cloud = await runIntelCloudTool('firecrawl_scrape', { url });
   if (!cloud.ok) return null;

@@ -95,9 +95,6 @@ async function runCloudOrThrow(
   ctx: RunContext,
   params: Record<string, string>
 ): Promise<{ summary: string; data: string }> {
-  if (!ctx.useHiveCloud) {
-    throw new Error('Add Firecrawl/SerpAPI keys in Settings, or turn on Hive Cloud to use credits');
-  }
   const cloud = await runIntelCloudTool(toolId, params);
   if (cloud.ok) return { summary: cloud.summary, data: cloud.data };
   if (cloud.needPayment) {
@@ -469,16 +466,6 @@ export function canRunTool(
   const def = getToolDef(toolId);
   if (!def.applicableTargets.includes(ctx.targetType)) {
     return { ok: false, reason: `Not used for ${ctx.targetType} targets` };
-  }
-  if (toolId === 'firecrawl_search' || toolId === 'firecrawl_scrape') {
-    if (!ctx.firecrawlKey && !ctx.useHiveCloud) {
-      return { ok: false, reason: 'Turn on Hive Cloud (uses credits) or add a Firecrawl key in Settings' };
-    }
-  }
-  if (toolId === 'serp_search') {
-    if (!ctx.serpapiKey && !ctx.useHiveCloud) {
-      return { ok: false, reason: 'Turn on Hive Cloud (uses credits) or add a SerpAPI key in Settings' };
-    }
   }
   if (def.requiresDomain && !ctx.domain) {
     return { ok: false, reason: 'Website/domain required for this module' };

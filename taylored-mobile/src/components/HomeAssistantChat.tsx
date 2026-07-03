@@ -27,6 +27,7 @@ import {
 import { colors, spacing } from '../theme/colors';
 import { getActiveLlmConfig } from '../lib/settings';
 import { sendHomeAssistantTurn, type HomeAssistantAction } from '../lib/homeAssistant';
+import { openResearch } from '../lib/researchNavigation';
 import type { ChatTurn } from '../lib/llm';
 import type { HiveTask } from '../lib/hiveApi';
 import { formatEstimateCard, HIVE_COPY } from '../constants/hiveCopy';
@@ -275,7 +276,7 @@ export function HomeAssistantChat({
 
       if (action.intent === 'research') {
         appendAi(action.reply);
-        setTimeout(() => navigation.navigate('IntelAgent', { prefillIntent: action.intelIntent || input }), 600);
+        setTimeout(() => openResearch(navigation, action.intelIntent || input), 600);
         return;
       }
 
@@ -377,7 +378,7 @@ export function HomeAssistantChat({
   const quickActions = [
     { label: 'Better job', icon: Briefcase, onPress: () => void submit('I want a better job — help me with applications and resume') },
     { label: 'Build a tool', icon: Wand2, onPress: () => void submit('I want to build a custom tool') },
-    { label: 'Research', icon: Radar, onPress: () => navigation.navigate('IntelAgent') },
+    { label: 'Research', icon: Radar, onPress: () => openResearch(navigation) },
   ];
 
   const openChat = useCallback(() => {
@@ -524,7 +525,7 @@ export function HomeAssistantChat({
               style={styles.pendingBtn}
               onPress={() => {
                 setPendingAction(null);
-                navigation.navigate('IntelAgent', { prefillIntent: pendingAction.intelIntent || input });
+                openResearch(navigation, pendingAction.intelIntent || input);
               }}
             >
               <Text style={styles.pendingBtnText}>Run research</Text>
