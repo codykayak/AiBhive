@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react-native';
 import { AppThemeShell } from '../components/AppThemeShell';
 import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
+import { GOOGLE_AUTH_ENABLED } from '../constants/features';
 import { PrimaryButton } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { openAddCredits } from '../lib/hiveAccount';
@@ -65,6 +67,7 @@ function handleHomeworkError(err: unknown, fallback: string) {
 }
 
 export default function HomeworkBotScreen() {
+  const navigation = useNavigation<any>();
   const theme = builtInAppForThemeKey('homework')!;
   const { user, signInWithGoogle } = useAuth();
   const [step, setStep] = useState<Step>('rag');
@@ -254,6 +257,20 @@ export default function HomeworkBotScreen() {
   const totalChars = documents.reduce((sum, d) => sum + (d.chars || 0), 0);
   const totalPages = documents.reduce((sum, d) => sum + (d.pageCount || 0), 0);
 
+  const openWebHomework = () =>
+    navigation.navigate('HiveAppWebView', {
+      runnerId: 'example-homework-bot',
+      title: 'Homework Bot',
+    });
+
+  const handleSignIn = () => {
+    if (GOOGLE_AUTH_ENABLED) {
+      void signInWithGoogle();
+      return;
+    }
+    openWebHomework();
+  };
+
   if (!user) {
     return (
       <AppThemeShell theme={theme} subtitle="Sign in to build your private reference library.">
@@ -263,7 +280,15 @@ export default function HomeworkBotScreen() {
             OCR your reference pages into a private library, then complete assignments with Grok. Your
             documents are isolated to your account. OCR and completion use Hive credits.
           </Text>
-          <PrimaryButton label="Sign in with Google" onPress={() => void signInWithGoogle()} />
+          <PrimaryButton
+            label={GOOGLE_AUTH_ENABLED ? 'Sign in with Google' : 'Sign in with Google (web)'}
+            onPress={handleSignIn}
+          />
+          {!GOOGLE_AUTH_ENABLED ? (
+            <Text style={styles.signInHint}>
+              Opens the web Homework Bot in-app so Google sign-in works on this device.
+            </Text>
+          ) : null}
         </View>
       </AppThemeShell>
     );
@@ -502,6 +527,7 @@ const styles = StyleSheet.create({
   signInBox: { padding: spacing.xl, gap: spacing.lg },
   signInTitle: { fontSize: 24, fontWeight: '800' },
   signInBody: { color: colors.textMuted, lineHeight: 22 },
+  signInHint: { color: colors.textDim, fontSize: 12, lineHeight: 18, textAlign: 'center' },
   stepRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
   stepBtn: {
     flex: 1,

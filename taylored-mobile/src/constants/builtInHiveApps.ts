@@ -1,4 +1,12 @@
-import { FolderKanban, Bot, Radar, GraduationCap, type LucideIcon } from 'lucide-react-native';
+import {
+  FolderKanban,
+  Bot,
+  Radar,
+  GraduationCap,
+  Megaphone,
+  Home,
+  type LucideIcon,
+} from 'lucide-react-native';
 
 export type BuiltInHiveApp = {
   id: string;
@@ -6,9 +14,10 @@ export type BuiltInHiveApp = {
   creator: string;
   tagline: string;
   desc: string;
-  route: 'JobTracker' | 'AutoBotResume' | 'IntelAgent' | 'HomeworkBot';
+  route: 'JobTracker' | 'AutoBotResume' | 'IntelAgent' | 'HomeworkBot' | 'HiveAppWebView';
+  runnerId?: string;
   icon: LucideIcon;
-  themeKey: 'tracker' | 'resume' | 'research' | 'homework';
+  themeKey: 'tracker' | 'resume' | 'research' | 'homework' | 'social' | 'flip';
   primary: string;
   primarySoft: string;
   surface: string;
@@ -76,6 +85,38 @@ export const BUILT_IN_HIVE_APPS: BuiltInHiveApp[] = [
     primarySoft: 'rgba(245,158,11,0.16)',
     surface: '#1a1408',
     bg: '#100c04',
+    accentText: '#fcd34d',
+  },
+  {
+    id: 'builtin-social-post-hunter',
+    title: 'Social Post Hunter',
+    creator: 'aibhive',
+    tagline: 'Find posts · reply · research',
+    desc: 'Discover threads by topic, copy draft replies, Reddit-safe discovery, and missed-opportunity radar.',
+    route: 'HiveAppWebView',
+    runnerId: 'example-social-post-hunter',
+    icon: Megaphone,
+    themeKey: 'social',
+    primary: '#a855f7',
+    primarySoft: 'rgba(168,85,247,0.18)',
+    surface: '#160f24',
+    bg: '#0c0714',
+    accentText: '#d8b4fe',
+  },
+  {
+    id: 'builtin-house-flip',
+    title: 'House Flip Calculator',
+    creator: 'aibhive',
+    tagline: 'Deal profit reactor',
+    desc: 'ARV, rehab, holding costs — live profit charts, deal score canvas, and 70% rule max offer.',
+    route: 'HiveAppWebView',
+    runnerId: 'example-house-flip',
+    icon: Home,
+    themeKey: 'flip',
+    primary: '#f59e0b',
+    primarySoft: 'rgba(245,158,11,0.18)',
+    surface: '#1a1408',
+    bg: '#0b0f14',
     accentText: '#fcd34d',
   },
 ];

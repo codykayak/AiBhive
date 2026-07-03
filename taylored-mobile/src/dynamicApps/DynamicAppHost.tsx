@@ -16,6 +16,7 @@ import type {
 import {
   fetchUserApp, deleteUserApp as deleteUserAppRemote, shareAppToToolkit,
 } from '../lib/hiveUserApps';
+import { resolveEnhancedRunnerForApp } from '../constants/enhancedHiveApps';
 import { HIVE_COPY } from '../constants/hiveCopy';
 import { colors, radii, spacing } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -40,13 +41,35 @@ export default function DynamicAppHost() {
     let cancelled = false;
     fetchUserApp(params.appId)
       .then((spec) => {
-        if (!cancelled) setApp(spec);
+        if (cancelled || !spec) return;
+        const runner = resolveEnhancedRunnerForApp(spec);
+        if (runner) {
+          navigation.replace('HiveAppWebView', {
+            runnerId: spec.sourceCommunityAppId || spec.id,
+            title: spec.title,
+            url: runner,
+          });
+          return;
+        }
+        setApp(spec);
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [params.appId, params.app]);
+  }, [params.appId, params.app, navigation]);
+
+  useEffect(() => {
+    if (!params.app) return;
+    const runner = resolveEnhancedRunnerForApp(params.app);
+    if (runner) {
+      navigation.replace('HiveAppWebView', {
+        runnerId: params.app.sourceCommunityAppId || params.app.id,
+        title: params.app.title,
+        url: runner,
+      });
+    }
+  }, [params.app, navigation]);
 
   const brand = useMemo(() => brandFor(app?.theme), [app?.theme]);
   const Icon = useMemo(() => iconFor(app?.icon), [app?.icon]);
