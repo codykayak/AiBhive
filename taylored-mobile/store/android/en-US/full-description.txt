@@ -15,6 +15,15 @@ AiBhive is your pocket AI app factory — describe any tool in plain English and
 • OCR page photos into a private reference library (your data stays on your account)
 • Complete assignments with Grok grounded in your library
 • Export your full RAG corpus as TXT, Markdown, or PDF
+• Google sign-in works in-app via the web runner when native auth is unavailable
+
+<b>Social Post Hunter</b>
+• Discover threads by topic across platforms
+• Reddit-safe search, draft replies, and missed-opportunity radar
+
+<b>House Flip Calculator</b>
+• ARV, rehab, and holding costs with live profit charts
+• Deal score canvas and 70% rule max offer
 
 <b>Research & intelligence</b>
 • Intel Agent for company, domain, and people research

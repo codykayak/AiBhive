@@ -17,6 +17,7 @@ import {
 import { HIVE_COPY } from '../constants/hiveCopy';
 import { BUILT_IN_HIVE_APPS } from '../constants/builtInHiveApps';
 import { fetchUserApps, fetchCommunityToolkit, installToolkitApp } from '../lib/hiveUserApps';
+import { openHiveApp } from '../lib/hiveAppNavigation';
 import type { HiveAppSpec, CommunityToolkitApp } from '../dynamicApps/types';
 import { brandFor, iconFor } from '../dynamicApps/branding';
 import { colors, radii, spacing } from '../theme/colors';
@@ -66,7 +67,7 @@ export default function AppsScreen() {
           },
           {
             text: 'Open app',
-            onPress: () => navigation.navigate('DynamicApp', { appId: installed.id, app: installed }),
+            onPress: () => openHiveApp(navigation, installed),
           },
         ]
       );
@@ -139,7 +140,7 @@ export default function AppsScreen() {
               tag="Community"
               icon={Icon}
               accent="amber"
-              onPress={() => navigation.navigate(app.route)}
+              onPress={() => openHiveApp(navigation, app)}
               style={{ borderLeftWidth: 4, borderLeftColor: app.primary, backgroundColor: app.surface + '88' }}
             />
           );
@@ -161,7 +162,7 @@ export default function AppsScreen() {
                 tag="Live"
                 icon={Icon}
                 accent="amber"
-                onPress={() => navigation.navigate('DynamicApp', { appId: app.id, app })}
+                onPress={() => openHiveApp(navigation, app)}
                 style={{ borderLeftWidth: 4, borderLeftColor: brand.primary }}
               />
             );
@@ -192,7 +193,7 @@ export default function AppsScreen() {
                 accent="purple"
                 onPress={() =>
                   owned && ownedApp
-                    ? navigation.navigate('DynamicApp', { appId: ownedApp.id, app: ownedApp })
+                    ? openHiveApp(navigation, ownedApp)
                     : void onInstallToolkit(app)
                 }
                 style={{ borderLeftWidth: 4, borderLeftColor: brand.primary }}

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
+import { Alert, Linking } from 'react-native';
 import type { User } from 'firebase/auth';
 import { GOOGLE_AUTH_ENABLED } from '../constants/features';
 
@@ -12,7 +13,19 @@ type AuthContextValue = {
 const stubValue: AuthContextValue = {
   user: null,
   loading: false,
-  signInWithGoogle: async () => {},
+  signInWithGoogle: async () => {
+    Alert.alert(
+      'Sign in on the web app',
+      'Google Sign-In is not configured in this APK build yet. Open Homework Bot in the browser to sign in with Google.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open Homework Bot',
+          onPress: () => void Linking.openURL('https://aibhive.com/hive-apps/run/example-homework-bot'),
+        },
+      ]
+    );
+  },
   signOut: async () => {},
 };
 

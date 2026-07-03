@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from 'react';
-import { signInWithPopup, signOut, type User } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, signOut, getRedirectResult, type User } from 'firebase/auth';
 import {
   AlertCircle,
   ArrowRight,
@@ -185,6 +185,7 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
       }
       loadDocuments(u);
     });
+    void getRedirectResult(auth).catch(() => undefined);
     return () => unsubscribe();
   }, [isPublic, loadDocuments, verifyAdminAccess]);
 
@@ -193,6 +194,16 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
+      const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: string }).code) : '';
+      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr: unknown) {
+          setError(redirectErr instanceof Error ? redirectErr.message : 'Sign-in failed');
+          return;
+        }
+      }
       setError(err instanceof Error ? err.message : 'Sign-in failed');
     }
   };
