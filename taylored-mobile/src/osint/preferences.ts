@@ -1,16 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const KEY = 'aibhive_intel_use_hive_cloud';
-
+/** Hive Cloud (server Firecrawl/Serp + credits) is always on — no user toggle. */
 export async function loadUseHiveCloudIntel(): Promise<boolean> {
-  try {
-    const v = await AsyncStorage.getItem(KEY);
-    return v !== '0';
-  } catch {
-    return true;
-  }
+  return true;
 }
 
-export async function saveUseHiveCloudIntel(enabled: boolean): Promise<void> {
-  await AsyncStorage.setItem(KEY, enabled ? '1' : '0');
+export async function saveUseHiveCloudIntel(_enabled: boolean): Promise<void> {
+  // no-op — Hive Cloud cannot be disabled
 }

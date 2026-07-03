@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -6,6 +6,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { AppThemeShell } from '../components/AppThemeShell';
 import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { enhancedRunnerUrl } from '../constants/enhancedHiveApps';
+import { getOrCreateHiveUserId } from '../lib/hiveApi';
 import { colors, spacing } from '../theme/colors';
 
 type Params = {
@@ -19,7 +20,13 @@ const THEME_BY_RUNNER: Record<string, Params['themeKey']> = {
   'example-house-flip': 'flip',
   'example-social-post-hunter': 'social',
   'example-homework-bot': 'homework',
+  'example-research': 'research',
 };
+
+function appendHiveUserId(baseUrl: string, userId: string): string {
+  const sep = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${sep}hiveUserId=${encodeURIComponent(userId)}`;
+}
 
 export default function HiveAppWebViewScreen() {
   const navigation = useNavigation();
@@ -28,11 +35,23 @@ export default function HiveAppWebViewScreen() {
   const runnerId = params.runnerId || '';
   const themeKey = params.themeKey || THEME_BY_RUNNER[runnerId] || 'research';
   const theme = builtInAppForThemeKey(themeKey) || builtInAppForThemeKey('research')!;
-  const uri = useMemo(
+  const baseUri = useMemo(
     () => params.url || enhancedRunnerUrl(runnerId) || 'https://aibhive.com/hive-apps',
     [params.url, runnerId]
   );
+  const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const userId = await getOrCreateHiveUserId();
+      if (!cancelled) setUri(appendHiveUserId(baseUri, userId));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [baseUri]);
 
   return (
     <AppThemeShell theme={theme} title={params.title || theme.title}>
@@ -48,14 +67,16 @@ export default function HiveAppWebViewScreen() {
           </View>
         )}
 
-        <WebView
-          source={{ uri }}
-          style={styles.web}
-          onLoadEnd={() => setLoading(false)}
-          setSupportMultipleWindows={false}
-          sharedCookiesEnabled
-          thirdPartyCookiesEnabled
-        />
+        {uri ? (
+          <WebView
+            source={{ uri }}
+            style={styles.web}
+            onLoadEnd={() => setLoading(false)}
+            setSupportMultipleWindows={false}
+            sharedCookiesEnabled
+            thirdPartyCookiesEnabled
+          />
+        ) : null}
       </View>
     </AppThemeShell>
   );

@@ -3,6 +3,7 @@ export const ENHANCED_HIVE_RUNNERS: Record<string, string> = {
   'example-house-flip': 'https://aibhive.com/hive-apps/run/example-house-flip?mobile=1',
   'example-social-post-hunter': 'https://aibhive.com/hive-apps/run/example-social-post-hunter?mobile=1',
   'example-homework-bot': 'https://aibhive.com/hive-apps/run/example-homework-bot?mobile=1',
+  'example-research': 'https://aibhive.com/hive-apps/run/example-research?mobile=1',
   'example-meeting-burn': 'https://aibhive.com/hive-apps/run/example-meeting-burn?mobile=1',
   'example-focus-reactor': 'https://aibhive.com/hive-apps/run/example-focus-reactor?mobile=1',
   'example-job-hunter': 'https://aibhive.com/hive-apps/run/example-job-hunter?mobile=1',
@@ -32,6 +33,9 @@ export function resolveEnhancedRunnerForApp(app: {
   }
   if (title.includes('social') && (title.includes('hunter') || title.includes('post'))) {
     return ENHANCED_HIVE_RUNNERS['example-social-post-hunter'];
+  }
+  if (title.includes('research') || title.includes('intel') || title.includes('osint')) {
+    return ENHANCED_HIVE_RUNNERS['example-research'];
   }
   return null;
 }

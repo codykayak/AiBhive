@@ -20,6 +20,7 @@ import { HomeHeroVideo } from '../components/HomeHeroVideo';
 import { HomeHeroBanner } from '../components/HomeHeroBanner';
 import { useResponsiveLayout } from '../components/ResponsiveShell';
 import { preloadHomeAssistantKnowledge } from '../lib/homeAssistantKnowledge';
+import { openResearch } from '../lib/researchNavigation';
 import { colors, radii, spacing } from '../theme/colors';
 import { listIntelCases } from '../osint/cases';
 import { countBuildingApps } from '../lib/hiveApps';
@@ -117,7 +118,7 @@ export default function HomeScreen() {
                   <ChevronRight color={colors.textDim} size={20} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.actionBlock} onPress={() => navigation.navigate('IntelAgent')}>
+                <TouchableOpacity style={styles.actionBlock} onPress={() => openResearch(navigation)}>
                   <Radar color={colors.purple} size={24} />
                   <View style={styles.actionCopy}>
                     <Text style={styles.actionTitle}>Research</Text>
