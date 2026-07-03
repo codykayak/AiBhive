@@ -31,7 +31,7 @@ export default function HeroLogoMarquee() {
         Built for the AI stack you already use
       </p>
 
-      <div className="hero-logo-marquee-mask relative overflow-hidden pt-2 pb-0">
+      <div className="hero-logo-marquee-mask relative overflow-hidden pt-2 pb-[2px]">
         <ul className="hero-logo-marquee-track m-0 flex w-max list-none items-center p-0">
           <LogoStrip />
           <LogoStrip ariaHidden />

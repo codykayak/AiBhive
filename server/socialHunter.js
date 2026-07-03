@@ -1,8 +1,13 @@
 /**
  * Social Post Hunter — find posts + reply copy + image prompts (web community app).
+ *
+ * Discovery is search-metadata only (no Reddit login, no page scraping).
+ * Users open threads manually and paste edited replies themselves.
  */
 import { GoogleGenAI } from '@google/genai';
 import * as hiveUsage from './hiveUsage.js';
+import { firecrawlWebSearch } from './intelFirecrawl.js';
+import { requireFirecrawlKey } from './intelCloudKeys.js';
 
 const MODEL = process.env.SOCIAL_HUNTER_MODEL || 'gemini-2.5-flash';
 const RAW_COST = 0.018;
@@ -16,41 +21,57 @@ function getGemini() {
   return aiClient;
 }
 
-function buildPostQuery(criteria) {
-  const topics = String(criteria.topics || '')
+function topicsList(criteria) {
+  return String(criteria.topics || '')
     .split(',')
     .map((t) => t.trim())
     .filter(Boolean);
-  const base = topics.length ? topics.join(' OR ') : 'real estate investing';
-  const platforms = criteria.platforms?.length ? criteria.platforms.join(' OR ') : 'LinkedIn OR Reddit OR X';
-  const days = criteria.dateRangeDays || 14;
-  return `${base} ${platforms} post discussion last ${days} days`;
 }
 
-async function firecrawlSearch(query) {
-  const apiKey = process.env.FIRECRAWL_API_KEY;
-  if (!apiKey) return null;
-  try {
-    const res = await fetch('https://api.firecrawl.dev/v1/search', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, limit: 12, scrapeOptions: { formats: ['markdown'] } }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (!Array.isArray(data.data)) return null;
-    return data.data
-      .map((item) => {
-        const url = item.url || item.metadata?.url || '';
-        const title = item.title || item.metadata?.title || '';
-        const text = item.markdown || item.description || '';
-        return `TITLE: ${title}\nURL: ${url}\n${String(text).slice(0, 1200)}`;
-      })
-      .join('\n\n---\n\n')
-      .slice(0, 22000);
-  } catch {
-    return null;
+/** Search-only queries — no scrapeOptions (safer for Reddit and platform ToS). */
+function buildSearchQueries(criteria) {
+  const topics = topicsList(criteria);
+  const base = topics.length ? topics.join(' OR ') : 'real estate investing';
+  const days = criteria.dateRangeDays || 14;
+  const platforms = criteria.platforms?.length ? criteria.platforms : ['LinkedIn', 'Reddit', 'X'];
+  const queries = [];
+
+  for (const platform of platforms) {
+    const p = String(platform).toLowerCase();
+    if (p.includes('reddit')) {
+      queries.push(`site:reddit.com ${base} discussion comment thread`);
+      queries.push(`site:reddit.com/r/ ${base} last ${days} days`);
+    } else if (p.includes('linkedin')) {
+      queries.push(`site:linkedin.com/posts ${base} discussion`);
+    } else if (p === 'x' || p.includes('twitter')) {
+      queries.push(`site:twitter.com OR site:x.com ${base} post`);
+    } else if (p.includes('facebook')) {
+      queries.push(`site:facebook.com ${base} post discussion`);
+    } else {
+      queries.push(`${platform} ${base} post discussion last ${days} days`);
+    }
   }
+
+  return [...new Set(queries)].slice(0, 4);
+}
+
+async function safeDiscoverySearch(criteria) {
+  const apiKey = requireFirecrawlKey();
+  if (!apiKey) return '';
+
+  const queries = buildSearchQueries(criteria);
+  const blocks = [];
+
+  for (const query of queries) {
+    try {
+      const result = await firecrawlWebSearch(apiKey, query, { limit: 8, timeout: 35000 });
+      if (result.data?.trim()) blocks.push(`QUERY: ${query}\n${result.data}`);
+    } catch (err) {
+      console.warn('[social-hunter] search skipped:', query, err.message || err);
+    }
+  }
+
+  return blocks.join('\n\n---\n\n').slice(0, 22000);
 }
 
 function demoPosts(criteria) {
@@ -70,6 +91,20 @@ function demoPosts(criteria) {
   }));
 }
 
+const REDDIT_REPLY_RULES = `
+REDDIT-SPECIFIC (critical — avoid spam/shadowban flags):
+- suggestedReply must reference something specific from the post snippet (quote or paraphrase).
+- 2-3 short sentences max; conversational, imperfect human tone; no marketing speak.
+- NO links, NO "DM me", NO identical CTAs across posts, NO emoji spam.
+- engagementTip must say: edit before posting, wait 10+ min between comments, max ~5/day on newer accounts.
+`;
+
+const GENERAL_REPLY_RULES = `
+- suggestedReply is a DRAFT — user will edit before posting.
+- Vary sentence structure across posts; never reuse the same opening line.
+- Be helpful first; soft expertise, not salesy.
+`;
+
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
  */
@@ -84,8 +119,8 @@ export async function runSocialPostSearch(db, userId, criteria) {
     return { ok: false, needPayment: true, amountUsd: budget.amountUsd ?? 0.05 };
   }
 
-  const query = buildPostQuery(criteria);
-  const searchBlob = (await firecrawlSearch(query)) || '';
+  const searchBlob = (await safeDiscoverySearch(criteria)) || '';
+  const hasReddit = (criteria.platforms || []).some((p) => String(p).toLowerCase().includes('reddit'));
 
   if (!searchBlob.trim()) {
     return {
@@ -96,7 +131,7 @@ export async function runSocialPostSearch(db, userId, criteria) {
     };
   }
 
-  const prompt = `You are a social media engagement assistant. Parse search results and return EXACTLY 10 relevant posts/discussions as JSON array.
+  const prompt = `You are a social media engagement assistant. Parse SEARCH SNIPPETS (metadata only — not full page scrapes) and return EXACTLY 10 relevant posts/discussions as JSON array.
 
 Criteria:
 - Topics: ${criteria.topics || 'any'}
@@ -106,22 +141,25 @@ Criteria:
 - Tone: ${criteria.tone || 'helpful and authentic'}
 - Brand voice: ${criteria.brandVoice || 'friendly expert'}
 
+${GENERAL_REPLY_RULES}
+${hasReddit ? REDDIT_REPLY_RULES : ''}
+
 For each post:
 {
   "platform": "LinkedIn"|"Reddit"|"X"|"Facebook"|"Other",
   "title": string,
-  "url": string,
+  "url": string (must be a real URL from search results when available),
   "author": string,
   "date": "YYYY-MM-DD",
   "snippet": string (1-2 sentences),
-  "suggestedReply": string (ready to copy-paste, 2-4 sentences, no hashtags unless X),
+  "suggestedReply": string (draft only — 2-4 sentences),
   "imagePrompt": string (detailed prompt for AI image generator for a companion post graphic),
   "engagementTip": string (short tip)
 }
 
 Return ONLY JSON array.
 
-SEARCH RESULTS:
+SEARCH SNIPPETS:
 ${searchBlob}`;
 
   const response = await gemini.models.generateContent({
@@ -155,9 +193,21 @@ ${searchBlob}`;
     engagementTip: String(p.engagementTip || ''),
   }));
 
-  await hiveUsage.recordTokenUsage(db, userId, RAW_COST, 'social_hunter');
+  await hiveUsage.recordTokenUsage(db, userId, {
+    rawCostUsd: RAW_COST,
+    feature: 'social_hunter',
+    summary: 'Social Post Hunter search',
+  });
 
-  return { ok: true, posts, demo: false, query };
+  return {
+    ok: true,
+    posts,
+    demo: false,
+    safeDiscovery: true,
+    note: hasReddit
+      ? 'Reddit-safe mode: search snippets only. Edit every reply before posting — never paste AI drafts verbatim.'
+      : undefined,
+  };
 }
 
 /**
@@ -172,7 +222,19 @@ export async function runTopicResearchBrief(db, userId, topics) {
   const budget = await hiveUsage.checkTokenBudget(db, userId, 0.01, 'social_research');
   if (!budget.ok) return { ok: false, needPayment: true, amountUsd: budget.amountUsd ?? 0.03 };
 
-  const searchBlob = (await firecrawlSearch(`${topicStr} trends news last 7 days`)) || topicStr;
+  let searchBlob = topicStr;
+  const apiKey = requireFirecrawlKey();
+  if (apiKey) {
+    try {
+      const result = await firecrawlWebSearch(apiKey, `${topicStr} trends news last 7 days`, {
+        limit: 8,
+        timeout: 35000,
+      });
+      searchBlob = result.data || topicStr;
+    } catch {
+      searchBlob = topicStr;
+    }
+  }
 
   const response = await gemini.models.generateContent({
     model: MODEL,
@@ -188,6 +250,10 @@ export async function runTopicResearchBrief(db, userId, topics) {
     ],
   });
 
-  await hiveUsage.recordTokenUsage(db, userId, 0.01, 'social_research');
+  await hiveUsage.recordTokenUsage(db, userId, {
+    rawCostUsd: 0.01,
+    feature: 'social_research',
+    summary: 'Social topic research',
+  });
   return { ok: true, brief: response.text || 'No brief generated.' };
 }
