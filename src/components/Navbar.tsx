@@ -36,7 +36,7 @@ export default function Navbar() {
   const transcriptionActive = isTranscriptionPath(location.pathname);
 
   return (
-    <nav className="sticky top-0 z-50 bg-bee-black/60 backdrop-blur-xl border-b border-white/5">
+    <nav className="sticky top-0 z-[100] bg-bee-black/60 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center group" onClick={() => setMobileOpen(false)}>
@@ -102,7 +102,7 @@ export default function Navbar() {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-64 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-50">
+                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-64 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
                     <div className="py-1">
                       {SOLUTION_CATEGORIES.map((link) => (
                         <HeadlessMenu.Item key={link.path}>
@@ -144,7 +144,7 @@ export default function Navbar() {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-56 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-50">
+                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-56 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
                     <div className="py-1">
                       {TRANSCRIPTION_SERVICES_LINKS.map((link) => (
                         <HeadlessMenu.Item key={link.path}>
@@ -187,7 +187,7 @@ export default function Navbar() {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <HeadlessMenu.Items className="absolute right-0 mt-4 w-40 origin-top-right rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden">
+                  <HeadlessMenu.Items className="absolute right-0 mt-4 w-40 origin-top-right rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
                     <div className="py-1">
                       {aboutLinks.map((link) => (
                         <HeadlessMenu.Item key={link.path}>
