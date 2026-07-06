@@ -320,7 +320,7 @@ export default function HomeAssistantWeb() {
     return createPortal(
       <div
         data-tour="hive-assistant"
-        className="fixed left-0 right-0 z-[9998] border-b border-bee-amber/25 bg-[#050810]/95 backdrop-blur-xl shadow-lg"
+        className="fixed left-0 right-0 z-40 border-b border-bee-amber/25 bg-[#050810]/95 backdrop-blur-xl shadow-lg"
         style={{ top: '5rem' }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
