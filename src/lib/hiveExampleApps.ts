@@ -24,9 +24,9 @@ export function listLocalExampleApps(): HiveAppSpec[] {
     pageCount: app.pages?.length ?? 0,
     isExample: true,
   }));
-  const resume = apps.find((a) => a.id === EXAMPLE_APP_IDS.resumeBot);
-  if (!resume) return apps;
-  return [resume, ...apps.filter((a) => a.id !== EXAMPLE_APP_IDS.resumeBot)];
+  const social = apps.find((a) => a.id === EXAMPLE_APP_IDS.socialPostHunter);
+  if (!social) return apps;
+  return [social, ...apps.filter((a) => a.id !== EXAMPLE_APP_IDS.socialPostHunter)];
 }
 
 export function getLocalExampleApp(appId: string): HiveAppSpec | null {
@@ -41,6 +41,12 @@ export function getLocalExampleApp(appId: string): HiveAppSpec | null {
 
 export const EXAMPLE_TOOLS = [
   {
+    id: EXAMPLE_APP_IDS.socialPostHunter,
+    title: 'Social Post Hunter',
+    sub: 'Find posts · reply · missed-opportunity radar',
+    featured: true,
+  },
+  {
     id: EXAMPLE_APP_IDS.resumeBot,
     title: 'Auto-Bot Resume',
     sub: 'Customized to the job posting - one click resume and cover letter.',
@@ -49,11 +55,6 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.jobHunter,
     title: 'Job Hunter Bot',
     sub: '10 jobs · cover letters · resume match',
-  },
-  {
-    id: EXAMPLE_APP_IDS.socialPostHunter,
-    title: 'Social Post Hunter',
-    sub: 'Find posts · reply · auto-social',
   },
   {
     id: EXAMPLE_APP_IDS.focusReactor,

@@ -22,7 +22,7 @@ function isPathInList(pathname: string, links: readonly { path: string }[]) {
 }
 
 function isSolutionPath(pathname: string) {
-  return pathname.startsWith('/solutions/');
+  return pathname.startsWith('/solutions/') || pathname.startsWith('/app');
 }
 
 function isTranscriptionPath(pathname: string) {
@@ -61,16 +61,6 @@ export default function Navbar() {
                 )}
               >
                 Home
-              </Link>
-
-              <Link
-                to="/app"
-                className={cn(
-                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
-                  location.pathname.startsWith('/app') ? 'text-bee-amber' : 'text-slate-300'
-                )}
-              >
-                App
               </Link>
 
               <Link
@@ -236,13 +226,6 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             >
               Home
-            </Link>
-            <Link
-              to="/app"
-              className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
-              onClick={() => setMobileOpen(false)}
-            >
-              App
             </Link>
             <Link
               to="/hive-apps"
