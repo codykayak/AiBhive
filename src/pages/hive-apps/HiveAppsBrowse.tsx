@@ -6,7 +6,7 @@ import BuildPlatformStrip from '../../components/BuildPlatformStrip';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import HiveAppLivePanel from '../../components/hive-apps/HiveAppLivePanel';
 import { fetchStoreCatalog } from '../../lib/hiveStoreApi';
-import { EXAMPLE_TOOLS } from '../../lib/hiveExampleApps';
+import { EXAMPLE_TOOLS, EXAMPLE_APP_IDS } from '../../lib/hiveExampleApps';
 import { PLATFORM_WEB_APPS, platformAppAsCard } from '../../lib/platformWebApps';
 import type { HiveAppSpec, PublishedWebApp, StoreCatalog } from '../../lib/hiveAppTypes';
 import { CATEGORY_LABELS } from '../../lib/hiveAppBranding';
@@ -85,10 +85,10 @@ export default function HiveAppsBrowse() {
   };
 
   useEffect(() => {
-    if (!isDesktop || q || tab === 'web' || activeAppId || !examples.length) return;
-    selectApp(examples[0].id);
+    if (!isDesktop || q || tab === 'web' || activeAppId) return;
+    selectApp(EXAMPLE_APP_IDS.socialPostHunter);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only seed desktop preview once
-  }, [isDesktop, examples.length, q, tab, activeAppId]);
+  }, [isDesktop, q, tab, activeAppId]);
 
   const categories = useMemo(() => {
     const entries = Object.entries(catalog.categories).sort(
@@ -147,6 +147,27 @@ export default function HiveAppsBrowse() {
 
       {tab !== 'web' && !q && (
         <div className="mb-8">
+          <Link
+            to="/hive-apps/run/example-social-post-hunter"
+            className="block w-full rounded-2xl border border-violet-500/40 bg-gradient-to-br from-violet-950/80 via-[#0b0f14] to-bee-black p-6 sm:p-8 hover:border-violet-400/60 transition-colors hive-tile-glow"
+          >
+            <p className="text-violet-300 text-xs font-bold uppercase tracking-widest">Featured app</p>
+            <p className="text-white text-2xl sm:text-3xl font-black mt-1">Social Post Hunter</p>
+            <p className="text-slate-300 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+              Discover threads by topic, draft replies, Reddit-safe search, and missed-opportunity radar — run it
+              free in your browser.
+            </p>
+            <span className="inline-flex items-center gap-2 mt-4 text-bee-amber font-extrabold text-sm">
+              <Play className="w-4 h-4 fill-current" />
+              Open Social Post Hunter
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </Link>
+        </div>
+      )}
+
+      {tab !== 'web' && !q && (
+        <div className="mb-8">
           <h2 className="text-white font-bold text-lg mb-3 px-1">Example tools</h2>
           <p className="text-slate-500 text-sm mb-3 px-1">
             {showSplit ? 'Click to run instantly in the panel →' : 'Tap to try live in your browser.'}
@@ -162,10 +183,17 @@ export default function HiveAppsBrowse() {
                     activeAppId === tool.id
                       ? 'border-bee-amber/50 bg-bee-amber/10'
                       : 'border-white/10 bg-white/[0.03] hover:border-bee-amber/30'
-                  }`}
+                  } ${'featured' in tool && tool.featured ? 'ring-1 ring-violet-500/30' : ''}`}
                 >
                   <div>
-                    <p className="text-white font-bold">{tool.title}</p>
+                    <p className="text-white font-bold">
+                      {tool.title}
+                      {'featured' in tool && tool.featured ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-violet-300 font-bold">
+                          Featured
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-slate-400 text-sm">{tool.sub}</p>
                   </div>
                   <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />
@@ -174,10 +202,21 @@ export default function HiveAppsBrowse() {
                 <Link
                   key={tool.id}
                   to={`/hive-apps/run/${tool.id}`}
-                  className="w-full flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-5 hover:border-bee-amber/30 transition-colors"
+                  className={`w-full flex items-center justify-between rounded-2xl border p-5 hover:border-bee-amber/30 transition-colors ${
+                    'featured' in tool && tool.featured
+                      ? 'border-violet-500/40 bg-violet-950/30'
+                      : 'border-white/10 bg-white/[0.03]'
+                  }`}
                 >
                   <div>
-                    <p className="text-white font-bold">{tool.title}</p>
+                    <p className="text-white font-bold">
+                      {tool.title}
+                      {'featured' in tool && tool.featured ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider text-violet-300 font-bold">
+                          Featured
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-slate-400 text-sm">{tool.sub}</p>
                   </div>
                   <Play className="w-5 h-5 text-bee-amber shrink-0 fill-current" />

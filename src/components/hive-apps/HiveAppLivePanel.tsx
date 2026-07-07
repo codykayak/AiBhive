@@ -63,7 +63,7 @@ export default function HiveAppLivePanel({ appId, className = '' }: Props) {
 
   return (
     <div className={`flex flex-col min-h-[480px] ${className}`}>
-      {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
+      {Enhanced ? <Enhanced expanded={false} /> : <DynamicAppRunner app={app} expanded={false} />}
       <p className="text-center text-slate-600 text-xs mt-4">
         Data saves in this browser ·{' '}
         <a href={`/hive-apps/app/${app.id}`} className="text-bee-amber hover:underline">

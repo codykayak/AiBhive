@@ -26,6 +26,10 @@ export const SOLUTION_CATEGORIES = [
     path: '/solutions/real-estate-ai-automation',
   },
   {
+    name: 'AiBhive App Hub',
+    path: '/app',
+  },
+  {
     name: 'Phone Systems',
     path: '/solutions/phone-systems-ai-integration',
   },

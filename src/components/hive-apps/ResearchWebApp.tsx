@@ -576,7 +576,13 @@ export default function ResearchWebApp({ expanded }: Props) {
           </section>
         ) : null}
 
-        <div className={`grid gap-5 ${expanded ? 'xl:grid-cols-[220px_1fr_380px]' : 'lg:grid-cols-[220px_1fr]'}`}>
+        <div
+          className={`grid gap-5 ${
+            expanded
+              ? 'xl:grid-cols-[minmax(180px,220px)_minmax(0,1fr)_minmax(300px,380px)]'
+              : 'grid-cols-1'
+          }`}
+        >
           {/* Cases sidebar */}
           <aside className="space-y-2">
             <div className="flex items-center justify-between px-1">
@@ -642,6 +648,15 @@ export default function ResearchWebApp({ expanded }: Props) {
           </aside>
 
           <div className="space-y-4 min-w-0">
+            {!expanded ? (
+              <Link
+                to="/hive-apps/run/example-research"
+                className="flex items-center justify-between gap-3 rounded-xl border border-bee-amber/40 bg-bee-amber/10 px-4 py-3 text-sm font-bold text-bee-amber hover:bg-bee-amber/15 transition-colors"
+              >
+                <span>Open full research workspace</span>
+                <span aria-hidden>→</span>
+              </Link>
+            ) : null}
             {/* Target */}
             <section className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
               <p className="text-sm font-bold text-white">Investigation target</p>
@@ -915,12 +930,11 @@ export default function ResearchWebApp({ expanded }: Props) {
                 </div>
               </section>
             ) : null}
+          </div>
 
-            {/* AI chat — right column on desktop when expanded */}
+          {expanded ? (
             <section
-              className={`rounded-xl border p-4 space-y-3 ${
-                expanded ? 'xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-10rem)] xl:flex xl:flex-col' : ''
-              }`}
+              className="rounded-xl border p-4 space-y-3 xl:sticky xl:top-4 xl:self-start xl:max-h-[calc(100vh-10rem)] xl:flex xl:flex-col min-w-0"
               style={{ borderColor: brand.primary + '55', backgroundColor: 'rgba(0,0,0,0.25)' }}
             >
               <div className="flex items-center gap-2">
@@ -963,9 +977,7 @@ export default function ResearchWebApp({ expanded }: Props) {
               </div>
               <div
                 ref={chatMessagesRef}
-                className={`rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto flex-1 ${
-                  expanded ? 'min-h-[280px] max-h-[50vh] xl:max-h-none xl:flex-1' : 'min-h-[200px] max-h-64'
-                }`}
+                className="rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto flex-1 min-h-[280px] max-h-[50vh] xl:max-h-none xl:flex-1"
               >
                 {!chatLines.length ? (
                   <p className="text-sm text-slate-500 text-center py-10">
@@ -999,7 +1011,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Ask about findings, risks, next steps… (Enter to send, Shift+Enter for newline)"
-                rows={expanded ? 5 : 3}
+                rows={5}
                 disabled={!activeCase?.brief || chatBusy}
                 className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-base text-white placeholder:text-slate-600 focus:outline-none focus:border-bee-amber/50 resize-y disabled:opacity-50 min-h-[100px]"
                 onKeyDown={(e) => {
@@ -1021,7 +1033,7 @@ export default function ResearchWebApp({ expanded }: Props) {
                 </button>
               </div>
             </section>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>

@@ -47,9 +47,9 @@ export function listExampleApps() {
   const apps = loadExamples()
     .filter((a) => !HIDDEN_STORE_IDS.has(a.id))
     .map(toPublicExample);
-  const resume = apps.find((a) => a.id === 'example-resume-bot');
-  if (!resume) return apps;
-  return [resume, ...apps.filter((a) => a.id !== 'example-resume-bot')];
+  const social = apps.find((a) => a.id === 'example-social-post-hunter');
+  if (!social) return apps;
+  return [social, ...apps.filter((a) => a.id !== 'example-social-post-hunter')];
 }
 
 export function getExampleApp(appId) {
