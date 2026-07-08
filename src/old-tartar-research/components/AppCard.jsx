@@ -1,9 +1,8 @@
-import { Link } from 'react-router-dom';
 import { useTartar } from '../context/TartarContext';
 import styles from '../tartar.module.css';
 
-export default function AppCard({ app }) {
-  const target = app.isCustom ? '/build' : '/';
+export default function AppCard({ app, onOpen }) {
+  const target = app.isCustom ? 'build' : 'dashboard';
 
   return (
     <article className={styles.card}>
@@ -15,9 +14,9 @@ export default function AppCard({ app }) {
           {app.features.slice(0, 4).map((f) => <li key={f}>{f}</li>)}
         </ul>
       )}
-      <Link to={target} className={`${styles.btn} ${styles.btnPrimary}`}>
+      <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => onOpen?.(target)}>
         Open
-      </Link>
+      </button>
     </article>
   );
 }

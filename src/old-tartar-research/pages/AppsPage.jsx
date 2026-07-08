@@ -2,7 +2,7 @@ import { useTartar } from '../context/TartarContext';
 import AppCard, { CreditBalance } from '../components/AppCard';
 import styles from '../tartar.module.css';
 
-export default function AppsPage() {
+export default function AppsPage({ onOpen }) {
   const { apps, user } = useTartar();
 
   return (
@@ -20,7 +20,7 @@ export default function AppsPage() {
 
       <div className={styles.grid}>
         {apps.map((app) => (
-          <AppCard key={app.id} app={app} />
+          <AppCard key={app.id} app={app} onOpen={onOpen} />
         ))}
       </div>
     </>

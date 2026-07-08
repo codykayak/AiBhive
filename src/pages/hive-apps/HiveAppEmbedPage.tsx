@@ -67,10 +67,11 @@ export default function HiveAppEmbedPage() {
   }
 
   const Enhanced = getEnhancedExampleApp(app.id);
+  const isTartarApp = app.id === 'example-old-tartar-research';
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-[#070a0f] flex flex-col">
-      <main className="flex-1 w-full min-h-0 overflow-auto p-2 sm:p-4">
+    <div className={`min-h-screen min-h-[100dvh] flex flex-col ${isTartarApp ? 'bg-[#0a0e14]' : 'bg-[#070a0f]'}`}>
+      <main className="flex-1 w-full min-h-0 overflow-auto p-0">
         {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
       </main>
     </div>
