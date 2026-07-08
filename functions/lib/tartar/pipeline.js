@@ -11,6 +11,7 @@ import {
   entitiesCol,
   ingestionJobsCol,
   sourcesCol,
+  ensureDataDoc,
 } from './paths.js';
 
 function parseYear(date) {
@@ -185,6 +186,7 @@ export async function runIngestionJob(db, uid, jobId, platformSecrets) {
  * Seed default sources for a new user from catalog definitions.
  */
 export async function seedDefaultSources(db, uid, catalogSources) {
+  await ensureDataDoc(db, uid);
   const col = sourcesCol(db, uid);
   const existing = await col.limit(1).get();
   if (!existing.empty) return;

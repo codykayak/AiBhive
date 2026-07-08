@@ -11,6 +11,7 @@ export class TartarApiError extends Error {
 }
 import { FieldValue } from 'firebase-admin/firestore';
 import { ensureProfile, storeApiKey, setBillingMode, PLATFORM_FEE_RATE } from './credits.js';
+import { redeemPromoCode, effectiveFeeRate } from './promoCodes.js';
 import { runIngestionJob, seedDefaultSources } from './pipeline.js';
 import { detectAnomalies } from './anomalyDetection.js';
 import {
@@ -186,16 +187,26 @@ export function createTartarHandlers({ db, platformSecrets = {} }) {
       return { ok: true };
     },
 
+    async tartarRedeemPromo(request) {
+      const uid = requireUid(request);
+      const { code } = request.data ?? {};
+      if (!code?.trim()) throw new TartarApiError('invalid-argument', 'Promo code required.');
+      return redeemPromoCode(db, uid, code);
+    },
+
     async tartarGetProfile(request) {
       const uid = requireUid(request);
       const profile = await ensureProfile(db, uid);
       const buildSnap = await customBuildRef(db, uid).get();
       const sourcesSnap = await sourcesCol(db, uid).get();
+      const fee = effectiveFeeRate(profile);
       return {
         profile,
         customBuild: buildSnap.exists ? buildSnap.data() : null,
         sources: sourcesSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
         platformFeeRate: PLATFORM_FEE_RATE,
+        effectiveFeeRate: fee,
+        hasPromo: Boolean(profile.waivePlatformMarkup),
       };
     },
   };

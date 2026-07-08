@@ -9,22 +9,19 @@ import { auth, googleProvider } from '../firebase';
 import { TartarProvider, useTartar } from './context/TartarContext';
 import TartarLayout from './components/TartarLayout';
 import TartarHeroVideo from './components/TartarHeroVideo';
-import AppsPage from './pages/AppsPage';
-import DashboardPage from './pages/DashboardPage';
-import SourcesPage from './pages/SourcesPage';
-import MentionsPage from './pages/MentionsPage';
-import AnomaliesPage from './pages/AnomaliesPage';
-import SearchTermsPage from './pages/SearchTermsPage';
-import CustomBuildPage from './pages/CustomBuildPage';
+import HomePage from './pages/HomePage';
+import ResearchPage from './pages/ResearchPage';
+import ArchivesPage from './pages/ArchivesPage';
 import SettingsPage from './pages/SettingsPage';
 import styles from './tartar.module.css';
 
 function TartarPage({ tab, onTab }) {
   const { syncing, error } = useTartar();
+  const showHero = tab === 'home';
 
   return (
     <>
-      <TartarHeroVideo compact />
+      {showHero && <TartarHeroVideo compact />}
       {syncing && (
         <div className={`${styles.alert} ${styles.alertInfo}`}>Syncing your research profile…</div>
       )}
@@ -36,24 +33,20 @@ function TartarPage({ tab, onTab }) {
           </p>
         </div>
       )}
-      {tab === 'apps' && <AppsPage onOpen={onTab} />}
-      {tab === 'dashboard' && <DashboardPage />}
-      {tab === 'sources' && <SourcesPage />}
-      {tab === 'mentions' && <MentionsPage />}
-      {tab === 'anomalies' && <AnomaliesPage />}
-      {tab === 'search-terms' && <SearchTermsPage />}
-      {tab === 'build' && <CustomBuildPage />}
+      {tab === 'home' && <HomePage onTab={onTab} />}
+      {tab === 'research' && <ResearchPage />}
+      {tab === 'archives' && <ArchivesPage />}
       {tab === 'settings' && <SettingsPage />}
     </>
   );
 }
 
 function TartarWorkspace({ user, onSignOut }) {
-  const [tab, setTab] = useState('dashboard');
+  const [tab, setTab] = useState('home');
 
   return (
     <TartarProvider user={user}>
-      <TartarLayout activeTab={tab} onTab={setTab} onSignOut={onSignOut}>
+      <TartarLayout activeTab={tab} onTab={setTab} onSignOut={onSignOut} userEmail={user?.email}>
         <TartarPage tab={tab} onTab={setTab} />
       </TartarLayout>
     </TartarProvider>
@@ -96,7 +89,7 @@ export default function OldTartarResearch() {
               <h1 className={styles.pageTitle}>Old Tartar Research</h1>
               <p className={styles.pageSub}>
                 Sign in with Google to ingest archives, extract historical mentions, and detect anomalies.
-                Uses Hive credits or your own API keys (BYOK).
+                Uses Hive credits, your own API keys (BYOK), or a partner code for reduced fees.
               </p>
               {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
               <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={signIn}>

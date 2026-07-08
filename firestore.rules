@@ -62,34 +62,19 @@ service cloud.firestore {
     match /users/{userId}/tartarResearch/{docId} {
       allow read, write: if isAuthenticated() && isOwner(userId);
     }
-    match /users/{userId}/tartarResearch/mentions/{mentionId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
-    match /users/{userId}/tartarResearch/entities/{entityId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
-    match /users/{userId}/tartarResearch/sources/{sourceId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
-    match /users/{userId}/tartarResearch/searchTerms/{termId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
-    match /users/{userId}/tartarResearch/ingestionJobs/{jobId} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update, delete: if false;
-    }
-    match /users/{userId}/tartarResearch/anomalies/{anomalyId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
-    }
-    match /users/{userId}/tartarResearch/usageLog/{logId} {
-      allow read: if isAuthenticated() && isOwner(userId);
-      allow create, update, delete: if false;
-    }
-    match /users/{userId}/tartarResearch/apiSecrets/{provider} {
-      allow read, write: if false;
+    match /users/{userId}/tartarResearch/data/{subcollection}/{itemId} {
+      allow read, write: if isAuthenticated() && isOwner(userId)
+        && subcollection in ['mentions', 'entities', 'sources', 'searchTerms', 'anomalies'];
+      allow read: if isAuthenticated() && isOwner(userId)
+        && subcollection in ['ingestionJobs', 'usageLog'];
+      allow create: if isAuthenticated() && isOwner(userId)
+        && subcollection == 'ingestionJobs';
     }
     match /tartarPlatform/{collection}/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+    match /tartarPlatform/catalog/promoCodes/{codeId} {
       allow read: if isAuthenticated();
       allow write: if false;
     }

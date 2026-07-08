@@ -19,6 +19,7 @@ export function createTartarApi(user) {
     queryEntities: (filters) => post('/api/tartar/entities/query', filters),
     setBillingMode: (mode) => post('/api/tartar/billing-mode', { mode }),
     storeApiKey: (provider, apiKey) => post('/api/tartar/api-keys', { provider, apiKey }),
+    redeemPromoCode: (code) => post('/api/tartar/promo-code', { code }),
   };
 }
 

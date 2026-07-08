@@ -10,6 +10,8 @@ export function TartarProvider({ children, user }) {
   const [profile, setProfile] = useState(null);
   const [customBuild, setCustomBuild] = useState(null);
   const [sources, setSources] = useState([]);
+  const [effectiveFeeRate, setEffectiveFeeRate] = useState(PLATFORM_FEE_RATE);
+  const [hasPromo, setHasPromo] = useState(false);
   const [error, setError] = useState(null);
 
   const api = useMemo(() => (user ? createTartarApi(user) : null), [user]);
@@ -30,6 +32,8 @@ export function TartarProvider({ children, user }) {
       setProfile(data.profile ?? null);
       setCustomBuild(data.customBuild ?? null);
       setSources(data.sources ?? []);
+      setEffectiveFeeRate(data.effectiveFeeRate ?? PLATFORM_FEE_RATE);
+      setHasPromo(Boolean(data.hasPromo));
     } catch (e) {
       setError(e.message ?? 'Failed to load research profile');
     } finally {
@@ -51,6 +55,8 @@ export function TartarProvider({ children, user }) {
     apps,
     api,
     platformFeeRate: PLATFORM_FEE_RATE,
+    effectiveFeeRate,
+    hasPromo,
     refresh,
     setCustomBuild,
     setProfile,
