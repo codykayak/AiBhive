@@ -144,9 +144,11 @@ export default function HeroTartaria3D() {
         </p>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/40 text-sm flex flex-col items-center z-30 text-center px-4">
-        <div>DRAG TO ROTATE • SCROLL TO ZOOM • CLICK PINS</div>
-        <div className="mt-2 text-xs animate-bounce">↓ SCROLL DOWN TO EXPLORE ↓</div>
+      <div className="absolute bottom-24 sm:bottom-20 left-1/2 -translate-x-1/2 text-white/70 text-sm flex flex-col items-center z-50 text-center px-4 pointer-events-none">
+        <div className="tracking-widest uppercase text-xs sm:text-sm">Drag to rotate • Scroll to zoom • Click pins</div>
+        <div className="mt-3 text-sm sm:text-base font-semibold text-amber-400 animate-bounce">
+          ↓ Scroll down to explore tools ↓
+        </div>
       </div>
 
       <AnimatePresence>
