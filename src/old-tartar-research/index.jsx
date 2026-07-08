@@ -91,8 +91,8 @@ export default function OldTartarResearch() {
             <div className={styles.card} style={{ maxWidth: 480, width: '100%' }}>
               <h1 className={styles.pageTitle}>Old Tartar Research</h1>
               <p className={styles.pageSub}>
-                Help build a community archive. Pay only API + infrastructure (or BYOK). Sign in to ingest documents,
-                cross-examine mentions, and detect anomalies — opt in to share with everyone.
+                Help build a community archive. Hive credits cover processing and AI API costs so you can search and ingest more.
+                Sign in to extract mentions, cross-examine sources, and detect anomalies — opt in to share with everyone.
               </p>
               {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
               <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={signIn}>
