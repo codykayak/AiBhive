@@ -44,6 +44,7 @@ const HiveAppsLayout = lazy(() => import('./pages/hive-apps/HiveAppsLayout'));
 const HiveAppsBrowse = lazy(() => import('./pages/hive-apps/HiveAppsBrowse'));
 const HiveAppDetailPage = lazy(() => import('./pages/hive-apps/HiveAppDetailPage'));
 const HiveAppRunPage = lazy(() => import('./pages/hive-apps/HiveAppRunPage'));
+const HiveAppEmbedPage = lazy(() => import('./pages/hive-apps/HiveAppEmbedPage'));
 const HiveAppsBuildPage = lazy(() => import('./pages/hive-apps/HiveAppsBuildPage'));
 
 function PageLoader() {
@@ -113,6 +114,7 @@ function AnimatedRoutes() {
               <Route index element={<HiveAppsBrowse />} />
               <Route path="app/:appId" element={<HiveAppDetailPage />} />
               <Route path="run/:appId" element={<HiveAppRunPage />} />
+              <Route path="embed/:appId" element={<HiveAppEmbedPage />} />
               <Route path="build" element={<HiveAppsBuildPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
@@ -128,21 +130,25 @@ function AppShell() {
   const isAdminRoute = pathname.startsWith('/admin');
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isPrivateRoute = isAdminRoute || isHomeworkRoute;
+  const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/hive-apps/run') ||
+    pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build');
 
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        {!isPrivateRoute && <SEO />}
-        <header className="fixed top-0 left-0 right-0 z-50">
-          <Navbar />
-        </header>
-        {!isPrivateRoute && <HomeAssistantWeb />}
-        {!isPrivateRoute && pathname.startsWith('/app') && <SiteGuideTour />}
-        <main className={`flex-grow pt-20 ${hideFooter ? 'pb-4' : ''}`}>
+        {!isPrivateRoute && !isEmbedRoute && <SEO />}
+        {!isEmbedRoute && (
+          <header className="fixed top-0 left-0 right-0 z-50">
+            <Navbar />
+          </header>
+        )}
+        {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
+        {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
+        <main className={`flex-grow ${isEmbedRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>

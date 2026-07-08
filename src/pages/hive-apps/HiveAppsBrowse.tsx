@@ -313,21 +313,49 @@ export default function HiveAppsBrowse() {
 
       <div className={`mx-auto px-4 sm:px-6 pb-16 ${showSplit ? 'max-w-7xl' : 'max-w-5xl'}`}>
         {tab !== 'web' && !q && (
-          <Link
-            to="/hive-apps/build"
-            className="block w-full mt-6 mb-4 rounded-2xl bg-bee-amber p-6 sm:p-8 hover:bg-bee-yellow transition-colors"
-          >
-            <p className="text-bee-black/70 text-xs font-bold uppercase tracking-widest">Your first app</p>
-            <p className="text-bee-black text-4xl sm:text-5xl font-black mt-1">$1 to $5</p>
-            <p className="text-bee-black/85 text-base sm:text-lg mt-3 max-w-xl leading-relaxed">
-              Describe any tool in plain English — live on your phone in under a minute. No app store wait.
-            </p>
-            <span className="inline-flex items-center gap-2 mt-5 text-bee-black font-extrabold text-sm bg-black/10 px-4 py-2.5 rounded-xl">
-              <Sparkles className="w-4 h-4" />
-              Build from scratch
-              <ArrowRight className="w-4 h-4" />
-            </span>
-          </Link>
+          <section className="mt-6 mb-8">
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0b0f14]">
+              <video
+                className="w-full aspect-video object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                poster="/og-image.png"
+              >
+                <source src="/aibhive_mobile_app_builder_ai.mp4" type="video/mp4" />
+              </video>
+              <div className="absolute inset-0 bg-gradient-to-t from-[#070a0f] via-[#070a0f]/40 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+                <p className="text-bee-amber text-xs font-bold uppercase tracking-widest">Hive Apps</p>
+                <h1 className="text-white text-3xl sm:text-4xl font-black mt-1 max-w-2xl">
+                  Build any app in plain English
+                </h1>
+                <p className="text-slate-300 text-sm sm:text-base mt-2 max-w-xl leading-relaxed">
+                  Describe a tool on your phone — live in under a minute. Install community apps free, tweak for
+                  pennies, or customize from a few dollars.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              to="/hive-apps/build"
+              className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-bee-amber/35 bg-bee-amber/10 p-5 sm:p-6 hover:border-bee-amber/55 transition-colors"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-bee-amber text-xs font-bold uppercase tracking-widest">Featured</p>
+                <p className="text-white text-xl sm:text-2xl font-black mt-1">Your first app: $1 to $5</p>
+                <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+                  Most apps appear on your phone in under a minute — no app store wait.
+                </p>
+              </div>
+              <span className="inline-flex items-center justify-center gap-2 shrink-0 text-bee-black font-extrabold text-sm bg-bee-amber px-4 py-2.5 rounded-xl">
+                <Sparkles className="w-4 h-4" />
+                Build from scratch
+                <ArrowRight className="w-4 h-4" />
+              </span>
+            </Link>
+          </section>
         )}
 
         {showSplit ? (

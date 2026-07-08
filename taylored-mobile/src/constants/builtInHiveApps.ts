@@ -28,21 +28,6 @@ export type BuiltInHiveApp = {
 /** Pre-installed community-style apps — distinct look, not AiBhive-branded inside. */
 export const BUILT_IN_HIVE_APPS: BuiltInHiveApp[] = [
   {
-    id: 'builtin-job-tracker',
-    title: 'Job Tracker',
-    creator: 'maya.j',
-    tagline: 'Applications & follow-ups',
-    desc: 'Pipeline for every application — status, materials, and follow-ups.',
-    route: 'JobTracker',
-    icon: FolderKanban,
-    themeKey: 'tracker',
-    primary: '#3b82f6',
-    primarySoft: 'rgba(59,130,246,0.16)',
-    surface: '#131c2e',
-    bg: '#0b1220',
-    accentText: '#93c5fd',
-  },
-  {
     id: 'builtin-resume-bot',
     title: 'Auto-Bot Resume',
     creator: 'alex.r',
@@ -79,7 +64,8 @@ export const BUILT_IN_HIVE_APPS: BuiltInHiveApp[] = [
     creator: 'aibhive',
     tagline: 'OCR → private RAG → Grok',
     desc: 'Upload reference pages, build a private library, and complete assignments grounded in your material.',
-    route: 'HomeworkBot',
+    route: 'HiveAppWebView',
+    runnerId: 'example-homework-bot',
     icon: GraduationCap,
     themeKey: 'homework',
     primary: '#f59e0b',
@@ -119,6 +105,21 @@ export const BUILT_IN_HIVE_APPS: BuiltInHiveApp[] = [
     surface: '#1a1408',
     bg: '#0b0f14',
     accentText: '#fcd34d',
+  },
+  {
+    id: 'builtin-job-tracker',
+    title: 'Job Tracker',
+    creator: 'maya.j',
+    tagline: 'Applications & follow-ups',
+    desc: 'Pipeline for every application — status, materials, and follow-ups.',
+    route: 'JobTracker',
+    icon: FolderKanban,
+    themeKey: 'tracker',
+    primary: '#3b82f6',
+    primarySoft: 'rgba(59,130,246,0.16)',
+    surface: '#131c2e',
+    bg: '#0b1220',
+    accentText: '#93c5fd',
   },
 ];
 

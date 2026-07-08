@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { Text, StyleSheet, View, ActivityIndicator, Alert } from 'react-native';
+import { Text, StyleSheet, View, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
-  Bot, AppWindow, Wand2, Sparkles, Boxes,
+  Bot, AppWindow, Wand2, Sparkles,
 } from 'lucide-react-native';
 import { useTabBarPadding } from '../components/TabScreenContainer';
 import { ScreenLayout, ScreenScrollView } from '../components/ScreenLayout';
@@ -16,6 +16,8 @@ import {
 } from '../components/ui';
 import { HIVE_COPY } from '../constants/hiveCopy';
 import { BUILT_IN_HIVE_APPS } from '../constants/builtInHiveApps';
+import { isLegacyFlipCalculatorApp } from '../constants/enhancedHiveApps';
+import { PLATFORM_WEB_APPS } from '../constants/platformWebApps';
 import { fetchUserApps, fetchCommunityToolkit, installToolkitApp } from '../lib/hiveUserApps';
 import { openHiveApp } from '../lib/hiveAppNavigation';
 import type { HiveAppSpec, CommunityToolkitApp } from '../dynamicApps/types';
@@ -151,7 +153,9 @@ export default function AppsScreen() {
             <ActivityIndicator color={colors.amberLight} />
           </View>
         ) : userApps.length === 0 ? null : (
-          userApps.map((app) => {
+          userApps
+            .filter((app) => !isLegacyFlipCalculatorApp(app))
+            .map((app) => {
             const brand = brandFor(app.theme);
             const Icon = iconFor(app.icon);
             return (
@@ -201,6 +205,37 @@ export default function AppsScreen() {
             );
           })
         )}
+
+        <SectionLabel>Web apps</SectionLabel>
+        <Text style={styles.toolkitIntro}>
+          AiBhive web tools — open in-app without leaving the Hive.
+        </Text>
+        <View style={styles.webAppGrid}>
+          {PLATFORM_WEB_APPS.map((app) => {
+            const Icon = app.icon;
+            return (
+              <TouchableOpacity
+                key={app.id}
+                style={styles.webAppTile}
+                onPress={() =>
+                  navigation.navigate('HiveAppWebView', {
+                    title: app.title,
+                    url: app.url,
+                    themeKey: 'research',
+                  })
+                }
+                activeOpacity={0.85}
+              >
+                <View style={styles.webAppIconWrap}>
+                  <Icon color={colors.amberLight} size={22} />
+                </View>
+                <Text style={styles.webAppTitle} numberOfLines={2}>
+                  {app.title}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
         <SectionLabel>More</SectionLabel>
         {MORE_TOOLS.map((app) => (
@@ -271,6 +306,39 @@ const styles = StyleSheet.create({
   },
   toolkitEmpty: { marginBottom: spacing.md, padding: spacing.md },
   toolkitEmptyText: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
+  webAppGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  webAppTile: {
+    width: '47%',
+    minHeight: 96,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.borderMuted,
+    backgroundColor: colors.bgElevated,
+    padding: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  webAppIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  webAppTitle: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
   tipCard: { marginTop: spacing.sm, marginBottom: spacing.md },
   tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   tipTitle: { color: colors.amberLight, fontWeight: '800' },
