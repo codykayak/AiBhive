@@ -383,5 +383,35 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-old-tartar-research",
+    "title": "Old Tartar Research",
+    "tagline": "Historical anomaly detection",
+    "summary": "Ingest 18th–early 20th century archives, extract entity mentions (architects, builders, authors), and flag statistically unusual output patterns. Hive credits or BYOK for Grok, Gemini, and Kimi.",
+    "theme": "slate",
+    "icon": "compass",
+    "category": "guides",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Old Tartar Research",
+        "type": "info",
+        "config": {
+          "body": "Open the full research workspace with apps list, per-user custom builds, archive ingestion, mentions explorer, and anomaly detection.",
+          "bullets": [
+            "Apps tab lists platform research + your custom build when signed in",
+            "Hive credits with platform fee, or BYOK API keys (Grok, Gemini, Kimi)",
+            "Sources: Internet Archive, LOC maps, Chronicling America, and custom HTTP",
+            "Anomaly engine flags high-output entities in narrow time windows"
+          ],
+          "links": [
+            { "label": "Run Old Tartar Research", "url": "https://aibhive.com/hive-apps/run/example-old-tartar-research" }
+          ]
+        }
+      }
+    ]
   }
 ]

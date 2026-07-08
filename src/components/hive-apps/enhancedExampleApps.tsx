@@ -8,6 +8,7 @@ import HomeworkBotWebApp from './HomeworkBotWebApp';
 import MeetingBurnWebApp from './MeetingBurnWebApp';
 import FocusReactorWebApp from './FocusReactorWebApp';
 import HouseFlipCalculatorWebApp from './HouseFlipCalculatorWebApp';
+import OldTartarResearchWebApp from './OldTartarResearchWebApp';
 
 /** Example apps that use a full interactive host instead of generic spec pages. */
 export const ENHANCED_EXAMPLE_APPS: Record<string, ComponentType<{ expanded?: boolean }>> = {
@@ -20,6 +21,7 @@ export const ENHANCED_EXAMPLE_APPS: Record<string, ComponentType<{ expanded?: bo
   'example-meeting-burn': MeetingBurnWebApp,
   'example-focus-reactor': FocusReactorWebApp,
   'example-house-flip': HouseFlipCalculatorWebApp,
+  'example-old-tartar-research': OldTartarResearchWebApp,
 };
 
 export function getEnhancedExampleApp(appId: string) {
