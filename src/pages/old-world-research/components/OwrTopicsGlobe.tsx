@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { sendIntelChat } from '../../../lib/intelWebApi';
 import styles from '../oldWorldResearch.module.css';
 
 export const RESEARCH_TOPICS = [
@@ -24,9 +23,6 @@ export default function OwrTopicsGlobe({ wordCount, onTopicSelect }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [activeTopic, setActiveTopic] = useState(RESEARCH_TOPICS[0].id);
-  const [crocInput, setCrocInput] = useState('');
-  const [crocReply, setCrocReply] = useState('');
-  const [crocBusy, setCrocBusy] = useState(false);
 
   const onMove = useCallback((clientX: number, clientY: number) => {
     const el = stageRef.current;
@@ -65,24 +61,18 @@ export default function OwrTopicsGlobe({ wordCount, onTopicSelect }: Props) {
     });
   }, []);
 
-  async function askCroc(e: React.FormEvent) {
-    e.preventDefault();
-    const q = crocInput.trim();
-    if (!q) return;
-    setCrocBusy(true);
-    setCrocReply('');
-    try {
-      const topic = RESEARCH_TOPICS.find((t) => t.id === activeTopic)?.label ?? 'Old World Research';
-      const res = await sendIntelChat({
-        message: `You are Croc, the Old World Research guide on AiBhive. Topic focus: ${topic}. User request: ${q}. Suggest which tools to use (OCR batch, web scrape, archive ingestion, translation) and how to narrow the search. Keep it concise.`,
-        llmProvider: 'gemini',
-      });
-      setCrocReply(res.text ?? 'Croc is thinking — try the Research Library tab below.');
-    } catch {
-      setCrocReply('Sign in and ensure Gemini is configured. Croc can help refine searches, run OCR, and scrape archives.');
-    } finally {
-      setCrocBusy(false);
-    }
+  function selectTopic(id: string) {
+    setActiveTopic(id);
+    onTopicSelect?.(id);
+    const label = RESEARCH_TOPICS.find((t) => t.id === id)?.label ?? 'Old World Research';
+    window.dispatchEvent(
+      new CustomEvent('bhive:open-assistant', {
+        detail: {
+          prefill: `Help me research ${label.toLowerCase()} — suggest Fable Scrape sources, OCR workflow, and RAG queries.`,
+          label: 'Old World Research',
+        },
+      }),
+    );
   }
 
   return (
@@ -90,8 +80,10 @@ export default function OwrTopicsGlobe({ wordCount, onTopicSelect }: Props) {
       <div className={styles.owrTopicsHeader}>
         <h2 className={styles.owrTopicsTitle}>Explore the old world</h2>
         <p className={styles.owrWordCount}>
-          {wordCount.toLocaleString()} words OCR&apos;d &amp; indexed in the RAG library
-          <span>grows as researchers ingest and share archives</span>
+          <strong>{wordCount.toLocaleString()}</strong> words OCR&apos;d &amp; indexed in the RAG library
+        </p>
+        <p className={styles.owrWordCountSub}>
+          grows as researchers ingest and share archives
         </p>
       </div>
 
@@ -119,30 +111,11 @@ export default function OwrTopicsGlobe({ wordCount, onTopicSelect }: Props) {
             type="button"
             className={`${styles.owrTopicNode} ${activeTopic === n.id ? styles.owrTopicNodeActive : ''}`}
             style={{ left: `${n.left}%`, top: `${n.top}%` }}
-            onClick={() => {
-              setActiveTopic(n.id);
-              onTopicSelect?.(n.id);
-              setCrocInput(`Research ${n.label.toLowerCase()} — where should I start?`);
-            }}
+            onClick={() => selectTopic(n.id)}
           >
             {n.label}
           </button>
         ))}
-        <div className={styles.owrCrocBox}>
-          <div className={styles.owrCrocHeader}>
-            <span className={styles.owrCrocIcon} aria-hidden>🐊</span>
-            Croc — research guide
-          </div>
-          <form className={styles.owrCrocInput} onSubmit={askCroc}>
-            <input
-              value={crocInput}
-              onChange={(e) => setCrocInput(e.target.value)}
-              placeholder="Ask Croc anything — OCR, maps, anomalies…"
-            />
-            <button type="submit" disabled={crocBusy}>{crocBusy ? '…' : 'Ask'}</button>
-          </form>
-          {crocReply && <p className={styles.owrCrocReply}>{crocReply}</p>}
-        </div>
       </div>
     </section>
   );
