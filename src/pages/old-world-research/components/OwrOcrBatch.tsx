@@ -2,6 +2,7 @@ import { useState, useRef, ChangeEvent } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 import styles from '../oldWorldResearch.module.css';
 import OwrCostGuard from './OwrCostGuard';
+import { useOwrWorkflow } from '../context/OwrWorkflowContext';
 
 const MAX_FILES = 100;
 const EST_COST_PER_IMAGE = 0.06;
@@ -36,6 +37,7 @@ async function compressImage(file: File): Promise<string> {
 }
 
 export default function OwrOcrBatch() {
+  const { appendOutput, setOcrText, setActiveStep, imageUrls } = useOwrWorkflow();
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
@@ -73,7 +75,15 @@ export default function OwrOcrBatch() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'OCR failed');
-      setResult(data.text ?? '');
+      const text = data.text ?? '';
+      setResult(text);
+      setOcrText(text);
+      appendOutput({
+        step: 'ocr',
+        title: `OCR batch — ${batch.length} image(s)`,
+        text,
+      });
+      setActiveStep(2);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'OCR failed');
     } finally {
@@ -91,6 +101,11 @@ export default function OwrOcrBatch() {
 
   return (
     <div className={styles.owrOcrZone}>
+      {imageUrls.length > 0 && (
+        <p className={styles.owrOcrHint}>
+          {imageUrls.length} image URL(s) from Fable Scrape — download and upload here, or add your own scans.
+        </p>
+      )}
       <input
         ref={inputRef}
         type="file"

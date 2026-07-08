@@ -69,6 +69,7 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { registerTartarRoutes } from './tartarRoutes.js';
+import { runFableScrape } from './fableScrape.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -707,6 +708,19 @@ app.get('/api/intel-gathering/dbpr', async (req, res) => {
   } catch (error) {
     console.error('Error in DBPR records endpoint:', error);
     res.status(500).json({ error: 'Failed to fetch DBPR records' });
+  }
+});
+
+/** Fable Scrape — stealth archive harvester for Old World Research */
+app.post('/api/fable-scrape', express.json(), async (req, res) => {
+  try {
+    const result = await runFableScrape(req.body || {});
+    res.json(result);
+  } catch (error) {
+    console.error('Fable Scrape error:', error);
+    res.status(error.message?.includes('not set') ? 503 : 500).json({
+      error: error.message || 'Fable Scrape failed',
+    });
   }
 });
 
