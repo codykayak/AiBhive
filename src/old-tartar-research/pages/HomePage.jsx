@@ -35,8 +35,9 @@ export default function HomePage({ onTab }) {
         <h2 className={styles.sectionTitle}>How this works (RAG-style research)</h2>
         <p className={styles.missionBody}>
           This is not just a static library — it <strong>retrieves</strong> documents from real archives, <strong>indexes</strong> them
-          with AI extraction, and lets you <strong>query and cross-examine</strong> mentions across sources. You pay API + infrastructure;
-          with a partner code there is no 30% markup. Opt in to share and everyone can benefit from pooled anomalies and mentions.
+          with AI extraction, and lets you <strong>query and cross-examine</strong> mentions across sources.{' '}
+          <strong>Hive credits</strong> cover processing and AI API costs so you can search and build more. Opt in to share
+          and everyone can benefit from pooled anomalies and mentions.
         </p>
         {userStats?.isRagReady ? (
           <div className={`${styles.alert} ${styles.alertInfo}`}>

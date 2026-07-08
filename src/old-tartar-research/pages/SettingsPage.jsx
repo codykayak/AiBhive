@@ -10,8 +10,6 @@ export default function SettingsPage() {
     profile,
     customBuild,
     sources,
-    platformFeeRate,
-    effectiveFeeRate,
     hasPromo,
     refresh,
     api,
@@ -32,9 +30,6 @@ export default function SettingsPage() {
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
-
-  const feePct = Math.round((effectiveFeeRate ?? platformFeeRate) * 100);
-  const standardPct = Math.round(platformFeeRate * 100);
 
   useEffect(() => {
     if (customBuild) {
@@ -153,14 +148,14 @@ export default function SettingsPage() {
     <>
       <h1 className={styles.pageTitle}>Settings</h1>
       <p className={styles.pageSub}>
-        Billing, partner codes, API keys, and your personalized research build.
+        Hive credits, sharing, API keys, and your personalized research build.
       </p>
 
       <div className={styles.card} style={{ maxWidth: 560, marginBottom: '1.5rem' }}>
         <h3 className={styles.cardTitle}>Community archive sharing</h3>
         <p className={styles.cardMeta}>
-          Opt in to pool your indexed mentions and anomalies with other researchers. Everyone benefits — you pay APIs and infrastructure,
-          and shared findings help build the public research library. You can turn this off anytime.
+          Opt in to pool your indexed mentions and anomalies with other researchers. Hive credits fund processing and AI work;
+          shared findings help build the public research library. You can turn this off anytime.
         </p>
         <label className={styles.shareToggle}>
           <input
@@ -176,23 +171,32 @@ export default function SettingsPage() {
         </label>
       </div>
 
+      <div className={styles.card} style={{ maxWidth: 560, marginBottom: '1.5rem' }}>
+        <h3 className={styles.cardTitle}>Hive credits</h3>
+        <p className={styles.cardMeta}>
+          Research uses <strong>Hive credits</strong> for <strong>processing</strong> (ingestion, OCR, indexing) and{' '}
+          <strong>AI API costs</strong> (extraction, anomaly analysis). Buy credits to search and build more of the library.
+          Or bring your own API keys and pay providers directly.
+        </p>
+        <p className={styles.cardMeta} style={{ marginBottom: '1rem' }}>
+          Balance: <strong>{profile?.hiveCredits ?? 0}</strong> credits · Default AI: {profile?.defaultAiProvider ?? 'gemini'}
+        </p>
+      </div>
+
       <div className={styles.card} style={{ maxWidth: 520, marginBottom: '1.5rem' }}>
-        <h3 className={styles.cardTitle}>Billing</h3>
+        <h3 className={styles.cardTitle}>Billing mode</h3>
         <div className={styles.field}>
           <label className={styles.label}>Mode</label>
           <select className={styles.select} value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="hive_credits">
-              Hive credits ({hasPromo ? `${feePct}% server fee` : `${standardPct}% platform markup`})
-            </option>
-            <option value="byok">My own API keys (pay provider directly)</option>
+            <option value="hive_credits">Hive credits — processing &amp; AI API costs</option>
+            <option value="byok">My own API keys (pay providers directly)</option>
           </select>
         </div>
-        <p className={styles.cardMeta}>
-          Balance: {profile?.hiveCredits ?? 0} credits · Default AI: {profile?.defaultAiProvider ?? 'gemini'}
-          {hasPromo && (
-            <> · Partner code <strong>{profile.promoCode}</strong> active ({feePct}% server fee)</>
-          )}
-        </p>
+        {hasPromo && (
+          <p className={styles.cardMeta}>
+            Partner code <strong>{profile.promoCode}</strong> active — reduced processing rates applied.
+          </p>
+        )}
         <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={saveBilling} disabled={busy}>
           Save billing
         </button>
@@ -201,12 +205,11 @@ export default function SettingsPage() {
       <div className={styles.card} style={{ maxWidth: 520, marginBottom: '1.5rem' }}>
         <h3 className={styles.cardTitle}>Partner / promo code</h3>
         <p className={styles.cardMeta}>
-          Have a code? Redeem it to skip the {standardPct}% platform markup. You pay API cost plus a small server fee
-          ({hasPromo ? `currently ${feePct}%` : 'typically ~5%'}), or use your own API keys.
+          Have a partner code? Redeem it for reduced processing on Hive credits, or use your own API keys.
         </p>
         {hasPromo ? (
           <div className={`${styles.alert} ${styles.alertInfo}`} style={{ marginBottom: 0 }}>
-            Code <strong>{profile.promoCode}</strong> is active — {feePct}% server fee instead of {standardPct}% markup.
+            Code <strong>{profile.promoCode}</strong> is active — thank you for helping build the library.
           </div>
         ) : (
           <form onSubmit={redeemPromo} style={{ display: 'flex', gap: '0.5rem' }}>

@@ -23,9 +23,9 @@ export default function TartarHeroBanner({ fullWidth = true, showVideo = true })
           <p className={styles.heroEyebrow}>Community archives · RAG research</p>
           <h1 className={styles.heroBannerTitle}>Help build the world&apos;s Tartar research library</h1>
           <p className={styles.heroBannerLead}>
-            You pay only for <strong>API usage</strong> and a small <strong>infrastructure fee</strong> — not a 30% markup
-            (or bring your own keys). Every document you ingest is indexed so you can search, compare, and cross-examine
-            mentions across archives — like a research RAG system.
+            <strong>Hive credits</strong> power processing and AI API costs — ingest documents, search archives, and build
+            the shared library. Bring your own API keys if you prefer. Every document you add is indexed so you can search,
+            compare, and cross-examine mentions across archives.
           </p>
           <p className={styles.heroBannerSub}>
             Opt in to share your findings and the whole community benefits. Everyone can access pooled research when contributors choose to share.

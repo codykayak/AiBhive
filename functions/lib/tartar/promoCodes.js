@@ -84,6 +84,6 @@ export async function redeemPromoCode(db, uid, code) {
     ok: true,
     code: promo.code,
     serverFeeRate: promo.serverFeeRate,
-    message: `Promo applied — ${Math.round(promo.serverFeeRate * 100)}% server fee instead of ${Math.round(PLATFORM_FEE_RATE * 100)}% markup.`,
+    message: `Promo applied — reduced processing rates on Hive credits. Thank you for helping build the library.`,
   };
 }

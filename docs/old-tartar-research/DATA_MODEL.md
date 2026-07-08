@@ -59,9 +59,9 @@ tartarPlatform/        — read-only platform catalog (optional seed)
 
 ## Billing
 
-- **Hive credits**: platform keys; 30% fee on usage (`PLATFORM_FEE_RATE = 0.3`) by default
-- **Partner / promo codes**: waive markup; user pays API cost + small server fee (~5%, configurable via `TARTAR_PROMO_CODES` or Firestore `tartarPlatform/catalog/promoCodes`)
-- **BYOK**: user stores keys in `data/apiSecrets`; no credit charge (pay provider directly)
+- **Hive credits**: cover processing (ingestion, indexing) and AI API costs (extraction, analysis)
+- **Partner / promo codes**: reduced processing rates on Hive credits (`TARTAR_PROMO_CODES` or Firestore `tartarPlatform/catalog/promoCodes`)
+- **BYOK**: user stores keys in `data/apiSecrets`; pay AI providers directly
 
 ## Query patterns
 

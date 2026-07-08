@@ -22,20 +22,17 @@ export default function AppCard({ app, onOpen }) {
 }
 
 export function CreditBalance() {
-  const { profile, platformFeeRate, effectiveFeeRate, hasPromo } = useTartar();
+  const { profile } = useTartar();
   const credits = profile?.hiveCredits ?? 0;
   const mode = profile?.billingMode ?? 'hive_credits';
-  const fee = hasPromo ? effectiveFeeRate : platformFeeRate;
 
   return (
     <div className={styles.stat}>
       <div className={styles.statVal}>{mode === 'byok' ? 'BYOK' : credits}</div>
       <div className={styles.statLabel}>
         {mode === 'byok'
-          ? 'Your API keys'
-          : hasPromo
-            ? `Hive credits (${Math.round(fee * 100)}% server fee)`
-            : `Hive credits (${Math.round(platformFeeRate * 100)}% platform fee)`}
+          ? 'Your API keys — pay providers directly'
+          : 'Hive credits — processing & AI API costs'}
       </div>
     </div>
   );
