@@ -75,9 +75,10 @@ export default function HiveAppRunPage() {
   }
 
   const Enhanced = getEnhancedExampleApp(app.id);
+  const isTartarApp = app.id === 'example-old-tartar-research';
 
   return (
-    <div className="min-h-screen bg-[#070a0f] flex flex-col">
+    <div className={`min-h-screen flex flex-col ${isTartarApp ? 'bg-[#0a0e14]' : 'bg-[#070a0f]'}`}>
       <AssistantTopSpacer />
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#070a0f]/95 backdrop-blur">
         <Link
@@ -114,12 +115,12 @@ export default function HiveAppRunPage() {
           )}
         </div>
       </header>
-      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <main className={isTartarApp ? 'flex-1 w-full p-0' : 'flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8'}>
         <div key={`${app.id}-${version}`}>
           {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
         </div>
       </main>
-      <BuildPlatformStrip />
+      {!isTartarApp && <BuildPlatformStrip />}
     </div>
   );
 }

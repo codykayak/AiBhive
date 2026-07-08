@@ -6,7 +6,7 @@ import { PLATFORM_FEE_RATE } from '../config/schema';
 const TartarContext = createContext(null);
 
 export function TartarProvider({ children, user }) {
-  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(true);
   const [profile, setProfile] = useState(null);
   const [customBuild, setCustomBuild] = useState(null);
   const [sources, setSources] = useState([]);
@@ -19,31 +19,31 @@ export function TartarProvider({ children, user }) {
       setProfile(null);
       setCustomBuild(null);
       setSources([]);
-      setLoading(false);
+      setSyncing(false);
       return;
     }
-    setLoading(true);
+    setSyncing(true);
     setError(null);
     try {
       await api.init();
       const data = await api.getProfile();
-      setProfile(data.profile);
-      setCustomBuild(data.customBuild);
+      setProfile(data.profile ?? null);
+      setCustomBuild(data.customBuild ?? null);
       setSources(data.sources ?? []);
     } catch (e) {
       setError(e.message ?? 'Failed to load research profile');
     } finally {
-      setLoading(false);
+      setSyncing(false);
     }
   }, [user, api]);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => { void refresh(); }, [refresh]);
 
   const apps = listAppsForUser(customBuild, profile?.enabledApps);
 
   const value = {
     user,
-    loading,
+    syncing,
     error,
     profile,
     customBuild,

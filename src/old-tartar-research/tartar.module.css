@@ -8,7 +8,8 @@
   --tartar-accent-dim: #8a7020;
   --tartar-danger: #e5534b;
   --tartar-ok: #3fb950;
-  min-height: 100vh;
+  width: 100%;
+  min-height: min(100vh, 100dvh);
   background: var(--tartar-bg);
   color: var(--tartar-text);
   font-family: system-ui, -apple-system, sans-serif;
@@ -17,7 +18,8 @@
 .shell {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+  min-height: min(100vh, 100dvh);
+  width: 100%;
 }
 
 .sidebar {
@@ -39,16 +41,22 @@
 
 .navLink {
   display: block;
+  width: 100%;
+  text-align: left;
   padding: 0.55rem 0.75rem;
   border-radius: 6px;
+  border: none;
+  background: transparent;
   color: var(--tartar-muted);
   text-decoration: none;
   font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
 }
 .navLink:hover { background: #1a2330; color: var(--tartar-text); }
 .navActive { background: #1a2330; color: var(--tartar-accent); }
 
-.main { padding: 1.5rem 2rem; max-width: 1200px; }
+.main { padding: 1.5rem 2rem; max-width: 1200px; width: 100%; min-width: 0; }
 
 .pageTitle {
   font-size: 1.5rem;

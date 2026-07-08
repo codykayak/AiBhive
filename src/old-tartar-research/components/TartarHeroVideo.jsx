@@ -15,7 +15,7 @@ export default function TartarHeroVideo({ compact = false }) {
         loop
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
         poster="/og-image.png"
       >
         <source src={WEBM} type="video/webm" />

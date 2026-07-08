@@ -4,7 +4,6 @@
  */
 
 import { useEffect, useState } from 'react';
-import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { TartarProvider, useTartar } from './context/TartarContext';
@@ -20,37 +19,42 @@ import CustomBuildPage from './pages/CustomBuildPage';
 import SettingsPage from './pages/SettingsPage';
 import styles from './tartar.module.css';
 
-function TartarRoutes() {
-  const { loading, error } = useTartar();
-
-  if (loading) {
-    return <p className={styles.pageSub}>Loading research workspace…</p>;
-  }
+function TartarPage({ tab, onTab }) {
+  const { syncing, error } = useTartar();
 
   return (
     <>
-      {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
-      <Routes>
-        <Route path="apps" element={<AppsPage />} />
-        <Route index element={<DashboardPage />} />
-        <Route path="sources" element={<SourcesPage />} />
-        <Route path="mentions" element={<MentionsPage />} />
-        <Route path="anomalies" element={<AnomaliesPage />} />
-        <Route path="search-terms" element={<SearchTermsPage />} />
-        <Route path="build" element={<CustomBuildPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="*" element={<Navigate to="." replace />} />
-      </Routes>
+      <TartarHeroVideo compact />
+      {syncing && (
+        <div className={`${styles.alert} ${styles.alertInfo}`}>Syncing your research profile…</div>
+      )}
+      {error && (
+        <div className={`${styles.alert} ${styles.alertError}`}>
+          {error}
+          <p className={styles.pageSub} style={{ margin: '0.5rem 0 0' }}>
+            You can still browse the workspace. API features need a signed-in session and server connection.
+          </p>
+        </div>
+      )}
+      {tab === 'apps' && <AppsPage onOpen={onTab} />}
+      {tab === 'dashboard' && <DashboardPage />}
+      {tab === 'sources' && <SourcesPage />}
+      {tab === 'mentions' && <MentionsPage />}
+      {tab === 'anomalies' && <AnomaliesPage />}
+      {tab === 'search-terms' && <SearchTermsPage />}
+      {tab === 'build' && <CustomBuildPage />}
+      {tab === 'settings' && <SettingsPage />}
     </>
   );
 }
 
-function TartarWorkspace({ user }) {
+function TartarWorkspace({ user, onSignOut }) {
+  const [tab, setTab] = useState('dashboard');
+
   return (
     <TartarProvider user={user}>
-      <TartarLayout onSignOut={() => signOut(auth)}>
-        <TartarHeroVideo compact />
-        <TartarRoutes />
+      <TartarLayout activeTab={tab} onTab={setTab} onSignOut={onSignOut}>
+        <TartarPage tab={tab} onTab={setTab} />
       </TartarLayout>
     </TartarProvider>
   );
@@ -102,9 +106,7 @@ export default function OldTartarResearch() {
           </div>
         </div>
       ) : (
-        <MemoryRouter>
-          <TartarWorkspace user={user} />
-        </MemoryRouter>
+        <TartarWorkspace user={user} onSignOut={() => signOut(auth)} />
       )}
     </div>
   );

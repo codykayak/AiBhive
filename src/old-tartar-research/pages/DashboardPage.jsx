@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const enabledSources = sources.filter((s) => s.enabled);
 
   async function runIngestion() {
+    if (!api) return;
     setBusy(true);
     try {
       const res = await api.startIngestion({
@@ -29,6 +30,7 @@ export default function DashboardPage() {
   }
 
   async function runAnomalies() {
+    if (!api) return;
     setBusy(true);
     try {
       const res = await api.detectAnomalies(customBuild?.anomalyRules ?? {});
