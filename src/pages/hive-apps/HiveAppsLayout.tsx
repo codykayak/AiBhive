@@ -37,7 +37,11 @@ export default function HiveAppsLayout() {
     [draft, navigate, tab]
   );
 
-  if (location.pathname.includes('/run/') || location.pathname.endsWith('/build')) {
+  if (
+    location.pathname.includes('/run/') ||
+    location.pathname.includes('/embed/') ||
+    location.pathname.endsWith('/build')
+  ) {
     return <Outlet />;
   }
 

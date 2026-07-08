@@ -13,7 +13,7 @@ export function openResearch(
     runnerId: 'example-research',
     title: 'Research',
     themeKey: 'research' as const,
-    url: `https://aibhive.com/hive-apps/run/example-research?mobile=1${intentQuery}`,
+    url: `https://aibhive.com/hive-apps/embed/example-research?mobile=1${intentQuery}`,
   };
   if (opts?.replace) {
     navigation.replace('HiveAppWebView', params);

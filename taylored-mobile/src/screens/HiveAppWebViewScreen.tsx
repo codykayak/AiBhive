@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
-import { ChevronLeft } from 'lucide-react-native';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { AppThemeShell } from '../components/AppThemeShell';
 import { builtInAppForThemeKey } from '../constants/builtInHiveApps';
 import { enhancedRunnerUrl } from '../constants/enhancedHiveApps';
@@ -29,7 +28,6 @@ function appendHiveUserId(baseUrl: string, userId: string): string {
 }
 
 export default function HiveAppWebViewScreen() {
-  const navigation = useNavigation();
   const route = useRoute<RouteProp<{ HiveAppWebView: Params }, 'HiveAppWebView'>>();
   const params = route.params || {};
   const runnerId = params.runnerId || '';
@@ -41,6 +39,7 @@ export default function HiveAppWebViewScreen() {
   );
   const [uri, setUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -54,27 +53,46 @@ export default function HiveAppWebViewScreen() {
   }, [baseUri]);
 
   return (
-    <AppThemeShell theme={theme} title={params.title || theme.title}>
+    <AppThemeShell theme={theme} title={params.title || theme.title} contentStyle={styles.shellContent}>
       <View style={styles.container}>
-        <TouchableOpacity style={styles.backRow} onPress={() => navigation.goBack()}>
-          <ChevronLeft color={theme.accentText} size={22} />
-          <Text style={[styles.backText, { color: theme.accentText }]}>Back</Text>
-        </TouchableOpacity>
-
-        {loading && (
+        {loading && !loadError ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={theme.primary} />
           </View>
-        )}
+        ) : null}
+
+        {loadError ? (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>{loadError}</Text>
+            <Text style={styles.errorHint}>Check your connection and try again.</Text>
+          </View>
+        ) : null}
 
         {uri ? (
           <WebView
             source={{ uri }}
             style={styles.web}
-            onLoadEnd={() => setLoading(false)}
-            setSupportMultipleWindows={false}
+            javaScriptEnabled
+            domStorageEnabled
             sharedCookiesEnabled
             thirdPartyCookiesEnabled
+            setSupportMultipleWindows={false}
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            originWhitelist={['https://*', 'http://*']}
+            onLoadStart={() => {
+              setLoading(true);
+              setLoadError('');
+            }}
+            onLoadEnd={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setLoadError('Could not load this app.');
+            }}
+            onHttpError={() => {
+              setLoading(false);
+              setLoadError('Could not load this app.');
+            }}
           />
         ) : null}
       </View>
@@ -83,20 +101,17 @@ export default function HiveAppWebViewScreen() {
 }
 
 const styles = StyleSheet.create({
+  shellContent: { paddingHorizontal: 0 },
   container: { flex: 1, backgroundColor: colors.bg },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  backText: { fontSize: 15, fontWeight: '700' },
-  web: { flex: 1, backgroundColor: colors.bg },
+  web: { flex: 1, backgroundColor: '#070a0f' },
   center: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.bg,
+    paddingHorizontal: spacing.lg,
+    zIndex: 2,
   },
+  errorText: { color: colors.text, fontWeight: '700', fontSize: 15, textAlign: 'center' },
+  errorHint: { color: colors.textMuted, fontSize: 13, marginTop: 8, textAlign: 'center' },
 });

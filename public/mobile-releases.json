@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.8.0",
-  "versionCode": 50,
-  "sourceVersion": "1.8.0",
-  "releaseNotes": "v1.8.0 — Research opens the full web Intel app in-app; Hive Cloud (credits) is always on — no toggle, no personal Firecrawl/SerpAPI keys. Your mobile Hive account syncs for billing.",
+  "shippedNativeVersion": "1.8.1",
+  "versionCode": 51,
+  "sourceVersion": "1.8.1",
+  "releaseNotes": "v1.8.1 — Fixed black WebView screens (Social Hunter, Flip Calc, Research, Homework). Homework opens web sign-in. Job Tracker moved to bottom. Web app tiles added. Duplicate flip calculators hidden.",
   "downloadUrl": "https://aibhive.com/api/download/apk",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
   "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1783110302812%2Ftaylored-mobile.apk.gz?alt=media&token=acc956fb-e2f8-4844-ab04-96b7d1dce985",
-  "publishedAt": "2026-07-03T20:25:13.544Z",
+  "publishedAt": "2026-07-08T01:20:00.000Z",
   "otaChannel": "production",
   "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=d9b9abde-d8dd-4350-9f73-f941c6d10031"
 }
