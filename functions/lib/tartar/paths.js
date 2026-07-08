@@ -64,6 +64,22 @@ export function promoCodesCol(db) {
   return db.collection('tartarPlatform').doc('catalog').collection('promoCodes');
 }
 
+export function poolStatsRef(db) {
+  return db.collection('tartarPlatform').doc('pool').collection('meta').doc('stats');
+}
+
+export function poolMentionsCol(db) {
+  return db.collection('tartarPlatform').doc('pool').collection('mentions');
+}
+
+export function poolAnomaliesCol(db) {
+  return db.collection('tartarPlatform').doc('pool').collection('anomalies');
+}
+
+export function poolAnomalyCacheCol(db) {
+  return db.collection('tartarPlatform').doc('pool').collection('anomalyCache');
+}
+
 export const PLATFORM_FEE_RATE = 0.3;
 export const PROMO_SERVER_FEE_RATE = 0.05;
 export const DEFAULT_STARTING_CREDITS = 100;

@@ -4,7 +4,7 @@ import { buildSearchUrl } from '../config/sourceRegistry';
 import styles from '../tartar.module.css';
 
 export default function SourcesPage() {
-  const { sources, refresh, api } = useTartar();
+  const { sources, archiveStats, refresh, api } = useTartar();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', kind: 'custom_http', homepageUrl: '', searchUrlTemplate: '' });
   const [busy, setBusy] = useState(false);
@@ -67,9 +67,12 @@ export default function SourcesPage() {
       )}
 
       <div className={styles.grid}>
-        {sources.map((source) => (
+        {sources.map((source) => {
+        const stat = archiveStats?.user?.sourceStats?.find((s) => s.sourceId === source.id);
+        const statusLabel = stat?.status === 'indexed' ? 'Indexed' : stat?.status === 'ready' ? 'Ready' : 'Disabled';
+        return (
           <article key={source.id} className={styles.card}>
-            <span className={styles.cardBadge}>{source.isCustom ? 'Custom' : source.kind}</span>
+            <span className={styles.cardBadge}>{stat?.status === 'indexed' ? `${stat.mentionCount} mentions` : statusLabel}</span>
             <h3 className={styles.cardTitle}>{source.name}</h3>
             <p className={styles.cardMeta}>{source.description ?? `Adapter: ${source.kind}`}</p>
             {source.homepageUrl && (
@@ -86,7 +89,8 @@ export default function SourcesPage() {
               {source.enabled ? 'Disable' : 'Enable'}
             </button>
           </article>
-        ))}
+        );
+      })}
       </div>
     </>
   );

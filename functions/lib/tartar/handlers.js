@@ -10,10 +10,20 @@ export class TartarApiError extends Error {
   }
 }
 import { FieldValue } from 'firebase-admin/firestore';
-import { ensureProfile, storeApiKey, setBillingMode, PLATFORM_FEE_RATE } from './credits.js';
+import { ensureProfile, storeApiKey, setBillingMode, PLATFORM_FEE_RATE, resolveApiKey, chargeCredits } from './credits.js';
 import { redeemPromoCode, effectiveFeeRate } from './promoCodes.js';
 import { runIngestionJob, seedDefaultSources } from './pipeline.js';
 import { detectAnomalies } from './anomalyDetection.js';
+import { analyzeAnomaliesWithFocus } from './aiProviders.js';
+import { getArchiveStats } from './archiveStats.js';
+import {
+  setShareOptIn,
+  contributeUserData,
+  queryPooledAnomalies,
+  anomalyCacheKey,
+  getCachedAnomalyResult,
+  setCachedAnomalyResult,
+} from './pool.js';
 import {
   customBuildRef,
   mentionsCol,
@@ -123,7 +133,21 @@ export function createTartarHandlers({ db, platformSecrets = {} }) {
 
     async tartarDetectAnomalies(request) {
       const uid = requireUid(request);
-      const rules = request.data?.rules ?? {};
+      const { rules = {}, customPrompt, aiProvider, usePool = true } = request.data ?? {};
+      const provider = aiProvider ?? (await ensureProfile(db, uid)).defaultAiProvider ?? 'gemini';
+      const cacheKey = anomalyCacheKey(rules, customPrompt);
+
+      if (usePool && !customPrompt?.trim()) {
+        const cached = await getCachedAnomalyResult(db, cacheKey);
+        if (cached?.anomalies?.length) {
+          return { count: cached.anomalies.length, anomalies: cached.anomalies.slice(0, 50), fromCache: true, fromPool: true };
+        }
+        const pooled = await queryPooledAnomalies(db, 30);
+        if (pooled.length && !(await mentionsCol(db, uid).limit(1).get()).docs.length) {
+          return { count: pooled.length, anomalies: pooled, fromPool: true };
+        }
+      }
+
       const snap = await mentionsCol(db, uid).limit(5000).get();
       const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
         .filter((m) => m.year != null)
@@ -135,15 +159,48 @@ export function createTartarHandlers({ db, platformSecrets = {} }) {
           project: m.project,
         }));
 
-      const detected = detectAnomalies(rows, rules);
+      let detected = detectAnomalies(rows, rules);
+
+      if (customPrompt?.trim()) {
+        try {
+          const { key, chargeCredits: shouldCharge } = await resolveApiKey(db, uid, provider, platformSecrets);
+          const sampleMentions = snap.docs.slice(0, 20).map((d) => d.data());
+          const aiResult = await analyzeAnomaliesWithFocus(provider, key, {
+            anomalies: detected,
+            customPrompt,
+            sampleMentions,
+          });
+          detected = aiResult.anomalies;
+          if (shouldCharge && aiResult.usage) {
+            await chargeCredits(db, uid, {
+              provider,
+              inputTokens: aiResult.usage.inputTokens,
+              outputTokens: aiResult.usage.outputTokens,
+              operation: 'anomaly_focus',
+            });
+          }
+        } catch (err) {
+          console.warn('[tartar] AI anomaly focus failed:', err.message);
+        }
+      }
+
       const batch = db.batch();
       const col = anomaliesCol(db, uid);
       for (const a of detected) {
         const ref = col.doc();
-        batch.set(ref, { ...a, id: ref.id, detectedAt: FieldValue.serverTimestamp() });
+        batch.set(ref, {
+          ...a,
+          id: ref.id,
+          focusPrompt: customPrompt?.trim() || null,
+          detectedAt: FieldValue.serverTimestamp(),
+        });
       }
       await batch.commit();
-      return { count: detected.length, anomalies: detected.slice(0, 50) };
+
+      await setCachedAnomalyResult(db, cacheKey, { anomalies: detected.slice(0, 100) });
+      await contributeUserData(db, uid);
+
+      return { count: detected.length, anomalies: detected.slice(0, 50), fromCache: false };
     },
 
     async tartarQueryMentions(request) {
@@ -192,6 +249,17 @@ export function createTartarHandlers({ db, platformSecrets = {} }) {
       const { code } = request.data ?? {};
       if (!code?.trim()) throw new TartarApiError('invalid-argument', 'Promo code required.');
       return redeemPromoCode(db, uid, code);
+    },
+
+    async tartarGetArchiveStats(request) {
+      const uid = requireUid(request);
+      return getArchiveStats(db, uid);
+    },
+
+    async tartarSetShareOptIn(request) {
+      const uid = requireUid(request);
+      const { enabled } = request.data ?? {};
+      return setShareOptIn(db, uid, Boolean(enabled));
     },
 
     async tartarGetProfile(request) {

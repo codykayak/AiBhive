@@ -91,7 +91,7 @@ export function registerTartarRoutes(app, db) {
   app.post('/api/tartar/anomalies/detect', async (req, res) => {
     const authUser = await requireTartarUser(req, res);
     if (!authUser) return;
-    return invoke(res, handlers.tartarDetectAnomalies.bind(handlers), authUser, { rules: req.body?.rules });
+    return invoke(res, handlers.tartarDetectAnomalies.bind(handlers), authUser, req.body ?? {});
   });
 
   app.post('/api/tartar/mentions/query', async (req, res) => {
@@ -125,6 +125,18 @@ export function registerTartarRoutes(app, db) {
     const authUser = await requireTartarUser(req, res);
     if (!authUser) return;
     return invoke(res, handlers.tartarRedeemPromo.bind(handlers), authUser, { code: req.body?.code });
+  });
+
+  app.get('/api/tartar/archive-stats', async (req, res) => {
+    const authUser = await requireTartarUser(req, res);
+    if (!authUser) return;
+    return invoke(res, handlers.tartarGetArchiveStats.bind(handlers), authUser);
+  });
+
+  app.post('/api/tartar/share-opt-in', async (req, res) => {
+    const authUser = await requireTartarUser(req, res);
+    if (!authUser) return;
+    return invoke(res, handlers.tartarSetShareOptIn.bind(handlers), authUser, { enabled: req.body?.enabled });
   });
 
   app.post('/api/tartar/ingestion/worker', (req, res) => {

@@ -6,7 +6,7 @@ Flexible Firestore schema for historical entity extraction and anomaly detection
 
 ```
 users/{uid}/tartarResearch/
-  profile              — hiveCredits, billingMode, defaultAiProvider, enabledApps, promo fields
+  profile              — hiveCredits, billingMode, defaultAiProvider, enabledApps, promo fields, shareWithCommunity
   customBuild          — per-user build (visible only when signed in)
   data                 — anchor document for subcollections
   data/apiSecrets/{provider} — BYOK keys (server-only; denied in client rules)
@@ -20,9 +20,10 @@ users/{uid}/tartarResearch/
 
 tartarPlatform/        — read-only platform catalog (optional seed)
   catalog/promoCodes/{code} — partner codes (server-managed redemptions)
-  apps/
-  entityTypes/
-  sourceCatalog/
+  pool/mentions/{id}   — opt-in pooled mentions (deduped)
+  pool/anomalies/{id}  — opt-in pooled anomalies
+  pool/anomalyCache/{key} — cached anomaly results (7-day TTL)
+  pool/meta/stats      — contributor counts
 ```
 
 ## Mention document (example)

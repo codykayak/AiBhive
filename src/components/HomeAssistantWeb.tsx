@@ -62,6 +62,17 @@ export default function HomeAssistantWeb() {
   }, []);
 
   useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<{ prefill?: string }>).detail;
+      if (detail?.prefill) setInput(detail.prefill);
+      setOpen(true);
+      setExpanded(true);
+    };
+    window.addEventListener('bhive:open-assistant', onOpen);
+    return () => window.removeEventListener('bhive:open-assistant', onOpen);
+  }, []);
+
+  useEffect(() => {
     if (messages.length > 1) saveAssistantHistory(messages);
   }, [messages]);
 
