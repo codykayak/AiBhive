@@ -29,6 +29,7 @@ export async function ensureProfile(db, uid) {
     defaultAiProvider: 'gemini',
     enabledApps: { old_tartar_research: true },
     waivePlatformMarkup: false,
+    shareWithCommunity: false,
     createdAt: FieldValue.serverTimestamp(),
   };
   await ref.set(profile);

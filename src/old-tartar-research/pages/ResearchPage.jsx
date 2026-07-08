@@ -13,6 +13,10 @@ export default function ResearchPage() {
   const [busy, setBusy] = useState(false);
   const [lastJob, setLastJob] = useState(null);
   const [section, setSection] = useState('workflow');
+  const [anomalyPrompt, setAnomalyPrompt] = useState(
+    customBuild?.anomalyFocusPrompt ?? 'Focus on architects and builders credited with impossible numbers of major structures in narrow decades.',
+  );
+  const [poolNote, setPoolNote] = useState('');
 
   const enabledSources = sources.filter((s) => s.enabled);
 
@@ -70,16 +74,27 @@ export default function ResearchPage() {
   async function runAnomalies() {
     if (!api) return;
     setBusy(true);
+    setPoolNote('');
     try {
-      const res = await api.detectAnomalies(customBuild?.anomalyRules ?? {});
+      const res = await api.detectAnomalies({
+        rules: customBuild?.anomalyRules ?? {},
+        customPrompt: anomalyPrompt,
+        aiProvider: profile?.defaultAiProvider ?? 'gemini',
+      });
       setAnomalies(res.anomalies ?? []);
+      if (res.fromPool) setPoolNote('Results include opt-in community pool data.');
+      if (res.fromCache) setPoolNote('Loaded from cached community analysis.');
       setSection('anomalies');
     } finally {
       setBusy(false);
     }
   }
 
-  useEffect(() => { void loadMentions(); }, [api]);
+  useEffect(() => {
+    if (customBuild?.anomalyFocusPrompt) {
+      setAnomalyPrompt(customBuild.anomalyFocusPrompt);
+    }
+  }, [customBuild?.anomalyFocusPrompt]);
 
   return (
     <>
@@ -124,6 +139,20 @@ export default function ResearchPage() {
               ))}
             </div>
           )}
+
+          <div className={styles.card} style={{ marginBottom: '1.25rem' }}>
+            <h3 className={styles.cardTitle}>AI anomaly focus</h3>
+            <p className={styles.cardMeta}>
+              Tell the AI what patterns to prioritize. Statistical detection runs first, then your agent filters and explains findings.
+            </p>
+            <textarea
+              className={styles.textarea}
+              value={anomalyPrompt}
+              onChange={(e) => setAnomalyPrompt(e.target.value)}
+              placeholder="e.g. Flag architects with 20+ major buildings in a 10-year window, or map references to Tartary that disappear after 1850…"
+              rows={3}
+            />
+          </div>
 
           <div className={styles.card} style={{ marginBottom: '1.25rem' }}>
             <h3 className={styles.cardTitle}>Run ingestion</h3>
@@ -179,7 +208,7 @@ export default function ResearchPage() {
               {mentions.length === 0 ? (
                 <tr><td colSpan={5} style={{ color: 'var(--tartar-muted)' }}>No mentions yet — run ingestion first.</td></tr>
               ) : mentions.map((m) => (
-                <tr key={m.id}>
+                <tr key={m.id} title={m.sourceExcerpt ? `Excerpt: ${m.sourceExcerpt}` : undefined}>
                   <td>{m.entityName}</td>
                   <td>{m.role ?? m.entityType}</td>
                   <td>{m.project ?? '—'}</td>
@@ -196,9 +225,19 @@ export default function ResearchPage() {
 
       {section === 'anomalies' && (
         <>
+          <div className={styles.card} style={{ marginBottom: '1rem' }}>
+            <h3 className={styles.cardTitle}>Custom AI focus</h3>
+            <textarea
+              className={styles.textarea}
+              value={anomalyPrompt}
+              onChange={(e) => setAnomalyPrompt(e.target.value)}
+              rows={2}
+            />
+          </div>
           <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={runAnomalies} disabled={busy} style={{ marginBottom: '1rem' }}>
             {busy ? 'Analyzing…' : 'Run anomaly detection'}
           </button>
+          {poolNote && <div className={`${styles.alert} ${styles.alertInfo}`}>{poolNote}</div>}
           <div className={styles.grid}>
             {anomalies.length === 0 && !busy && (
               <p className={styles.pageSub}>No anomalies yet. Ingest mentions first, then run detection.</p>
@@ -208,6 +247,8 @@ export default function ResearchPage() {
                 <span className={styles.cardBadge}>Score {a.score}</span>
                 <h3 className={styles.cardTitle}>{a.entityName}</h3>
                 <p className={styles.cardMeta}>{a.summary}</p>
+                {a.aiInsight && <p className={styles.aiInsight}>{a.aiInsight}</p>}
+                {a.fromPool && <span className={styles.cardBadge}>Community pool</span>}
                 <p style={{ fontSize: '0.8rem', color: 'var(--tartar-muted)', margin: 0 }}>
                   {a.windowStartYear}–{a.windowEndYear} · {a.count} mentions · {a.entityType}
                 </p>

@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [mode, setMode] = useState(profile?.billingMode ?? 'hive_credits');
   const [keys, setKeys] = useState({ gemini: '', grok: '', kimi: '' });
   const [promoCode, setPromoCode] = useState('');
+  const [shareEnabled, setShareEnabled] = useState(Boolean(profile?.shareWithCommunity));
   const [buildForm, setBuildForm] = useState({
     name: 'My Research Build',
     description: '',
@@ -26,6 +27,8 @@ export default function SettingsPage() {
     enabledEntityTypes: ENTITY_TYPES.map((t) => t.id),
     dashboardWidgets: ['mentions', 'anomalies', 'timeline'],
     anomalyRules: { highOutputWindowYears: 10, highOutputMinCount: 15 },
+    anomalyFocusPrompt: 'Focus on architects and builders with unusually high output in narrow decades.',
+    extractionPrompt: '',
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -42,9 +45,15 @@ export default function SettingsPage() {
         enabledEntityTypes: customBuild.enabledEntityTypes ?? ENTITY_TYPES.map((t) => t.id),
         dashboardWidgets: customBuild.dashboardWidgets ?? ['mentions', 'anomalies', 'timeline'],
         anomalyRules: customBuild.anomalyRules ?? { highOutputWindowYears: 10, highOutputMinCount: 15 },
+        anomalyFocusPrompt: customBuild.anomalyFocusPrompt ?? '',
+        extractionPrompt: customBuild.extractionPrompt ?? '',
       });
     }
   }, [customBuild]);
+
+  useEffect(() => {
+    setShareEnabled(Boolean(profile?.shareWithCommunity));
+  }, [profile?.shareWithCommunity]);
 
   useEffect(() => {
     setMode(profile?.billingMode ?? 'hive_credits');
@@ -70,6 +79,22 @@ export default function SettingsPage() {
       await api.storeApiKey(provider, keys[provider]);
       setKeys((k) => ({ ...k, [provider]: '' }));
       setMsg(`${provider} key saved (server-side only).`);
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleShare() {
+    setBusy(true);
+    setMsg('');
+    try {
+      const next = !shareEnabled;
+      await api.setShareOptIn(next);
+      setShareEnabled(next);
+      setMsg(next
+        ? 'Thank you — your research will be pooled for the community (mentions & anomalies).'
+        : 'Sharing turned off. Your data stays private.');
       await refresh();
     } finally {
       setBusy(false);
@@ -130,6 +155,26 @@ export default function SettingsPage() {
       <p className={styles.pageSub}>
         Billing, partner codes, API keys, and your personalized research build.
       </p>
+
+      <div className={styles.card} style={{ maxWidth: 560, marginBottom: '1.5rem' }}>
+        <h3 className={styles.cardTitle}>Community archive sharing</h3>
+        <p className={styles.cardMeta}>
+          Opt in to pool your indexed mentions and anomalies with other researchers. Everyone benefits — you pay APIs and infrastructure,
+          and shared findings help build the public research library. You can turn this off anytime.
+        </p>
+        <label className={styles.shareToggle}>
+          <input
+            type="checkbox"
+            checked={shareEnabled}
+            onChange={toggleShare}
+            disabled={busy}
+          />
+          <span>
+            <strong>I want everybody to be able to see this research</strong>
+            <small>Shares anonymized mentions and anomaly summaries to the community pool</small>
+          </span>
+        </label>
+      </div>
 
       <div className={styles.card} style={{ maxWidth: 520, marginBottom: '1.5rem' }}>
         <h3 className={styles.cardTitle}>Billing</h3>
@@ -250,6 +295,16 @@ export default function SettingsPage() {
               ...buildForm,
               anomalyRules: { ...buildForm.anomalyRules, highOutputWindowYears: Number(e.target.value) },
             })}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <label className={styles.label}>Default AI anomaly focus prompt</label>
+          <textarea
+            className={styles.textarea}
+            value={buildForm.anomalyFocusPrompt}
+            onChange={(e) => setBuildForm({ ...buildForm, anomalyFocusPrompt: e.target.value })}
+            rows={3}
           />
         </div>
 

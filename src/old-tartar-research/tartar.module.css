@@ -372,3 +372,238 @@
   border-color: var(--tartar-accent-dim);
   color: var(--tartar-accent);
 }
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: min(100vh, 100dvh);
+}
+
+.authShellFull {
+  display: flex;
+  flex-direction: column;
+  min-height: min(100vh, 100dvh);
+}
+
+.heroBanner {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--tartar-border);
+}
+
+.heroBannerFull {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+.heroMapBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: sepia(0.35) brightness(0.45);
+  transform: scale(1.05);
+}
+
+.heroBannerOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, rgba(10, 14, 20, 0.92) 0%, rgba(10, 14, 20, 0.55) 45%, rgba(10, 14, 20, 0.75) 100%);
+}
+
+.heroBannerGrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.heroBannerCopy {
+  max-width: 56ch;
+}
+
+.heroBannerTitle {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--tartar-text);
+}
+
+.heroBannerLead {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--tartar-muted);
+}
+
+.heroBannerLead strong {
+  color: var(--tartar-accent);
+}
+
+.heroBannerSub {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--tartar-muted);
+}
+
+.heroVideoPanel {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--tartar-border);
+  aspect-ratio: 16 / 10;
+  background: #000;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.heroVideoInset {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.missionCard {
+  background: var(--tartar-surface);
+  border: 1px solid var(--tartar-border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.missionBody {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tartar-muted);
+}
+
+.counterSection {
+  margin-bottom: 1.75rem;
+}
+
+.counterIntro {
+  font-size: 0.85rem;
+  color: var(--tartar-muted);
+  margin: 0 0 1rem;
+  max-width: 70ch;
+}
+
+.counterGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.counterCard {
+  background: var(--tartar-surface);
+  border: 1px solid var(--tartar-border);
+  border-radius: 10px;
+  padding: 1rem;
+  text-align: center;
+  transition: border-color 0.3s, transform 0.3s;
+}
+
+.counterHighlight {
+  border-color: var(--tartar-accent-dim);
+  background: linear-gradient(180deg, #151c28 0%, var(--tartar-surface) 100%);
+}
+
+.counterValue {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--tartar-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.counterLabel {
+  font-size: 0.72rem;
+  color: var(--tartar-muted);
+  margin-top: 0.35rem;
+  line-height: 1.3;
+}
+
+.counterMeta {
+  font-size: 0.8rem;
+  color: var(--tartar-muted);
+  margin: 0.75rem 0 0;
+}
+
+.shareToggle {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--tartar-text);
+}
+
+.shareToggle input {
+  margin-top: 0.25rem;
+  accent-color: var(--tartar-accent);
+}
+
+.shareToggle small {
+  display: block;
+  color: var(--tartar-muted);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.aiInsight {
+  font-size: 0.82rem;
+  color: var(--tartar-accent);
+  margin: 0 0 0.5rem;
+  font-style: italic;
+}
+
+.customizeFab {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 1.25rem;
+  z-index: 9997;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--tartar-accent);
+  background: rgba(18, 24, 32, 0.95);
+  color: var(--tartar-accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  font-family: inherit;
+}
+
+.customizeFab:hover {
+  background: var(--tartar-accent-dim);
+  color: #fff;
+}
+
+.customizeFabIcon {
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .heroBannerGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroVideoPanel {
+    max-height: 200px;
+  }
+  .customizeFab {
+    bottom: 5rem;
+    right: 0.75rem;
+    font-size: 0.8rem;
+  }
+}

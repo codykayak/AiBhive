@@ -11,6 +11,7 @@ import {
   entitiesCol,
   ingestionJobsCol,
   sourcesCol,
+  customBuildRef,
   ensureDataDoc,
 } from './paths.js';
 
@@ -47,13 +48,17 @@ export async function processSourceRecord(db, uid, {
   provider,
   platformSecrets,
   useAi = true,
+  extractionPrompt,
 }) {
   let extracted = [];
   let usage = { inputTokens: 0, outputTokens: 0 };
 
   if (useAi && record.text?.trim()) {
     const { key, chargeCredits: shouldCharge } = await resolveApiKey(db, uid, provider, platformSecrets);
-    const result = await extractMentions(provider, key, record.text, { sourceTitle: record.title });
+    const result = await extractMentions(provider, key, record.text, {
+      sourceTitle: record.title,
+      systemPrompt: extractionPrompt,
+    });
     extracted = result.mentions;
     usage = result.usage;
     if (shouldCharge) {
@@ -142,6 +147,8 @@ export async function runIngestionJob(db, uid, jobId, platformSecrets) {
   try {
     const sourcesSnap = await sourcesCol(db, uid).get();
     const sourceMap = Object.fromEntries(sourcesSnap.docs.map((d) => [d.id, { id: d.id, ...d.data() }]));
+    const buildSnap = await customBuildRef(db, uid).get();
+    const extractionPrompt = buildSnap.data()?.extractionPrompt ?? null;
 
     for (const sourceId of job.sourceIds ?? []) {
       const source = sourceMap[sourceId];
@@ -157,6 +164,7 @@ export async function runIngestionJob(db, uid, jobId, platformSecrets) {
           provider,
           platformSecrets,
           useAi: job.useAi !== false,
+          extractionPrompt,
         });
         mentionsExtracted += result.extractedCount;
       }
@@ -168,6 +176,9 @@ export async function runIngestionJob(db, uid, jobId, platformSecrets) {
       mentionsExtracted,
       completedAt: FieldValue.serverTimestamp(),
     });
+
+    const { contributeUserData } = await import('./pool.js');
+    await contributeUserData(db, uid);
 
     return { itemsProcessed, mentionsExtracted };
   } catch (err) {

@@ -17,6 +17,9 @@ const AssistantDockContext = createContext<AssistantDockContextValue | null>(nul
 const TOP_BAR_HEIGHT = 52;
 
 function inferDockMode(pathname: string): AssistantDockMode {
+  if (pathname.includes('example-old-tartar-research')) {
+    return 'floating';
+  }
   if (
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/build') ||

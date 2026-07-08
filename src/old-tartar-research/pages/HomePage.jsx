@@ -1,53 +1,70 @@
 import { useTartar } from '../context/TartarContext';
 import { CreditBalance } from '../components/AppCard';
+import { ArchiveCounterRow } from '../components/TartarHeroBanner';
 import styles from '../tartar.module.css';
 
 const STEPS = [
   {
     n: 1,
-    title: 'Set up archives',
-    body: 'Enable built-in sources (Internet Archive, LOC, Chronicling America) or add your own catalog entries.',
+    title: 'Enable archives',
+    body: 'Turn on Internet Archive, LOC, Chronicling America, or add your own. Each source becomes a searchable catalog entry.',
     tab: 'archives',
   },
   {
     n: 2,
-    title: 'Run research',
-    body: 'Add search terms, ingest documents, and let AI extract entity mentions from 18th–early 20th century records.',
+    title: 'Retrieve & index',
+    body: 'Run ingestion — documents are fetched, text extracted, and entity mentions stored for RAG-style search and comparison.',
     tab: 'research',
   },
   {
     n: 3,
-    title: 'Find anomalies',
-    body: 'Detect statistical spikes — e.g. dozens of major structures credited to one architect in a narrow decade.',
+    title: 'Cross-examine & detect',
+    body: 'Filter mentions by entity, year, and source. Compare records side-by-side and run anomaly detection with your own AI focus prompt.',
     tab: 'research',
   },
 ];
 
 export default function HomePage({ onTab }) {
-  const { profile, sources, user } = useTartar();
+  const { profile, sources, archiveStats, user } = useTartar();
   const enabledSources = sources.filter((s) => s.enabled);
+  const userStats = archiveStats?.user;
 
   return (
     <>
-      <h1 className={styles.pageTitle}>Welcome back</h1>
-      <p className={styles.pageSub}>
-        Historical anomaly detection across archival sources. Hive credits, your own API keys, or a partner code for reduced fees.
-      </p>
+      <div className={styles.missionCard}>
+        <h2 className={styles.sectionTitle}>How this works (RAG-style research)</h2>
+        <p className={styles.missionBody}>
+          This is not just a static library — it <strong>retrieves</strong> documents from real archives, <strong>indexes</strong> them
+          with AI extraction, and lets you <strong>query and cross-examine</strong> mentions across sources. You pay API + infrastructure;
+          with a partner code there is no 30% markup. Opt in to share and everyone can benefit from pooled anomalies and mentions.
+        </p>
+        {userStats?.isRagReady ? (
+          <div className={`${styles.alert} ${styles.alertInfo}`}>
+            Your archive is active — {userStats.mentionsExtracted} mentions indexed across {userStats.activeSources} sources. Head to Research to compare documents.
+          </div>
+        ) : (
+          <div className={`${styles.alert} ${styles.alertInfo}`}>
+            No documents indexed yet. Enable archives, then run ingestion from the Research tab.
+          </div>
+        )}
+      </div>
+
+      <ArchiveCounterRow stats={archiveStats} />
 
       <div className={styles.statRow}>
         <CreditBalance />
         <div className={styles.stat}>
           <div className={styles.statVal}>{enabledSources.length}</div>
-          <div className={styles.statLabel}>Active archives</div>
+          <div className={styles.statLabel}>Archives enabled</div>
         </div>
         <div className={styles.stat}>
-          <div className={styles.statVal}>{profile?.billingMode === 'byok' ? 'BYOK' : 'Credits'}</div>
-          <div className={styles.statLabel}>Billing mode</div>
+          <div className={styles.statVal}>{archiveStats?.builtArchives ?? 0}</div>
+          <div className={styles.statLabel}>Archives with data</div>
         </div>
       </div>
 
       <section className={styles.stepSection}>
-        <h2 className={styles.sectionTitle}>How it works</h2>
+        <h2 className={styles.sectionTitle}>Three steps</h2>
         <div className={styles.stepGrid}>
           {STEPS.map((step) => (
             <article key={step.n} className={styles.stepCard}>
@@ -71,7 +88,7 @@ export default function HomePage({ onTab }) {
           Start researching
         </button>
         <button type="button" className={styles.btn} onClick={() => onTab?.('settings')}>
-          Billing &amp; settings
+          Share &amp; billing
         </button>
       </div>
 
