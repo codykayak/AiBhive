@@ -15,6 +15,7 @@ export const EXAMPLE_APP_IDS = {
   meetingBurn: 'example-meeting-burn',
   focusReactor: 'example-focus-reactor',
   houseFlip: 'example-house-flip',
+  oldTartarResearch: 'example-old-tartar-research',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
@@ -85,5 +86,10 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.houseFlip,
     title: 'House Flip Calculator',
     sub: 'ARV · rehab · live profit charts',
+  },
+  {
+    id: EXAMPLE_APP_IDS.oldTartarResearch,
+    title: 'Old Tartar Research',
+    sub: 'Historical archives · anomaly detection',
   },
 ] as const;

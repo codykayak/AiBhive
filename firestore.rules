@@ -57,5 +57,41 @@ service cloud.firestore {
       allow update: if isAuthenticated() && isOwner(userId) && !('role' in request.resource.data);
       allow delete: if false;
     }
+
+    // Old Tartar Research — per-user research data (users/{uid}/tartarResearch/…)
+    match /users/{userId}/tartarResearch/{docId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/mentions/{mentionId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/entities/{entityId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/sources/{sourceId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/searchTerms/{termId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/ingestionJobs/{jobId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update, delete: if false;
+    }
+    match /users/{userId}/tartarResearch/anomalies/{anomalyId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    match /users/{userId}/tartarResearch/usageLog/{logId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow create, update, delete: if false;
+    }
+    match /users/{userId}/tartarResearch/apiSecrets/{provider} {
+      allow read, write: if false;
+    }
+    match /tartarPlatform/{collection}/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
   }
 }

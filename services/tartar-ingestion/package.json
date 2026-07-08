@@ -1,0 +1,14 @@
+{
+  "name": "tartar-ingestion",
+  "version": "1.0.0",
+  "description": "Cloud Run worker for Old Tartar Research archive ingestion",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": { "node": "20" },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
