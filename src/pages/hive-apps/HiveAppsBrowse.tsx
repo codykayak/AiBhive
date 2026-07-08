@@ -135,7 +135,7 @@ export default function HiveAppsBrowse() {
         <div className="mb-8">
           <h2 className="text-white font-bold text-lg mb-3 px-1">AiBhive Labs</h2>
           <p className="text-slate-500 text-sm mb-3 px-1">
-            Built-in web tools — OCR and multilingual transcription.
+            Built-in web tools — OCR, multilingual transcription, and stealth research scraping.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {PLATFORM_WEB_APPS.map((app) => (

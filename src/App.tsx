@@ -14,6 +14,7 @@ const Home = lazy(() => import('./pages/Home'));
 const TranscriptionStudio = lazy(() => import('./pages/TranscriptionStudio'));
 const VoiceCloneLab = lazy(() => import('./pages/VoiceCloneLab'));
 const OcrLab = lazy(() => import('./pages/ocr-lab/OcrLab'));
+const FableScrape = lazy(() => import('./pages/fable-scrape/FableScrape'));
 const GrowGlobally = lazy(() => import('./pages/GrowGlobally'));
 const AboutContact = lazy(() => import('./pages/AboutContact'));
 const GetStarted = lazy(() => import('./pages/GetStarted'));
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
             <Route path="/transcription" element={<TranscriptionStudio />} />
             <Route path="/voice-clone" element={<VoiceCloneLab />} />
             <Route path="/ocr-lab" element={<OcrLab />} />
+            <Route path="/fable-scrape" element={<FableScrape />} />
             <Route path="/grow" element={<GrowGlobally />} />
             <Route path="/about" element={<AboutContact />} />
             <Route path="/faq" element={<FAQ />} />
