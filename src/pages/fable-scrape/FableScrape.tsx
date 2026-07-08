@@ -79,6 +79,7 @@ export default function FableScrape() {
   const [result, setResult] = useState<ScanResult | null>(null);
 
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
+  const [brokenPreviews, setBrokenPreviews] = useState<Set<string>>(new Set());
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState('');
 
@@ -105,6 +106,7 @@ export default function FableScrape() {
     setOcrText('');
     setOcrError('');
     setSelectedImages(new Set());
+    setBrokenPreviews(new Set());
     setScanning(true);
     try {
       const res = await fetch('/api/fable-scrape/scan', {
@@ -391,17 +393,32 @@ export default function FableScrape() {
                           onClick={() => toggleImage(img.url)}
                           className="block w-full aspect-square bg-[#0f1115]"
                         >
-                          {/* Preview via proxy is best-effort; hotlink may fail silently. */}
-                          <img
-                            src={img.url}
-                            alt={img.alt || img.filename}
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.opacity = '0.15';
-                            }}
-                          />
+                          {/* Direct preview is best-effort — some origins block hotlinking.
+                              On failure we show a labeled placeholder (the proxy still
+                              downloads/OCRs the real file regardless). */}
+                          {brokenPreviews.has(img.url) ? (
+                            <span className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-500 px-2">
+                              <ImageIcon className="w-8 h-8 opacity-40" />
+                              <span className="text-[10px] text-center break-all line-clamp-2">
+                                {img.ext ? img.ext.toUpperCase() : 'IMG'}
+                              </span>
+                            </span>
+                          ) : (
+                            <img
+                              src={img.url}
+                              alt={img.alt || img.filename}
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                              onError={() =>
+                                setBrokenPreviews((prev) => {
+                                  const next = new Set(prev);
+                                  next.add(img.url);
+                                  return next;
+                                })
+                              }
+                            />
+                          )}
                         </button>
                         <div className="absolute top-2 left-2">
                           <div
