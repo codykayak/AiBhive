@@ -40,23 +40,23 @@ function TartarPage({ tab, onTab }) {
   );
 }
 
-function TartarWorkspace({ user, onSignOut }) {
-  const [tab, setTab] = useState('home');
+function TartarWorkspace({ user, onSignOut, embedded = false }) {
+  const [tab, setTab] = useState(embedded ? 'research' : 'home');
 
   return (
     <TartarProvider user={user}>
       <div className={styles.workspace}>
-        <TartarHeroBanner fullWidth />
+        {!embedded && <TartarHeroBanner fullWidth />}
         <TartarLayout activeTab={tab} onTab={setTab} onSignOut={onSignOut} userEmail={user?.email}>
           <TartarPage tab={tab} onTab={setTab} />
         </TartarLayout>
-        <TartarCustomizeFab />
+        {!embedded && <TartarCustomizeFab />}
       </div>
     </TartarProvider>
   );
 }
 
-export default function OldTartarResearch() {
+export default function OldTartarResearch({ embedded = false }) {
   const [user, setUser] = useState(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
@@ -85,14 +85,13 @@ export default function OldTartarResearch() {
           <p className={styles.pageSub}>Loading…</p>
         </div>
       ) : !user ? (
-        <div className={styles.authShellFull}>
-          <TartarHeroBanner fullWidth />
+        <div className={embedded ? styles.authWrap : styles.authShellFull}>
+          {!embedded && <TartarHeroBanner fullWidth />}
           <div className={styles.authWrap}>
             <div className={styles.card} style={{ maxWidth: 480, width: '100%' }}>
-              <h1 className={styles.pageTitle}>Old Tartar Research</h1>
+              <h1 className={styles.pageTitle}>{embedded ? 'Research Library' : 'Old Tartar Research'}</h1>
               <p className={styles.pageSub}>
-                Help build a community archive. Hive credits cover processing and AI API costs so you can search and ingest more.
-                Sign in to extract mentions, cross-examine sources, and detect anomalies — opt in to share with everyone.
+                Sign in to ingest archives and search the RAG library. Hive credits cover processing and AI API costs.
               </p>
               {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
               <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={signIn}>
@@ -102,7 +101,7 @@ export default function OldTartarResearch() {
           </div>
         </div>
       ) : (
-        <TartarWorkspace user={user} onSignOut={() => signOut(auth)} />
+        <TartarWorkspace user={user} onSignOut={() => signOut(auth)} embedded={embedded} />
       )}
     </div>
   );
