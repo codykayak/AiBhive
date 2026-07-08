@@ -32,16 +32,31 @@ export const PLATFORM_WEB_APPS: PublishedWebApp[] = [
     kind: 'web_app',
     taskId: null,
   },
+  {
+    id: 'platform/fable-scrape',
+    owner: 'aibhive',
+    slug: 'fable-scrape',
+    title: 'Fable Scrape',
+    summary: 'Harvest images and documents from bot-blocked archives undetected, then OCR them in one pass.',
+    url: '/fable-scrape',
+    kind: 'web_app',
+    taskId: null,
+  },
 ];
 
 export function platformAppAsCard(app: PublishedWebApp) {
+  const icon = app.id.includes('ocr')
+    ? ('book' as const)
+    : app.id.includes('fable-scrape')
+      ? ('compass' as const)
+      : ('compass' as const);
   return {
     id: app.id,
     title: app.title,
     tagline: app.summary,
     summary: app.summary,
-    theme: 'purple' as const,
-    icon: app.id.includes('ocr') ? ('book' as const) : ('compass' as const),
+    theme: app.id.includes('fable-scrape') ? ('green' as const) : ('purple' as const),
+    icon,
     pages: [],
     pageCount: 0,
     isExample: true,

@@ -30,6 +30,16 @@ export const PLATFORM_WEB_APPS = [
     url: '/hive-apps/run/example-homework-bot',
     kind: 'platform_app',
   },
+  {
+    id: 'platform/fable-scrape',
+    owner: 'aibhive',
+    slug: 'fable-scrape',
+    title: 'Fable Scrape',
+    summary: 'Harvest images and documents from bot-blocked archives undetected, then OCR them in one pass.',
+    taskId: null,
+    url: '/fable-scrape',
+    kind: 'platform_app',
+  },
 ];
 
 export function listPlatformWebApps() {

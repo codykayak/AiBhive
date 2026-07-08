@@ -15,6 +15,7 @@ AiBhive combines (1) Bhive Builder — a no-code app factory on web and Android,
 - Hive Apps store: https://aibhive.com/hive-apps
 - AI tool guides (real estate): https://aibhive.com/tools/real-estate-ai
 - All tool categories: https://aibhive.com/tools
+- Fable Scrape (stealth image & document harvester + OCR): https://aibhive.com/fable-scrape
 - FAQ: https://aibhive.com/faq
 - About: https://aibhive.com/about
 
