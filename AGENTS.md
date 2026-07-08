@@ -13,18 +13,19 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 
 ## Pull requests
 
-**Default: test locally, then open a PR — do not auto-merge.**
+**When the user asks to auto-publish:** merge PRs to `main-fixed` after tests pass — Cloud Run auto-deploy runs on merge.
 
-1. **Commit and push** completed work to `cursor/<descriptive-name>-ee8d`.
-2. **Open PRs as ready for review** (`draft: false`), base branch `main-fixed`.
-3. **Do not merge** unless the user explicitly asks. Leave the PR open for human review in the sandbox or on GitHub.
-4. **Update the user** with what changed, how to test locally (`npm run dev:start`), and the PR link.
+**Default:** test locally, open PR as ready for review (`draft: false`), base `main-fixed`.
 
-Only auto-merge when the user explicitly requests it:
+1. **Commit and push** to `cursor/<descriptive-name>-c9be`.
+2. **Open PR** — triggers will run on merge via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
+3. **Merge** when the user requests auto-publish or explicit merge.
 
 ```bash
 gh pr merge <number> --squash --delete-branch
 ```
+
+**Live Old World Research:** https://aibhive.com/old-world-research (not only `/hive-apps/run/...`).
 
 ## Branch naming
 

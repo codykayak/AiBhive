@@ -1,0 +1,408 @@
+.owr {
+  --owr-bg: #050810;
+  --owr-surface: #0c1220;
+  --owr-border: rgba(56, 189, 248, 0.15);
+  --owr-cyan: #22d3ee;
+  --owr-amber: #f59e0b;
+  --owr-violet: #a78bfa;
+  --owr-text: #e8eef7;
+  --owr-muted: #8b9cb3;
+  min-height: 100vh;
+  background: var(--owr-bg);
+  color: var(--owr-text);
+  overflow-x: hidden;
+}
+
+.owrHero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  align-items: center;
+}
+
+.owrHeroCopy {
+  z-index: 2;
+}
+
+.owrEyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--owr-cyan);
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+
+.owrTypedTitle {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 1rem;
+  min-height: 1.2em;
+  background: linear-gradient(135deg, #fff 0%, var(--owr-cyan) 50%, var(--owr-amber) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.owrTypedTitle.void {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.98);
+  filter: blur(6px);
+  transition: opacity 1.2s ease, transform 1.2s ease, filter 1.2s ease;
+}
+
+.owrSubtitle {
+  font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+  font-weight: 600;
+  color: var(--owr-text);
+  margin: 0 0 1.25rem;
+  line-height: 1.35;
+}
+
+.owrBullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.owrBullets li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--owr-muted);
+}
+
+.owrBullets li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--owr-amber);
+  box-shadow: 0 0 8px var(--owr-amber);
+  flex-shrink: 0;
+}
+
+.owrCreditsNote {
+  font-size: 0.85rem;
+  color: var(--owr-muted);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--owr-border);
+  background: rgba(34, 211, 238, 0.06);
+  margin-bottom: 1rem;
+}
+
+.owrCreditsNote strong {
+  color: var(--owr-cyan);
+}
+
+.owrVideoWrap {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--owr-border);
+  box-shadow: 0 24px 80px rgba(34, 211, 238, 0.12), 0 0 0 1px rgba(167, 139, 250, 0.1);
+  aspect-ratio: 16 / 10;
+  background: #000;
+}
+
+.owrVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.owrVideoGlow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 60% 40%, rgba(34, 211, 238, 0.2), transparent 55%);
+  pointer-events: none;
+  animation: owrPulse 4s ease-in-out infinite;
+}
+
+@keyframes owrPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.owrTopics {
+  position: relative;
+  padding: 4rem 1.5rem 5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.owrTopicsHeader {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.owrTopicsTitle {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 800;
+  margin: 0 0 0.5rem;
+}
+
+.owrWordCount {
+  font-size: 1.1rem;
+  color: var(--owr-cyan);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.owrWordCount span {
+  font-size: 0.85rem;
+  color: var(--owr-muted);
+  font-weight: 500;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.owrGlobeStage {
+  position: relative;
+  width: min(100%, 720px);
+  height: min(72vw, 520px);
+  margin: 0 auto;
+  perspective: 900px;
+}
+
+.owrGlobe {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(34, 211, 238, 0.15), transparent 50%),
+    radial-gradient(circle at 70% 75%, rgba(167, 139, 250, 0.12), transparent 45%),
+    linear-gradient(145deg, #0a1020 0%, #050810 100%);
+  border: 1px solid var(--owr-border);
+  box-shadow: inset 0 0 60px rgba(34, 211, 238, 0.08), 0 0 80px rgba(34, 211, 238, 0.06);
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+}
+
+.owrGlobeLines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.owrTopicNode {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(12, 18, 32, 0.92);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--owr-text);
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  z-index: 2;
+}
+
+.owrTopicNode:hover,
+.owrTopicNodeActive {
+  border-color: var(--owr-amber);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.35);
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.owrCrocBox {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92%, 340px);
+  z-index: 10;
+  background: rgba(5, 8, 16, 0.94);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(34, 211, 238, 0.1);
+  backdrop-filter: blur(12px);
+}
+
+.owrCrocHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--owr-cyan);
+}
+
+.owrCrocIcon {
+  font-size: 1.25rem;
+}
+
+.owrCrocInput {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.owrCrocInput input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--owr-border);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--owr-text);
+  font-size: 0.85rem;
+}
+
+.owrCrocInput button {
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  border: none;
+  background: var(--owr-amber);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.owrCrocReply {
+  margin-top: 0.65rem;
+  font-size: 0.8rem;
+  color: var(--owr-muted);
+  line-height: 1.45;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.owrTools {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem 4rem;
+}
+
+.owrTabRow {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--owr-border);
+  padding-bottom: 0.75rem;
+}
+
+.owrTab {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--owr-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.owrTabActive {
+  color: var(--owr-cyan);
+  border-color: var(--owr-border);
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.owrPanel {
+  border-radius: 16px;
+  border: 1px solid var(--owr-border);
+  background: var(--owr-surface);
+  overflow: hidden;
+}
+
+.owrEmbeddedTartar {
+  border: none;
+  border-radius: 0;
+}
+
+.owrOcrZone {
+  padding: 1.5rem;
+}
+
+.owrOcrDrop {
+  border: 2px dashed var(--owr-border);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.owrOcrDrop:hover {
+  border-color: var(--owr-cyan);
+  background: rgba(34, 211, 238, 0.04);
+}
+
+.owrModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.owrModal {
+  max-width: 440px;
+  width: 100%;
+  background: var(--owr-surface);
+  border: 1px solid var(--owr-amber);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.owrModal h3 {
+  margin: 0 0 0.75rem;
+  color: var(--owr-amber);
+}
+
+.owrModalActions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.owrBtn {
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid var(--owr-border);
+  background: transparent;
+  color: var(--owr-text);
+  font-family: inherit;
+}
+
+.owrBtnPrimary {
+  background: linear-gradient(135deg, var(--owr-amber), #d97706);
+  border-color: var(--owr-amber);
+  color: #000;
+}
+
+@media (max-width: 900px) {
+  .owrHero {
+    grid-template-columns: 1fr;
+  }
+  .owrVideoWrap {
+    order: -1;
+    max-height: 280px;
+  }
+}
