@@ -160,12 +160,75 @@
 .alertError { background: #2d1515; border: 1px solid #5c2020; color: #f0a8a4; }
 .alertInfo { background: #15202d; border: 1px solid #203a5c; color: #a8c8f0; }
 
+.authShell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 2.5rem;
+}
+
 .authWrap {
-  min-height: 100vh;
+  min-height: min(70vh, 640px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--tartar-border);
+  margin-bottom: 1.5rem;
+  aspect-ratio: 16 / 9;
+  max-height: 420px;
+  background: #000;
+}
+.heroCompact {
+  max-height: 220px;
+  margin-bottom: 1rem;
+}
+.heroVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 14, 20, 0.92) 0%, rgba(10, 14, 20, 0.35) 55%, rgba(10, 14, 20, 0.15) 100%);
+  pointer-events: none;
+}
+.heroCopy {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+  z-index: 1;
+}
+.heroEyebrow {
+  margin: 0 0 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tartar-accent);
+}
+.heroTitle {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 800;
+  color: var(--tartar-text);
+}
+.heroSub {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--tartar-muted);
+  max-width: 52ch;
 }
 
 @media (max-width: 768px) {

@@ -9,6 +9,7 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { TartarProvider, useTartar } from './context/TartarContext';
 import TartarLayout from './components/TartarLayout';
+import TartarHeroVideo from './components/TartarHeroVideo';
 import AppsPage from './pages/AppsPage';
 import DashboardPage from './pages/DashboardPage';
 import SourcesPage from './pages/SourcesPage';
@@ -48,6 +49,7 @@ function TartarWorkspace({ user }) {
   return (
     <TartarProvider user={user}>
       <TartarLayout onSignOut={() => signOut(auth)}>
+        <TartarHeroVideo compact />
         <TartarRoutes />
       </TartarLayout>
     </TartarProvider>
@@ -76,31 +78,34 @@ export default function OldTartarResearch() {
     }
   }
 
-  if (!ready) {
-    return <div className={styles.authWrap}><p className={styles.pageSub}>Loading…</p></div>;
-  }
-
-  if (!user) {
-    return (
-      <div className={styles.authWrap}>
-        <div className={styles.card} style={{ maxWidth: 420, width: '100%' }}>
-          <h1 className={styles.pageTitle}>Old Tartar Research</h1>
-          <p className={styles.pageSub}>
-            Sign in with Google to ingest archives, extract historical mentions, and detect anomalies.
-            Uses Hive credits or your own API keys (BYOK).
-          </p>
-          {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
-          <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={signIn}>
-            Sign in with Google
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <MemoryRouter>
-      <TartarWorkspace user={user} />
-    </MemoryRouter>
+    <div className={styles.tartar}>
+      {!ready ? (
+        <div className={styles.authWrap}>
+          <p className={styles.pageSub}>Loading…</p>
+        </div>
+      ) : !user ? (
+        <div className={styles.authShell}>
+          <TartarHeroVideo />
+          <div className={styles.authWrap}>
+            <div className={styles.card} style={{ maxWidth: 420, width: '100%' }}>
+              <h1 className={styles.pageTitle}>Old Tartar Research</h1>
+              <p className={styles.pageSub}>
+                Sign in with Google to ingest archives, extract historical mentions, and detect anomalies.
+                Uses Hive credits or your own API keys (BYOK).
+              </p>
+              {error && <div className={`${styles.alert} ${styles.alertError}`}>{error}</div>}
+              <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={signIn}>
+                Sign in with Google
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <MemoryRouter>
+          <TartarWorkspace user={user} />
+        </MemoryRouter>
+      )}
+    </div>
   );
 }
