@@ -6,18 +6,20 @@ Flexible Firestore schema for historical entity extraction and anomaly detection
 
 ```
 users/{uid}/tartarResearch/
-  profile              — hiveCredits, billingMode, defaultAiProvider, enabledApps
+  profile              — hiveCredits, billingMode, defaultAiProvider, enabledApps, promo fields
   customBuild          — per-user build (visible only when signed in)
-  apiSecrets/{provider}— BYOK keys (server-only; denied in client rules)
-  sources/{sourceId}   — enabled catalog + user-added sources
-  searchTerms/{id}     — custom keywords for ingestion
-  ingestionJobs/{id}   — pipeline job status
-  mentions/{id}        — every extracted mention (full metadata)
-  entities/{id}        — aggregated entity rollups
-  anomalies/{id}       — flagged statistical patterns
-  usageLog/{id}        — credit usage audit trail
+  data                 — anchor document for subcollections
+  data/apiSecrets/{provider} — BYOK keys (server-only; denied in client rules)
+  data/sources/{sourceId}    — enabled catalog + user-added sources
+  data/searchTerms/{id}      — custom keywords for ingestion
+  data/ingestionJobs/{id}    — pipeline job status
+  data/mentions/{id}         — every extracted mention (full metadata)
+  data/entities/{id}         — aggregated entity rollups
+  data/anomalies/{id}        — flagged statistical patterns
+  data/usageLog/{id}         — credit usage audit trail
 
 tartarPlatform/        — read-only platform catalog (optional seed)
+  catalog/promoCodes/{code} — partner codes (server-managed redemptions)
   apps/
   entityTypes/
   sourceCatalog/
@@ -56,8 +58,9 @@ tartarPlatform/        — read-only platform catalog (optional seed)
 
 ## Billing
 
-- **Hive credits**: platform keys; 30% fee on usage (`PLATFORM_FEE_RATE = 0.3`)
-- **BYOK**: user stores keys in `apiSecrets`; no credit charge
+- **Hive credits**: platform keys; 30% fee on usage (`PLATFORM_FEE_RATE = 0.3`) by default
+- **Partner / promo codes**: waive markup; user pays API cost + small server fee (~5%, configurable via `TARTAR_PROMO_CODES` or Firestore `tartarPlatform/catalog/promoCodes`)
+- **BYOK**: user stores keys in `data/apiSecrets`; no credit charge (pay provider directly)
 
 ## Query patterns
 

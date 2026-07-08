@@ -121,6 +121,12 @@ export function registerTartarRoutes(app, db) {
     });
   });
 
+  app.post('/api/tartar/promo-code', async (req, res) => {
+    const authUser = await requireTartarUser(req, res);
+    if (!authUser) return;
+    return invoke(res, handlers.tartarRedeemPromo.bind(handlers), authUser, { code: req.body?.code });
+  });
+
   app.post('/api/tartar/ingestion/worker', (req, res) => {
     return handleTartarIngestionWorker(req, res, { db, platformSecrets: tartarSecrets() });
   });

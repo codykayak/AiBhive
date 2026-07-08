@@ -1,21 +1,20 @@
 import styles from '../tartar.module.css';
 
 export const TARTAR_TABS = [
-  { id: 'apps', label: 'Apps' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'sources', label: 'Sources' },
-  { id: 'mentions', label: 'Mentions' },
-  { id: 'anomalies', label: 'Anomalies' },
-  { id: 'search-terms', label: 'Search terms' },
-  { id: 'build', label: 'My build' },
+  { id: 'home', label: 'Home' },
+  { id: 'research', label: 'Research' },
+  { id: 'archives', label: 'Archives' },
   { id: 'settings', label: 'Settings' },
 ];
 
-export default function TartarLayout({ children, activeTab, onTab, onSignOut }) {
+export default function TartarLayout({ children, activeTab, onTab, onSignOut, userEmail }) {
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
         <div className={styles.brand}>Old Tartar Research</div>
+        {userEmail && (
+          <p className={styles.sidebarUser} title={userEmail}>{userEmail}</p>
+        )}
         {TARTAR_TABS.map(({ id, label }) => {
           const active = activeTab === id;
           return (

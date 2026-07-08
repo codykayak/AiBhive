@@ -39,9 +39,9 @@ export default function SourcesPage() {
 
   return (
     <>
-      <h1 className={styles.pageTitle}>Data sources</h1>
+      <h1 className={styles.pageTitle}>Archives</h1>
       <p className={styles.pageSub}>
-        Clear catalog of archive sources. Enable built-in sources or add your own — each maps to an ingestion adapter.
+        Catalog of archive sources. Enable built-in sources or add your own — each maps to an ingestion adapter.
       </p>
 
       <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setShowForm(!showForm)} style={{ marginBottom: '1rem' }}>

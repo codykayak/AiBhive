@@ -1,6 +1,6 @@
 /**
  * Hive credits + BYOK billing for AI extraction.
- * Platform charges 30% on Hive credit usage for upkeep/servers.
+ * Platform charges 30% on Hive credit usage by default; promo codes reduce to ~5% server fee.
  */
 
 import { FieldValue } from 'firebase-admin/firestore';
@@ -8,15 +8,18 @@ import {
   profileRef,
   usageLogCol,
   apiSecretsRef,
+  ensureDataDoc,
   PLATFORM_FEE_RATE,
   DEFAULT_STARTING_CREDITS,
   CREDIT_RATES,
 } from './paths.js';
+import { effectiveFeeRate } from './promoCodes.js';
 
 /**
  * Ensure user has a tartar profile with starting credits.
  */
 export async function ensureProfile(db, uid) {
+  await ensureDataDoc(db, uid);
   const ref = profileRef(db, uid);
   const snap = await ref.get();
   if (snap.exists) return snap.data();
@@ -25,6 +28,7 @@ export async function ensureProfile(db, uid) {
     billingMode: 'hive_credits',
     defaultAiProvider: 'gemini',
     enabledApps: { old_tartar_research: true },
+    waivePlatformMarkup: false,
     createdAt: FieldValue.serverTimestamp(),
   };
   await ref.set(profile);
@@ -45,16 +49,17 @@ export async function resolveApiKey(db, uid, provider, platformSecrets) {
   }
   const platformKey = platformSecrets[provider];
   if (!platformKey) throw new Error(`Platform ${provider} is not configured.`);
-  return { key: platformKey, mode: 'hive_credits', chargeCredits: true };
+  return { key: platformKey, mode: 'hive_credits', chargeCredits: true, profile };
 }
 
 /**
  * Estimate credit cost from token usage.
  */
-export function estimateCredits(provider, inputTokens, outputTokens) {
+export function estimateCredits(provider, inputTokens, outputTokens, profile) {
   const rates = CREDIT_RATES[provider] ?? CREDIT_RATES.gemini;
   const base = (inputTokens / 1000) * rates.inputPer1k + (outputTokens / 1000) * rates.outputPer1k;
-  const withFee = base * (1 + PLATFORM_FEE_RATE);
+  const fee = effectiveFeeRate(profile);
+  const withFee = base * (1 + fee);
   return Math.ceil(withFee * 100) / 100;
 }
 
@@ -62,7 +67,9 @@ export function estimateCredits(provider, inputTokens, outputTokens) {
  * Deduct credits and log usage. Returns remaining balance.
  */
 export async function chargeCredits(db, uid, { provider, inputTokens, outputTokens, operation, jobId }) {
-  const credits = estimateCredits(provider, inputTokens, outputTokens);
+  const profile = await ensureProfile(db, uid);
+  const credits = estimateCredits(provider, inputTokens, outputTokens, profile);
+  const fee = effectiveFeeRate(profile);
   const ref = profileRef(db, uid);
 
   await db.runTransaction(async (tx) => {
@@ -82,7 +89,9 @@ export async function chargeCredits(db, uid, { provider, inputTokens, outputToke
       inputTokens,
       outputTokens,
       creditsCharged: credits,
-      platformFee: Math.ceil(credits * PLATFORM_FEE_RATE * 100) / 100,
+      platformFeeRate: fee,
+      platformFee: Math.ceil(credits * fee / (1 + fee) * 100) / 100,
+      promoCode: profile.promoCode ?? null,
       jobId: jobId ?? null,
       createdAt: FieldValue.serverTimestamp(),
     });
@@ -96,6 +105,7 @@ export async function chargeCredits(db, uid, { provider, inputTokens, outputToke
  * Store user's BYOK key (server-side only).
  */
 export async function storeApiKey(db, uid, provider, apiKey) {
+  await ensureDataDoc(db, uid);
   await apiSecretsRef(db, uid, provider).set({
     provider,
     apiKey: String(apiKey).trim(),
