@@ -1,4 +1,3 @@
-import type { User } from 'firebase/auth';
 import { adminJson } from '../../lib/adminApi';
 
 export function createTartarApi(user) {
