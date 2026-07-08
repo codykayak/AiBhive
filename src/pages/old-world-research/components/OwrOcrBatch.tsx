@@ -37,7 +37,7 @@ async function compressImage(file: File): Promise<string> {
 }
 
 export default function OwrOcrBatch() {
-  const { appendOutput, setOcrText, setActiveStep, imageUrls } = useOwrWorkflow();
+  const { appendOutput, setOcrText, setActiveStep } = useOwrWorkflow();
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
@@ -101,11 +101,6 @@ export default function OwrOcrBatch() {
 
   return (
     <div className={styles.owrOcrZone}>
-      {imageUrls.length > 0 && (
-        <p className={styles.owrOcrHint}>
-          {imageUrls.length} image URL(s) from Fable Scrape — download and upload here, or add your own scans.
-        </p>
-      )}
       <input
         ref={inputRef}
         type="file"

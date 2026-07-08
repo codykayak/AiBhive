@@ -157,6 +157,12 @@
     <priority>0.95</priority>
   </url>
   <url>
+    <loc>https://aibhive.com/fable-scrape</loc>
+    <lastmod>2026-07-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://aibhive.com/autoposter</loc>
     <lastmod>2026-06-22</lastmod>
     <changefreq>weekly</changefreq>

@@ -395,6 +395,16 @@
   max-width: 52rem;
 }
 
+.owrInlineLink {
+  color: var(--owr-cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.owrInlineLink:hover {
+  color: var(--owr-amber);
+}
+
 .owrStepRow {
   display: flex;
   gap: 0.35rem;
@@ -448,6 +458,20 @@
 .owrStepIntro strong {
   color: var(--owr-cyan);
   font-weight: 600;
+}
+
+/* Embedded Fable Scrape — original tool, trimmed chrome for in-section use */
+.owrFableEmbed main {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.owrFableEmbed main > div > header {
+  display: none;
+}
+
+.owrFableEmbed .glass-card {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .owrScrapeForm {

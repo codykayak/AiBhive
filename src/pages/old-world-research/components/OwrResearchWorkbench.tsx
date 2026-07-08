@@ -23,8 +23,9 @@ export default function OwrResearchWorkbench() {
       <header className={styles.owrWorkbenchHeader}>
         <h2>One section — every tool</h2>
         <p>
-          Step through scrape → OCR → library → research → translate. Each step builds on the last; your output
-          accumulates at the bottom.
+          Step through Fable Scrape → OCR → library → research → translate. Fable Scrape is the same tool as{' '}
+          <a href="/fable-scrape" className={styles.owrInlineLink}>/fable-scrape</a> — embedded here so you
+          never leave this page.
         </p>
       </header>
 

@@ -62,6 +62,7 @@ import {
   chargeHomeworkUsage,
 } from './homeworkBilling.js';
 import { runOcrOnImages } from './ocr.js';
+import { scanPage, downloadAsset, fetchImagesForOcr } from './fableScrape.js';
 import {
   initSocialPostsService,
   handleSocialPostsRequest,
@@ -69,7 +70,6 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { registerTartarRoutes } from './tartarRoutes.js';
-import { runFableScrape } from './fableScrape.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -269,6 +269,46 @@ async function verifyAdmin(req, res, next) {
 // --- OCR API ---
 // Must be registered before global express.json() (default 100kb) so large image payloads work.
 app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
+
+// --- Fable Scrape API (stealth research harvester) ---
+const fableScrapeJson = express.json({ limit: '2mb' });
+
+app.post('/api/fable-scrape/scan', fableScrapeJson, async (req, res) => {
+  try {
+    const { url, engine } = req.body || {};
+    const result = await scanPage({ url, engine });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] scan error:', error.message);
+    return res.status(400).json({ error: error.message || 'Failed to scan page.' });
+  }
+});
+
+app.post('/api/fable-scrape/download', fableScrapeJson, async (req, res) => {
+  try {
+    const { url, referer, cookies } = req.body || {};
+    const asset = await downloadAsset({ url, referer, cookies });
+    return res.status(200).json(asset);
+  } catch (error) {
+    console.error('[fable-scrape] download error:', error.message);
+    return res.status(400).json({ error: error.message || 'Failed to download asset.' });
+  }
+});
+
+app.post('/api/fable-scrape/ocr', fableScrapeJson, async (req, res) => {
+  try {
+    const { urls, referer, cookies, format } = req.body || {};
+    const { images, fetched, failed } = await fetchImagesForOcr({ urls, referer, cookies });
+    if (!images.length) {
+      return res.status(400).json({ error: 'Could not fetch any images for OCR.', failed });
+    }
+    const text = await runOcrOnImages(images, format);
+    return res.status(200).json({ text, fetched, failed });
+  } catch (error) {
+    console.error('[fable-scrape] ocr error:', error.message);
+    return res.status(400).json({ error: error.message || 'Failed to OCR images.' });
+  }
+});
 
 app.post(
   '/api/homework/ocr-ingest',
@@ -708,19 +748,6 @@ app.get('/api/intel-gathering/dbpr', async (req, res) => {
   } catch (error) {
     console.error('Error in DBPR records endpoint:', error);
     res.status(500).json({ error: 'Failed to fetch DBPR records' });
-  }
-});
-
-/** Fable Scrape — stealth archive harvester for Old World Research */
-app.post('/api/fable-scrape', express.json(), async (req, res) => {
-  try {
-    const result = await runFableScrape(req.body || {});
-    res.json(result);
-  } catch (error) {
-    console.error('Fable Scrape error:', error);
-    res.status(error.message?.includes('not set') ? 503 : 500).json({
-      error: error.message || 'Fable Scrape failed',
-    });
   }
 });
 
