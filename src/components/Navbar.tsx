@@ -64,6 +64,16 @@ export default function Navbar() {
               </Link>
 
               <Link
+                to="/old-world-research"
+                className={cn(
+                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
+                  location.pathname.startsWith('/old-world-research') ? 'text-bee-amber' : 'text-slate-300'
+                )}
+              >
+                Old World Research
+              </Link>
+
+              <Link
                 to="/hive-apps"
                 className={cn(
                   'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
@@ -226,6 +236,13 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             >
               Home
+            </Link>
+            <Link
+              to="/old-world-research"
+              className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
+              onClick={() => setMobileOpen(false)}
+            >
+              Old World Research
             </Link>
             <Link
               to="/hive-apps"

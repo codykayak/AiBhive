@@ -48,6 +48,7 @@ const HiveAppDetailPage = lazy(() => import('./pages/hive-apps/HiveAppDetailPage
 const HiveAppRunPage = lazy(() => import('./pages/hive-apps/HiveAppRunPage'));
 const HiveAppEmbedPage = lazy(() => import('./pages/hive-apps/HiveAppEmbedPage'));
 const HiveAppsBuildPage = lazy(() => import('./pages/hive-apps/HiveAppsBuildPage'));
+const OldWorldResearchPage = lazy(() => import('./pages/old-world-research/OldWorldResearchPage'));
 
 function PageLoader() {
   return (
@@ -114,6 +115,8 @@ function AnimatedRoutes() {
               <Route path="research" element={<ResearchPage />} />
               <Route path="settings" element={<WebSettingsPage />} />
             </Route>
+            <Route path="/old-world-research" element={<OldWorldResearchPage />} />
+            <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/old-world-research" />} />
             <Route path="/hive-apps" element={<HiveAppsLayout />}>
               <Route index element={<HiveAppsBrowse />} />
               <Route path="app/:appId" element={<HiveAppDetailPage />} />
@@ -137,6 +140,7 @@ function AppShell() {
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
+    pathname.startsWith('/old-world-research') ||
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build');
