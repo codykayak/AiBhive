@@ -1,6 +1,6 @@
 import { SEO } from '../../components/SEO';
 import TartarCustomizeFab from '../../old-tartar-research/components/TartarCustomizeFab';
-import HeroTartaria3D from './components/HeroTartaria3D';
+import HeroTartaria from './components/HeroTartaria';
 import OwrBuilderPanel from './components/OwrBuilderPanel';
 import OwrResearchWorkbench from './components/OwrResearchWorkbench';
 import { OwrWorkflowProvider } from './context/OwrWorkflowContext';
@@ -15,7 +15,7 @@ export default function OldWorldResearchPage() {
           description="Explore Tartaria, mud floods, antiquitech, and hidden history. Fable Scrape, OCR, archives, RAG search, and 3D research tools."
           keywords="old world research, Tartaria, forgotten world, historical archives, OCR, RAG, star forts, mud flood, Fable Scrape"
         />
-        <HeroTartaria3D />
+        <HeroTartaria />
         <OwrBuilderPanel />
         <OwrResearchWorkbench />
         <TartarCustomizeFab />
