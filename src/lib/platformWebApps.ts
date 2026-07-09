@@ -37,7 +37,7 @@ export const PLATFORM_WEB_APPS: PublishedWebApp[] = [
     owner: 'aibhive',
     slug: 'fable-scrape',
     title: 'Fable Scrape',
-    summary: 'Harvest images and documents from bot-blocked archives undetected, then OCR them in one pass.',
+    summary: 'AI-directed harvester: find, read, and translate documents from bot-blocked archives with the model of your choice.',
     url: '/fable-scrape',
     kind: 'web_app',
     taskId: null,

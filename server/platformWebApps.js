@@ -35,7 +35,7 @@ export const PLATFORM_WEB_APPS = [
     owner: 'aibhive',
     slug: 'fable-scrape',
     title: 'Fable Scrape',
-    summary: 'Harvest images and documents from bot-blocked archives undetected, then OCR them in one pass.',
+    summary: 'AI-directed harvester: find, read, and translate documents from bot-blocked archives with the model of your choice.',
     taskId: null,
     url: '/fable-scrape',
     kind: 'platform_app',
