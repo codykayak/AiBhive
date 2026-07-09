@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 
-const clients = new Map<string, GoogleGenAI>();
+const clients = new Map();
 
-function getGemini(apiKey?: string) {
+function getGemini(apiKey) {
   const key = (apiKey || process.env.GEMINI_API_KEY || '').trim();
   if (!key) return null;
   if (!clients.has(key)) {
