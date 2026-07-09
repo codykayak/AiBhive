@@ -64,15 +64,13 @@ export default function Navbar() {
               </Link>
 
               <Link
-                to="/research"
+                to="/old-world-research"
                 className={cn(
                   'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
-                  location.pathname.startsWith('/research') || location.pathname.startsWith('/old-world-research')
-                    ? 'text-bee-amber'
-                    : 'text-slate-300'
+                  location.pathname.startsWith('/old-world-research') ? 'text-bee-amber' : 'text-slate-300'
                 )}
               >
-                Research
+                Old World Research
               </Link>
 
               <Link
@@ -240,11 +238,11 @@ export default function Navbar() {
               Home
             </Link>
             <Link
-              to="/research"
+              to="/old-world-research"
               className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
               onClick={() => setMobileOpen(false)}
             >
-              Research
+              Old World Research
             </Link>
             <Link
               to="/hive-apps"
