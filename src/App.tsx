@@ -115,9 +115,8 @@ function AnimatedRoutes() {
               <Route path="research" element={<ResearchPage />} />
               <Route path="settings" element={<WebSettingsPage />} />
             </Route>
-            <Route path="/research" element={<OldWorldResearchPage />} />
-            <Route path="/old-world-research" element={<AppRedirect to="/research" />} />
-            <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research" />} />
+            <Route path="/old-world-research" element={<OldWorldResearchPage />} />
+            <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/old-world-research" />} />
             <Route path="/hive-apps" element={<HiveAppsLayout />}>
               <Route index element={<HiveAppsBrowse />} />
               <Route path="app/:appId" element={<HiveAppDetailPage />} />
@@ -141,7 +140,6 @@ function AppShell() {
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
-    pathname.startsWith('/research') ||
     pathname.startsWith('/old-world-research') ||
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
