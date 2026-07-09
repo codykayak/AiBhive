@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Optimize Old World Research hero video for web delivery.
+ * Optimize Research Lab hero video for web delivery.
  * Source: src/aibhive-research_data-ai-library.mp4
  */
 import { execSync } from 'node:child_process';

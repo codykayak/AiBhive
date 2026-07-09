@@ -1,6 +1,6 @@
 import { useState, useRef, ChangeEvent } from 'react';
 import { Loader2, Upload } from 'lucide-react';
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 import OwrCostGuard from './OwrCostGuard';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
 
