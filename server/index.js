@@ -62,7 +62,14 @@ import {
   chargeHomeworkUsage,
 } from './homeworkBilling.js';
 import { runOcrOnImages } from './ocr.js';
-import { scanPage, downloadAsset, fetchImagesForOcr } from './fableScrape.js';
+import {
+  scanPage,
+  crawlSite,
+  downloadAsset,
+  fetchImagesForOcr,
+  residentialProxyStatus,
+  testProxyConnection,
+} from './fableScrape.js';
 import {
   initSocialPostsService,
   handleSocialPostsRequest,
@@ -273,10 +280,28 @@ app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
 // --- Fable Scrape API (stealth research harvester) ---
 const fableScrapeJson = express.json({ limit: '2mb' });
 
+app.get('/api/fable-scrape/status', (_req, res) => {
+  return res.status(200).json({
+    residentialProxy: residentialProxyStatus(),
+    firecrawl: !!process.env.FIRECRAWL_API_KEY,
+  });
+});
+
+app.post('/api/fable-scrape/test-proxy', fableScrapeJson, async (req, res) => {
+  try {
+    const { routing } = req.body || {};
+    const result = await testProxyConnection(routing);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] test-proxy error:', error.message);
+    return res.status(400).json({ error: error.message || 'Proxy test failed.' });
+  }
+});
+
 app.post('/api/fable-scrape/scan', fableScrapeJson, async (req, res) => {
   try {
-    const { url, engine } = req.body || {};
-    const result = await scanPage({ url, engine });
+    const { url, engine, include, includeIcons, routing } = req.body || {};
+    const result = await scanPage({ url, engine, include, includeIcons, routing });
     return res.status(200).json(result);
   } catch (error) {
     console.error('[fable-scrape] scan error:', error.message);
@@ -284,10 +309,21 @@ app.post('/api/fable-scrape/scan', fableScrapeJson, async (req, res) => {
   }
 });
 
+app.post('/api/fable-scrape/crawl', fableScrapeJson, async (req, res) => {
+  try {
+    const { url, include, includeIcons, routing, maxPages, maxDepth, sameHostOnly } = req.body || {};
+    const result = await crawlSite({ url, include, includeIcons, routing, maxPages, maxDepth, sameHostOnly });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] crawl error:', error.message);
+    return res.status(400).json({ error: error.message || 'Failed to crawl site.' });
+  }
+});
+
 app.post('/api/fable-scrape/download', fableScrapeJson, async (req, res) => {
   try {
-    const { url, referer, cookies } = req.body || {};
-    const asset = await downloadAsset({ url, referer, cookies });
+    const { url, referer, cookies, routing } = req.body || {};
+    const asset = await downloadAsset({ url, referer, cookies, routing });
     return res.status(200).json(asset);
   } catch (error) {
     console.error('[fable-scrape] download error:', error.message);
@@ -297,8 +333,8 @@ app.post('/api/fable-scrape/download', fableScrapeJson, async (req, res) => {
 
 app.post('/api/fable-scrape/ocr', fableScrapeJson, async (req, res) => {
   try {
-    const { urls, referer, cookies, format } = req.body || {};
-    const { images, fetched, failed } = await fetchImagesForOcr({ urls, referer, cookies });
+    const { urls, referer, cookies, format, routing } = req.body || {};
+    const { images, fetched, failed } = await fetchImagesForOcr({ urls, referer, cookies, routing });
     if (!images.length) {
       return res.status(400).json({ error: 'Could not fetch any images for OCR.', failed });
     }
