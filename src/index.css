@@ -371,3 +371,136 @@
     transform: none;
   }
 }
+
+/* ---------------- Fable Scrape — high-tech FX ---------------- */
+@layer components {
+  /* Animated conic gradient border for the hero / feature panels */
+  .fable-frame {
+    position: relative;
+    border-radius: 1.5rem;
+    isolation: isolate;
+  }
+  .fable-frame::before {
+    content: "";
+    position: absolute;
+    inset: -1.5px;
+    border-radius: inherit;
+    padding: 1.5px;
+    background: conic-gradient(
+      from var(--fable-angle, 0deg),
+      rgba(245, 158, 11, 0.05),
+      rgba(168, 85, 247, 0.6),
+      rgba(56, 189, 248, 0.6),
+      rgba(245, 158, 11, 0.7),
+      rgba(245, 158, 11, 0.05)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: fable-spin 7s linear infinite;
+    z-index: -1;
+  }
+  @property --fable-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes fable-spin {
+    to {
+      --fable-angle: 360deg;
+    }
+  }
+
+  /* Moving grid + scanline backdrop for the hero */
+  .fable-grid {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(168, 85, 247, 0.18), transparent 60%),
+      linear-gradient(180deg, #0a0e17 0%, #05070c 100%);
+  }
+  .fable-grid::before {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background-image:
+      linear-gradient(rgba(56, 189, 248, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56, 189, 248, 0.09) 1px, transparent 1px);
+    background-size: 44px 44px;
+    transform: perspective(500px) rotateX(58deg);
+    animation: fable-grid-move 6s linear infinite;
+    mask-image: linear-gradient(to bottom, transparent, #000 30%, transparent 85%);
+  }
+  .fable-grid::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 28%;
+    top: -28%;
+    background: linear-gradient(to bottom, transparent, rgba(56, 189, 248, 0.14), transparent);
+    animation: fable-scan 4.5s ease-in-out infinite;
+  }
+  @keyframes fable-grid-move {
+    to {
+      background-position: 0 44px, 44px 0;
+    }
+  }
+  @keyframes fable-scan {
+    0% {
+      top: -28%;
+    }
+    100% {
+      top: 128%;
+    }
+  }
+
+  /* Status "beacon" dot */
+  .fable-beacon {
+    position: relative;
+  }
+  .fable-beacon::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 9999px;
+    border: 1px solid currentColor;
+    opacity: 0.6;
+    animation: fable-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes fable-ping {
+    75%,
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  /* Working-state shimmer bar */
+  .fable-progress {
+    background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.9), transparent);
+    background-size: 40% 100%;
+    background-repeat: no-repeat;
+    animation: fable-progress-slide 1.3s ease-in-out infinite;
+  }
+  @keyframes fable-progress-slide {
+    0% {
+      background-position: -40% 0;
+    }
+    100% {
+      background-position: 140% 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fable-frame::before,
+  .fable-grid::before,
+  .fable-grid::after,
+  .fable-beacon::after,
+  .fable-progress {
+    animation: none !important;
+  }
+}

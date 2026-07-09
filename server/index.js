@@ -70,6 +70,9 @@ import {
   residentialProxyStatus,
   testProxyConnection,
 } from './fableScrape.js';
+import { aiHarvest, translateText } from './fableScrapeAgent.js';
+import { providerStatus } from './fableScrapeProviders.js';
+import { publishFindings, listLibrary } from './fableLibrary.js';
 import {
   initSocialPostsService,
   handleSocialPostsRequest,
@@ -285,6 +288,51 @@ app.get('/api/fable-scrape/status', (_req, res) => {
     residentialProxy: residentialProxyStatus(),
     firecrawl: !!process.env.FIRECRAWL_API_KEY,
   });
+});
+
+app.get('/api/fable-scrape/providers', (_req, res) => {
+  return res.status(200).json({ providers: providerStatus() });
+});
+
+app.post('/api/fable-scrape/ai-harvest', fableScrapeJson, async (req, res) => {
+  try {
+    const result = await aiHarvest(req.body || {});
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] ai-harvest error:', error.message);
+    return res.status(400).json({ error: error.message || 'AI harvest failed.' });
+  }
+});
+
+app.post('/api/fable-scrape/translate', fableScrapeJson, async (req, res) => {
+  try {
+    const { text, targetLang, provider, model, keys } = req.body || {};
+    const result = await translateText({ text, targetLang, provider, model, keys });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] translate error:', error.message);
+    return res.status(400).json({ error: error.message || 'Translation failed.' });
+  }
+});
+
+app.post('/api/fable-scrape/publish', fableScrapeJson, async (req, res) => {
+  try {
+    const result = await publishFindings(db, req.body || {});
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] publish error:', error.message);
+    return res.status(400).json({ error: error.message || 'Publish failed.' });
+  }
+});
+
+app.get('/api/fable-scrape/library', async (req, res) => {
+  try {
+    const result = await listLibrary(db, { limit: req.query.limit });
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('[fable-scrape] library error:', error.message);
+    return res.status(400).json({ error: error.message || 'Failed to load library.' });
+  }
 });
 
 app.post('/api/fable-scrape/test-proxy', fableScrapeJson, async (req, res) => {

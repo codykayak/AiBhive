@@ -14,6 +14,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   BookOpen,
+  Bot,
+  Cpu,
+  Languages,
+  Library,
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 
@@ -63,14 +67,64 @@ export default function FableScrapeGuide() {
             How <span className="text-gradient">Fable Scrape</span> works
           </h1>
           <p className="text-lg text-slate-400 leading-relaxed">
-            Fable Scrape is a stealth research harvester for archives that normally detect and block bots. It finds
-            images, PDFs, documents, and videos on a page (or across a whole site), downloads them undetected, and can
-            OCR the images in one pass — all while protecting the shared AiBhive server IP from bans.
+            Fable Scrape is an AI-directed stealth research harvester for archives that normally detect and block bots.
+            Tell an AI what to find and it selects, reads (OCR), and translates the documents with the models you choose;
+            or drive it manually to find images, PDFs, documents, and videos across a whole site. Findings can be
+            published to a communal library — all while protecting the shared AiBhive server IP from bans.
           </p>
         </header>
 
         <div className="space-y-6">
-          <Section icon={Globe} title="1. The two run modes">
+          <Section icon={Bot} title="AI Harvest — tell it what to find">
+            <p>
+              The <strong className="text-white">AI Harvest</strong> tab is the fastest way to work. Type a plain-English
+              request — for example, <em>"search this archive and return 10 pages of cuneiform text that likely haven't
+              been translated before and may contain something valuable"</em> — give it a start URL, and run it.
+            </p>
+            <p>The pipeline runs in a fixed order:</p>
+            <ol className="list-decimal pl-6 space-y-1">
+              <li><strong className="text-white">Director</strong> (default Grok) reads your request and the discovered candidates, then intelligently selects the most promising items with a reason and confidence for each.</li>
+              <li><strong className="text-white">Vision / OCR</strong> (default Gemini 2.5) reads the text out of each selected image.</li>
+              <li><strong className="text-white">Translator</strong> (default Gemini 2.5) translates each finding into your target language.</li>
+            </ol>
+            <p>
+              Findings appear as rich cards — thumbnail, the Director's reasoning, the transcription, and the translation
+              side by side — each downloadable, and all publishable to the communal library in one click.
+            </p>
+          </Section>
+
+          <Section icon={Cpu} title="Configurable AI roster (bring your own keys)">
+            <p>
+              Open the <strong className="text-white">AI roster</strong> to choose which model does which job and
+              experiment with cost and quality. Each role (Director, Vision/OCR, Translator) can be set to
+              <strong className="text-white"> Grok, Gemini, Claude, Kimi, or DeepSeek</strong>, with an optional custom
+              model name.
+            </p>
+            <p>
+              Add your own API keys (BYOK) per provider — they're used only for your requests in that session and never
+              stored. Providers that have a server key are marked with a check; the OCR/Vision role only offers
+              vision-capable providers (Gemini, Claude, Grok).
+            </p>
+          </Section>
+
+          <Section icon={Languages} title="Translation Lab">
+            <p>
+              The <strong className="text-white">Translation Lab</strong> tab reuses AiBhive's archival translation —
+              preserving names, dates, and place names — and lets you pick the AI agent for it. Paste OCR output or any
+              archival text, choose a target language and agent, and translate.
+            </p>
+          </Section>
+
+          <Section icon={Library} title="Communal library">
+            <p>
+              Publishing a finding writes it to the <strong className="text-white">communal library</strong>, a shared,
+              web-visible archive of harvested + translated documents. The <strong className="text-white">Communal
+              Library</strong> tab shows what the community has contributed — image, transcription, translation, source
+              link, and which models were used.
+            </p>
+          </Section>
+
+          <Section icon={Globe} title="1. Manual scrape — the two run modes">
             <p>
               <strong className="text-white">Single page</strong> — scans exactly one URL. Fastest, and best when you
               already know the page holding your documents (e.g. a specific manuscript record).
