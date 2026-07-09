@@ -21,7 +21,7 @@ export default function OwrInlineWebResearch() {
       const res = await sendIntelChat({
         message: q,
         documentContext: ctx || undefined,
-        targetContext: 'Old World historical research — archives, anomalies, star forts, world fairs',
+        targetContext: 'Community research library — archives, anomalies, historical documents, smart Q&A',
         llmProvider: 'gemini',
       });
       appendOutput({

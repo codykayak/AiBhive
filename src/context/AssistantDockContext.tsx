@@ -19,6 +19,7 @@ const TOP_BAR_HEIGHT = 52;
 function inferDockMode(pathname: string): AssistantDockMode {
   if (
     pathname.includes('example-old-tartar-research') ||
+    pathname.startsWith('/research') ||
     pathname.startsWith('/old-world-research')
   ) {
     return 'floating';
