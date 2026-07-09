@@ -14,6 +14,18 @@ function clip(s, n) {
   return String(s || '').slice(0, n);
 }
 
+/** Map raw GCP/Firestore errors to a clear, user-facing message. */
+function friendlyDbError(err) {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/default credentials|GOOGLE_APPLICATION_CREDENTIALS|could not load/i.test(msg)) {
+    return new Error('Communal library storage is not configured on this server (Firestore credentials missing).');
+  }
+  if (/permission|PERMISSION_DENIED|NOT_FOUND/i.test(msg)) {
+    return new Error('Communal library storage is unavailable (Firestore permission/database issue).');
+  }
+  return err instanceof Error ? err : new Error(msg);
+}
+
 /**
  * Publish one or more findings to the communal library.
  * @param {FirebaseFirestore.Firestore} db
@@ -59,7 +71,11 @@ export async function publishFindings(db, payload) {
   }
 
   if (!ids.length) throw new Error('Findings had no OCR/translation text to publish.');
-  await batch.commit();
+  try {
+    await batch.commit();
+  } catch (err) {
+    throw friendlyDbError(err);
+  }
   return { ok: true, published: ids.length, ids };
 }
 
@@ -71,7 +87,12 @@ export async function publishFindings(db, payload) {
 export async function listLibrary(db, opts = {}) {
   if (!db) throw new Error('Library storage is not configured (Firestore unavailable).');
   const limit = Math.max(1, Math.min(Number(opts.limit) || 30, 100));
-  const snap = await db.collection(COLLECTION).orderBy('createdAt', 'desc').limit(limit).get();
+  let snap;
+  try {
+    snap = await db.collection(COLLECTION).orderBy('createdAt', 'desc').limit(limit).get();
+  } catch (err) {
+    throw friendlyDbError(err);
+  }
   const entries = snap.docs.map((doc) => {
     const d = doc.data();
     const created = d.createdAt?.toDate ? d.createdAt.toDate().toISOString() : null;
