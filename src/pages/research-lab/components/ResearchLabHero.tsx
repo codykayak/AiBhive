@@ -18,8 +18,8 @@ export default function ResearchLabHero() {
       <TechParallaxHeroLayers />
 
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-bee-black/80 via-bee-black/55 to-bee-black z-10" />
-        <div className="absolute inset-0 tech-scanlines z-[2] opacity-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-bee-black/40 via-bee-black/20 to-bee-black/75 z-10" />
+        <div className="absolute inset-0 tech-scanlines z-[2] opacity-[0.12]" />
         <motion.div
           style={{ y: heroParallaxY }}
           initial={{ scale: 1.08, opacity: 0 }}
@@ -41,7 +41,7 @@ export default function ResearchLabHero() {
         </motion.div>
       </div>
 
-      <div className="absolute inset-0 aurora-bg opacity-50 pointer-events-none z-[1]" />
+      <div className="absolute inset-0 aurora-bg opacity-20 pointer-events-none z-[1]" />
 
       <motion.div
         style={{ y: heroContentY }}
@@ -61,8 +61,7 @@ export default function ResearchLabHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.05 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-bee-amber leading-[1.08] mb-8 tracking-tight"
-            style={{ textShadow: '0 4px 40px rgba(245, 158, 11, 0.35)' }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-bee-amber leading-[1.08] mb-8 tracking-tight drop-shadow-[0_2px_24px_rgba(0,0,0,0.85)]"
           >
             Research — Community Sourced Library
           </motion.h1>
@@ -79,13 +78,13 @@ export default function ResearchLabHero() {
             aria-hidden
           >
             <div className="flex w-max gap-16 rl-hero-marquee whitespace-nowrap">
-              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-200">
+              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-100 drop-shadow-[0_1px_12px_rgba(0,0,0,0.9)]">
                 {TAGLINE}
               </span>
-              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-200">
+              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-100 drop-shadow-[0_1px_12px_rgba(0,0,0,0.9)]">
                 {TAGLINE}
               </span>
-              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-200">
+              <span className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-100 drop-shadow-[0_1px_12px_rgba(0,0,0,0.9)]">
                 {TAGLINE}
               </span>
             </div>

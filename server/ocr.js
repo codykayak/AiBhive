@@ -1,12 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
-let aiClient;
-function getGemini() {
-  if (!aiClient) {
-    if (!process.env.GEMINI_API_KEY) return null;
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const clients = new Map<string, GoogleGenAI>();
+
+function getGemini(apiKey?: string) {
+  const key = (apiKey || process.env.GEMINI_API_KEY || '').trim();
+  if (!key) return null;
+  if (!clients.has(key)) {
+    clients.set(key, new GoogleGenAI({ apiKey: key }));
   }
-  return aiClient;
+  return clients.get(key) ?? null;
 }
 
 const FORMAT_INSTRUCTIONS = {
@@ -21,8 +23,9 @@ const FORMAT_INSTRUCTIONS = {
  * Run Gemini vision OCR on up to 100 base64 JPEG images.
  * @param {string[]} images - base64 strings (no data-URL prefix)
  * @param {string} [format] - Markdown | Plain Text | Preserve Layout
+ * @param {string} [apiKey] - optional BYOK Gemini key
  */
-export async function runOcrOnImages(images, format = 'Markdown') {
+export async function runOcrOnImages(images, format = 'Markdown', apiKey) {
   if (!images?.length) {
     throw new Error('No images provided.');
   }
@@ -30,7 +33,7 @@ export async function runOcrOnImages(images, format = 'Markdown') {
     throw new Error('Maximum 100 images allowed per request.');
   }
 
-  const ai = getGemini();
+  const ai = getGemini(apiKey);
   if (!ai) {
     throw new Error('GEMINI_API_KEY is not configured.');
   }

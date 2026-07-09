@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import { SEO } from '../../components/SEO';
 import OwrResearchWorkbench from './components/OwrResearchWorkbench';
 import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
-import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
 import { OwrWorkflowProvider } from './context/OwrWorkflowContext';
+import { ResearchLabUserProvider } from './context/ResearchLabUserContext';
+import workspaceBg from '../../research-ai-tools-translation-library.jpg';
 import styles from './researchLab.module.css';
 
 function ResearchLabWorkspace({ userEmail }: { userEmail: string }) {
   return (
     <OwrWorkflowProvider>
-      <div className={styles.rlWorkspace}>
+      <div
+        className={`${styles.rlWorkspace} ${styles.rlWorkspaceBg}`}
+        style={{ '--rl-workspace-bg': `url(${workspaceBg})` } as CSSProperties}
+      >
         <header className={styles.rlWorkspaceBar}>
           <div>
             <p className={styles.rlWorkspaceEyebrow}>Research Lab</p>
@@ -73,7 +77,7 @@ export default function ResearchLabWorkspacePage() {
             <p className={styles.rlAuthSub}>
               Create an account or sign in to access Fable Scrape, OCR, the community RAG library,
               web research, and translation. Hive credits cover processing and AI usage when you run
-              tools.
+              tools — or bring your own API keys to pay vendors directly plus a small platform fee.
             </p>
             {error && <div className={styles.rlAuthError}>{error}</div>}
             <button type="button" className={styles.rlBtnPrimary} onClick={signIn}>
@@ -85,7 +89,9 @@ export default function ResearchLabWorkspacePage() {
           </div>
         </div>
       ) : (
-        <ResearchLabWorkspace userEmail={user.email ?? 'Signed in'} />
+        <ResearchLabUserProvider user={user}>
+          <ResearchLabWorkspace userEmail={user.email ?? 'Signed in'} />
+        </ResearchLabUserProvider>
       )}
     </div>
   );

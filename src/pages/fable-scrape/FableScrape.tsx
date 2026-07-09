@@ -43,7 +43,11 @@ import {
   saveText,
   blobToBase64,
   clientFetchBlob,
+  fablePost,
+  parseFableJson,
+  fableOcrPost,
 } from './shared';
+import { useFableApi } from './fableApiContext';
 
 type Tab = 'harvest' | 'scrape' | 'translate' | 'library';
 type Engine = 'auto' | 'firecrawl' | 'stealth';
@@ -63,7 +67,7 @@ const ENGINES: { id: Engine; label: string }[] = [
 
 const OCR_FORMATS = ['Markdown', 'Plain Text', 'Preserve Layout'];
 
-export default function FableScrape() {
+export default function FableScrape({ embedded = false }: { embedded?: boolean }) {
   const [tab, setTab] = useState<Tab>('harvest');
   const [url, setUrl] = useState('');
   const [engine, setEngine] = useState<Engine>('auto');
@@ -76,14 +80,17 @@ export default function FableScrape() {
   };
 
   return (
-    <main className="py-24">
+    <main className={embedded ? 'py-0' : 'py-24'}>
+      {!embedded && (
       <SEO
         title="Fable Scrape — AI Research Harvester & Stealth Scraper | AiBhive"
         description="Tell an AI what to find; it crawls bot-blocked archives undetected, reads and translates the documents with the model of your choice, and publishes them to a communal library."
         keywords="AI web scraper, stealth scraper, residential proxy, historical document AI, cuneiform OCR translation, communal research library"
       />
+      )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Hero */}
+        {!embedded && (
+        <>
         <div className="fable-frame mb-8">
           <header className="fable-grid rounded-3xl px-6 py-12 sm:py-16 text-center">
             <motion.div
@@ -116,6 +123,8 @@ export default function FableScrape() {
             </div>
           </header>
         </div>
+        </>
+        )}
 
         {/* Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -197,6 +206,7 @@ function HarvestTab({
   const [error, setError] = useState('');
   const [result, setResult] = useState<HarvestResult | null>(null);
   const [publishState, setPublishState] = useState<{ busy: boolean; msg?: string; err?: string }>({ busy: false });
+  const api = useFableApi();
 
   const run = async () => {
     const target = normalizedUrl();
@@ -208,10 +218,7 @@ function HarvestTab({
     setPublishState({ busy: false });
     setRunning(true);
     try {
-      const res = await fetch('/api/fable-scrape/ai-harvest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fablePost(api, '/ai-harvest', {
           url: target,
           prompt: prompt.trim(),
           count,
@@ -224,10 +231,7 @@ function HarvestTab({
           keys: roster.keys,
           translate,
           targetLang,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Harvest failed.');
+        });
       setResult(data as HarvestResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Harvest failed.');
@@ -240,19 +244,13 @@ function HarvestTab({
     if (!result?.findings?.length) return;
     setPublishState({ busy: true });
     try {
-      const res = await fetch('/api/fable-scrape/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const data = await fablePost(api, '/publish', {
           findings: result.findings.filter((f) => f.ocrText || f.translation),
           prompt: result.prompt,
           sourceUrl: result.sourceUrl,
           roles: result.roles,
           targetLang,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Publish failed.');
+        });
       setPublishState({ busy: false, msg: `Published ${data.published} finding(s) to the communal library.` });
     } catch (err) {
       setPublishState({ busy: false, err: err instanceof Error ? err.message : 'Publish failed.' });
@@ -423,6 +421,7 @@ function FindingCard({
 }) {
   const [broken, setBroken] = useState(false);
   const [dl, setDl] = useState('');
+  const api = useFableApi();
 
   const download = async () => {
     setDl('…');
@@ -431,13 +430,11 @@ function FindingCard({
         const blob = await clientFetchBlob(finding.url);
         saveBytes(blob, blob.type || 'application/octet-stream', finding.filename);
       } else {
-        const res = await fetch('/api/fable-scrape/download', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: finding.url, referer: finding.sourceUrl, routing }),
+        const data = await fablePost(api, '/download', {
+          url: finding.url,
+          referer: finding.sourceUrl,
+          routing,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
         saveBytes(base64ToBytes(data.base64), data.mimeType, data.filename || finding.filename);
       }
       setDl('');
@@ -533,6 +530,7 @@ function ScrapeTab({
   const [ocrText, setOcrText] = useState('');
   const [ocrError, setOcrError] = useState('');
   const [copied, setCopied] = useState(false);
+  const api = useFableApi();
 
   const allSelected = !!result?.images.length && selectedImages.size === result.images.length;
 
@@ -548,13 +546,11 @@ function ScrapeTab({
     setBroken(new Set());
     setScanning(true);
     try {
-      const endpoint = runMode === 'crawl' ? '/api/fable-scrape/crawl' : '/api/fable-scrape/scan';
+      const endpoint = runMode === 'crawl' ? '/crawl' : '/scan';
       const body = runMode === 'crawl'
         ? { url: target, engine, include, includeIcons, routing: routing.routing, maxPages, maxDepth, sameHostOnly }
         : { url: target, engine, include, includeIcons, routing: routing.routing };
-      const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Scan failed (${res.status}).`);
+      const data = await fablePost(api, endpoint, body);
       setResult(data as ScanResult);
       setSelectedImages(new Set((data.images as Asset[]).map((i) => i.url)));
     } catch (err) {
@@ -579,9 +575,14 @@ function ScrapeTab({
           saveBytes(blob, blob.type || 'application/octet-stream', targets[i].filename);
           ok++;
         } else {
-          const res = await fetch('/api/fable-scrape/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: targets[i].url, referer: result.finalUrl, cookies: result.cookies, routing: routing.routing }) });
-          const data = await res.json();
-          if (res.ok) { saveBytes(base64ToBytes(data.base64), data.mimeType, data.filename || targets[i].filename); ok++; }
+          const data = await fablePost(api, '/download', {
+            url: targets[i].url,
+            referer: result.finalUrl,
+            cookies: result.cookies,
+            routing: routing.routing,
+          });
+          saveBytes(base64ToBytes(data.base64), data.mimeType, data.filename || targets[i].filename);
+          ok++;
         }
         await new Promise((r) => setTimeout(r, 300));
       } catch { /* continue */ }
@@ -605,11 +606,17 @@ function ScrapeTab({
           try { const blob = await clientFetchBlob(t.url); if (blob.type.startsWith('image/')) imgs.push(await blobToBase64(blob)); } catch { /* skip */ }
         }
         if (!imgs.length) throw new Error('Could not fetch images in browser mode (CORS). Switch routing.');
-        const res = await fetch('/api/ocr-process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ images: imgs, format: ocrFormat }) });
-        const data = await res.json(); if (!res.ok) throw new Error(data.error); text = data.text || '';
+        const data = await fableOcrPost(api, { images: imgs, format: ocrFormat });
+        text = data.text || '';
       } else {
-        const res = await fetch('/api/fable-scrape/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ urls: targets.map((t) => t.url).slice(0, 100), referer: result.finalUrl, cookies: result.cookies, routing: routing.routing, format: ocrFormat }) });
-        const data = await res.json(); if (!res.ok) throw new Error(data.error); text = data.text || '';
+        const data = await fablePost(api, '/ocr', {
+          urls: targets.map((t) => t.url).slice(0, 100),
+          referer: result.finalUrl,
+          cookies: result.cookies,
+          routing: routing.routing,
+          format: ocrFormat,
+        });
+        text = data.text || '';
       }
       setOcrText(text);
     } catch (err) { setOcrError(err instanceof Error ? err.message : 'OCR failed.'); }
@@ -754,6 +761,7 @@ function FileSection({ title, icon: Icon, items, onDownload, onDownloadAll, down
 /* ============================ TRANSLATION LAB ============================ */
 
 function TranslateTab({ roster }: { roster: ReturnType<typeof useRoster> }) {
+  const api = useFableApi();
   const [text, setText] = useState('');
   const [targetLang, setTargetLang] = useState('English');
   const [provider, setProvider] = useState<ProviderId>('gemini');
@@ -766,9 +774,7 @@ function TranslateTab({ roster }: { roster: ReturnType<typeof useRoster> }) {
     if (!text.trim()) return setError('Paste text to translate.');
     setError(''); setOut(''); setBusy(true);
     try {
-      const res = await fetch('/api/fable-scrape/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, targetLang, provider, keys: roster.keys }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Translation failed.');
+      const data = await fablePost(api, '/translate', { text, targetLang, provider, keys: roster.keys });
       setOut(data.translation || '');
     } catch (err) { setError(err instanceof Error ? err.message : 'Translation failed.'); }
     finally { setBusy(false); }
@@ -804,19 +810,19 @@ function TranslateTab({ roster }: { roster: ReturnType<typeof useRoster> }) {
 /* ============================ COMMUNAL LIBRARY ============================ */
 
 function LibraryTab() {
+  const api = useFableApi();
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = () => {
     setLoading(true); setError('');
-    fetch('/api/fable-scrape/library?limit=50')
-      .then((r) => r.json())
+    fableGet(api, '/library?limit=50')
       .then((d) => { if (d.error) throw new Error(d.error); setEntries(d.entries || []); })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load library.'))
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(load, [api]);
 
   return (
     <div className="space-y-5">

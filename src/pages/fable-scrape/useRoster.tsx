@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bot, Eye, Languages, KeyRound, Cpu, CheckCircle2 } from 'lucide-react';
+import { useFableApi } from './fableApiContext';
 import {
   DEFAULT_ROSTER,
   PROVIDER_LABELS,
   ROLE_META,
+  fableGet,
   type ProviderId,
   type ProviderInfo,
   type RoleKey,
@@ -13,17 +15,17 @@ import {
 const ROLE_ICON: Record<RoleKey, typeof Bot> = { director: Bot, vision: Eye, translator: Languages };
 
 export function useRoster() {
+  const api = useFableApi();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [roster, setRoster] = useState<Roster>(DEFAULT_ROSTER);
   const [keys, setKeys] = useState<Partial<Record<ProviderId, string>>>({});
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/fable-scrape/providers')
-      .then((r) => r.json())
+    fableGet(api, '/providers')
       .then((d) => setProviders(d.providers || []))
       .catch(() => {});
-  }, []);
+  }, [api]);
 
   const byId = useMemo(() => {
     const m: Partial<Record<ProviderId, ProviderInfo>> = {};

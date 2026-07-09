@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Loader2, Languages } from 'lucide-react';
-import { sendIntelChat } from '../../../lib/intelWebApi';
+import { sendIntelChatAsUser } from '../../../lib/intelWebApi';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
+import { useResearchLabUser } from '../context/ResearchLabUserContext';
 import styles from '../researchLab.module.css';
 
 export default function OwrInlineTranslate() {
   const { scrapeText, ocrText, appendOutput } = useOwrWorkflow();
+  const user = useResearchLabUser();
   const [source, setSource] = useState('');
   const [targetLang, setTargetLang] = useState('English');
   const [busy, setBusy] = useState(false);
@@ -19,16 +21,16 @@ export default function OwrInlineTranslate() {
   async function handleTranslate(e: React.FormEvent) {
     e.preventDefault();
     const text = source.trim();
-    if (!text) {
-      setError('Paste archival text or pull from your session output.');
+    if (!text || !user) {
+      setError(text ? 'Sign in required.' : 'Paste archival text or pull from your session output.');
       return;
     }
     setBusy(true);
     setError('');
     try {
-      const res = await sendIntelChat({
-        message: `Translate the following archival document text into ${targetLang}. Preserve names, dates, and place names. Add a brief note if the source language is uncertain.\n\n---\n${text}`,
-        llmProvider: 'gemini',
+      const res = await sendIntelChatAsUser(user, {
+        message: `Translate the following archival document text into ${targetLang}. Preserve names, dates, and place names. Add a brief note if the source language or script is uncertain (including cuneiform or hieroglyphs).\n\n---\n${text}`,
+        llmProvider: 'grok',
       });
       appendOutput({
         step: 'translate',
@@ -50,8 +52,8 @@ export default function OwrInlineTranslate() {
           Translation — no language barriers
         </h3>
         <p>
-          Transcribe and translate archival text in 20+ languages. Pull from your scrape or OCR session, or paste
-          directly. Results flow into the output panel below.
+          Transcribe and translate archival text in 20+ languages — including cuneiform and hieroglyphs via
+          Grok. Pull from your scrape or OCR session, or paste directly.
         </p>
       </div>
       <form className={styles.owrScrapeForm} onSubmit={(e) => void handleTranslate(e)}>
@@ -74,7 +76,7 @@ export default function OwrInlineTranslate() {
           />
         </label>
         {error && <p className={styles.owrError}>{error}</p>}
-        <button type="submit" className={`${styles.owrBtn} ${styles.owrBtnPrimary}`} disabled={busy}>
+        <button type="submit" className={`${styles.owrBtn} ${styles.owrBtnPrimary}`} disabled={busy || !user}>
           {busy ? <Loader2 className="animate-spin inline w-4 h-4" /> : 'Translate'}
         </button>
       </form>
