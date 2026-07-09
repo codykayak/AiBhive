@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Loader2, Languages } from 'lucide-react';
 import { sendIntelChat } from '../../../lib/intelWebApi';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 
 export default function OwrInlineTranslate() {
   const { scrapeText, ocrText, appendOutput } = useOwrWorkflow();

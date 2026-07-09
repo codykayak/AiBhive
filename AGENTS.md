@@ -25,7 +25,7 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 gh pr merge <number> --squash --delete-branch
 ```
 
-**Live Old World Research:** https://aibhive.com/old-world-research (not only `/hive-apps/run/...`).
+**Live Research Lab:** https://aibhive.com/research-lab (legacy `/old-world-research` redirects).
 
 ## Branch naming
 

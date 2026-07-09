@@ -11,10 +11,10 @@ import {
   runHomeAssistantWebSearch,
   type ChatTurn,
 } from '../../../lib/homeAssistantWeb';
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 
 const WELCOME =
-  "I'm Bhive Builder — your Old World research copilot. Ask me to customize maps, refine archive searches, chain Fable Scrape → OCR → RAG, or build custom research tools.";
+  "I'm Bhive Builder — your Research Lab copilot. Ask me to customize tools, refine archive searches, chain Fable Scrape → OCR → RAG, or build custom research apps.";
 
 const QUICK = [
   { label: 'Map star forts', text: 'Help me build a custom map of star forts in Europe with archive sources' },

@@ -1,3 +1,4 @@
+.rl,
 .owr {
   --owr-bg: #050810;
   --owr-surface: #0c1220;
@@ -962,6 +963,422 @@
     font-size: clamp(1.5rem, 6vw, 2.5rem);
   }
   .owrWelcomeGrid {
+    grid-template-columns: 1fr;
+  }
+  .rlWelcomeContent {
+    max-width: 100%;
+    padding: 2.5rem 1.25rem;
+  }
+  .rlToolsInner {
+    padding: 0 1rem;
+  }
+}
+
+/* Parallax welcome — Research Lab landing */
+.rlWelcomeParallax {
+  position: relative;
+  min-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--owr-border);
+}
+
+.rlWelcomeParallaxBg {
+  position: absolute;
+  inset: -12% 0;
+  z-index: 0;
+}
+
+.rlWelcomeParallaxBg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.rlWelcomeParallaxOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    rgba(5, 8, 16, 0.92) 0%,
+    rgba(5, 8, 16, 0.72) 42%,
+    rgba(5, 8, 16, 0.45) 100%
+  );
+}
+
+.rlWelcomeContent {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 640px);
+  margin-right: clamp(1rem, 8vw, 6rem);
+  padding: 4rem 2rem;
+  text-align: right;
+}
+
+.rlWelcomeHeader h2 {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, var(--owr-cyan) 50%, var(--owr-amber) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rlWelcomeQuote {
+  margin: 0 0 2rem;
+  padding: 0;
+  border: none;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.65;
+  color: var(--owr-muted);
+  font-style: italic;
+}
+
+.rlWelcomeQuote cite {
+  display: block;
+  margin-top: 0.75rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--owr-amber);
+  font-size: 0.95rem;
+}
+
+.rlWelcomeList {
+  list-style: none;
+  margin: 0 0 2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rlWelcomeList li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  text-align: right;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--owr-text);
+}
+
+.rlWelcomeListIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--owr-cyan);
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.rlWelcomeCta {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Tools & OCR explorer */
+.rlToolsSection {
+  padding: 4.5rem 1.25rem 5rem;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(34, 211, 238, 0.06), transparent 50%),
+    var(--owr-bg);
+}
+
+.rlToolsInner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.rlToolsIntro {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.rlToolsIntroBlock {
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--owr-border);
+  background: rgba(12, 18, 32, 0.7);
+}
+
+.rlToolsIntroBlock p {
+  margin: 0.75rem 0 0;
+  line-height: 1.65;
+  color: var(--owr-muted);
+}
+
+.rlToolsIntroIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--owr-amber);
+}
+
+.rlOcrExplorer {
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid var(--owr-border);
+  background: rgba(8, 12, 22, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.rlOcrExplorerHeader h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.rlOcrExplorerHeader p {
+  margin: 0 0 1.75rem;
+  color: var(--owr-muted);
+  line-height: 1.6;
+  max-width: 52rem;
+}
+
+.rlOcrSliderRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.rlOcrSliderRow label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--owr-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rlOcrSlider {
+  width: 100%;
+  accent-color: var(--owr-amber);
+}
+
+.rlOcrSliderValue {
+  font-weight: 800;
+  color: #fff;
+  min-width: 7rem;
+  text-align: right;
+}
+
+.rlOcrResult {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.rlOcrResultLabel {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--owr-muted);
+}
+
+.rlOcrResultCredits {
+  font-size: 1.5rem;
+  color: var(--owr-amber);
+}
+
+.rlOcrResultHint {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--owr-muted);
+}
+
+.rlOcrChartWrap {
+  margin-bottom: 1.5rem;
+}
+
+.rlOcrExamples {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.rlOcrExampleCard {
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--owr-border);
+  background: rgba(12, 18, 32, 0.6);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.rlOcrExampleCard:hover {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.rlOcrExampleCard strong {
+  display: block;
+  color: #fff;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.rlOcrExampleCard span {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--owr-muted);
+  margin-bottom: 0.35rem;
+}
+
+.rlOcrExampleCard em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--owr-cyan);
+  font-weight: 600;
+}
+
+.rlToolsCta {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+/* Workspace + auth */
+.rlWorkspace {
+  min-height: 100vh;
+}
+
+.rlWorkspaceBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--owr-border);
+  background: rgba(8, 12, 22, 0.9);
+}
+
+.rlWorkspaceEyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--owr-cyan);
+  font-weight: 700;
+}
+
+.rlWorkspaceTitle {
+  margin: 0.25rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.rlWorkspaceActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rlWorkspaceEmail {
+  font-size: 0.85rem;
+  color: var(--owr-muted);
+}
+
+.rlAuthShell {
+  min-height: min(80vh, 720px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.rlAuthCard {
+  width: min(100%, 480px);
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid var(--owr-border);
+  background: rgba(12, 18, 32, 0.85);
+  text-align: center;
+}
+
+.rlAuthTitle {
+  margin: 0.5rem 0 1rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.rlAuthSub {
+  margin: 0 0 1.5rem;
+  color: var(--owr-muted);
+  line-height: 1.6;
+}
+
+.rlAuthError {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+.rlAuthHint {
+  margin: 1rem 0 0;
+  font-size: 0.82rem;
+  color: var(--owr-muted);
+}
+
+.rlBtnPrimary {
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--owr-amber), #d97706);
+  color: #000;
+}
+
+.rlBtnGhost {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--owr-border);
+  background: transparent;
+  color: var(--owr-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .rlToolsIntro {
+    grid-template-columns: 1fr;
+  }
+  .rlOcrExamples {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rlWelcomeList li {
+    flex-direction: row-reverse;
+  }
+}
+
+@media (max-width: 560px) {
+  .rlOcrExamples {
+    grid-template-columns: 1fr;
+  }
+  .rlOcrSliderRow {
     grid-template-columns: 1fr;
   }
 }

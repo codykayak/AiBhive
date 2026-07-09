@@ -1,4 +1,4 @@
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 
 type Props = {
   estimatedUsd: number;

@@ -345,6 +345,15 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes rl-hero-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.rl-hero-marquee {
+  animation: rl-hero-marquee 32s linear infinite;
+}
+
 /* Respect users who prefer reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .float-slow,
@@ -354,7 +363,8 @@
   .text-shimmer,
   .pulse-ring::after,
   .parallax-orb,
-  .hero-logo-marquee-track {
+  .hero-logo-marquee-track,
+  .rl-hero-marquee {
     animation: none !important;
   }
   .tech-tile:hover {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 
 export default function OwrOutputPanel() {
   const { output, clearOutput, scrapeText, ocrText } = useOwrWorkflow();

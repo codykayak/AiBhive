@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
 import { sendIntelChat } from '../../../lib/intelWebApi';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
-import styles from '../oldWorldResearch.module.css';
+import styles from '../researchLab.module.css';
 
 export default function OwrInlineWebResearch() {
   const { scrapeText, ocrText, appendOutput } = useOwrWorkflow();
@@ -21,7 +21,7 @@ export default function OwrInlineWebResearch() {
       const res = await sendIntelChat({
         message: q,
         documentContext: ctx || undefined,
-        targetContext: 'Old World historical research — archives, anomalies, star forts, world fairs',
+        targetContext: 'Research Lab — archives, anomalies, historical documents, community library',
         llmProvider: 'gemini',
       });
       appendOutput({
