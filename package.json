@@ -14,7 +14,7 @@
     "dev:check": "node scripts/dev-check.mjs",
     "optimize:tartar-video": "node scripts/optimize-tartar-hero-video.mjs",
     "optimize:owr-video": "node scripts/optimize-owr-hero-video.mjs",
-    "prebuild": "node scripts/optimize-tartar-hero-video.mjs || true && node scripts/optimize-owr-hero-video.mjs || true",
+    "prebuild": "node scripts/optimize-tartar-hero-video.mjs || true && node scripts/optimize-owr-hero-video.mjs || true && node scripts/optimize-research-hero-video.mjs || true",
     "build": "vite build && npm run build --prefix cody && npm run build --prefix autoposter/admin",
     "preview": "vite preview --port 8080 --host 0.0.0.0",
     "start": "node server/index.js",

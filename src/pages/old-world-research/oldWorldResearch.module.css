@@ -753,6 +753,183 @@
   color: #000;
 }
 
+/* Video hero — Old World Research only */
+.owrVideoHero {
+  position: relative;
+  height: 100vh;
+  min-height: 560px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.owrVideoHeroBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.owrVideoHeroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 8, 16, 0.55) 0%,
+    rgba(5, 8, 16, 0.35) 45%,
+    rgba(5, 8, 16, 0.82) 100%
+  );
+  pointer-events: none;
+}
+
+.owrVideoHeroContent {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 1100px);
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.owrVideoHeroTitle {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.75rem, 5.5vw, 4rem);
+  font-weight: 900;
+  line-height: 1.1;
+  color: #f59e0b;
+  text-shadow: 0 4px 40px rgba(245, 158, 11, 0.35);
+  letter-spacing: -0.02em;
+}
+
+.owrMarqueeWrap {
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.owrMarqueeTrack {
+  display: flex;
+  width: max-content;
+  gap: 4rem;
+  animation: owrMarquee 28s linear infinite;
+  white-space: nowrap;
+}
+
+.owrMarqueeTrack span {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 600;
+  color: rgba(232, 238, 247, 0.92);
+}
+
+@keyframes owrMarquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.owrVideoHeroScroll {
+  position: absolute;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(245, 158, 11, 0.8);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: owrScrollBounce 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes owrScrollBounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, 6px); }
+}
+
+/* Welcome — Old World Research */
+.owrWelcome {
+  padding: 4rem 1.25rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.08), transparent 55%),
+    var(--owr-bg);
+  border-bottom: 1px solid var(--owr-border);
+}
+
+.owrWelcomeInner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.owrWelcomeHeader {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.owrWelcomeHeader h2 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, var(--owr-cyan) 50%, var(--owr-amber) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.owrWelcomeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.owrWelcomeCard {
+  position: relative;
+  padding: 1.5rem 1.5rem 1.5rem 3.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--owr-border);
+  background: rgba(12, 18, 32, 0.75);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.owrWelcomeCard:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 12px 40px rgba(245, 158, 11, 0.08);
+  transform: translateY(-2px);
+}
+
+.owrWelcomeNum {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #000;
+  background: var(--owr-amber);
+}
+
+.owrWelcomeCardIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--owr-cyan);
+  margin-bottom: 0.65rem;
+}
+
+.owrWelcomeCard p {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.55;
+  color: var(--owr-text);
+}
+
 @media (max-width: 900px) {
   .owrHero {
     grid-template-columns: 1fr;
@@ -780,5 +957,11 @@
   }
   .owrOutputSearch input {
     font-size: 16px;
+  }
+  .owrVideoHeroTitle {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  }
+  .owrWelcomeGrid {
+    grid-template-columns: 1fr;
   }
 }

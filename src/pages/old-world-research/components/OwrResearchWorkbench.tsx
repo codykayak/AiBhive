@@ -21,12 +21,8 @@ export default function OwrResearchWorkbench() {
   return (
     <section className={styles.owrWorkbench} aria-label="Old World research workbench">
       <header className={styles.owrWorkbenchHeader}>
-        <h2>One section — every tool</h2>
-        <p>
-          Step through Fable Scrape → OCR → library → research → translate. Fable Scrape is the same tool as{' '}
-          <a href="/fable-scrape" className={styles.owrInlineLink}>/fable-scrape</a> — embedded here so you
-          never leave this page.
-        </p>
+        <h2>Tools</h2>
+        <p>Fable Scrape, OCR, RAG library, web research, and translation — one workflow below.</p>
       </header>
 
       <div className={styles.owrStepRow} role="tablist" aria-label="Research steps">
