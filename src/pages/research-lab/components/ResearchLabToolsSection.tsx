@@ -10,17 +10,40 @@ import {
 } from 'recharts';
 import { Wrench, Layers } from 'lucide-react';
 import StartResearchingButton from './StartResearchingButton';
+import ResearchLabPricingPlans from './ResearchLabPricingPlans';
 import styles from '../researchLab.module.css';
 
-/** Hive credits per OCR page — matches OwrOcrBatch estimate */
-const CREDITS_PER_PAGE = 0.06;
+/**
+ * Example bundled estimate per archive page through scrape → OCR → translate orchestration.
+ * BYOK lowers AI portions; platform orchestration still applies in the workspace.
+ */
+const CREDITS_PER_PIPELINE_PAGE = 0.08;
 
 const EXAMPLES = [
-  { label: 'Single journal', pages: 24, note: 'One scanned article' },
-  { label: 'Book chapter', pages: 120, note: 'Typical archive chapter' },
-  { label: 'Small collection', pages: 500, note: 'Municipal record set' },
-  { label: 'Large archive run', pages: 2000, note: 'Institution backlog batch' },
+  {
+    label: 'Archive index',
+    pages: 40,
+    note: 'Scrape listing + gather tablet thumbnails',
+  },
+  {
+    label: 'Cuneiform batch',
+    pages: 120,
+    note: 'OCR cuneiform tables from one collection',
+  },
+  {
+    label: 'Mixed run',
+    pages: 450,
+    note: 'Scrape, OCR, translate to English',
+  },
+  {
+    label: 'Deep harvest',
+    pages: 1500,
+    note: 'Full site crawl + communal library publish',
+  },
 ] as const;
+
+const WORKFLOW_STEPS =
+  'Your favorite archive site → Scrape and gather archives → OCR Cuneiform tables → Translate to English → Your data forever → Interrogate returned data with AI → Share your data with the community if you opt in.';
 
 function formatCredits(value: number) {
   return value < 10 ? value.toFixed(2) : value.toFixed(0);
@@ -34,46 +57,55 @@ export default function ResearchLabToolsSection() {
       EXAMPLES.map((ex) => ({
         name: ex.label,
         pages: ex.pages,
-        credits: Number((ex.pages * CREDITS_PER_PAGE).toFixed(2)),
+        credits: Number((ex.pages * CREDITS_PER_PIPELINE_PAGE).toFixed(2)),
       })),
     [],
   );
 
-  const selectedCredits = pages * CREDITS_PER_PAGE;
+  const selectedCredits = pages * CREDITS_PER_PIPELINE_PAGE;
 
   return (
-    <section className={styles.rlToolsSection} aria-label="Research Lab tools and pricing">
+    <section id="pricing" className={styles.rlToolsSection} aria-label="Research Lab pricing">
       <div className={styles.rlToolsInner}>
+        <header className={styles.rlPricingTitle}>
+          <h2>Pricing</h2>
+          <p>
+            Fable Scrape chains Director (Grok by default), Vision OCR, and translation — then indexes
+            findings for search and Grok analysis. Bring your own API keys per provider in-session, or use
+            Hive credits for our managed stack.
+          </p>
+        </header>
+
         <div className={styles.rlToolsIntro}>
           <div className={styles.rlToolsIntroBlock}>
             <Wrench className={styles.rlToolsIntroIcon} aria-hidden />
             <p>
-              We offer a huge selection of tools at the lowest price possible to encourage
-              researchers to research heavily and build the library with the community, and not
-              focus on their spending.
+              We offer a huge selection of tools at the lowest price possible to encourage researchers to
+              research heavily and build the library with the community, and not focus on their spending.
             </p>
           </div>
           <div className={styles.rlToolsIntroBlock}>
             <Layers className={styles.rlToolsIntroIcon} aria-hidden />
             <p>
-              The tools provided here are all fully customizable. You can build your own web apps
-              and add or tweak the tools for your specific needs. This is only a scaffolding of
-              what is possible for you to build on and research through.
+              The tools provided here are all fully customizable. You can build your own web apps and add or
+              tweak the tools for your specific needs. This is only a scaffolding of what is possible for
+              you to build on and research through.
             </p>
           </div>
         </div>
 
         <div className={styles.rlOcrExplorer}>
           <header className={styles.rlOcrExplorerHeader}>
-            <h3>OCR from online archives</h3>
+            <h3>Use case example</h3>
             <p>
-              Drag the slider to estimate how many pages you might OCR from an online archive.
-              Costs are shown in Hive credits — billed when you run the tools.
+              Estimates for scraping an archived site, OCRing cuneiform tablet images, and translating into
+              English. Drag the slider to model your run — shown in Hive credits (billed when you use the
+              workspace tools).
             </p>
           </header>
 
           <div className={styles.rlOcrSliderRow}>
-            <label htmlFor="rl-ocr-pages">Pages to OCR</label>
+            <label htmlFor="rl-ocr-pages">Archive pages in pipeline</label>
             <input
               id="rl-ocr-pages"
               type="range"
@@ -93,7 +125,8 @@ export default function ResearchLabToolsSection() {
               {formatCredits(selectedCredits)} Hive credits
             </strong>
             <span className={styles.rlOcrResultHint}>
-              {pages.toLocaleString()} pages × {CREDITS_PER_PAGE} Hive credits per page
+              {pages.toLocaleString()} pages × {CREDITS_PER_PIPELINE_PAGE} Hive credits per page (example
+              bundle)
             </span>
           </div>
 
@@ -148,13 +181,17 @@ export default function ResearchLabToolsSection() {
                 <strong>{ex.label}</strong>
                 <span>{ex.note}</span>
                 <em>
-                  {ex.pages.toLocaleString()} pages · {formatCredits(ex.pages * CREDITS_PER_PAGE)}{' '}
+                  {ex.pages.toLocaleString()} pages · {formatCredits(ex.pages * CREDITS_PER_PIPELINE_PAGE)}{' '}
                   Hive credits
                 </em>
               </button>
             ))}
           </div>
+
+          <p className={styles.rlWorkflowSteps}>{WORKFLOW_STEPS}</p>
         </div>
+
+        <ResearchLabPricingPlans />
 
         <div className={styles.rlToolsCta}>
           <StartResearchingButton />

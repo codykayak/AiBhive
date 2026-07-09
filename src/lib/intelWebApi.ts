@@ -1,4 +1,6 @@
 import { getOrCreateWebHiveUserId } from './hiveWebUser';
+import type { User } from 'firebase/auth';
+import { adminJson } from './adminApi';
 
 export type IntelTargetType = 'company' | 'domain' | 'person' | 'discovery';
 
@@ -375,7 +377,7 @@ export async function sendIntelChat(opts: {
       history: opts.history || [],
       targetContext: opts.targetContext,
       documentContext: opts.documentContext,
-      llmProvider: opts.llmProvider,
+      llmProvider: opts.llmProvider ?? 'grok',
     }),
   });
   const data = await res.json();
@@ -391,6 +393,42 @@ export async function sendIntelChat(opts: {
   return {
     text: data.text,
     provider: data.provider || 'hive',
+    chargedUsd: data.chargedUsd,
+  };
+}
+
+/** Signed-in Research Lab chat — bills Firebase uid via Hive credits. */
+export async function sendIntelChatAsUser(
+  user: User,
+  opts: {
+    message: string;
+    history?: ChatTurn[];
+    targetContext?: string;
+    documentContext?: string;
+    llmProvider?: IntelLlmProvider;
+  },
+): Promise<{ text: string; provider: string; chargedUsd?: number }> {
+  const data = await adminJson<{
+    ok?: boolean;
+    text: string;
+    provider?: string;
+    chargedUsd?: number;
+    error?: string;
+    amountUsd?: number;
+  }>('/api/intel-gathering/chat', user, {
+    method: 'POST',
+    body: JSON.stringify({
+      userId: user.uid,
+      message: opts.message,
+      history: opts.history || [],
+      targetContext: opts.targetContext,
+      documentContext: opts.documentContext,
+      llmProvider: opts.llmProvider ?? 'grok',
+    }),
+  });
+  return {
+    text: data.text,
+    provider: data.provider || 'grok',
     chargedUsd: data.chargedUsd,
   };
 }

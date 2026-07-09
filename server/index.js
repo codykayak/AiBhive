@@ -80,6 +80,7 @@ import {
 } from './socialPosts/index.js';
 import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { registerTartarRoutes } from './tartarRoutes.js';
+import { registerResearchLabRoutes } from './researchLabRoutes.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -1433,6 +1434,7 @@ app.post('/api/homework/complete', verifyHomeworkUser, async (req, res) => {
 
 // --- Old Tartar Research (historical anomaly detection) ---
 registerTartarRoutes(app, db);
+registerResearchLabRoutes(app, db);
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {

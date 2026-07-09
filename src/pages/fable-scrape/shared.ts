@@ -159,3 +159,65 @@ export async function clientFetchBlob(url: string): Promise<Blob> {
   if (!res.ok) throw new Error(`status ${res.status}`);
   return res.blob();
 }
+
+export type FableApiOptions = {
+  apiBase: string;
+  ocrEndpoint: string;
+  getAuthHeaders?: () => Promise<Record<string, string>>;
+};
+
+export const PUBLIC_FABLE_API: FableApiOptions = {
+  apiBase: '/api/fable-scrape',
+  ocrEndpoint: '/api/ocr-process',
+};
+
+export function meteredFableApi(
+  getAuthHeaders: () => Promise<Record<string, string>>,
+): FableApiOptions {
+  return {
+    apiBase: '/api/research-lab/fable-scrape',
+    ocrEndpoint: '/api/research-lab/ocr',
+    getAuthHeaders,
+  };
+}
+
+export async function parseFableJson(res: Response) {
+  const data = await res.json();
+  if (res.status === 402) {
+    throw new Error(
+      data.error ||
+        `Need Hive credits (~$${Number(data.amountUsd ?? 5).toFixed(2)}). Add credits or start with pay-as-you-go.`,
+    );
+  }
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
+  return data;
+}
+
+export async function fablePost(api: FableApiOptions, path: string, body: unknown) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (api.getAuthHeaders) Object.assign(headers, await api.getAuthHeaders());
+  const res = await fetch(`${api.apiBase}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  return parseFableJson(res);
+}
+
+export async function fableOcrPost(api: FableApiOptions, body: unknown) {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (api.getAuthHeaders) Object.assign(headers, await api.getAuthHeaders());
+  const res = await fetch(api.ocrEndpoint, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  return parseFableJson(res);
+}
+
+export async function fableGet(api: FableApiOptions, path: string) {
+  const headers: Record<string, string> = {};
+  if (api.getAuthHeaders) Object.assign(headers, await api.getAuthHeaders());
+  const res = await fetch(`${api.apiBase}${path}`, { headers });
+  return parseFableJson(res);
+}

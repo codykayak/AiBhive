@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { MessageSquare } from 'lucide-react';
-import { sendIntelChat } from '../../../lib/intelWebApi';
+import { sendIntelChatAsUser } from '../../../lib/intelWebApi';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
+import { useResearchLabUser } from '../context/ResearchLabUserContext';
 import styles from '../researchLab.module.css';
 
 export default function OwrInlineWebResearch() {
   const { scrapeText, ocrText, appendOutput } = useOwrWorkflow();
+  const user = useResearchLabUser();
   const [question, setQuestion] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -13,16 +15,17 @@ export default function OwrInlineWebResearch() {
   async function handleAsk(e: React.FormEvent) {
     e.preventDefault();
     const q = question.trim();
-    if (!q) return;
+    if (!q || !user) return;
     setBusy(true);
     setError('');
     try {
       const ctx = [scrapeText, ocrText].filter(Boolean).join('\n\n').slice(0, 10000);
-      const res = await sendIntelChat({
+      const res = await sendIntelChatAsUser(user, {
         message: q,
         documentContext: ctx || undefined,
-        targetContext: 'Research Lab — archives, anomalies, historical documents, community library',
-        llmProvider: 'gemini',
+        targetContext:
+          'Research Lab — archives, cuneiform, historical documents, communal library. Grok analyzes findings.',
+        llmProvider: 'grok',
       });
       appendOutput({
         step: 'search',
@@ -44,8 +47,8 @@ export default function OwrInlineWebResearch() {
           Web research — stays in this section
         </h3>
         <p>
-          Ask follow-up questions using your scrape and OCR context. Hive credits cover cloud search and AI
-          synthesis — no need to open another page.
+          Ask follow-up questions using your scrape and OCR context. Grok (default) synthesizes answers;
+          Hive credits cover cloud search and AI — or bring your own keys in Fable Scrape.
         </p>
       </div>
       <form className={styles.owrScrapeForm} onSubmit={(e) => void handleAsk(e)}>
@@ -55,11 +58,11 @@ export default function OwrInlineWebResearch() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             rows={4}
-            placeholder="What anomalies appear in these world fair photographs? Suggest archive sources…"
+            placeholder="What do these cuneiform transcriptions suggest about trade routes? Suggest related archives…"
           />
         </label>
         {error && <p className={styles.owrError}>{error}</p>}
-        <button type="submit" className={`${styles.owrBtn} ${styles.owrBtnPrimary}`} disabled={busy}>
+        <button type="submit" className={`${styles.owrBtn} ${styles.owrBtnPrimary}`} disabled={busy || !user}>
           {busy ? 'Researching…' : 'Run research brief'}
         </button>
       </form>

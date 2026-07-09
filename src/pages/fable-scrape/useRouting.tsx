@@ -10,6 +10,8 @@ import {
   Zap,
 } from 'lucide-react';
 import type { RouteMode, Routing } from './shared';
+import { useFableApi } from './fableApiContext';
+import { fableGet, fablePost } from './shared';
 
 type Provider = 'dataimpulse' | 'iproyal' | 'webshare' | 'generic';
 
@@ -21,6 +23,7 @@ const PROVIDER_PRESETS: Record<Provider, { label: string; template: string }> = 
 };
 
 export function useRouting() {
+  const api = useFableApi();
   const [routeMode, setRouteMode] = useState<RouteMode>('browser');
   const [provider, setProvider] = useState<Provider>('dataimpulse');
   const [proxyUrl, setProxyUrl] = useState('');
@@ -29,11 +32,10 @@ export function useRouting() {
   const [ackMyIp, setAckMyIp] = useState(false);
 
   useEffect(() => {
-    fetch('/api/fable-scrape/status')
-      .then((r) => r.json())
+    fableGet(api, '/status')
       .then((d) => setProxyStatus(d.residentialProxy || null))
       .catch(() => {});
-  }, []);
+  }, [api]);
 
   const routing: Routing = useMemo(
     () => ({ mode: routeMode, proxyUrl: routeMode === 'custom' ? proxyUrl.trim() : undefined }),
@@ -56,13 +58,7 @@ export function useRouting() {
   const testProxy = async () => {
     setProxyTest({ testing: true });
     try {
-      const res = await fetch('/api/fable-scrape/test-proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ routing }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Proxy test failed.');
+      const data = await fablePost(api, '/test-proxy', { routing });
       setProxyTest({ testing: false, ip: data.exitIp });
     } catch (err) {
       setProxyTest({ testing: false, error: err instanceof Error ? err.message : 'Proxy test failed.' });

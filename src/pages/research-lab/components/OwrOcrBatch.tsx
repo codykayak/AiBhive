@@ -3,6 +3,8 @@ import { Loader2, Upload } from 'lucide-react';
 import styles from '../researchLab.module.css';
 import OwrCostGuard from './OwrCostGuard';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
+import { useResearchLabUser } from '../context/ResearchLabUserContext';
+import { adminJson } from '../../../lib/adminApi';
 
 const MAX_FILES = 100;
 const EST_COST_PER_IMAGE = 0.06;
@@ -38,6 +40,7 @@ async function compressImage(file: File): Promise<string> {
 
 export default function OwrOcrBatch() {
   const { appendOutput, setOcrText, setActiveStep } = useOwrWorkflow();
+  const user = useResearchLabUser();
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
@@ -59,6 +62,10 @@ export default function OwrOcrBatch() {
       setError('Add up to 100 images or document scans.');
       return;
     }
+    if (!user) {
+      setError('Sign in required.');
+      return;
+    }
     setShowCostGuard(false);
     setBusy(true);
     setError('');
@@ -68,13 +75,14 @@ export default function OwrOcrBatch() {
       for (const f of batch) {
         images.push(await compressImage(f));
       }
-      const res = await fetch('/api/ocr-process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images, format: 'Markdown' }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'OCR failed');
+      const data = await adminJson<{ text: string; chargedUsd?: number }>(
+        '/api/research-lab/ocr',
+        user,
+        {
+          method: 'POST',
+          body: JSON.stringify({ images, format: 'Markdown' }),
+        },
+      );
       const text = data.text ?? '';
       setResult(text);
       setOcrText(text);
