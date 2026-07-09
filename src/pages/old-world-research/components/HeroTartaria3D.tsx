@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Environment } from '@react-three/drei';
+import { OrbitControls, Stars, Environment, useTexture } from '@react-three/drei';
 import { Suspense, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
@@ -68,6 +68,57 @@ const topics: Topic[] = [
   },
 ];
 
+type GlobeProps = {
+  onSelectTopic: (topic: Topic) => void;
+};
+
+function Globe({ onSelectTopic }: GlobeProps) {
+  const globeTexture = useTexture('/tartaria-globe-texture.jpg');
+
+  return (
+    <group>
+      <mesh>
+        <sphereGeometry args={[4.2, 90, 90]} />
+        <meshPhongMaterial
+          map={globeTexture}
+          emissive="#2a1a0f"
+          shininess={12}
+          specular="#ffddaa"
+        />
+      </mesh>
+
+      <mesh>
+        <sphereGeometry args={[4.5, 64, 64]} />
+        <meshBasicMaterial color="#ff8833" transparent opacity={0.18} />
+      </mesh>
+
+      {topics.map((topic, i) => (
+        <group key={i} position={topic.position}>
+          <mesh
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectTopic(topic);
+            }}
+            onPointerOver={() => {
+              document.body.style.cursor = 'pointer';
+            }}
+            onPointerOut={() => {
+              document.body.style.cursor = 'default';
+            }}
+          >
+            <sphereGeometry args={[0.13, 36, 36]} />
+            <meshStandardMaterial color="#ffdd55" emissive="#ffaa00" emissiveIntensity={1.4} />
+          </mesh>
+          <mesh>
+            <ringGeometry args={[0.22, 0.28, 48]} />
+            <meshBasicMaterial color="#ffcc00" transparent opacity={0.7} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 export default function HeroTartaria3D() {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
 
@@ -79,42 +130,11 @@ export default function HeroTartaria3D() {
         style={{ touchAction: 'none' }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.35} />
+          <ambientLight intensity={0.4} />
           <pointLight position={[15, 10, 10]} intensity={2.8} color="#ffcc77" />
           <pointLight position={[-12, -15, -8]} intensity={1.8} color="#aa5522" />
 
-          <group>
-            <mesh>
-              <sphereGeometry args={[4.2, 90, 90]} />
-              <meshPhongMaterial color="#1c1208" emissive="#2a1a0f" shininess={10} specular="#ffddaa" />
-            </mesh>
-
-            <mesh>
-              <sphereGeometry args={[4.5, 64, 64]} />
-              <meshBasicMaterial color="#ff8833" transparent opacity={0.22} />
-            </mesh>
-
-            {topics.map((topic, i) => (
-              <group key={i} position={topic.position}>
-                <mesh
-                  onClick={() => setSelectedTopic(topic)}
-                  onPointerOver={() => {
-                    document.body.style.cursor = 'pointer';
-                  }}
-                  onPointerOut={() => {
-                    document.body.style.cursor = 'default';
-                  }}
-                >
-                  <sphereGeometry args={[0.13, 36, 36]} />
-                  <meshStandardMaterial color="#ffdd55" emissive="#ffaa00" emissiveIntensity={1.3} />
-                </mesh>
-                <mesh>
-                  <ringGeometry args={[0.22, 0.28, 48]} />
-                  <meshBasicMaterial color="#ffcc00" transparent opacity={0.7} side={THREE.DoubleSide} />
-                </mesh>
-              </group>
-            ))}
-          </group>
+          <Globe onSelectTopic={setSelectedTopic} />
 
           <Stars radius={600} depth={90} count={1500} factor={5} fade />
           <Environment preset="night" />
