@@ -1,7 +1,7 @@
 import { SEO } from '../../components/SEO';
 import TartarCustomizeFab from '../../old-tartar-research/components/TartarCustomizeFab';
-import HeroTartaria from './components/HeroTartaria';
-import OwrBuilderPanel from './components/OwrBuilderPanel';
+import HeroResearch from './components/HeroResearch';
+import OwrWelcomeSection from './components/OwrWelcomeSection';
 import OwrResearchWorkbench from './components/OwrResearchWorkbench';
 import { OwrWorkflowProvider } from './context/OwrWorkflowContext';
 import styles from './oldWorldResearch.module.css';
@@ -11,12 +11,12 @@ export default function OldWorldResearchPage() {
     <OwrWorkflowProvider>
       <div className={styles.owr}>
         <SEO
-          title="Old World Research — The Forgotten World | AiBhive"
-          description="Explore Tartaria, mud floods, antiquitech, and hidden history. Fable Scrape, OCR, archives, RAG search, and 3D research tools."
-          keywords="old world research, Tartaria, forgotten world, historical archives, OCR, RAG, star forts, mud flood, Fable Scrape"
+          title="Research — Community Sourced Library | AiBhive"
+          description="The most powerful research tool known to humankind. Community-built library: scrape archives, OCR, ask smart questions, and share what you build."
+          keywords="research library, community sourced, Fable Scrape, OCR, RAG, AiBhive, web scraper, smart answers"
         />
-        <HeroTartaria />
-        <OwrBuilderPanel />
+        <HeroResearch />
+        <OwrWelcomeSection />
         <OwrResearchWorkbench />
         <TartarCustomizeFab />
       </div>
