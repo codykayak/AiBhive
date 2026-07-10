@@ -610,7 +610,7 @@ function ScrapeTab({
         text = data.text || '';
       } else {
         const data = await fablePost(api, '/ocr', {
-          urls: targets.map((t) => t.url).slice(0, 100),
+          urls: targets.map((t) => t.url).slice(0, 50),
           referer: result.finalUrl,
           cookies: result.cookies,
           routing: routing.routing,
