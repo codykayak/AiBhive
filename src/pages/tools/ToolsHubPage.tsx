@@ -20,8 +20,7 @@ export default function ToolsHubPage() {
         <h1 className="text-4xl md:text-5xl font-black text-white mb-6">AI tool categories on AiBhive</h1>
 
         <DirectAnswer>
-          {SITE_TAGLINE} These pages list intent-based AI tool categories (starting with real estate) with
-          plain-English answers so you and AI search engines can see what AiBhive builds—no app login required.
+          {`${SITE_TAGLINE} These pages list intent-based AI tool categories (starting with real estate) with plain-English answers so you and AI search engines can see what AiBhive builds—no app login required.`}
         </DirectAnswer>
 
         <ul className="space-y-4 mt-10">
