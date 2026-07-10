@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "AiBhive Diagnose",
+    "slug": "aibhive-diagnose",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/aibhive-logo-mark.png",
+    "scheme": "aibhivediagnose",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aibhive.diagnose",
+      "infoPlist": {
+        "NSCameraUsageDescription": "AiBhive Diagnose needs the camera to photograph equipment for AI diagnosis.",
+        "NSMicrophoneUsageDescription": "AiBhive Diagnose needs the microphone for voice commands in the field.",
+        "NSPhotoLibraryUsageDescription": "AiBhive Diagnose needs photo access to diagnose equipment from your gallery."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F14",
+        "foregroundImage": "./assets/brand/aibhive-logo-mark.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "package": "com.aibhive.diagnose",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/brand/aibhive-logo-mark.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/aibhive-logo.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0F14"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow AiBhive Diagnose to access photos for equipment diagnosis.",
+          "cameraPermission": "Allow AiBhive Diagnose to photograph equipment for AI diagnosis."
+        }
+      ],
+      "expo-video",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "aibhive-diagnose"
+      }
+    }
+  }
+}
