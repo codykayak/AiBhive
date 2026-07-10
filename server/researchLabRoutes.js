@@ -34,7 +34,7 @@ import {
   MAX_CRAWL_PAGES,
   MAX_OCR_IMAGES,
 } from './costProtection.js';
-import { applyTokenMarkup } from './hivePlans.js';
+import { markCostForUser } from './hiveUsage.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -69,7 +69,7 @@ async function gateAndCharge(db, uid, rawCost, feature, summary) {
       return { ok: false, status: 402, body: budget };
     }
 
-    const marked = applyTokenMarkup(rawCost);
+    const { markedUsd: marked } = await markCostForUser(db, uid, rawCost);
     const daily = await assertDailySpendCap(db, uid, marked, { reserve: true });
     if (!daily.ok) {
       endUserJob(uid);

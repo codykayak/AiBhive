@@ -5,6 +5,7 @@ import OwrOcrBatch from './OwrOcrBatch';
 import OwrInlineWebResearch from './OwrInlineWebResearch';
 import OwrInlineTranslate from './OwrInlineTranslate';
 import OwrOutputPanel from './OwrOutputPanel';
+import ResearchLabWorkspaceGuide from './ResearchLabWorkspaceGuide';
 import styles from '../researchLab.module.css';
 
 const STEPS = [
@@ -20,6 +21,8 @@ export default function OwrResearchWorkbench() {
 
   return (
     <section className={styles.owrWorkbench} aria-label="Research Lab workbench">
+      <ResearchLabWorkspaceGuide />
+
       <header className={styles.owrWorkbenchHeader}>
         <h2>Research tools</h2>
         <p>Fable Scrape, OCR, RAG library, web research, and translation — one workflow below.</p>

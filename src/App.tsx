@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { SEO } from './components/SEO';
 import HomeAssistantWeb from './components/HomeAssistantWeb';
+import SiteAnalyticsBeacon from './components/SiteAnalyticsBeacon';
 import SiteGuideTour from './components/SiteGuideTour';
 import { AssistantDockProvider } from './context/AssistantDockContext';
 import ScrollToTop from './components/ScrollToTop';
@@ -177,6 +178,7 @@ function AppShell() {
           </header>
         )}
         {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
+        {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main className={`flex-grow ${isEmbedRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
           {isPrivateRoute ? (
