@@ -18,6 +18,7 @@ const DONE_AT = 6200;
 
 /** Session lock — survives React Strict Mode remounts. */
 let introFinishedThisSession = false;
+let introStartedAt: number | null = null;
 
 export function hasIntroFinished() {
   return introFinishedThisSession;
@@ -93,7 +94,6 @@ export function IntroSplash({ onDone }: Props) {
   const { width, height } = useWindowDimensions();
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
-  const startRef = useRef<number | null>(null);
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -123,16 +123,14 @@ export function IntroSplash({ onDone }: Props) {
       return;
     }
 
-    // Keep a stable start time across Strict Mode double-invoke.
-    if (startRef.current == null) {
-      startRef.current = Date.now();
+    if (introStartedAt == null) {
+      introStartedAt = Date.now();
     }
-    const startedAt = startRef.current;
     let raf = 0;
     let done = false;
 
     const tick = () => {
-      const elapsed = Date.now() - startedAt;
+      const elapsed = Date.now() - (introStartedAt ?? Date.now());
 
       let words = 0;
       for (let i = 0; i < WORD_AT.length; i += 1) {

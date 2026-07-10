@@ -16,7 +16,6 @@ const PackContext = createContext<PackContextValue | null>(null);
 
 export function PackProvider({ children }: { children: React.ReactNode }) {
   const [activePackId, setActivePackIdState] = useState<TradePackId>('pool');
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,8 +25,8 @@ export function PackProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled && (stored === 'pool' || stored === 'electrical')) {
           setActivePackIdState(stored);
         }
-      } finally {
-        if (!cancelled) setHydrated(true);
+      } catch {
+        // Keep default pack if storage is unavailable.
       }
     })();
     return () => {
@@ -49,10 +48,6 @@ export function PackProvider({ children }: { children: React.ReactNode }) {
     }),
     [activePackId, setActivePackId]
   );
-
-  if (!hydrated) {
-    return null;
-  }
 
   return <PackContext.Provider value={value}>{children}</PackContext.Provider>;
 }
