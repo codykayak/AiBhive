@@ -27,9 +27,17 @@ import {
   RESEARCH_TRANSLATE_RAW,
   scrapeRawCost,
 } from './researchLabBilling.js';
+import {
+  assertDailySpendCap,
+  beginUserJob,
+  endUserJob,
+  MAX_CRAWL_PAGES,
+  MAX_OCR_IMAGES,
+} from './costProtection.js';
+import { applyTokenMarkup } from './hivePlans.js';
 
 const json2mb = express.json({ limit: '2mb' });
-const json50mb = express.json({ limit: '50mb' });
+const json10mb = express.json({ limit: '10mb' });
 
 async function requireResearchLabUser(req, res) {
   const authUser = await verifyHiveAuth(req);
@@ -46,22 +54,62 @@ function usesPlatformRouting(routing) {
 }
 
 /**
+ * Budget + daily spend + concurrency gate. Charges credits BEFORE work so
+ * failed charges cannot leave platform API spend unpaid.
+ */
+async function gateAndCharge(db, uid, rawCost, feature, summary) {
+  const job = beginUserJob(uid);
+  if (!job.ok) return { ok: false, status: 429, body: { error: job.reason, code: 'CONCURRENCY' } };
+
+  try {
+    await ensureHiveUser(db, uid);
+    const budget = await requireResearchLabBudget(db, uid, rawCost, feature);
+    if (!budget.ok) {
+      endUserJob(uid);
+      return { ok: false, status: 402, body: budget };
+    }
+
+    const marked = applyTokenMarkup(rawCost);
+    const daily = await assertDailySpendCap(db, uid, marked, { reserve: true });
+    if (!daily.ok) {
+      endUserJob(uid);
+      return { ok: false, status: 429, body: { error: daily.reason, code: 'DAILY_CAP' } };
+    }
+
+    const charge = await chargeResearchLabUsage(db, uid, rawCost, feature, summary);
+    if (!charge.ok) {
+      endUserJob(uid);
+      return { ok: false, status: 402, body: charge };
+    }
+
+    return { ok: true, chargedUsd: charge.chargedUsd };
+  } catch (err) {
+    endUserJob(uid);
+    throw err;
+  }
+}
+
+/**
  * @param {import('express').Express} app
  * @param {import('firebase-admin/firestore').Firestore} db
  */
 export function registerResearchLabRoutes(app, db) {
-  app.post('/api/research-lab/ocr', json50mb, async (req, res) => {
+  app.post('/api/research-lab/ocr', json10mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
+      uid = authUser.uid;
 
       const { images, format } = req.body || {};
       const pageCount = Array.isArray(images) ? images.length : 0;
       if (!pageCount) {
         return res.status(400).json({ error: 'No images provided.' });
       }
+      if (pageCount > MAX_OCR_IMAGES) {
+        return res.status(400).json({ error: `Maximum ${MAX_OCR_IMAGES} images per request.` });
+      }
 
-      await ensureHiveUser(db, authUser.uid);
       const platformKey = process.env.GEMINI_API_KEY ?? '';
       const ocrKey = await resolveResearchOcrKey(db, authUser.uid, platformKey);
       const rawCost =
@@ -69,21 +117,23 @@ export function registerResearchLabRoutes(app, db) {
           ? RESEARCH_BYOK_ORCHESTRATION_RAW * pageCount
           : researchOcrRawCost(pageCount);
 
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_ocr');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const text = await runOcrOnImages(images, format, ocrKey.apiKey);
-      const charge = await chargeResearchLabUsage(
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_ocr',
         `Research Lab OCR (${pageCount} pages, ${ocrKey.billingMode})`,
       );
-      if (!charge.ok) return res.status(402).json(charge);
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
 
-      return res.json({ text, chargedUsd: charge.chargedUsd, billingMode: ocrKey.billingMode });
+      try {
+        const text = await runOcrOnImages(images, format, ocrKey.apiKey);
+        return res.json({ text, chargedUsd: gate.chargedUsd, billingMode: ocrKey.billingMode });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       console.error('[research-lab/ocr]', error);
       const status =
         error.message?.includes('Maximum') || error.message?.includes('No images') ? 400 : 500;
@@ -118,86 +168,98 @@ export function registerResearchLabRoutes(app, db) {
   });
 
   app.post('/api/research-lab/fable-scrape/scan', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
+      uid = authUser.uid;
       const { routing } = req.body || {};
       const rawCost = scrapeRawCost(routing);
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_scrape');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const result = await scanPage(req.body || {});
-      const charge = await chargeResearchLabUsage(
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_scrape',
         `Research Lab scan (${routing?.mode || 'browser'})`,
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...result, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const result = await scanPage(req.body || {});
+        return res.json({ ...result, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'Scan failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/crawl', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
-      const { routing, maxPages } = req.body || {};
-      const pages = Math.max(1, Math.min(Number(maxPages) || 6, 30));
+      uid = authUser.uid;
+      const body = req.body || {};
+      const { routing, maxPages } = body;
+      const pages = Math.max(1, Math.min(Number(maxPages) || 6, MAX_CRAWL_PAGES));
       const rawCost = scrapeRawCost(routing) * pages;
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_scrape');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const result = await crawlSite(req.body || {});
-      const charge = await chargeResearchLabUsage(
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_scrape',
         `Research Lab crawl (${pages} pages max)`,
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...result, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const result = await crawlSite({ ...body, maxPages: pages });
+        return res.json({ ...result, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'Crawl failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/download', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
+      uid = authUser.uid;
       const rawCost = scrapeRawCost(req.body?.routing) * 0.25;
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_scrape');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const asset = await downloadAsset(req.body || {});
-      const charge = await chargeResearchLabUsage(
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_scrape',
         'Research Lab asset download',
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...asset, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const asset = await downloadAsset(req.body || {});
+        return res.json({ ...asset, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'Download failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/ocr', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
+      uid = authUser.uid;
       const { urls, routing, format } = req.body || {};
-      const pageCount = Array.isArray(urls) ? urls.length : 1;
+      const pageCount = Math.min(Array.isArray(urls) ? urls.length : 1, MAX_OCR_IMAGES);
       const platformKey = process.env.GEMINI_API_KEY ?? '';
       const ocrKey = await resolveResearchOcrKey(db, authUser.uid, platformKey);
       const rawCost =
@@ -205,110 +267,120 @@ export function registerResearchLabRoutes(app, db) {
           ? RESEARCH_BYOK_ORCHESTRATION_RAW * pageCount
           : researchOcrRawCost(pageCount) + scrapeRawCost(routing);
 
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_ocr');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const { images, fetched, failed } = await fetchImagesForOcr(req.body || {});
-      if (!images.length) {
-        return res.status(400).json({ error: 'Could not fetch any images for OCR.', failed });
-      }
-      const text = await runOcrOnImages(images, format, ocrKey.apiKey);
-      const charge = await chargeResearchLabUsage(
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_ocr',
-        `Research Lab Fable OCR (${images.length} images)`,
+        `Research Lab Fable OCR (${pageCount} images)`,
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ text, fetched, failed, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const { images, fetched, failed } = await fetchImagesForOcr({
+          ...(req.body || {}),
+          urls: Array.isArray(urls) ? urls.slice(0, MAX_OCR_IMAGES) : urls,
+        });
+        if (!images.length) {
+          return res.status(400).json({ error: 'Could not fetch any images for OCR.', failed });
+        }
+        const text = await runOcrOnImages(images, format, ocrKey.apiKey);
+        return res.json({ text, fetched, failed, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'OCR failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/ai-harvest', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
+      uid = authUser.uid;
       const body = req.body || {};
-      const rawCost = harvestRawCost(body.keys, body.roles, usesPlatformRouting(body.routing));
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(db, authUser.uid, rawCost, 'research_lab_ai_harvest');
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const result = await aiHarvest(body);
-      const charge = await chargeResearchLabUsage(
+      const rawCost = harvestRawCost(
+        body.keys,
+        body.roles,
+        usesPlatformRouting(body.routing),
+        body.count,
+      );
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         rawCost,
         'research_lab_ai_harvest',
         'Research Lab AI harvest',
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...result, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const result = await aiHarvest({
+          ...body,
+          maxPages: Math.min(Number(body.maxPages) || 6, MAX_CRAWL_PAGES),
+        });
+        return res.json({ ...result, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'AI harvest failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/translate', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(
-        db,
-        authUser.uid,
-        RESEARCH_TRANSLATE_RAW,
-        'research_lab_translate',
-      );
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const result = await translateText(req.body || {});
-      const charge = await chargeResearchLabUsage(
+      uid = authUser.uid;
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         RESEARCH_TRANSLATE_RAW,
         'research_lab_translate',
         'Research Lab translation',
       );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...result, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const result = await translateText(req.body || {});
+        return res.json({ ...result, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'Translation failed.' });
     }
   });
 
   app.post('/api/research-lab/fable-scrape/publish', json2mb, async (req, res) => {
+    let uid = null;
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
-      await ensureHiveUser(db, authUser.uid);
-      const budget = await requireResearchLabBudget(
+      uid = authUser.uid;
+      const gate = await gateAndCharge(
         db,
         authUser.uid,
         RESEARCH_PUBLISH_RAW,
         'research_lab_publish',
+        'Research Lab library publish',
       );
-      if (!budget.ok) return res.status(402).json(budget);
-
-      const payload = {
-        ...req.body,
-        contributor: authUser.email || authUser.uid,
-      };
-      const result = await publishFindings(db, payload);
-      const charge = await chargeResearchLabUsage(
-        db,
-        authUser.uid,
-        RESEARCH_PUBLISH_RAW,
-        'research_lab_publish',
-        `Published ${result.published} finding(s)`,
-      );
-      if (!charge.ok) return res.status(402).json(charge);
-      return res.json({ ...result, chargedUsd: charge.chargedUsd });
+      if (!gate.ok) return res.status(gate.status).json(gate.body);
+      try {
+        const result = await publishFindings(db, {
+          ...(req.body || {}),
+          publishedBy: authUser.uid,
+        });
+        return res.json({ ...result, chargedUsd: gate.chargedUsd });
+      } finally {
+        endUserJob(authUser.uid);
+      }
     } catch (error) {
+      if (uid) endUserJob(uid);
       return res.status(400).json({ error: error.message || 'Publish failed.' });
     }
   });
@@ -320,7 +392,7 @@ export function registerResearchLabRoutes(app, db) {
       const result = await listLibrary(db, { limit: req.query.limit });
       return res.json(result);
     } catch (error) {
-      return res.status(500).json({ error: error.message || 'Library failed.' });
+      return res.status(400).json({ error: error.message || 'Failed to load library.' });
     }
   });
 }

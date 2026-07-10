@@ -6,7 +6,7 @@ import { useOwrWorkflow } from '../context/OwrWorkflowContext';
 import { useResearchLabUser } from '../context/ResearchLabUserContext';
 import { adminJson } from '../../../lib/adminApi';
 
-const MAX_FILES = 100;
+const MAX_FILES = 50;
 const EST_COST_PER_IMAGE = 0.06;
 
 async function compressImage(file: File): Promise<string> {
@@ -59,7 +59,7 @@ export default function OwrOcrBatch() {
   async function runOcr(narrow = false) {
     const batch = narrow ? files.slice(0, Math.min(20, files.length)) : files;
     if (!batch.length) {
-      setError('Add up to 100 images or document scans.');
+      setError('Add up to 50 images or document scans.');
       return;
     }
     if (!user) {

@@ -12,6 +12,7 @@
  */
 import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
+import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
 
 const DEFAULT_ROLES = {
   director: { provider: 'grok', model: '' },
@@ -74,7 +75,7 @@ export async function aiHarvest(params) {
   if (!url) throw new Error('A start URL is required.');
   if (!prompt || !prompt.trim()) throw new Error('Describe what you want the AI to find.');
   const roles = mergeRoles(rawRoles);
-  const wanted = Math.max(1, Math.min(Number(count) || 10, 15));
+  const wanted = Math.max(1, Math.min(Number(count) || 8, MAX_HARVEST_FINDINGS));
   const warnings = [];
 
   // ---- Discover candidates ----
@@ -220,12 +221,13 @@ export async function aiHarvest(params) {
  */
 export async function translateText({ text, targetLang = 'English', provider = 'gemini', model = '', keys = {} }) {
   if (!text || !text.trim()) throw new Error('No text to translate.');
+  const clipped = text.slice(0, MAX_TRANSLATE_CHARS);
   const out = await runChat({
     provider,
     model,
     byok: keys,
     system: TRANSLATE_SYSTEM,
-    prompt: `Translate the following archival document text into ${targetLang}. Preserve names, dates, and place names.\n\n---\n${text.slice(0, 12000)}`,
+    prompt: `Translate the following archival document text into ${targetLang}. Preserve names, dates, and place names.\n\n---\n${clipped}`,
     maxTokens: 4096,
   });
   return { translation: out, targetLang, provider, model: model || PROVIDERS[provider]?.defaultChat };

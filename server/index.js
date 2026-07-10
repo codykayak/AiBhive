@@ -107,6 +107,12 @@ import path from 'path';
 import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 import { processOcr } from './ocr.js';
+import {
+  allowTestCheckout,
+  getCostProtectionLimits,
+  ipRateLimitMiddleware,
+  requirePublicPlatformAiAllowed,
+} from './costProtection.js';
 
 dotenv.config({ path: '.env.local' });
 dotenv.config();
@@ -277,25 +283,34 @@ async function verifyAdmin(req, res, next) {
   }
 }
 
-// --- OCR API ---
+// --- OCR API (gated in production — use Research Lab for metered OCR) ---
 // Must be registered before global express.json() (default 100kb) so large image payloads work.
-app.post('/api/ocr-process', express.json({ limit: '50mb' }), processOcr);
+app.post(
+  '/api/ocr-process',
+  requirePublicPlatformAiAllowed,
+  ipRateLimitMiddleware(10, 60 * 60 * 1000, 'ocr'),
+  express.json({ limit: '10mb' }),
+  processOcr,
+);
 
 // --- Fable Scrape API (stealth research harvester) ---
+// Public unmetered surface is disabled in production; use /api/research-lab/fable-scrape/*.
 const fableScrapeJson = express.json({ limit: '2mb' });
+const fableGate = [requirePublicPlatformAiAllowed, ipRateLimitMiddleware(20, 60 * 60 * 1000, 'fable')];
 
-app.get('/api/fable-scrape/status', (_req, res) => {
+app.get('/api/fable-scrape/status', ...fableGate, (_req, res) => {
   return res.status(200).json({
     residentialProxy: residentialProxyStatus(),
     firecrawl: !!process.env.FIRECRAWL_API_KEY,
+    costProtection: getCostProtectionLimits(),
   });
 });
 
-app.get('/api/fable-scrape/providers', (_req, res) => {
+app.get('/api/fable-scrape/providers', ...fableGate, (_req, res) => {
   return res.status(200).json({ providers: providerStatus() });
 });
 
-app.post('/api/fable-scrape/ai-harvest', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/ai-harvest', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const result = await aiHarvest(req.body || {});
     return res.status(200).json(result);
@@ -305,7 +320,7 @@ app.post('/api/fable-scrape/ai-harvest', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/translate', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/translate', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { text, targetLang, provider, model, keys } = req.body || {};
     const result = await translateText({ text, targetLang, provider, model, keys });
@@ -316,7 +331,7 @@ app.post('/api/fable-scrape/translate', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/publish', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/publish', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const result = await publishFindings(db, req.body || {});
     return res.status(200).json(result);
@@ -326,7 +341,7 @@ app.post('/api/fable-scrape/publish', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.get('/api/fable-scrape/library', async (req, res) => {
+app.get('/api/fable-scrape/library', ...fableGate, async (req, res) => {
   try {
     const result = await listLibrary(db, { limit: req.query.limit });
     return res.status(200).json(result);
@@ -336,7 +351,7 @@ app.get('/api/fable-scrape/library', async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/test-proxy', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/test-proxy', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { routing } = req.body || {};
     const result = await testProxyConnection(routing);
@@ -347,7 +362,7 @@ app.post('/api/fable-scrape/test-proxy', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/scan', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/scan', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { url, engine, include, includeIcons, routing } = req.body || {};
     const result = await scanPage({ url, engine, include, includeIcons, routing });
@@ -358,7 +373,7 @@ app.post('/api/fable-scrape/scan', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/crawl', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/crawl', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { url, include, includeIcons, routing, maxPages, maxDepth, sameHostOnly } = req.body || {};
     const result = await crawlSite({ url, include, includeIcons, routing, maxPages, maxDepth, sameHostOnly });
@@ -369,7 +384,7 @@ app.post('/api/fable-scrape/crawl', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/download', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/download', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { url, referer, cookies, routing } = req.body || {};
     const asset = await downloadAsset({ url, referer, cookies, routing });
@@ -380,7 +395,7 @@ app.post('/api/fable-scrape/download', fableScrapeJson, async (req, res) => {
   }
 });
 
-app.post('/api/fable-scrape/ocr', fableScrapeJson, async (req, res) => {
+app.post('/api/fable-scrape/ocr', ...fableGate, fableScrapeJson, async (req, res) => {
   try {
     const { urls, referer, cookies, format, routing } = req.body || {};
     const { images, fetched, failed } = await fetchImagesForOcr({ urls, referer, cookies, routing });
@@ -836,7 +851,7 @@ app.get('/api/intel-gathering/dbpr', async (req, res) => {
   }
 });
 
-app.post('/api/intel-gathering/firecrawl', express.json(), async (req, res) => {
+app.post('/api/intel-gathering/firecrawl', requirePublicPlatformAiAllowed, ipRateLimitMiddleware(10, 60 * 60 * 1000, 'firecrawl'), express.json(), async (req, res) => {
   try {
     const { url } = req.body;
     if (!url) {
@@ -1603,8 +1618,14 @@ function calculatePrice(lead) {
 }
 
 
-// TEST ENDPOINT - BYPASS STRIPE
+// TEST ENDPOINT - BYPASS STRIPE (disabled in production unless ALLOW_TEST_CHECKOUT=true)
 app.post('/api/test-checkout-session', async (req, res) => {
+  if (!allowTestCheckout()) {
+    return res.status(403).json({
+      error: 'Test checkout is disabled in production.',
+      code: 'TEST_CHECKOUT_DISABLED',
+    });
+  }
   const { leadId, email } = req.body || {};
   console.log('[test-checkout] request received', { leadId, email });
 
