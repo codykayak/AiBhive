@@ -1,12 +1,17 @@
-import { useEffect } from 'react';
-import { Image, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Asset } from 'expo-asset';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Animated, {
   Easing,
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -18,30 +23,61 @@ const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
 
-/** Word stagger + logo hold tuned to the ~6s intro clip. */
-const WORD_START_MS = 450;
-const WORD_STAGGER_MS = 650;
-const WORD_FADE_MS = 420;
-const LOGO_AT_MS = WORD_START_MS + WORDS.length * WORD_STAGGER_MS + 700;
-const EXIT_AT_MS = 5600;
-const EXIT_FADE_MS = 500;
+const WORD_START_MS = 500;
+const WORD_STAGGER_MS = 700;
+const LOGO_AT_MS = WORD_START_MS + WORDS.length * WORD_STAGGER_MS + 800;
+const WORDS_HIDE_MS = LOGO_AT_MS - 250;
+const EXIT_AT_MS = 6200;
+const EXIT_FADE_MS = 550;
 
 type Props = {
   onDone: () => void;
 };
 
-export function IntroSplash({ onDone }: Props) {
-  const { width, height } = useWindowDimensions();
-  const screenOpacity = useSharedValue(1);
-  const wordsOpacity = useSharedValue(0);
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.86);
-  const w0 = useSharedValue(0);
-  const w1 = useSharedValue(0);
-  const w2 = useSharedValue(0);
-  const w3 = useSharedValue(0);
-  const wordValues = [w0, w1, w2, w3];
+function WebVideo({ uri }: { uri: string }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
 
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.muted = true;
+    el.defaultMuted = true;
+    el.playsInline = true;
+    void el.play().catch(() => undefined);
+  }, [uri]);
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      {Platform.OS === 'web' ? (
+        <View style={StyleSheet.absoluteFill}>
+          {/**
+           * Using a plain DOM video keeps the intro reliable in Expo web.
+           */}
+          {(() => {
+            const React = require('react') as typeof import('react');
+            return React.createElement('video', {
+              ref,
+              src: uri,
+              muted: true,
+              autoPlay: true,
+              playsInline: true,
+              style: {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+              },
+            });
+          })()}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function NativeVideo() {
   const player = useVideoPlayer(INTRO_VIDEO, (instance) => {
     instance.loop = false;
     instance.muted = true;
@@ -49,111 +85,144 @@ export function IntroSplash({ onDone }: Props) {
 
   useEffect(() => {
     const sub = player.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay') {
-        player.play();
-      }
+      if (status === 'readyToPlay') player.play();
     });
     player.play();
     return () => sub.remove();
   }, [player]);
 
+  return (
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      nativeControls={false}
+      allowsPictureInPicture={false}
+      surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
+    />
+  );
+}
+
+export function IntroSplash({ onDone }: Props) {
+  const { width, height } = useWindowDimensions();
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(0);
+  const [showWords, setShowWords] = useState(true);
+  const [showLogo, setShowLogo] = useState(false);
+  const screenOpacity = useSharedValue(1);
+  const logoOpacity = useSharedValue(0);
+  const logoScale = useSharedValue(0.88);
+
   useEffect(() => {
-    wordsOpacity.value = withDelay(WORD_START_MS - 80, withTiming(1, { duration: 200 }));
+    let cancelled = false;
+    (async () => {
+      try {
+        const asset = Asset.fromModule(INTRO_VIDEO);
+        await asset.downloadAsync();
+        if (!cancelled) {
+          setVideoUri(asset.localUri ?? asset.uri);
+        }
+      } catch {
+        if (!cancelled && typeof INTRO_VIDEO === 'string') {
+          setVideoUri(INTRO_VIDEO);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    const hideWordsAt = LOGO_AT_MS - 200;
+  useEffect(() => {
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
 
-    wordValues.forEach((value, index) => {
-      const appearAt = WORD_START_MS + index * WORD_STAGGER_MS;
-      const visibleFor = Math.max(hideWordsAt - appearAt - WORD_FADE_MS, 200);
-      value.value = withDelay(
-        appearAt,
-        withSequence(
-          withTiming(1, { duration: WORD_FADE_MS, easing: Easing.out(Easing.cubic) }),
-          withDelay(visibleFor, withTiming(0, { duration: 380, easing: Easing.in(Easing.quad) }))
-        )
+    WORDS.forEach((_, index) => {
+      timers.push(
+        setTimeout(() => {
+          setVisibleCount(index + 1);
+        }, WORD_START_MS + index * WORD_STAGGER_MS)
       );
     });
 
-    wordsOpacity.value = withDelay(hideWordsAt, withTiming(0, { duration: 400 }));
-
-    logoOpacity.value = withDelay(
-      LOGO_AT_MS,
-      withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })
-    );
-    logoScale.value = withDelay(
-      LOGO_AT_MS,
-      withTiming(1, { duration: 700, easing: Easing.out(Easing.cubic) })
+    timers.push(
+      setTimeout(() => {
+        setShowWords(false);
+      }, WORDS_HIDE_MS)
     );
 
-    const exitTimer = setTimeout(() => {
-      screenOpacity.value = withTiming(0, { duration: EXIT_FADE_MS });
-    }, EXIT_AT_MS);
+    timers.push(
+      setTimeout(() => {
+        setShowLogo(true);
+        logoOpacity.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
+        logoScale.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
+      }, LOGO_AT_MS)
+    );
 
-    const doneTimer = setTimeout(() => {
-      try {
-        player.pause();
-      } catch {
-        // ignore
-      }
-      onDone();
-    }, EXIT_AT_MS + EXIT_FADE_MS);
+    timers.push(
+      setTimeout(() => {
+        screenOpacity.value = withTiming(0, { duration: EXIT_FADE_MS });
+      }, EXIT_AT_MS)
+    );
+
+    timers.push(
+      setTimeout(() => {
+        onDoneRef.current();
+      }, EXIT_AT_MS + EXIT_FADE_MS)
+    );
 
     return () => {
-      clearTimeout(exitTimer);
-      clearTimeout(doneTimer);
+      timers.forEach(clearTimeout);
     };
-  }, [logoOpacity, logoScale, onDone, player, screenOpacity, w0, w1, w2, w3, wordsOpacity]);
+  }, [logoOpacity, logoScale, screenOpacity]);
 
   const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
-  const wordsWrapStyle = useAnimatedStyle(() => ({ opacity: wordsOpacity.value }));
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
     transform: [{ scale: logoScale.value }],
   }));
 
-  const wordStyles = [
-    useAnimatedStyle(() => ({
-      opacity: w0.value,
-      transform: [{ translateY: interpolate(w0.value, [0, 1], [18, 0]) }],
-    })),
-    useAnimatedStyle(() => ({
-      opacity: w1.value,
-      transform: [{ translateY: interpolate(w1.value, [0, 1], [18, 0]) }],
-    })),
-    useAnimatedStyle(() => ({
-      opacity: w2.value,
-      transform: [{ translateY: interpolate(w2.value, [0, 1], [18, 0]) }],
-    })),
-    useAnimatedStyle(() => ({
-      opacity: w3.value,
-      transform: [{ translateY: interpolate(w3.value, [0, 1], [18, 0]) }],
-    })),
-  ];
-
   return (
     <Animated.View style={[styles.root, { width, height }, screenStyle]}>
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        nativeControls={false}
-        allowsPictureInPicture={false}
-        surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
-      />
-      <View style={styles.scrim} pointerEvents="none" />
+      {Platform.OS === 'web' ? (
+        videoUri ? <WebVideo uri={videoUri} /> : <View style={[StyleSheet.absoluteFill, styles.fallbackBg]} />
+      ) : (
+        <NativeVideo />
+      )}
+      <View style={styles.scrim} />
 
-      <Animated.View style={[styles.wordsBlock, wordsWrapStyle]}>
-        {WORDS.map((word, index) => (
-          <Animated.Text key={word} style={[styles.word, wordStyles[index]]}>
-            {word}
-          </Animated.Text>
-        ))}
-      </Animated.View>
+      {showWords ? (
+        <View style={styles.wordsBlock}>
+          {WORDS.map((word, index) => (
+            <Text
+              key={word}
+              style={[
+                styles.word,
+                {
+                  opacity: index < visibleCount ? 1 : 0,
+                  transform: [{ translateY: index < visibleCount ? 0 : 12 }],
+                },
+              ]}
+            >
+              {word}
+            </Text>
+          ))}
+        </View>
+      ) : null}
 
-      <Animated.View style={[styles.logoBlock, logoStyle]}>
-        <Image source={AIBHIVE_LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="AiBhive" />
-        <Text style={styles.product}>Diagnose</Text>
-      </Animated.View>
+      {showLogo ? (
+        <Animated.View style={[styles.logoBlock, logoStyle]}>
+          <Image
+            source={AIBHIVE_LOGO}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel="AiBhive"
+          />
+          <Text style={styles.product}>Diagnose</Text>
+        </Animated.View>
+      ) : null}
     </Animated.View>
   );
 }
@@ -164,27 +233,28 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  fallbackBg: {
+    backgroundColor: theme.colors.bg,
   },
   scrim: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(11, 15, 20, 0.42)',
+    backgroundColor: 'rgba(11, 15, 20, 0.45)',
   },
   wordsBlock: {
     position: 'absolute',
     left: 28,
     right: 28,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   word: {
     color: theme.colors.mist,
-    fontSize: 36,
+    fontSize: 38,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.65)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
   },
   logoBlock: {
     position: 'absolute',
@@ -192,9 +262,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 168,
-    height: 168,
-    borderRadius: 36,
+    width: 176,
+    height: 176,
+    borderRadius: 38,
   },
   product: {
     marginTop: 16,

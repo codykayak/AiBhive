@@ -5,7 +5,7 @@ import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
@@ -41,6 +41,7 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const [showSplash, setShowSplash] = useState(true);
+  const splashDoneRef = useRef(false);
 
   useEffect(() => {
     if (error) throw error;
@@ -52,7 +53,11 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  const finishSplash = useCallback(() => setShowSplash(false), []);
+  const finishSplash = useCallback(() => {
+    if (splashDoneRef.current) return;
+    splashDoneRef.current = true;
+    setShowSplash(false);
+  }, []);
 
   if (!loaded) {
     return null;
