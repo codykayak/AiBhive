@@ -44,7 +44,7 @@ export function getHomeAssistantKnowledgeMarkdown() {
     mission = '';
   }
   // Compact Tartarian starter brief so general Research Lab questions have real start URLs
-  const tartarianBrief = getTartarianStarterBrief({ maxChars: 3200 });
+  const tartarianBrief = getTartarianStarterBrief({ maxChars: 4500 });
   return [
     base,
     '',
@@ -53,7 +53,7 @@ export function getHomeAssistantKnowledgeMarkdown() {
     '',
     tartarianBrief,
     '',
-    'You understand AiBhive\'s complete product mission: build apps from plain English, research with multi-agent Research Lab, meter Hive credits fairly, and grow a community-sourced library. Never invent features. Never mention internal cost markups — only Hive credits and plans. For Tartarian / Old World / mud-flood questions, use the finds directory leads above — cite start URLs, do not invent quotes.',
+    'You understand AiBhive\'s complete product mission: build apps from plain English, research with multi-agent Research Lab, meter Hive credits fairly, and grow a community-sourced library. Never invent features. Never mention internal cost markups — only Hive credits and plans. For Tartarian / Old World / mud-flood questions: scout with 3 paste-ready dig URLs + probability hints, ask A/B/C, never invent quotes.',
   ].join('\n');
 }
 
