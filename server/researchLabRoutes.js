@@ -27,6 +27,7 @@ import {
   RESEARCH_TRANSLATE_RAW,
   scrapeRawCost,
 } from './researchLabBilling.js';
+import { getResearchLabFablePrefs, saveResearchLabFablePrefs } from './researchLabPrefs.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json50mb = express.json({ limit: '50mb' });
@@ -321,6 +322,28 @@ export function registerResearchLabRoutes(app, db) {
       return res.json(result);
     } catch (error) {
       return res.status(500).json({ error: error.message || 'Library failed.' });
+    }
+  });
+
+  app.get('/api/research-lab/fable-prefs', async (req, res) => {
+    const authUser = await requireResearchLabUser(req, res);
+    if (!authUser) return;
+    try {
+      const prefs = await getResearchLabFablePrefs(db, authUser.uid);
+      return res.json(prefs);
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Could not load preferences.' });
+    }
+  });
+
+  app.put('/api/research-lab/fable-prefs', json2mb, async (req, res) => {
+    const authUser = await requireResearchLabUser(req, res);
+    if (!authUser) return;
+    try {
+      const prefs = await saveResearchLabFablePrefs(db, authUser.uid, req.body || {});
+      return res.json(prefs);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Could not save preferences.' });
     }
   });
 }
