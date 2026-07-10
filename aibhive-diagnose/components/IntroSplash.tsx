@@ -1,6 +1,14 @@
 import { Asset } from 'expo-asset';
-import { useEffect, useRef, useState } from 'react';
-import { Image, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { theme } from '@/constants/theme';
@@ -9,6 +17,8 @@ const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
 const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
+/** Hard ceiling so throttled tabs / stalled video never trap the user. */
+const INTRO_MAX_MS = 8000;
 
 type Phase = 'words' | 'logo' | 'exit';
 
@@ -81,7 +91,7 @@ function NativeVideo() {
 /**
  * Sequential branded intro:
  * video + words one-by-one → fade to AiBhive logo → dismiss.
- * Uses chained timeouts (not rAF) so web automation / background tabs can't skip.
+ * Tap anywhere to skip. Hard-caps at INTRO_MAX_MS.
  */
 export function IntroSplash({ onDone }: Props) {
   const { width, height } = useWindowDimensions();
@@ -89,11 +99,21 @@ export function IntroSplash({ onDone }: Props) {
   onDoneRef.current = onDone;
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const generationRef = useRef(0);
+  const finishedRef = useRef(false);
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
   const [phase, setPhase] = useState<Phase>('words');
   const [opacity, setOpacity] = useState(1);
+
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current.length = 0;
+    generationRef.current += 1;
+    onDoneRef.current();
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,9 +136,10 @@ export function IntroSplash({ onDone }: Props) {
     const timers = timersRef.current;
     timers.forEach(clearTimeout);
     timers.length = 0;
+    finishedRef.current = false;
 
     const safe = (fn: () => void) => () => {
-      if (generationRef.current !== generation) return;
+      if (generationRef.current !== generation || finishedRef.current) return;
       fn();
     };
 
@@ -126,43 +147,42 @@ export function IntroSplash({ onDone }: Props) {
       timers.push(setTimeout(safe(fn), ms));
     };
 
-    // Reset visual state for this generation
     setVisibleCount(0);
     setPhase('words');
     setOpacity(1);
 
-    // Words one at a time
     WORDS.forEach((_, index) => {
       schedule(() => setVisibleCount(index + 1), 700 + index * 850);
     });
 
-    // Hold last word, then logo
     schedule(() => setPhase('logo'), 700 + WORDS.length * 850 + 500);
 
-    // Fade out
     schedule(() => {
       setPhase('exit');
       setOpacity(0);
     }, 700 + WORDS.length * 850 + 500 + 2200);
 
-    // Done
     schedule(() => {
-      onDoneRef.current();
-    }, 700 + WORDS.length * 850 + 500 + 2200 + 600);
+      finish();
+    }, Math.min(700 + WORDS.length * 850 + 500 + 2200 + 600, INTRO_MAX_MS));
+
+    // Absolute fail-open if timers are throttled (background / Simple Browser).
+    schedule(() => finish(), INTRO_MAX_MS);
 
     return () => {
-      // Invalidate this generation so late timers no-op.
-      // Do NOT bump generation here — only clear timers.
       timers.forEach(clearTimeout);
       timers.length = 0;
     };
-  }, []);
+  }, [finish]);
 
   const showWords = phase === 'words';
   const showLogo = phase === 'logo' || phase === 'exit';
 
   return (
-    <View
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Skip intro"
+      onPress={finish}
       style={[
         styles.root,
         {
@@ -177,10 +197,10 @@ export function IntroSplash({ onDone }: Props) {
       ) : (
         <NativeVideo />
       )}
-      <View style={styles.scrim} />
+      <View style={styles.scrim} pointerEvents="none" />
 
       {showWords ? (
-        <View style={styles.wordsBlock}>
+        <View style={styles.wordsBlock} pointerEvents="none">
           {WORDS.map((word, index) => (
             <Text
               key={word}
@@ -198,7 +218,7 @@ export function IntroSplash({ onDone }: Props) {
       ) : null}
 
       {showLogo ? (
-        <View style={styles.logoBlock}>
+        <View style={styles.logoBlock} pointerEvents="none">
           <Image
             source={AIBHIVE_LOGO}
             style={styles.logo}
@@ -208,7 +228,11 @@ export function IntroSplash({ onDone }: Props) {
           <Text style={styles.product}>Diagnose</Text>
         </View>
       ) : null}
-    </View>
+
+      <Text style={styles.skipHint} pointerEvents="none">
+        Tap to skip
+      </Text>
+    </Pressable>
   );
 }
 
@@ -262,6 +286,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 4,
+    textTransform: 'uppercase',
+  },
+  skipHint: {
+    position: 'absolute',
+    bottom: 36,
+    color: 'rgba(232, 236, 241, 0.55)',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
 });
