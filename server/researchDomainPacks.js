@@ -24,13 +24,20 @@ export const DOMAIN_PACKS = [
     blurb: 'Stealth crawl fairground plates → OCR captions → timeline notes → community publish.',
     topicId: 'world-fairs',
     steps: [
-      { step: 0, action: 'harvest', hint: 'AI Harvest with Director filtering fairgrounds imagery.' },
+      {
+        step: 0,
+        action: 'harvest',
+        hint:
+          'Paste an Archive.org fair search (e.g. Columbian Exposition 1893 photographs) — Crawl on, findings 2–4.',
+      },
       { step: 1, action: 'ocr', hint: 'OCR engraved captions and plate numbers.' },
       { step: 3, action: 'research', hint: 'Ask Grok for timeline synthesis over harvested text.' },
       { step: 2, action: 'publish', hint: 'Publish caption packs to Communal Library.' },
     ],
     rosterHint: { director: 'grok', vision: 'gemini', translator: 'grok' },
     estimateHint: 'Harvest of 8 findings ≈ 0.08–0.20 Hive credits depending on routing',
+    suggestedUrl:
+      'https://archive.org/search?query=Columbian+Exposition+1893+photographs&and[]=year%3A%5B1870+TO+1925%5D',
   },
   {
     id: 'exhibit-ocr-sprint',
@@ -84,12 +91,19 @@ export const DOMAIN_PACKS = [
     blurb: 'Photo archives + window-line notes → OCR → communal mud-flood corpus.',
     topicId: 'mud-flood',
     steps: [
-      { step: 0, action: 'harvest', hint: 'Collect street-level historical photos.' },
+      {
+        step: 0,
+        action: 'harvest',
+        hint:
+          'Start with Chron Am mud-flood / street-grade search OR Archive.org souvenir albums — not bare homepages.',
+      },
       { step: 1, action: 'ocr', hint: 'OCR captions, signs, and newspaper clippings.' },
       { step: 2, action: 'publish', hint: 'Publish to Mud Flood topic with source URLs.' },
     ],
     rosterHint: { director: 'grok', vision: 'gemini', translator: 'gemini' },
     estimateHint: 'Photo pack ≈ 0.10–0.30 Hive credits',
+    suggestedUrl:
+      'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=mud+flood&date1=1870&date2=1920&rows=20&searchType=basic',
   },
   {
     id: 'chronicling-america-tartaria',
@@ -112,6 +126,45 @@ export const DOMAIN_PACKS = [
     estimateHint: 'Text-corpus harvest (no Vision OCR) ≈ 0.05–0.25 Hive credits for 2–4 leads',
     suggestedUrl:
       'https://chroniclingamerica.loc.gov/search/pages/results/?state=&date1=1850&date2=1922&proxtext=Tartar&x=0&y=0&dateFilterType=yearRange&rows=20&searchType=basic',
+  },
+  {
+    id: 'star-fort-maps',
+    category: 'historical-ancient',
+    name: 'Star fort & Sanborn map dig',
+    blurb: 'Rumsey/LOC fort + Sanborn grade maps → image harvest → communal star-forts corpus.',
+    topicId: 'star-forts',
+    steps: [
+      {
+        step: 0,
+        action: 'harvest',
+        hint: 'Paste Rumsey fort/bastion search or LOC Sanborn city query — image-OCR path.',
+      },
+      { step: 1, action: 'ocr', hint: 'OCR map titles, legends, and street grades.' },
+      { step: 2, action: 'publish', hint: 'Publish to star-forts / ancient-maps with source URLs.' },
+    ],
+    rosterHint: { director: 'grok', vision: 'gemini', translator: 'grok' },
+    estimateHint: 'Map pack ≈ 0.08–0.25 Hive credits',
+    suggestedUrl: 'https://www.davidrumsey.com/luna/servlet/view/search?q=fort%20bastion',
+  },
+  {
+    id: 'orphan-train-press',
+    category: 'historical-ancient',
+    name: 'Orphan train press dig',
+    blurb: 'Chron Am orphan-train / foundling searches by state → text-corpus → communal orphan-trains.',
+    topicId: 'orphan-trains',
+    steps: [
+      {
+        step: 0,
+        action: 'harvest',
+        hint: 'Use Chron Am orphan-train search-results URL (national or state filter) — Crawl 8–12, findings 2–4.',
+      },
+      { step: 3, action: 'research', hint: 'Cross-check arrival dates vs institutional builds — do not invent links.' },
+      { step: 2, action: 'publish', hint: 'Publish public-domain quotes only to orphan-trains.' },
+    ],
+    rosterHint: { director: 'grok', vision: 'gemini', translator: 'grok' },
+    estimateHint: 'Text-corpus harvest ≈ 0.05–0.20 Hive credits',
+    suggestedUrl:
+      'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=%22orphan+train%22&date1=1850&date2=1929&rows=20&searchType=basic',
   },
 ];
 

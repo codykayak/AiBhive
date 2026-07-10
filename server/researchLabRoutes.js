@@ -55,6 +55,7 @@ import {
 } from './researchProjects.js';
 import { parseHttpUrl } from './urlNormalize.js';
 import {
+  getTartarianDigPacks,
   getTartarianFindsDirectory,
   getTartarianStarterBrief,
 } from './tartarianFindsDirectory.js';
@@ -530,18 +531,21 @@ export function registerResearchLabRoutes(app, db) {
 
   /** Documented Tartarian / Old World starter finds for assistants & UI. */
   app.get('/api/research-lab/tartarian-finds', (req, res) => {
-    const maxChars = Math.min(20000, Math.max(2000, Number(req.query.maxChars) || 14000));
+    const maxChars = Math.min(28000, Math.max(2000, Number(req.query.maxChars) || 14000));
     const brief = req.query.brief === '1' || req.query.brief === 'true';
+    const digPacks = getTartarianDigPacks();
     const markdown = brief
-      ? getTartarianStarterBrief({ maxChars: Math.min(maxChars, 4000) })
+      ? getTartarianStarterBrief({ maxChars: Math.min(maxChars, 5500) })
       : getTartarianFindsDirectory({ maxChars });
     return res.json({
       ok: true,
       brief,
       chars: markdown.length,
       markdown,
+      digPacks,
       topicId: 'tartarian',
-      hint: 'Use these leads when users ask general Tartarian / Old World questions. Cite start URLs; do not invent quotes.',
+      hint:
+        'Scout mode: for vague questions present 3 digs with paste-ready URLs + probability, then ask A/B/C. Never invent quotes. Chron Am = search-results URLs only.',
     });
   });
 
