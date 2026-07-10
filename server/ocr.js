@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { MAX_OCR_IMAGES } from './costProtection.js';
 
 const clients = new Map();
 
@@ -20,7 +21,7 @@ const FORMAT_INSTRUCTIONS = {
 };
 
 /**
- * Run Gemini vision OCR on up to 100 base64 JPEG images.
+ * Run Gemini vision OCR on base64 JPEG images (hard-capped for cost control).
  * @param {string[]} images - base64 strings (no data-URL prefix)
  * @param {string} [format] - Markdown | Plain Text | Preserve Layout
  * @param {string} [apiKey] - optional BYOK Gemini key
@@ -29,8 +30,8 @@ export async function runOcrOnImages(images, format = 'Markdown', apiKey) {
   if (!images?.length) {
     throw new Error('No images provided.');
   }
-  if (images.length > 100) {
-    throw new Error('Maximum 100 images allowed per request.');
+  if (images.length > MAX_OCR_IMAGES) {
+    throw new Error(`Maximum ${MAX_OCR_IMAGES} images allowed per request.`);
   }
 
   const ai = getGemini(apiKey);
@@ -78,7 +79,8 @@ export const processOcr = async (req, res) => {
     return res.status(200).json({ text });
   } catch (error) {
     console.error('OCR Processing Error:', error);
-    const status = error.message?.includes('Maximum') || error.message?.includes('No images') ? 400 : 500;
+    const status =
+      error.message?.includes('Maximum') || error.message?.includes('No images') ? 400 : 500;
     return res.status(status).json({ error: error.message || 'Failed to process images.' });
   }
 };

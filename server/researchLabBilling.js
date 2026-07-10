@@ -41,15 +41,17 @@ export function scrapeRawCost(routing = {}, usesPlatformAi = true) {
   return RESEARCH_SCRAPE_PLATFORM_RAW;
 }
 
-export function harvestRawCost(keys = {}, roles = {}, usesPlatformRouting = false) {
+export function harvestRawCost(keys = {}, roles = {}, usesPlatformRouting = false, findingCount = 8) {
   const providers = new Set(
     [roles?.director?.provider, roles?.vision?.provider, roles?.translator?.provider].filter(Boolean),
   );
   const allByok = [...providers].every((p) => keys?.[p]);
-  if (allByok && providers.size > 0) {
-    return RESEARCH_AI_HARVEST_BYOK_RAW + (usesPlatformRouting ? RESEARCH_SCRAPE_PLATFORM_RAW : 0);
-  }
-  return RESEARCH_AI_HARVEST_RAW + (usesPlatformRouting ? RESEARCH_SCRAPE_PLATFORM_RAW : 0);
+  const findings = Math.max(1, Math.min(Number(findingCount) || 8, 8));
+  // Base orchestration + per-finding vision/translate cost (platform keys).
+  const perFinding = allByok && providers.size > 0 ? 0.001 : 0.005;
+  const base =
+    allByok && providers.size > 0 ? RESEARCH_AI_HARVEST_BYOK_RAW : RESEARCH_AI_HARVEST_RAW * 0.35;
+  return base + findings * perFinding + (usesPlatformRouting ? RESEARCH_SCRAPE_PLATFORM_RAW : 0);
 }
 
 /**

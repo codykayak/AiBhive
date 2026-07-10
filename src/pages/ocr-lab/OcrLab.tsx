@@ -174,7 +174,7 @@ export default function OcrLab() {
     <main className="py-24">
       <SEO
         title="OCR Lab - Batch Image to Text | AiBhive"
-        description="AiBhive OCR Lab converts up to 100 photos into formatted text, Markdown, or PDF with vision AI — built for archives, scanned documents, and research images."
+        description="AiBhive OCR Lab converts up to 50 photos into formatted text, Markdown, or PDF with vision AI — built for archives, scanned documents, and research images."
         keywords="OCR lab, batch OCR, image to text AI, scanned document OCR, AiBhive vision AI"
       />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -195,7 +195,7 @@ export default function OcrLab() {
             OCR <span className="text-gradient">Lab</span>
           </motion.h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Upload up to 100 photos and convert them instantly to formatted text, Markdown, or PDF using state-of-the-art vision models.
+            Upload up to 50 photos and convert them instantly to formatted text, Markdown, or PDF using state-of-the-art vision models.
           </p>
         </header>
 
@@ -225,7 +225,7 @@ export default function OcrLab() {
                   <Upload className="w-8 h-8 text-bee-amber" />
                 </div>
                 <p className="text-white font-bold text-lg mb-2">Tap to select photos</p>
-                <p className="text-slate-400 text-sm">Select up to 100 images from your gallery</p>
+                <p className="text-slate-400 text-sm">Select up to 50 images from your gallery</p>
               </div>
 
               {files.length > 0 && (

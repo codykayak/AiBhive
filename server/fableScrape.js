@@ -19,6 +19,7 @@
 import dns from 'dns';
 import net from 'net';
 import { ProxyAgent } from 'undici';
+import { MAX_CRAWL_PAGES, MAX_OCR_IMAGES } from './costProtection.js';
 
 const dnsLookup = dns.promises.lookup;
 
@@ -719,7 +720,12 @@ export async function scanPage({ url, engine = 'auto', include, includeIcons = f
   };
 }
 
-const CRAWL_LIMITS = { maxPages: 40, maxDepth: 4, maxAssets: 4000, timeBudgetMs: 120000 };
+const CRAWL_LIMITS = {
+  maxPages: MAX_CRAWL_PAGES,
+  maxDepth: 3,
+  maxAssets: 2000,
+  timeBudgetMs: 90_000,
+};
 
 /**
  * Multi-page crawl. BFS from startUrl within caps, aggregating assets.
@@ -873,7 +879,7 @@ export async function downloadAsset({ url, referer, cookies, routing = {} }) {
  * @param {{ urls:string[], referer?:string, cookies?:string, routing?:object }} params
  */
 export async function fetchImagesForOcr({ urls, referer, cookies, routing = {} }) {
-  const list = (Array.isArray(urls) ? urls : []).slice(0, 100);
+  const list = (Array.isArray(urls) ? urls : []).slice(0, MAX_OCR_IMAGES);
   if (!list.length) throw new Error('No image URLs provided.');
   const images = [];
   const failed = [];

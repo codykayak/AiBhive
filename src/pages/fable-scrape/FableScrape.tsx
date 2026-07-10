@@ -293,11 +293,11 @@ function HarvestTab({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div>
             <label className="block text-slate-400 text-xs font-bold mb-1">Findings (≤15)</label>
-            <input type="number" min={1} max={15} value={count} onChange={(e) => setCount(Math.max(1, Math.min(15, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-bee-amber/50 focus:outline-none" />
+            <input type="number" min={1} max={8} value={count} onChange={(e) => setCount(Math.max(1, Math.min(8, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-bee-amber/50 focus:outline-none" />
           </div>
           <div>
             <label className="block text-slate-400 text-xs font-bold mb-1">Max pages</label>
-            <input type="number" min={1} max={40} value={maxPages} disabled={!crawl} onChange={(e) => setMaxPages(Math.max(1, Math.min(40, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-bee-amber/50 focus:outline-none disabled:opacity-40" />
+            <input type="number" min={1} max={20} value={maxPages} disabled={!crawl} onChange={(e) => setMaxPages(Math.max(1, Math.min(20, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:border-bee-amber/50 focus:outline-none disabled:opacity-40" />
           </div>
           <div>
             <label className="block text-slate-400 text-xs font-bold mb-1">Link depth</label>
@@ -602,7 +602,7 @@ function ScrapeTab({
       let text = '';
       if (routing.routeMode === 'browser') {
         const imgs: string[] = [];
-        for (const t of targets.slice(0, 100)) {
+        for (const t of targets.slice(0, 50)) {
           try { const blob = await clientFetchBlob(t.url); if (blob.type.startsWith('image/')) imgs.push(await blobToBase64(blob)); } catch { /* skip */ }
         }
         if (!imgs.length) throw new Error('Could not fetch images in browser mode (CORS). Switch routing.');
@@ -639,7 +639,7 @@ function ScrapeTab({
         </div>
         {runMode === 'crawl' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-            <div><label className="block text-slate-400 text-xs font-bold mb-1">Max pages (≤40)</label><input type="number" min={1} max={40} value={maxPages} onChange={(e) => setMaxPages(Math.max(1, Math.min(40, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none" /></div>
+            <div><label className="block text-slate-400 text-xs font-bold mb-1">Max pages (≤20)</label><input type="number" min={1} max={20} value={maxPages} onChange={(e) => setMaxPages(Math.max(1, Math.min(20, Number(e.target.value) || 1)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none" /></div>
             <div><label className="block text-slate-400 text-xs font-bold mb-1">Link depth (≤4)</label><input type="number" min={0} max={4} value={maxDepth} onChange={(e) => setMaxDepth(Math.max(0, Math.min(4, Number(e.target.value) || 0)))} className="w-full bg-[#0f1115]/70 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none" /></div>
             <label className="flex items-center gap-2 self-end pb-2 cursor-pointer"><input type="checkbox" checked={sameHostOnly} onChange={(e) => setSameHostOnly(e.target.checked)} className="accent-bee-amber w-4 h-4" /><span className="text-slate-300 text-sm">Same domain only</span></label>
           </div>
