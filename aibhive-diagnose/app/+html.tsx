@@ -36,26 +36,26 @@ html, body, #root {
   color: #e8ecf1;
 }
 body::before {
-  content: 'Loading AiBhive Diagnose…';
+  content: 'AiBhive Diagnose — loading…\\A If this stays blank, open Ports → 8082 → Open in Browser';
+  white-space: pre-line;
   position: fixed;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font: 600 14px/1.4 system-ui, sans-serif;
-  letter-spacing: 0.04em;
-  color: rgba(232, 236, 241, 0.7);
+  text-align: center;
+  padding: 24px;
+  font: 700 16px/1.5 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  color: #f5a623;
   pointer-events: none;
   z-index: 0;
 }
 #root {
   position: relative;
   z-index: 1;
-}
-#root:not(:empty) ~ *,
-#root:not(:empty) {
-  /* Once React mounts, hide the CSS-only loading hint via root paint. */
+  background-color: #0b0f14;
 }
 body:has(#root:not(:empty))::before {
   display: none;
-}`
+}`;
