@@ -75,6 +75,7 @@ export type HarvestResult = {
   ok: boolean;
   prompt?: string;
   strategy?: string;
+  mode?: 'image-ocr' | 'text-corpus' | 'empty' | string;
   candidatesConsidered?: number;
   findings: Finding[];
   pdfs?: Asset[];

@@ -409,6 +409,26 @@ function HarvestTab({
           <p className="text-slate-500 text-xs mt-1.5">
             Paste the full page address (must include the site name, e.g. archive.org/…). Domain-only is fine — we add https://.
           </p>
+          <div className="mt-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-cyan-100/90 leading-relaxed">
+            <p className="font-bold text-cyan-300 mb-1">Newspaper / text archives tip</p>
+            <p>
+              Sites like Chronicling America rarely expose document images on the homepage. Start from a{' '}
+              <strong>search-results URL</strong> with your keywords, enable <strong>Crawl</strong>, set max pages
+              to 8–12, and keep findings at 2–4 to stay cheap. Example:{' '}
+              <button
+                type="button"
+                className="text-bee-amber underline underline-offset-2 text-left"
+                onClick={() =>
+                  setUrl(
+                    'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic',
+                  )
+                }
+              >
+                Load Chronicling America “Tartar” search
+              </button>
+              . AI Harvest will mine page text when images aren’t available.
+            </p>
+          </div>
         </div>
 
         {/* Scope row */}
@@ -488,17 +508,36 @@ function HarvestTab({
             <div className="glass-card p-5 rounded-2xl border-l-4 border-l-violet-500/60">
               <p className="text-violet-300 text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-1">
                 <Cpu className="w-4 h-4" /> Director strategy
+                {result.mode ? (
+                  <span className="normal-case tracking-normal font-semibold text-slate-400">
+                    · {result.mode === 'text-corpus' ? 'text corpus' : result.mode === 'image-ocr' ? 'image OCR' : result.mode}
+                  </span>
+                ) : null}
               </p>
               <p className="text-slate-200 text-sm">{result.strategy}</p>
-              <p className="text-slate-500 text-xs mt-2">Considered {result.candidatesConsidered} candidates · {result.findings.length} findings returned.</p>
+              <p className="text-slate-500 text-xs mt-2">
+                Considered {result.candidatesConsidered} candidates · {result.findings.length} findings returned.
+              </p>
             </div>
           )}
 
           {result.warnings && result.warnings.length > 0 && (
-            <div className="glass-card p-4 rounded-2xl border border-amber-500/20">
+            <div className="glass-card p-4 rounded-2xl border border-amber-500/20 space-y-1.5">
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-amber-300/90 text-xs flex items-start gap-2"><AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {w}</p>
+                <p key={i} className="text-amber-300/90 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {w}
+                </p>
               ))}
+            </div>
+          )}
+
+          {result.findings.length === 0 && (
+            <div className="glass-card p-6 rounded-2xl border border-white/10 text-slate-300 text-sm space-y-2">
+              <p className="font-bold text-white">No findings this run</p>
+              <p>
+                For text-heavy sites, start on a keyword search-results page (not the homepage), enable Crawl, and
+                raise max pages. Try the Chronicling America tip button above if you’re researching American newspapers.
+              </p>
             </div>
           )}
 
