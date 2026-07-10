@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Eye, Languages, KeyRound, Cpu, CheckCircle2 } from 'lucide-react';
 import { useFableApi } from './fableApiContext';
 import {
@@ -6,6 +6,8 @@ import {
   PROVIDER_LABELS,
   ROLE_META,
   fableGet,
+  fablePrefsGet,
+  fablePrefsPut,
   type ProviderId,
   type ProviderInfo,
   type RoleKey,
@@ -20,12 +22,33 @@ export function useRoster() {
   const [roster, setRoster] = useState<Roster>(DEFAULT_ROSTER);
   const [keys, setKeys] = useState<Partial<Record<ProviderId, string>>>({});
   const [open, setOpen] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(!api.persistPrefs);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     fableGet(api, '/providers')
       .then((d) => setProviders(d.providers || []))
       .catch(() => {});
   }, [api]);
+
+  useEffect(() => {
+    if (!api.persistPrefs) return;
+    fablePrefsGet(api)
+      .then((prefs) => {
+        if (prefs.roster) setRoster(prefs.roster);
+      })
+      .catch(() => {})
+      .finally(() => setPrefsLoaded(true));
+  }, [api]);
+
+  useEffect(() => {
+    if (!api.persistPrefs || !prefsLoaded) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void fablePrefsPut(api, { roster }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(saveTimer.current);
+  }, [api, roster, prefsLoaded]);
 
   const byId = useMemo(() => {
     const m: Partial<Record<ProviderId, ProviderInfo>> = {};
@@ -142,8 +165,9 @@ export function useRoster() {
               })}
             </div>
             <p className="text-[11px] text-slate-500 mt-2">
-              Keys are sent only with your requests for this session and never stored. Order is enforced: the Director
-              plans, then Vision reads, then the Translator — findings can then be published to the communal library.
+              {api.persistPrefs
+                ? 'API keys stay in this browser session only (never stored). Your AI roster choices are saved to your account and reload on sign-in. Order is enforced: the Director plans, then Vision reads, then the Translator — findings can then be published to the communal library.'
+                : 'Keys are sent only with your requests for this session and never stored. Order is enforced: the Director plans, then Vision reads, then the Translator — findings can then be published to the communal library.'}
             </p>
           </div>
         </div>

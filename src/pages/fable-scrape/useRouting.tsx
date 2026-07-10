@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Wifi,
   Server,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { RouteMode, Routing } from './shared';
 import { useFableApi } from './fableApiContext';
-import { fableGet, fablePost } from './shared';
+import { fableGet, fablePost, fablePrefsGet, fablePrefsPut } from './shared';
 
 type Provider = 'dataimpulse' | 'iproyal' | 'webshare' | 'generic';
 
@@ -30,12 +30,37 @@ export function useRouting() {
   const [proxyStatus, setProxyStatus] = useState<{ available: boolean; rotating: boolean; count: number } | null>(null);
   const [proxyTest, setProxyTest] = useState<{ testing: boolean; ip?: string; error?: string }>({ testing: false });
   const [ackMyIp, setAckMyIp] = useState(false);
+  const [prefsLoaded, setPrefsLoaded] = useState(!api.persistPrefs);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     fableGet(api, '/status')
       .then((d) => setProxyStatus(d.residentialProxy || null))
       .catch(() => {});
   }, [api]);
+
+  useEffect(() => {
+    if (!api.persistPrefs) return;
+    fablePrefsGet(api)
+      .then((prefs) => {
+        if (prefs.routing?.mode) setRouteMode(prefs.routing.mode);
+        if (prefs.routing?.proxyProvider) setProvider(prefs.routing.proxyProvider);
+        if (prefs.routing?.ackMyIp) setAckMyIp(true);
+      })
+      .catch(() => {})
+      .finally(() => setPrefsLoaded(true));
+  }, [api]);
+
+  useEffect(() => {
+    if (!api.persistPrefs || !prefsLoaded) return;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void fablePrefsPut(api, {
+        routing: { mode: routeMode, proxyProvider: provider, ackMyIp },
+      }).catch(() => {});
+    }, 800);
+    return () => clearTimeout(saveTimer.current);
+  }, [api, routeMode, provider, ackMyIp, prefsLoaded]);
 
   const routing: Routing = useMemo(
     () => ({ mode: routeMode, proxyUrl: routeMode === 'custom' ? proxyUrl.trim() : undefined }),
