@@ -3,6 +3,7 @@ import ResearchLabHero from './components/ResearchLabHero';
 import ResearchLabWelcomeSection from './components/ResearchLabWelcomeSection';
 import ResearchLabToolsSection from './components/ResearchLabToolsSection';
 import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
+import CommunalLibraryMapSection from './components/CommunalLibraryMapSection';
 import styles from './researchLab.module.css';
 
 export default function ResearchLabLandingPage() {
@@ -39,6 +40,13 @@ export default function ResearchLabLandingPage() {
       />
       <ResearchLabHero />
       <ResearchLabWelcomeSection />
+      <section
+        id="communal-library"
+        className={styles.rlLibLandingSection}
+        aria-label="Communal Library knowledge map"
+      >
+        <CommunalLibraryMapSection headingLevel="h2" showFullLibraryCta />
+      </section>
       <ResearchLabToolsSection />
       <ResearchLabCustomizeFab />
     </div>

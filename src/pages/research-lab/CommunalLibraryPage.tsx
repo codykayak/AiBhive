@@ -1,7 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  Library,
   Share2,
   Users,
   Sparkles,
@@ -14,12 +13,11 @@ import {
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import StartResearchingButton from './components/StartResearchingButton';
-import { COMMUNAL_TOPICS, getCommunalTopic } from './communalLibraryTopics';
+import CommunalLibraryMapSection from './components/CommunalLibraryMapSection';
+import { COMMUNAL_TOPICS } from './communalLibraryTopics';
 import { auth } from '../../firebase';
 import type { LibraryEntry } from '../fable-scrape/shared';
 import styles from './researchLab.module.css';
-
-const CommunalKnowledgeMap = lazy(() => import('./components/CommunalKnowledgeMap'));
 
 type LiveEntry = LibraryEntry & {
   topicId?: string;
@@ -59,16 +57,6 @@ export default function CommunalLibraryPage() {
         docs: Math.max(t.docs, liveStats[t.id] || 0),
         liveDocs: liveStats[t.id] || 0,
       })),
-    [liveStats],
-  );
-
-  const selected = selectedId ? topicsWithLive.find((t) => t.id === selectedId) || getCommunalTopic(selectedId) : null;
-  const totalDocs = useMemo(
-    () => topicsWithLive.reduce((sum, t) => sum + t.docs, 0),
-    [topicsWithLive],
-  );
-  const liveTotal = useMemo(
-    () => Object.values(liveStats).reduce((s, n) => s + n, 0),
     [liveStats],
   );
 
@@ -193,90 +181,18 @@ export default function CommunalLibraryPage() {
         ]}
       />
 
-      <header className={styles.rlLibHero}>
-        <p className={styles.rlLibEyebrow}>Research Lab · Communal Library</p>
-        <h1 className={styles.rlLibTitle}>
-          One library. <span>Infinite trails.</span>
-        </h1>
-        <p className={styles.rlLibLead}>
-          A living knowledge lattice — rotate the map, search live corpora, fork entries into your project,
-          and correct glossaries so the next researcher starts ahead.
+      {share && (
+        <p className={styles.rlLibShareBanner}>
+          Viewing share-link corpus <code>{share}</code>
         </p>
-        <div className={styles.rlLibHeroStats}>
-          <div>
-            <strong>{COMMUNAL_TOPICS.length}</strong>
-            <span>topic nodes</span>
-          </div>
-          <div>
-            <strong>{totalDocs.toLocaleString()}</strong>
-            <span>mapped documents</span>
-          </div>
-          <div>
-            <strong>{liveTotal.toLocaleString()}</strong>
-            <span>live published</span>
-          </div>
-        </div>
-        {share && (
-          <p className={styles.rlLibShareBanner}>
-            Viewing share-link corpus <code>{share}</code>
-          </p>
-        )}
-      </header>
+      )}
 
-      <section className={styles.rlLibMapSection} aria-label="3D knowledge map">
-        <div className={styles.rlLibMapFrame}>
-          <Suspense
-            fallback={
-              <div className={styles.rlLibMapFallback}>
-                <Library className="w-8 h-8 text-bee-amber animate-pulse" />
-                <p>Loading knowledge lattice…</p>
-              </div>
-            }
-          >
-            <CommunalKnowledgeMap
-              selectedId={selectedId}
-              onSelect={selectTopic}
-              topics={topicsWithLive}
-            />
-          </Suspense>
-        </div>
-
-        <aside className={styles.rlLibDetail} aria-live="polite">
-          {selected ? (
-            <>
-              <p className={styles.rlLibDetailKicker}>Selected node</p>
-              <h2>{selected.label}</h2>
-              <p className={styles.rlLibDocCount}>
-                <button type="button" className={styles.rlLibDocBtn} onClick={() => selectTopic(selected.id)}>
-                  {selected.docs.toLocaleString()} documents
-                  {'liveDocs' in selected && (selected as { liveDocs?: number }).liveDocs
-                    ? ` · ${(selected as { liveDocs: number }).liveDocs} live`
-                    : ''}
-                </button>
-              </p>
-              <p>{selected.blurb}</p>
-              <div className={styles.rlLibRelated}>
-                <p>Connected topics</p>
-                <div className={styles.rlLibChips}>
-                  {selected.links.map((id) => {
-                    const t = topicsWithLive.find((x) => x.id === id) || getCommunalTopic(id);
-                    if (!t) return null;
-                    return (
-                      <button key={id} type="button" onClick={() => selectTopic(id)}>
-                        {t.label}
-                        <span>{t.docs.toLocaleString()}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <StartResearchingButton size="md" />
-            </>
-          ) : (
-            <p className={styles.rlLibDetailEmpty}>Click a glowing node to open its corpus.</p>
-          )}
-        </aside>
-      </section>
+      <CommunalLibraryMapSection
+        headingLevel="h1"
+        selectedId={selectedId}
+        onSelectTopic={selectTopic}
+        lead="A living knowledge lattice — rotate the map, search live corpora, fork entries into your project, and correct glossaries so the next researcher starts ahead."
+      />
 
       <section className={styles.rlLibLive} aria-label="Live corpus search">
         <div className={styles.rlLibLiveHead}>
