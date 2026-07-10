@@ -29,11 +29,33 @@ export default function Root({ children }: { children: ReactNode }) {
 }
 
 const responsiveBackground = `
-body {
-  background-color: #fff;
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: #0b0f14;
+  color: #e8ecf1;
 }
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
-}`;
+body::before {
+  content: 'Loading AiBhive Diagnose…';
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 600 14px/1.4 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: rgba(232, 236, 241, 0.7);
+  pointer-events: none;
+  z-index: 0;
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+#root:not(:empty) ~ *,
+#root:not(:empty) {
+  /* Once React mounts, hide the CSS-only loading hint via root paint. */
+}
+body:has(#root:not(:empty))::before {
+  display: none;
+}`
