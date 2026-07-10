@@ -13,6 +13,7 @@ import { enrichHomeAssistantAction } from './homeAssistOrchestrate.js';
 import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
+import { getTartarianStarterBrief } from './tartarianFindsDirectory.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const HOME_CHAT_RAW_COST = 0.006;
@@ -42,13 +43,17 @@ export function getHomeAssistantKnowledgeMarkdown() {
   } catch {
     mission = '';
   }
+  // Compact Tartarian starter brief so general Research Lab questions have real start URLs
+  const tartarianBrief = getTartarianStarterBrief({ maxChars: 3200 });
   return [
     base,
     '',
     '--- COMPLETE PRODUCT MISSION (authoritative) ---',
     String(mission || '').slice(0, 12000),
     '',
-    'You understand AiBhive\'s complete product mission: build apps from plain English, research with multi-agent Research Lab, meter Hive credits fairly, and grow a community-sourced library. Never invent features. Never mention internal cost markups — only Hive credits and plans.',
+    tartarianBrief,
+    '',
+    'You understand AiBhive\'s complete product mission: build apps from plain English, research with multi-agent Research Lab, meter Hive credits fairly, and grow a community-sourced library. Never invent features. Never mention internal cost markups — only Hive credits and plans. For Tartarian / Old World / mud-flood questions, use the finds directory leads above — cite start URLs, do not invent quotes.',
   ].join('\n');
 }
 
