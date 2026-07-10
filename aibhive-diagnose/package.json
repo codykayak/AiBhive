@@ -42,12 +42,13 @@
   },
   "scripts": {
     "dev": "expo start",
-    "dev:start": "expo start --web --port 8081",
+    "dev:start": "expo start --web --port 8082",
+    "dev:8081": "expo start --web --port 8081",
     "dev:check": "tsc --noEmit",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web --port 8081",
+    "web": "expo start --web --port 8082",
     "typecheck": "tsc --noEmit"
   },
   "private": true

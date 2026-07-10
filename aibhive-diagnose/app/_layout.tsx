@@ -41,23 +41,37 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const [showIntro, setShowIntro] = useState(true);
+  const [fontTimedOut, setFontTimedOut] = useState(false);
 
   useEffect(() => {
-    if (error) throw error;
+    // Don't block the app forever if the font asset stalls on web.
+    const timer = setTimeout(() => setFontTimedOut(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (error) {
+      // Font failure should not hard-crash the whole app into a blank spinner.
+      setFontTimedOut(true);
+    }
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (loaded || fontTimedOut) {
+      SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [loaded]);
+  }, [loaded, fontTimedOut]);
 
   const finishIntro = useCallback(() => {
     setShowIntro(false);
   }, []);
 
-  if (!loaded) {
-    return null;
+  if (!loaded && !fontTimedOut) {
+    return (
+      <View className="flex-1 items-center justify-center bg-hive-bg">
+        <StatusBar style="light" />
+      </View>
+    );
   }
 
   return (
