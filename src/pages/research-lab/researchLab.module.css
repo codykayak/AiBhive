@@ -2688,3 +2688,491 @@
     min-height: 42vh;
   }
 }
+
+/* —— Research project continuity —— */
+.rlProjectBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(8, 12, 24, 0.88));
+}
+
+.rlProjectBarMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.rlProjectIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.rlProjectTitleInput {
+  flex: 1 1 160px;
+  min-width: 0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.7rem;
+  font-family: inherit;
+}
+
+.rlProjectSelect {
+  max-width: 200px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.55rem;
+  font-family: inherit;
+}
+
+.rlProjectBarActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rlVisibility {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.15rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rlVisBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rlVisBtnActive {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.rlReceiptChip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #67e8f9;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.rlProjectStatus {
+  width: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+  color: #86efac;
+}
+
+/* —— Domain packs —— */
+.rlPackBar {
+  margin: 0 0 1rem;
+}
+
+.rlPackToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(167, 139, 250, 0.35);
+  background: rgba(91, 33, 182, 0.18);
+  color: #ddd6fe;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rlPackGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.rlPackCard {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.rlPackCard h3 {
+  margin: 0 0 0.35rem;
+  color: #f8fafc;
+  font-size: 0.95rem;
+}
+
+.rlPackCard p {
+  margin: 0 0 0.55rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.rlPackEst {
+  color: #67e8f9 !important;
+  font-size: 0.72rem !important;
+  font-weight: 600;
+}
+
+/* —— Citation brief —— */
+.rlBriefPanel {
+  margin: 1rem 0;
+}
+
+.rlBriefToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rlBriefBody {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 12, 24, 0.85);
+}
+
+.rlBriefLead {
+  margin: 0 0 0.75rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.rlBriefList {
+  list-style: none;
+  margin: 0 0 0.85rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rlBriefList li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+}
+
+.rlBriefConf {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #67e8f9;
+  margin-left: 0.4rem;
+}
+
+.rlBriefActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* —— Reliability theater —— */
+.rlReliability {
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  background: rgba(8, 47, 73, 0.25);
+}
+
+.rlReliabilityTitle {
+  margin: 0 0 0.35rem;
+  color: #67e8f9;
+  font-size: 0.95rem;
+}
+
+.rlReliabilityLead {
+  margin: 0 0 0.65rem;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.rlReliabilityList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.rlReliabilityItem {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.65rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 3px solid #34d399;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.rlReliabilityItemFail {
+  border-left-color: #f87171;
+}
+
+.rlReliabilityTime {
+  grid-row: 1 / span 2;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.rlReliabilityMsg {
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.rlReliabilityDetail {
+  grid-column: 2;
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+/* —— Live communal library —— */
+.rlLibShareBanner {
+  margin: 1rem 0 0;
+  padding: 0.55rem 0.85rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(167, 139, 250, 0.45);
+  background: rgba(91, 33, 182, 0.15);
+  color: #ddd6fe;
+  font-size: 0.85rem;
+}
+
+.rlLibShareBanner code {
+  color: #fcd34d;
+}
+
+.rlLibLive {
+  margin: 2.5rem auto;
+  max-width: 1100px;
+  padding: 0 1.25rem 2rem;
+}
+
+.rlLibLiveHead h2 {
+  margin: 0 0 0.35rem;
+  color: #fff;
+  font-size: 1.55rem;
+}
+
+.rlLibLiveHead p {
+  margin: 0 0 1rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  max-width: 52rem;
+}
+
+.rlLibSearch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.rlLibSearchIcon {
+  position: absolute;
+  left: 0.85rem;
+  width: 1rem;
+  height: 1rem;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.rlLibSearch input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 0.65rem 0.85rem 0.65rem 2.4rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.85);
+  color: #f8fafc;
+  font-family: inherit;
+}
+
+.rlLibForkMsg {
+  color: #67e8f9;
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.rlLibLoading,
+.rlLibEmpty,
+.rlLibError {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.rlLibError {
+  color: #fca5a5;
+}
+
+.rlLibEntryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.rlLibEntry {
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.rlLibEntryMain h3 {
+  margin: 0 0 0.25rem;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.rlLibEntryMeta {
+  margin: 0 0 0.45rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: lowercase;
+}
+
+.rlLibEntryBody {
+  margin: 0 0 0.45rem;
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.rlLibEntrySource {
+  color: #38bdf8;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.rlLibEntryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.rlLibCorrect {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 0.55rem;
+}
+
+.rlLibCorrect label {
+  display: grid;
+  gap: 0.25rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rlLibCorrect select,
+.rlLibCorrect textarea,
+.rlLibCorrect input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: #f8fafc;
+  padding: 0.5rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.rlLibCorrectActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.rlLibGlossary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.rlLibGlossary h3 {
+  margin: 0 0 0.55rem;
+  color: #fcd34d;
+  font-size: 0.95rem;
+}
+
+.rlLibGlossary ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.rlSrOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

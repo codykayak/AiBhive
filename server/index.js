@@ -353,7 +353,12 @@ app.post('/api/fable-scrape/publish', ...fableGate, fableScrapeJson, async (req,
 
 app.get('/api/fable-scrape/library', ...fableGate, async (req, res) => {
   try {
-    const result = await listLibrary(db, { limit: req.query.limit });
+    const result = await listLibrary(db, {
+      limit: req.query.limit,
+      topicId: req.query.topicId,
+      q: req.query.q,
+      shareToken: req.query.share,
+    });
     return res.status(200).json(result);
   } catch (error) {
     console.error('[fable-scrape] library error:', error.message);

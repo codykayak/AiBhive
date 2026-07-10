@@ -13,7 +13,14 @@ import {
   testProxyConnection,
 } from './fableScrape.js';
 import { aiHarvest, translateText } from './fableScrapeAgent.js';
-import { publishFindings, listLibrary } from './fableLibrary.js';
+import {
+  publishFindings,
+  listLibrary,
+  getLibraryEntry,
+  submitCorrection,
+  listGlossary,
+  getTopicStats,
+} from './fableLibrary.js';
 import { providerStatus } from './fableScrapeProviders.js';
 import { ensureHiveUser } from './hiveBilling.js';
 import {
@@ -35,6 +42,17 @@ import {
   MAX_OCR_IMAGES,
 } from './costProtection.js';
 import { markCostForUser } from './hiveUsage.js';
+import { estimateForUser } from './researchLabEstimates.js';
+import { listDomainPacks, getDomainPack } from './researchDomainPacks.js';
+import {
+  listProjects,
+  getProject,
+  createProject,
+  updateProject,
+  deleteProject,
+  appendProjectReceipt,
+  forkLibraryEntryIntoProject,
+} from './researchProjects.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -386,13 +404,181 @@ export function registerResearchLabRoutes(app, db) {
   });
 
   app.get('/api/research-lab/fable-scrape/library', async (req, res) => {
-    const authUser = await requireResearchLabUser(req, res);
-    if (!authUser) return;
     try {
-      const result = await listLibrary(db, { limit: req.query.limit });
+      const authUser = await verifyHiveAuth(req);
+      const result = await listLibrary(db, {
+        limit: req.query.limit,
+        topicId: req.query.topicId,
+        q: req.query.q,
+        shareToken: req.query.share,
+        viewerUid: authUser?.uid || null,
+      });
       return res.json(result);
     } catch (error) {
       return res.status(400).json({ error: error.message || 'Failed to load library.' });
+    }
+  });
+
+  app.get('/api/research-lab/library/topics', async (_req, res) => {
+    try {
+      const result = await getTopicStats(db);
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to load topic stats.' });
+    }
+  });
+
+  app.get('/api/research-lab/library/:id', async (req, res) => {
+    try {
+      const authUser = await verifyHiveAuth(req);
+      const entry = await getLibraryEntry(db, req.params.id, {
+        viewerUid: authUser?.uid,
+        shareToken: req.query.share,
+      });
+      if (!entry) return res.status(404).json({ error: 'Entry not found.' });
+      return res.json({ ok: true, entry });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to load entry.' });
+    }
+  });
+
+  app.post('/api/research-lab/library/:id/correct', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const result = await submitCorrection(db, {
+        entryId: req.params.id,
+        field: req.body?.field,
+        original: req.body?.original,
+        corrected: req.body?.corrected,
+        note: req.body?.note,
+        userId: authUser.uid,
+        contributor: authUser.email || authUser.uid,
+      });
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Correction failed.' });
+    }
+  });
+
+  app.get('/api/research-lab/glossary', async (req, res) => {
+    try {
+      const result = await listGlossary(db, {
+        topicId: req.query.topicId,
+        limit: req.query.limit,
+      });
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to load glossary.' });
+    }
+  });
+
+  app.post('/api/research-lab/library/:id/fork', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const entry = await getLibraryEntry(db, req.params.id, {
+        viewerUid: authUser.uid,
+        shareToken: req.body?.share || req.query.share,
+      });
+      if (!entry) return res.status(404).json({ error: 'Entry not found or not accessible.' });
+      await ensureHiveUser(db, authUser.uid);
+      const result = await forkLibraryEntryIntoProject(db, authUser.uid, entry, {
+        title: req.body?.title,
+        domainPackId: req.body?.domainPackId,
+      });
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Fork failed.' });
+    }
+  });
+
+  app.post('/api/research-lab/estimate', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const result = await estimateForUser(db, authUser.uid, req.body?.op, req.body?.params || {});
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Estimate failed.' });
+    }
+  });
+
+  app.get('/api/research-lab/domain-packs', (_req, res) => {
+    return res.json({ ok: true, packs: listDomainPacks(_req.query.category) });
+  });
+
+  app.get('/api/research-lab/domain-packs/:id', (req, res) => {
+    const pack = getDomainPack(req.params.id);
+    if (!pack) return res.status(404).json({ error: 'Pack not found.' });
+    return res.json({ ok: true, pack });
+  });
+
+  app.get('/api/research-lab/projects', async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const result = await listProjects(db, authUser.uid);
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to list projects.' });
+    }
+  });
+
+  app.post('/api/research-lab/projects', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      await ensureHiveUser(db, authUser.uid);
+      const result = await createProject(db, authUser.uid, req.body || {});
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to create project.' });
+    }
+  });
+
+  app.get('/api/research-lab/projects/:id', async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const project = await getProject(db, authUser.uid, req.params.id);
+      if (!project) return res.status(404).json({ error: 'Project not found.' });
+      return res.json({ ok: true, project });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to load project.' });
+    }
+  });
+
+  app.patch('/api/research-lab/projects/:id', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const result = await updateProject(db, authUser.uid, req.params.id, req.body || {});
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to update project.' });
+    }
+  });
+
+  app.delete('/api/research-lab/projects/:id', async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      await deleteProject(db, authUser.uid, req.params.id);
+      return res.json({ ok: true });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to delete project.' });
+    }
+  });
+
+  app.post('/api/research-lab/projects/:id/receipt', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const result = await appendProjectReceipt(db, authUser.uid, req.params.id, req.body || {});
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Failed to save receipt.' });
     }
   });
 }

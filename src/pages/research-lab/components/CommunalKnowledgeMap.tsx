@@ -8,6 +8,7 @@ import styles from '../researchLab.module.css';
 type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
+  topics?: CommunalTopic[];
 };
 
 function TopicNode({
@@ -95,7 +96,7 @@ function LinkLines({ topics }: { topics: CommunalTopic[] }) {
   );
 }
 
-function Scene({ selectedId, onSelect }: Props) {
+function Scene({ selectedId, onSelect, topics = COMMUNAL_TOPICS }: Props) {
   const group = useRef<THREE.Group>(null);
   useFrame((_, dt) => {
     if (group.current) group.current.rotation.y += dt * 0.05;
@@ -109,8 +110,8 @@ function Scene({ selectedId, onSelect }: Props) {
       <pointLight position={[-6, -4, -3]} intensity={0.7} color="#22d3ee" />
       <Stars radius={60} depth={40} count={1800} factor={3} saturation={0} fade speed={0.6} />
       <group ref={group}>
-        <LinkLines topics={COMMUNAL_TOPICS} />
-        {COMMUNAL_TOPICS.map((t) => (
+        <LinkLines topics={topics} />
+        {topics.map((t) => (
           <TopicNode
             key={t.id}
             topic={t}
@@ -134,12 +135,12 @@ function Scene({ selectedId, onSelect }: Props) {
   );
 }
 
-export default function CommunalKnowledgeMap({ selectedId, onSelect }: Props) {
+export default function CommunalKnowledgeMap({ selectedId, onSelect, topics }: Props) {
   return (
     <div className={styles.rlLibCanvasWrap}>
       <Canvas camera={{ position: [0, 1.5, 9], fov: 48 }} dpr={[1, 1.75]}>
         <Suspense fallback={null}>
-          <Scene selectedId={selectedId} onSelect={onSelect} />
+          <Scene selectedId={selectedId} onSelect={onSelect} topics={topics} />
         </Suspense>
       </Canvas>
       <p className={styles.rlLibCanvasHint}>Drag to rotate · Scroll to zoom · Click a node</p>

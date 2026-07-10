@@ -44,10 +44,12 @@ import {
   blobToBase64,
   clientFetchBlob,
   fablePost,
+  fableGet,
   parseFableJson,
   fableOcrPost,
 } from './shared';
 import { useFableApi } from './fableApiContext';
+import { useFableWorkflowBridge } from './fableWorkflowBridge';
 
 type Tab = 'harvest' | 'scrape' | 'translate' | 'library';
 type Engine = 'auto' | 'firecrawl' | 'stealth';
@@ -206,7 +208,52 @@ function HarvestTab({
   const [error, setError] = useState('');
   const [result, setResult] = useState<HarvestResult | null>(null);
   const [publishState, setPublishState] = useState<{ busy: boolean; msg?: string; err?: string }>({ busy: false });
+  const [visibility, setVisibility] = useState<'private' | 'unlisted' | 'public'>('public');
+  const [estimateMsg, setEstimateMsg] = useState('');
   const api = useFableApi();
+  const bridge = useFableWorkflowBridge();
+
+  useEffect(() => {
+    if (bridge?.visibility) setVisibility(bridge.visibility);
+  }, [bridge?.visibility]);
+
+  useEffect(() => {
+    if (!bridge?.authHeaders) {
+      setEstimateMsg('');
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const headers = {
+          ...(await bridge.authHeaders()),
+          'Content-Type': 'application/json',
+        };
+        const res = await fetch('/api/research-lab/estimate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            op: 'ai-harvest',
+            params: {
+              findingCount: count,
+              usesPlatformRouting: routing.routing.mode === 'residential' || routing.routing.mode === 'server',
+              roles: roster.roster,
+              keys: roster.keys,
+            },
+          }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok) {
+          setEstimateMsg(data.message || `About $${Number(data.estimatedCredits || 0).toFixed(2)} Hive credits`);
+        }
+      } catch {
+        if (!cancelled) setEstimateMsg('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bridge, count, routing.routing.mode, roster.roster, roster.keys]);
 
   const run = async () => {
     const target = normalizedUrl();
@@ -233,8 +280,48 @@ function HarvestTab({
           targetLang,
         });
       setResult(data as HarvestResult);
+      const text = (data.findings || [])
+        .map((f: Finding) => [f.translation, f.ocrText, f.reason].filter(Boolean).join('\n'))
+        .filter(Boolean)
+        .join('\n\n---\n\n');
+      if (bridge) {
+        if (text) bridge.setScrapeText(text);
+        const urls = (data.findings || []).map((f: Finding) => f.url).filter(Boolean);
+        if (urls.length) bridge.setImageUrls(urls);
+        bridge.appendOutput({
+          step: 'scrape',
+          title: `AI Harvest — ${data.findings?.length || 0} finding(s)`,
+          text: text || data.strategy || 'Harvest complete',
+          sourceUrl: data.sourceUrl || target,
+        });
+        if (typeof data.chargedUsd === 'number') {
+          bridge.addReceipt({
+            feature: 'research_lab_ai_harvest',
+            summary: `AI harvest (${data.findings?.length || 0} findings)`,
+            rawCostUsd: 0,
+            chargedUsd: data.chargedUsd,
+          });
+        }
+        bridge.addReliability({
+          op: 'ai-harvest',
+          ok: true,
+          engine,
+          routingMode: routing.routing.mode,
+          retries: Array.isArray(data.warnings) ? data.warnings.length : 0,
+          reason: data.warnings?.[0],
+          pagesVisited: data.candidatesConsidered,
+        });
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Harvest failed.');
+      const msg = err instanceof Error ? err.message : 'Harvest failed.';
+      setError(msg);
+      bridge?.addReliability({
+        op: 'ai-harvest',
+        ok: false,
+        engine,
+        routingMode: routing.routing.mode,
+        reason: msg,
+      });
     } finally {
       setRunning(false);
     }
@@ -250,8 +337,30 @@ function HarvestTab({
           sourceUrl: result.sourceUrl,
           roles: result.roles,
           targetLang,
+          visibility,
+          projectId: bridge?.projectId || undefined,
         });
-      setPublishState({ busy: false, msg: `Published ${data.published} finding(s) to the communal library.` });
+      const shareHint = data.sharePath ? ` Share: ${data.sharePath}` : '';
+      setPublishState({
+        busy: false,
+        msg: `Published ${data.published} finding(s) (${visibility}).${shareHint}`,
+      });
+      if (bridge) {
+        bridge.appendOutput({
+          step: 'library',
+          title: `Published ${data.published} finding(s)`,
+          text: `Visibility: ${visibility}${shareHint}`,
+          sourceUrl: result.sourceUrl,
+        });
+        if (typeof data.chargedUsd === 'number') {
+          bridge.addReceipt({
+            feature: 'research_lab_publish',
+            summary: `Publish ${data.published} finding(s)`,
+            rawCostUsd: 0,
+            chargedUsd: data.chargedUsd,
+          });
+        }
+      }
     } catch (err) {
       setPublishState({ busy: false, err: err instanceof Error ? err.message : 'Publish failed.' });
     }
@@ -333,6 +442,10 @@ function HarvestTab({
         {roster.ui}
         {routing.ui}
 
+        {estimateMsg && (
+          <p className="text-xs text-cyan-300/90 text-center font-medium">{estimateMsg}</p>
+        )}
+
         <button
           onClick={run}
           disabled={running}
@@ -382,14 +495,28 @@ function HarvestTab({
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <FileText className="w-5 h-5 text-bee-amber" /> Findings ({result.findings.length})
                 </h2>
-                <button
-                  onClick={publish}
-                  disabled={publishState.busy}
-                  className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-extrabold hover:bg-violet-500 disabled:opacity-40 flex items-center gap-2"
-                >
-                  {publishState.busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-                  Publish to communal library
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-xs text-slate-400 flex items-center gap-1.5">
+                    Visibility
+                    <select
+                      value={visibility}
+                      onChange={(e) => setVisibility(e.target.value as 'private' | 'unlisted' | 'public')}
+                      className="bg-[#0f1115] border border-white/10 rounded-lg px-2 py-1.5 text-white text-xs"
+                    >
+                      <option value="private">Private</option>
+                      <option value="unlisted">Share link</option>
+                      <option value="public">Public</option>
+                    </select>
+                  </label>
+                  <button
+                    onClick={publish}
+                    disabled={publishState.busy}
+                    className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-extrabold hover:bg-violet-500 disabled:opacity-40 flex items-center gap-2"
+                  >
+                    {publishState.busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                    Publish to communal library
+                  </button>
+                </div>
               </div>
               {publishState.msg && <p className="text-emerald-400 text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {publishState.msg}</p>}
               {publishState.err && <p className="text-red-400 text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4" /> {publishState.err}</p>}
@@ -530,9 +657,48 @@ function ScrapeTab({
   const [ocrText, setOcrText] = useState('');
   const [ocrError, setOcrError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [estimateMsg, setEstimateMsg] = useState('');
   const api = useFableApi();
+  const bridge = useFableWorkflowBridge();
 
   const allSelected = !!result?.images.length && selectedImages.size === result.images.length;
+
+  useEffect(() => {
+    if (!bridge?.authHeaders) {
+      setEstimateMsg('');
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const headers = {
+          ...(await bridge.authHeaders()),
+          'Content-Type': 'application/json',
+        };
+        const res = await fetch('/api/research-lab/estimate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            op: runMode === 'crawl' ? 'crawl' : 'scan',
+            params: {
+              pages: maxPages,
+              routing: routing.routing,
+              mode: routing.routing.mode,
+            },
+          }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok) {
+          setEstimateMsg(data.message || `About $${Number(data.estimatedCredits || 0).toFixed(2)} Hive credits`);
+        }
+      } catch {
+        if (!cancelled) setEstimateMsg('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bridge, runMode, maxPages, routing.routing]);
 
   const scan = async () => {
     const target = normalizedUrl();
@@ -553,8 +719,46 @@ function ScrapeTab({
       const data = await fablePost(api, endpoint, body);
       setResult(data as ScanResult);
       setSelectedImages(new Set((data.images as Asset[]).map((i) => i.url)));
+      if (bridge) {
+        if (data.text) bridge.setScrapeText(String(data.text));
+        const urls = (data.images as Asset[] | undefined)?.map((i) => i.url) || [];
+        if (urls.length) bridge.setImageUrls(urls);
+        bridge.appendOutput({
+          step: 'scrape',
+          title: `${runMode === 'crawl' ? 'Crawl' : 'Scan'} — ${data.title || target}`,
+          text: String(data.text || '').slice(0, 12000) || `Found ${(data.images || []).length} images`,
+          sourceUrl: data.finalUrl || target,
+        });
+        if (typeof data.chargedUsd === 'number') {
+          bridge.addReceipt({
+            feature: 'research_lab_scrape',
+            summary: `${runMode} via ${data.engine || engine}`,
+            rawCostUsd: 0,
+            chargedUsd: data.chargedUsd,
+          });
+        }
+        bridge.addReliability({
+          op: runMode,
+          ok: !data.blocked,
+          engine: data.engine || engine,
+          routingMode: data.routingMode || routing.routing.mode,
+          retries: data.truncated ? 1 : 0,
+          reason: data.blocked
+            ? 'Archive blocked — try Max stealth or residential routing'
+            : data.stoppedReason || undefined,
+          pagesVisited: data.pagesVisited,
+        });
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Scan failed.');
+      const msg = err instanceof Error ? err.message : 'Scan failed.';
+      setError(msg);
+      bridge?.addReliability({
+        op: runMode,
+        ok: false,
+        engine,
+        routingMode: routing.routing.mode,
+        reason: msg,
+      });
     } finally {
       setScanning(false);
     }
@@ -600,6 +804,7 @@ function ScrapeTab({
     setOcrError(''); setOcrText(''); setOcrRunning(true);
     try {
       let text = '';
+      let chargedUsd: number | undefined;
       if (routing.routeMode === 'browser') {
         const imgs: string[] = [];
         for (const t of targets.slice(0, 50)) {
@@ -608,6 +813,7 @@ function ScrapeTab({
         if (!imgs.length) throw new Error('Could not fetch images in browser mode (CORS). Switch routing.');
         const data = await fableOcrPost(api, { images: imgs, format: ocrFormat });
         text = data.text || '';
+        chargedUsd = data.chargedUsd;
       } else {
         const data = await fablePost(api, '/ocr', {
           urls: targets.map((t) => t.url).slice(0, 50),
@@ -617,10 +823,44 @@ function ScrapeTab({
           format: ocrFormat,
         });
         text = data.text || '';
+        chargedUsd = data.chargedUsd;
       }
       setOcrText(text);
-    } catch (err) { setOcrError(err instanceof Error ? err.message : 'OCR failed.'); }
-    finally { setOcrRunning(false); }
+      if (bridge && text) {
+        bridge.setOcrText(text);
+        bridge.appendOutput({
+          step: 'ocr',
+          title: `Fable OCR — ${targets.length} image(s)`,
+          text,
+          sourceUrl: result.finalUrl,
+        });
+        if (typeof chargedUsd === 'number') {
+          bridge.addReceipt({
+            feature: 'research_lab_ocr',
+            summary: `OCR ${targets.length} image(s)`,
+            rawCostUsd: 0,
+            chargedUsd,
+          });
+        }
+        bridge.addReliability({
+          op: 'ocr',
+          ok: true,
+          engine: result.engine,
+          routingMode: routing.routing.mode,
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'OCR failed.';
+      setOcrError(msg);
+      bridge?.addReliability({
+        op: 'ocr',
+        ok: false,
+        routingMode: routing.routing.mode,
+        reason: msg,
+      });
+    } finally {
+      setOcrRunning(false);
+    }
   };
 
   return (
@@ -660,6 +900,9 @@ function ScrapeTab({
           {ENGINES.map((e) => <button key={e.id} onClick={() => setEngine(e.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${engine === e.id ? 'border-bee-amber bg-bee-amber/10 text-bee-amber' : 'border-white/10 bg-white/5 text-slate-400'}`}>{e.label}</button>)}
         </div>
         {routing.ui}
+        {estimateMsg && (
+          <p className="text-xs text-cyan-300/90 text-center font-medium">{estimateMsg}</p>
+        )}
         <button onClick={scan} disabled={scanning} className="w-full py-4 bg-bee-amber text-bee-black font-extrabold rounded-2xl hover:bg-bee-yellow transition-all neon-glow text-lg disabled:opacity-50 flex items-center justify-center">
           {scanning ? <><Loader2 className="w-6 h-6 mr-3 animate-spin" /> {runMode === 'crawl' ? 'Crawling…' : 'Scanning…'}</> : <><Search className="w-5 h-5 mr-3" /> {runMode === 'crawl' ? 'Crawl & Harvest' : 'Scan & Harvest'}</>}
         </button>
@@ -811,28 +1054,70 @@ function TranslateTab({ roster }: { roster: ReturnType<typeof useRoster> }) {
 
 function LibraryTab() {
   const api = useFableApi();
+  const bridge = useFableWorkflowBridge();
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [q, setQ] = useState('');
+  const [msg, setMsg] = useState('');
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true); setError('');
-    fableGet(api, '/library?limit=50')
+    const qs = new URLSearchParams({ limit: '50' });
+    if (q.trim()) qs.set('q', q.trim());
+    fableGet(api, `/library?${qs}`)
       .then((d) => { if (d.error) throw new Error(d.error); setEntries(d.entries || []); })
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load library.'))
       .finally(() => setLoading(false));
+  }, [api, q]);
+  useEffect(load, [load]);
+
+  const fork = async (entry: LibraryEntry) => {
+    if (!bridge?.authHeaders) {
+      setMsg('Open Research Lab workspace to fork into a project.');
+      return;
+    }
+    try {
+      const headers = { ...(await bridge.authHeaders()), 'Content-Type': 'application/json' };
+      const res = await fetch(`/api/research-lab/library/${encodeURIComponent(entry.id)}/fork`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ title: `Fork · ${entry.title}` }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fork failed');
+      setMsg('Forked into your Research Project.');
+      bridge.appendOutput({
+        step: 'library',
+        title: `Forked · ${entry.title}`,
+        text: entry.translation || entry.ocrText || entry.reason || '',
+        sourceUrl: entry.sourceUrl,
+      });
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Fork failed');
+    }
   };
-  useEffect(load, [api]);
 
   return (
     <div className="space-y-5">
-      <div className="glass-card p-6 rounded-2xl flex items-center justify-between gap-3">
+      <div className="glass-card p-6 rounded-2xl flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2"><Library className="w-6 h-6 text-bee-amber" /> Communal Library</h2>
-          <p className="text-slate-400 text-sm mt-1">Findings that researchers have harvested, read, translated, and shared with the community.</p>
+          <p className="text-slate-400 text-sm mt-1">Live findings with topic tags, provenance, and fork-into-project.</p>
         </div>
-        <button onClick={load} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">Refresh</button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && load()}
+            placeholder="Search library…"
+            className="bg-[#0f1115]/70 border border-white/10 rounded-xl px-3 py-2 text-white text-sm w-44"
+          />
+          <button onClick={load} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">Refresh</button>
+          <Link to="/research-lab/communal-library" className="px-4 py-2 rounded-xl bg-bee-amber/15 border border-bee-amber/40 text-bee-amber text-sm font-bold">Open map</Link>
+        </div>
       </div>
+      {msg && <p className="text-cyan-300 text-sm">{msg}</p>}
 
       {loading ? (
         <div className="text-center text-slate-400 py-12"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-bee-amber/60" /> Loading library…</div>
@@ -852,10 +1137,19 @@ function LibraryTab() {
                 {e.reason && <p className="text-slate-500 text-xs italic truncate">“{e.reason}”</p>}
                 <p className="text-slate-300 text-xs mt-1 line-clamp-3 whitespace-pre-wrap">{e.translation || e.ocrText}</p>
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px] text-slate-500">
+                  {e.topicId && <span className="px-1.5 py-0.5 rounded bg-bee-amber/10 text-bee-amber">{e.topicId}</span>}
+                  {e.visibility && <span className="px-1.5 py-0.5 rounded bg-white/5">{e.visibility}</span>}
                   {e.targetLang && <span className="px-1.5 py-0.5 rounded bg-white/5">→ {e.targetLang}</span>}
                   {e.sourceUrl && <a href={e.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-sky-400 inline-flex items-center gap-0.5 hover:underline">source <ExternalLink className="w-2.5 h-2.5" /></a>}
                   <span className="ml-auto">{e.contributor}</span>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => void fork(e)}
+                  className="mt-2 text-xs font-bold text-violet-300 hover:text-violet-200"
+                >
+                  Fork into project
+                </button>
               </div>
             </div>
           ))}
