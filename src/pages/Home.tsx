@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'motion/react';
 import TechParallaxSection, { TechParallaxHeroLayers } from '../components/TechParallaxSection';
@@ -15,8 +16,6 @@ import {
 } from 'lucide-react';
 import { SITE_TAGLINE } from '../constants/site';
 import backgroundLogo from '../aibhive_background.png';
-import leadGenImg from '../grow_content_creators_podcator_veiwership_translations.png';
-import orchestrationImg from '../1775559497156.png';
 import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
@@ -90,6 +89,14 @@ export default function Home() {
   const { scrollY } = useScroll();
   const heroParallaxY = useTransform(scrollY, [0, 700], [0, 120]);
   const heroContentY = useTransform(scrollY, [0, 700], [0, 40]);
+  const solutionsRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: solutionsProgress } = useScroll({
+    target: solutionsRef,
+    offset: ['start end', 'end start'],
+  });
+  const solutionsBgY = useTransform(solutionsProgress, [0, 1], ['-18%', '18%']);
+  const solutionsBgScale = useTransform(solutionsProgress, [0, 0.5, 1], [1.12, 1.05, 1.12]);
+  const solutionsGlowY = useTransform(solutionsProgress, [0, 1], ['8%', '-12%']);
 
   return (
     <main className="relative">
@@ -193,114 +200,125 @@ export default function Home() {
 
       <SectionDivider />
 
-      {/* ——— MAIN CATEGORIES (SEO hubs) ——— */}
-      <TechParallaxSection className="py-20 md:py-24 bg-bee-black/95" intensity="medium">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ——— SOLUTION CATEGORIES (parallax hive) ——— */}
+      <section
+        ref={solutionsRef}
+        className="relative overflow-hidden py-24 md:py-32 border-y border-bee-amber/10"
+        aria-labelledby="solution-categories-heading"
+      >
+        <div className="absolute inset-0 z-0" aria-hidden>
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="clearfix"
+            style={{ y: solutionsBgY, scale: solutionsBgScale }}
+            className="absolute inset-x-0 -top-[18%] h-[136%] will-change-transform"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Solution <span className="text-bee-amber">categories</span>
-            </h2>
-
-            <figure className="mb-8 md:mb-4 md:float-right md:clear-right md:ml-10 md:max-w-[min(100%,22rem)] lg:max-w-sm">
-              <img
-                src={orchestrationImg}
-                alt="AiBhive enterprise workflow orchestration — multi-agent AI automating business pipelines"
-                className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
-              />
-            </figure>
-
-            <p className="text-lg text-slate-400 leading-relaxed mb-6">
-              Deep-dive guides on each agentic capability we build. Select a category to explore
-              architecture, ROI, and implementation paths—we expand these hubs continuously.
-            </p>
-
-            <ul className="space-y-1 mb-2 md:mb-0">
-              {CATEGORIES.slice(0, 4).map((cat, index) => (
-                <motion.li
-                  key={cat.href}
-                  initial={{ opacity: 0, x: -12 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <Link
-                    to={cat.href}
-                    className="group flex gap-4 py-4 border-b border-white/5 hover:border-bee-amber/20 transition-colors"
-                  >
-                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-bee-amber/10 ring-1 ring-bee-amber/20 group-hover:bg-bee-amber/15 transition-colors">
-                      <cat.icon className="h-5 w-5 text-bee-amber" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <h3 className="text-base font-bold text-white group-hover:text-bee-amber transition-colors">
-                          {cat.title}
-                        </h3>
-                        <ArrowRight
-                          className="h-4 w-4 text-bee-amber/0 group-hover:text-bee-amber transition-all -translate-x-1 group-hover:translate-x-0"
-                          aria-hidden
-                        />
-                      </span>
-                      <p className="mt-1 text-sm text-slate-400 leading-relaxed">{cat.excerpt}</p>
-                    </span>
-                  </Link>
-                </motion.li>
-              ))}
-            </ul>
-
-            <figure className="my-8 md:my-6 md:float-left md:clear-left md:mr-10 md:max-w-[min(100%,20rem)] lg:max-w-xs">
-              <img
-                src={leadGenImg}
-                alt="AiBhive AI lead generation and sales pipeline automation for real estate and B2B"
-                className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
-              />
-            </figure>
-
-            <ul className="space-y-1 clear-both md:clear-none">
-              {CATEGORIES.slice(4).map((cat, index) => (
-                <motion.li
-                  key={cat.href}
-                  initial={{ opacity: 0, x: -12 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                >
-                  <Link
-                    to={cat.href}
-                    className="group flex gap-4 py-4 border-b border-white/5 last:border-0 hover:border-bee-amber/20 transition-colors"
-                  >
-                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-bee-amber/10 ring-1 ring-bee-amber/20 group-hover:bg-bee-amber/15 transition-colors">
-                      <cat.icon className="h-5 w-5 text-bee-amber" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <h3 className="text-base font-bold text-white group-hover:text-bee-amber transition-colors">
-                          {cat.title}
-                        </h3>
-                        <ArrowRight
-                          className="h-4 w-4 text-bee-amber/0 group-hover:text-bee-amber transition-all -translate-x-1 group-hover:translate-x-0"
-                          aria-hidden
-                        />
-                      </span>
-                      <p className="mt-1 text-sm text-slate-400 leading-relaxed">{cat.excerpt}</p>
-                    </span>
-                  </Link>
-                </motion.li>
-              ))}
-            </ul>
-
-            <p className="mt-8 text-sm text-slate-500 md:clear-both">
-              Each hub includes architecture notes, ROI framing, and implementation paths—updated as
-              we ship new agent patterns.
-            </p>
+            <img
+              src="/solutions-categories-bg.png"
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+            />
           </motion.div>
+          <div className="absolute inset-0 bg-gradient-to-b from-bee-black via-bee-black/78 to-bee-black" />
+          <div className="absolute inset-0 bg-gradient-to-r from-bee-black/90 via-transparent to-bee-black/85" />
+          <div className="absolute inset-0 tech-scanlines opacity-25" />
+          <motion.div
+            style={{ y: solutionsGlowY }}
+            className="absolute -left-24 top-1/4 h-72 w-72 rounded-full bg-bee-amber/20 blur-[100px]"
+          />
+          <motion.div
+            style={{ y: solutionsGlowY }}
+            className="absolute -right-16 bottom-1/4 h-80 w-80 rounded-full bg-cyan-400/10 blur-[110px]"
+          />
         </div>
-      </TechParallaxSection>
+
+        <div className="relative z-[1] max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.header
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-3xl mb-14 md:mb-16"
+          >
+            <p className="text-bee-amber text-xs font-bold uppercase tracking-[0.28em] mb-5">
+              Agentic capability map
+            </p>
+            <h2
+              id="solution-categories-heading"
+              className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.05] mb-5"
+            >
+              Solution <span className="text-gradient">categories</span>
+            </h2>
+            <p className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl">
+              Seven production agent stacks — pick a hub for architecture, ROI, and the path from
+              first workflow to full orchestration.
+            </p>
+          </motion.header>
+
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            {CATEGORIES.map((cat, index) => {
+              const wide = index === 0 || index === CATEGORIES.length - 1;
+              return (
+                <motion.li
+                  key={cat.href}
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.5, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                  className={wide ? 'md:col-span-2' : undefined}
+                >
+                  <Link
+                    to={cat.href}
+                    className="group relative flex items-start gap-5 overflow-hidden rounded-2xl border border-white/10 bg-bee-black/45 px-5 py-5 md:px-7 md:py-6 backdrop-blur-md transition-all duration-500 hover:border-bee-amber/45 hover:bg-bee-black/60 hover:shadow-[0_0_48px_rgba(245,158,11,0.12)]"
+                  >
+                    <span
+                      className="pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-bee-amber via-bee-yellow to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                      aria-hidden
+                    />
+                    <span className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-bee-amber/0 blur-3xl transition-all duration-700 group-hover:bg-bee-amber/15" aria-hidden />
+
+                    <span className="relative mt-0.5 flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-bee-amber/10 ring-1 ring-bee-amber/25 transition-all duration-500 group-hover:scale-105 group-hover:bg-bee-amber/20 group-hover:ring-bee-amber/50">
+                      <cat.icon className="h-5 w-5 text-bee-amber" aria-hidden />
+                    </span>
+
+                    <span className="relative min-w-0 flex-1">
+                      <span className="mb-2 flex items-center gap-3">
+                        <span className="font-mono text-[11px] font-bold tracking-widest text-bee-amber/70">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="h-px flex-1 bg-gradient-to-r from-bee-amber/30 to-transparent opacity-60" aria-hidden />
+                      </span>
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h3 className="text-lg md:text-xl font-bold text-white transition-colors duration-300 group-hover:text-bee-amber">
+                          {cat.title}
+                        </h3>
+                        <ArrowRight
+                          className="h-4 w-4 text-bee-amber/40 transition-all duration-300 -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                          aria-hidden
+                        />
+                      </span>
+                      <p className="mt-2 text-sm md:text-base text-slate-400 leading-relaxed max-w-2xl">
+                        {cat.excerpt}
+                      </p>
+                    </span>
+                  </Link>
+                </motion.li>
+              );
+            })}
+          </ul>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-10 text-sm text-slate-500"
+          >
+            Each hub ships with architecture notes, ROI framing, and implementation paths — updated
+            as we release new agent patterns.
+          </motion.p>
+        </div>
+      </section>
 
       <SectionDivider />
 
