@@ -9,7 +9,17 @@ Built with Expo SDK 57, Expo Router, NativeWind, Reanimated motion, and Grok + o
 ```bash
 cd aibhive-diagnose
 npm install
-npx expo start
+npm run dev:start
+```
+
+That starts Expo on web at **http://localhost:8081**.
+
+Other useful scripts:
+
+```bash
+npm start          # Expo chooser (press w / i / a)
+npm run web        # Web only
+npm run typecheck  # TypeScript
 ```
 
 Optional live AI:
