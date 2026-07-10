@@ -21,6 +21,8 @@ export function shouldPlayIntro(): boolean {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
     if (params.get('intro') === '1') return true;
+    // Always play in Expo web/dev so reloads show the branded intro.
+    if (typeof __DEV__ !== 'undefined' && __DEV__) return true;
     try {
       return window.sessionStorage.getItem(STORAGE_KEY) !== '1';
     } catch {
@@ -32,6 +34,9 @@ export function shouldPlayIntro(): boolean {
 
 function markIntroPlayed() {
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('intro') === '1') return;
+    if (typeof __DEV__ !== 'undefined' && __DEV__) return;
     try {
       window.sessionStorage.setItem(STORAGE_KEY, '1');
     } catch {
