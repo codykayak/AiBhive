@@ -53,6 +53,7 @@ const OldWorldResearchRedirect = lazy(() => import('./pages/research-lab/OldWorl
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
+const CommunalLibraryPage = lazy(() => import('./pages/research-lab/CommunalLibraryPage'));
 
 function PageLoader() {
   return (
@@ -121,6 +122,7 @@ function AnimatedRoutes() {
             </Route>
             <Route path="/research-lab" element={<ResearchLabLandingPage />} />
             <Route path="/research-lab/workspace" element={<ResearchLabWorkspacePage />} />
+            <Route path="/research-lab/communal-library" element={<CommunalLibraryPage />} />
             <Route
               path="/research-lab/historical-ancient"
               element={<ResearchLabCategoryPage categoryId="historical-ancient" />}
