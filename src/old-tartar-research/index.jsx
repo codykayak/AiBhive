@@ -9,7 +9,6 @@ import { auth, googleProvider } from '../firebase';
 import { TartarProvider, useTartar } from './context/TartarContext';
 import TartarLayout from './components/TartarLayout';
 import TartarHeroBanner from './components/TartarHeroBanner';
-import TartarCustomizeFab from './components/TartarCustomizeFab';
 import HomePage from './pages/HomePage';
 import ResearchPage from './pages/ResearchPage';
 import ArchivesPage from './pages/ArchivesPage';
@@ -50,7 +49,6 @@ function TartarWorkspace({ user, onSignOut, embedded = false }) {
         <TartarLayout activeTab={tab} onTab={setTab} onSignOut={onSignOut} userEmail={user?.email}>
           <TartarPage tab={tab} onTab={setTab} />
         </TartarLayout>
-        {!embedded && <TartarCustomizeFab />}
       </div>
     </TartarProvider>
   );
