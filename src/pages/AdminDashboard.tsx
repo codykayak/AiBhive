@@ -18,12 +18,16 @@ import {
   Search,
   Copy,
   Check,
+  BarChart3,
+  Ticket,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 import { adminJson } from '../lib/adminApi';
 import RagSourcesPanel from '../components/admin/RagSourcesPanel';
 import AutoSocialPanel from '../components/admin/AutoSocialPanel';
+import AdminAnalyticsPanel from '../components/admin/AdminAnalyticsPanel';
+import AdminPromoCodesPanel from '../components/admin/AdminPromoCodesPanel';
 
 interface Lead {
   id: string;
@@ -66,8 +70,15 @@ export default function AdminDashboard() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const tabParam = searchParams.get('tab');
   const initialTab =
-    tabParam === 'auto-social' || tabParam === 'settings' ? tabParam : 'leads';
-  const [activeTab, setActiveTab] = useState<'leads' | 'settings' | 'auto-social'>(initialTab);
+    tabParam === 'auto-social' ||
+    tabParam === 'settings' ||
+    tabParam === 'analytics' ||
+    tabParam === 'promos'
+      ? tabParam
+      : 'leads';
+  const [activeTab, setActiveTab] = useState<
+    'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos'
+  >(initialTab);
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingData, setLoadingData] = useState(false);
@@ -121,7 +132,7 @@ export default function AdminDashboard() {
   }, [fetchAdminData]);
 
   const switchTab = useCallback(
-    (tab: 'leads' | 'settings' | 'auto-social') => {
+    (tab: 'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos') => {
       setActiveTab(tab);
       if (tab === 'leads') {
         searchParams.delete('tab');
@@ -134,7 +145,12 @@ export default function AdminDashboard() {
   );
 
   useEffect(() => {
-    if (tabParam === 'auto-social' || tabParam === 'settings') {
+    if (
+      tabParam === 'auto-social' ||
+      tabParam === 'settings' ||
+      tabParam === 'analytics' ||
+      tabParam === 'promos'
+    ) {
       setActiveTab(tabParam);
     } else if (!tabParam) {
       setActiveTab('leads');
@@ -357,6 +373,32 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
+          onClick={() => switchTab('analytics')}
+          className={cn(
+            'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
+            activeTab === 'analytics'
+              ? 'bg-bee-amber text-bee-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+          )}
+        >
+          <BarChart3 className="w-5 h-5 mr-2" />
+          Analytics
+        </button>
+        <button
+          type="button"
+          onClick={() => switchTab('promos')}
+          className={cn(
+            'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
+            activeTab === 'promos'
+              ? 'bg-bee-amber text-bee-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+          )}
+        >
+          <Ticket className="w-5 h-5 mr-2" />
+          Promo codes
+        </button>
+        <button
+          type="button"
           onClick={() => switchTab('settings')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
@@ -544,6 +586,10 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === 'auto-social' && <AutoSocialPanel user={user} />}
+
+          {activeTab === 'analytics' && <AdminAnalyticsPanel user={user} />}
+
+          {activeTab === 'promos' && <AdminPromoCodesPanel user={user} />}
 
           {activeTab === 'settings' && (
             <div className="p-8 max-w-2xl">

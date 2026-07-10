@@ -6,7 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { anthropicApiKey, claudeChatMessages, intelClaudeModel } from './anthropicProvider.js';
 import * as hiveUsage from './hiveUsage.js';
-import { applyTokenMarkup } from './hivePlans.js';
+import { markCostForUser } from './hiveUsage.js';
 import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 
 const GEMINI_MODEL = process.env.INTEL_GEMINI_MODEL || 'gemini-2.5-flash';
@@ -105,7 +105,7 @@ export async function runIntelResearchChat(db, userId, opts) {
   const message = String(opts.message || '').trim();
   if (!message) return { ok: false, error: 'Empty message.' };
 
-  const markedEstimate = applyTokenMarkup(CHAT_RAW_COST);
+  const { markedUsd: markedEstimate } = await markCostForUser(db, userId, CHAT_RAW_COST);
 
   const budget = await hiveUsage.checkTokenBudget(db, userId, markedEstimate, 'hive_cloud_intel', {
     email: opts.email,

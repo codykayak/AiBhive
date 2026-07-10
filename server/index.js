@@ -45,6 +45,15 @@ import {
 } from './hiveBilling.js';
 import { getPlan, listPlansForClient } from './hivePlans.js';
 import { startWeeklyGrokModelRefresh } from './grokModelResolver.js';
+import {
+  HIVE_PROMO_MARKUP,
+  listHivePromos,
+  upsertHivePromo,
+  setHivePromoActive,
+  deleteHivePromo,
+  redeemHivePromo,
+} from './hivePromoCodes.js';
+import { recordAnalyticsEvents, getAnalyticsSummary, hashIp } from './siteAnalytics.js';
 import { ensureUsagePeriod, setUserPlan, recordTokenUsage, checkTokenBudget } from './hiveUsage.js';
 import { verifyHiveAuth } from './hiveAuth.js';
 import { isHiveFreeBuildEmail } from './hiveAdmin.js';
@@ -1127,6 +1136,100 @@ app.get('/api/admin/leads', verifyAdmin, async (req, res) => {
       error: 'Failed to fetch leads',
       hint: describeFirestoreError(error.code),
     });
+  }
+});
+
+app.get('/api/admin/analytics', verifyAdmin, async (req, res) => {
+  try {
+    const days = Math.min(60, Math.max(1, parseInt(req.query.days, 10) || 14));
+    const summary = await getAnalyticsSummary(db, { days });
+    return res.json(summary);
+  } catch (error) {
+    console.error('[admin/analytics]', error);
+    return res.status(500).json({ error: error.message || 'Failed to load analytics' });
+  }
+});
+
+app.get('/api/admin/promo-codes', verifyAdmin, async (_req, res) => {
+  try {
+    const codes = await listHivePromos(db);
+    return res.json({
+      codes,
+      defaultMarkupMultiplier: HIVE_PROMO_MARKUP,
+      note: 'Partner promos bill near API + server cost (default 1.08×). Regular users use standard Hive credits.',
+    });
+  } catch (error) {
+    console.error('[admin/promo-codes] GET', error);
+    return res.status(500).json({ error: error.message || 'Failed to list promo codes' });
+  }
+});
+
+app.post('/api/admin/promo-codes', verifyAdmin, express.json(), async (req, res) => {
+  try {
+    const saved = await upsertHivePromo(db, req.body || {});
+    return res.json({ ok: true, promo: saved });
+  } catch (error) {
+    console.error('[admin/promo-codes] POST', error);
+    return res.status(400).json({ error: error.message || 'Failed to save promo code' });
+  }
+});
+
+app.patch('/api/admin/promo-codes/:code', verifyAdmin, express.json(), async (req, res) => {
+  try {
+    if (typeof req.body?.active === 'boolean') {
+      const result = await setHivePromoActive(db, req.params.code, req.body.active);
+      return res.json({ ok: true, ...result });
+    }
+    const saved = await upsertHivePromo(db, { ...req.body, code: req.params.code });
+    return res.json({ ok: true, promo: saved });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Failed to update promo' });
+  }
+});
+
+app.delete('/api/admin/promo-codes/:code', verifyAdmin, async (req, res) => {
+  try {
+    await deleteHivePromo(db, req.params.code);
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(400).json({ error: error.message || 'Failed to delete promo' });
+  }
+});
+
+app.post('/api/analytics/collect', express.json({ limit: '32kb' }), async (req, res) => {
+  try {
+    const ip =
+      (req.headers['x-forwarded-for'] && String(req.headers['x-forwarded-for']).split(',')[0].trim()) ||
+      req.socket?.remoteAddress ||
+      '';
+    const result = await recordAnalyticsEvents(db, req.body?.events || req.body, {
+      referrer: req.body?.referrer || req.get('referer') || '',
+      sessionId: req.body?.sessionId || '',
+      userAgent: req.get('user-agent') || '',
+      ipHash: hashIp(ip),
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error('[analytics/collect]', error);
+    return res.status(500).json({ error: 'Analytics ingest failed' });
+  }
+});
+
+app.post('/api/hive/promo/redeem', express.json(), async (req, res) => {
+  try {
+    const authUser = await verifyHiveAuth(req);
+    if (!authUser?.uid) {
+      return res.status(401).json({ error: 'Sign in to redeem a promo code.' });
+    }
+    await ensureHiveUser(db, authUser.uid);
+    if (authUser.email) {
+      await db.collection('hive_users').doc(authUser.uid).set({ email: authUser.email }, { merge: true });
+    }
+    const result = await redeemHivePromo(db, authUser.uid, req.body?.code, { email: authUser.email });
+    return res.json(result);
+  } catch (error) {
+    console.error('[hive/promo/redeem]', error);
+    return res.status(400).json({ error: error.message || 'Promo redeem failed' });
   }
 });
 

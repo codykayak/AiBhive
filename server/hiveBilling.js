@@ -81,6 +81,11 @@ export async function getHiveAccount(db, userId) {
     periodStart: fresh.periodStart ?? null,
     periodEnd: fresh.periodEnd ?? null,
     stripeSubscriptionId: fresh.stripeSubscriptionId ?? null,
+    promoCode: fresh.promoCode || null,
+    promoLabel: fresh.promoLabel || null,
+    partnerName: fresh.partnerName || null,
+    markupMultiplier: fresh.markupMultiplier ?? null,
+    waivePlatformMarkup: !!fresh.waivePlatformMarkup,
     recentActivity,
     usage: computeUsageBudget(fresh),
   };
