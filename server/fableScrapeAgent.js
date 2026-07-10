@@ -14,6 +14,7 @@
 import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
 import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
+import { getTartarianStarterBrief, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
 
 const DEFAULT_ROLES = {
   director: { provider: 'grok', model: '' },
@@ -111,6 +112,9 @@ async function harvestFromTextCorpus({
     `- If the corpus is mostly navigation chrome with no usable content, return selections:[].\n` +
     `- Return ONLY JSON:\n` +
     `{"strategy":"one sentence","mode":"text-corpus","selections":[{"title":"...","reason":"why promising","quote":"verbatim excerpt","sourceUrl":"https://...","confidence":0-1}]}\n\n` +
+    (shouldInjectTartarianFinds(prompt)
+      ? `${getTartarianStarterBrief({ maxChars: 1800 })}\n\nUse directory angles only as prioritization hints — still cite only corpus evidence.\n\n`
+      : '') +
     formatCorpusForPrompt(chunks);
 
   let strategy = '';

@@ -54,6 +54,10 @@ import {
   forkLibraryEntryIntoProject,
 } from './researchProjects.js';
 import { parseHttpUrl } from './urlNormalize.js';
+import {
+  getTartarianFindsDirectory,
+  getTartarianStarterBrief,
+} from './tartarianFindsDirectory.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -522,6 +526,23 @@ export function registerResearchLabRoutes(app, db) {
     const pack = getDomainPack(req.params.id);
     if (!pack) return res.status(404).json({ error: 'Pack not found.' });
     return res.json({ ok: true, pack });
+  });
+
+  /** Documented Tartarian / Old World starter finds for assistants & UI. */
+  app.get('/api/research-lab/tartarian-finds', (req, res) => {
+    const maxChars = Math.min(20000, Math.max(2000, Number(req.query.maxChars) || 14000));
+    const brief = req.query.brief === '1' || req.query.brief === 'true';
+    const markdown = brief
+      ? getTartarianStarterBrief({ maxChars: Math.min(maxChars, 4000) })
+      : getTartarianFindsDirectory({ maxChars });
+    return res.json({
+      ok: true,
+      brief,
+      chars: markdown.length,
+      markdown,
+      topicId: 'tartarian',
+      hint: 'Use these leads when users ask general Tartarian / Old World questions. Cite start URLs; do not invent quotes.',
+    });
   });
 
   app.get('/api/research-lab/projects', async (req, res) => {

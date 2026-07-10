@@ -20,11 +20,25 @@ export default function OwrInlineWebResearch() {
     setError('');
     try {
       const ctx = [scrapeText, ocrText].filter(Boolean).join('\n\n').slice(0, 10000);
+      let findsBrief = '';
+      try {
+        const fr = await fetch('/api/research-lab/tartarian-finds?brief=1&maxChars=3500');
+        const fd = await fr.json();
+        if (fr.ok && fd.markdown) findsBrief = String(fd.markdown).slice(0, 3500);
+      } catch {
+        /* optional enrichment */
+      }
       const res = await sendIntelChatAsUser(user, {
         message: q,
         documentContext: ctx || undefined,
-        targetContext:
-          'Research Lab — archives, cuneiform, historical documents, communal library. Grok analyzes findings.',
+        targetContext: [
+          'Research Lab — archives, historical documents, communal library. Grok analyzes findings.',
+          'When the question is Tartarian / Old World / mud-flood / star-fort / orphan-train related, prefer the documented finds directory leads (start URLs) over inventing sources.',
+          findsBrief,
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+          .slice(0, 14000),
         llmProvider: 'grok',
       });
       appendOutput({
