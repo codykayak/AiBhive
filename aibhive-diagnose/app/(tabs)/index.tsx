@@ -3,7 +3,6 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { BigButton } from '@/components/BigButton';
 import { AiBhiveLogo, DiagnoseOrb } from '@/components/motion';
@@ -47,7 +46,9 @@ export default function HomeScreen() {
         />
         <View className="absolute -left-16 bottom-0 h-36 w-36 rounded-full bg-hive-amber/20" />
 
-        <Animated.View entering={FadeInDown.duration(500)} className="flex-row items-center justify-between">
+        {/* Plain View (not Reanimated entering) so static web SSR is visible
+            even when Cursor's preview never finishes hydrating JS. */}
+        <View className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
             <View className="flex-row items-center gap-3">
               <AiBhiveLogo size={52} />
@@ -66,16 +67,16 @@ export default function HomeScreen() {
             </View>
           </View>
           <DiagnoseOrb size={96} />
-        </Animated.View>
+        </View>
       </View>
 
-      <Animated.View entering={FadeInDown.delay(80).duration(450)} className="mx-5 rounded-2xl border border-hive-border bg-hive-card px-4 py-3">
+      <View className="mx-5 rounded-2xl border border-hive-border bg-hive-card px-4 py-3">
         <View className="flex-row items-center gap-2">
           <Sparkles color={theme.colors.amber} size={16} />
           <Text className="text-xs font-bold uppercase tracking-wider text-hive-amber">Field tip</Text>
         </View>
         <Text className="mt-1 text-sm leading-5 text-hive-mist">{tip}</Text>
-      </Animated.View>
+      </View>
 
       <View className="mt-5 gap-3 px-5">
         <BigButton

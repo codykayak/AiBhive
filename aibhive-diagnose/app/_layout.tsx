@@ -6,7 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useCallback, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 
 import { IntroSplash } from '@/components/IntroSplash';
@@ -36,12 +36,35 @@ const DiagnoseTheme = {
   },
 };
 
+/**
+ * Web static export SSR used to paint the full-screen black intro overlay
+ * before JS hydrated. Cursor's port-forward preview often never finishes JS,
+ * so users saw a permanent black screen. Default: no intro on web.
+ * Replay with ?intro=1
+ */
+function shouldPlayIntro(): boolean {
+  if (Platform.OS !== 'web') return true;
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URLSearchParams(window.location.search).get('intro') === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(() => Platform.OS !== 'web');
   const [fontTimedOut, setFontTimedOut] = useState(false);
+
+  useEffect(() => {
+    // Web: intro only when explicitly requested (?intro=1). Avoids black SSR overlay.
+    if (Platform.OS === 'web') {
+      setShowIntro(shouldPlayIntro());
+    }
+  }, []);
 
   useEffect(() => {
     // Don't block the app forever if the font asset stalls on web.
@@ -68,8 +91,17 @@ export default function RootLayout() {
 
   if (!loaded && !fontTimedOut) {
     return (
-      <View className="flex-1 items-center justify-center bg-hive-bg">
+      <View
+        className="flex-1 items-center justify-center bg-hive-bg px-6"
+        style={{ backgroundColor: theme.colors.bg }}
+      >
         <StatusBar style="light" />
+        <Text style={{ color: theme.colors.amber, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
+          AiBhive Diagnose
+        </Text>
+        <Text style={{ color: theme.colors.mist, marginTop: 10, textAlign: 'center', opacity: 0.75 }}>
+          Loading the field app…
+        </Text>
       </View>
     );
   }
