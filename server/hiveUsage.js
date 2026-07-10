@@ -9,6 +9,13 @@ import {
   TOKEN_MARKUP,
 } from './hivePlans.js';
 import { isHiveBillingExempt } from './hiveAdmin.js';
+import { applyMarkup, getUserMarkupMultiplier } from './hivePromoCodes.js';
+
+/** Mark raw API cost with the user's promo or default Hive credit rate. */
+export async function markCostForUser(db, userId, rawCostUsd) {
+  const mult = await getUserMarkupMultiplier(db, userId);
+  return { markedUsd: applyMarkup(rawCostUsd, mult), markupMultiplier: mult };
+}
 
 function monthBounds(from = new Date()) {
   const start = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -85,10 +92,10 @@ export async function recordTokenUsage(db, userId, opts) {
     return { ok: true, chargedUsd: 0, free: true };
   }
 
-  const markedUp = applyTokenMarkup(rawCostUsd);
+  const { markedUsd: markedUp, markupMultiplier } = await markCostForUser(db, userId, rawCostUsd);
   if (markedUp === 0) return { ok: true, chargedUsd: 0 };
 
-  const check = await checkTokenBudget(db, userId, markedUp, feature);
+  const check = await checkTokenBudget(db, userId, markedUp, feature, { email });
   if (!check.ok) return check;
 
   const userRef = db.collection('hive_users').doc(userId);
@@ -126,7 +133,8 @@ export async function recordTokenUsage(db, userId, opts) {
       type: 'token_usage',
       feature: feature ?? 'token',
       rawCostUsd: Number(rawCostUsd) || 0,
-      markupMultiplier: TOKEN_MARKUP,
+      markupMultiplier,
+      promoCode: u.promoCode || null,
       amountUsd: -markedUp,
       summary: summary ?? `Token usage (${feature ?? 'api'})`,
       createdAt: now,
@@ -134,7 +142,12 @@ export async function recordTokenUsage(db, userId, opts) {
   });
 
   const user = (await userRef.get()).data() ?? {};
-  return { ok: true, chargedUsd: markedUp, budget: computeUsageBudget(user) };
+  return {
+    ok: true,
+    chargedUsd: markedUp,
+    markupMultiplier,
+    budget: computeUsageBudget(user),
+  };
 }
 
 /** @param {import('firebase-admin/firestore').Firestore} db */

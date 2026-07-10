@@ -1,7 +1,6 @@
 /**
  * Research Lab utility billing — Hive credits (Hive credits) or BYOK orchestration fee.
  */
-import { applyTokenMarkup } from './hivePlans.js';
 import * as hiveUsage from './hiveUsage.js';
 import { ensureProfile, resolveApiKey } from '../functions/lib/tartar/credits.js';
 
@@ -58,7 +57,7 @@ export function harvestRawCost(keys = {}, roles = {}, usesPlatformRouting = fals
  * @param {import('firebase-admin/firestore').Firestore} db
  */
 export async function requireResearchLabBudget(db, userId, rawCostUsd, feature) {
-  const marked = applyTokenMarkup(rawCostUsd);
+  const { markedUsd: marked } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
   const budget = await hiveUsage.checkTokenBudget(db, userId, marked, feature);
   if (!budget.ok) {
     return {
@@ -81,10 +80,11 @@ export async function chargeResearchLabUsage(db, userId, rawCostUsd, feature, su
     summary,
   });
   if (!charge.ok) {
+    const { markedUsd } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
     return {
       ok: false,
       needPayment: true,
-      amountUsd: charge.amountUsd ?? applyTokenMarkup(rawCostUsd),
+      amountUsd: charge.amountUsd ?? markedUsd,
     };
   }
   return { ok: true, chargedUsd: charge.chargedUsd };

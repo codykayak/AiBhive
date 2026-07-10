@@ -3,6 +3,7 @@
  * Never proxies requests to google.com; SerpAPI/Firecrawl only.
  */
 import { applyTokenMarkup } from './hivePlans.js';
+import { markCostForUser } from './hiveUsage.js';
 import { buildDiscoverySearchQueries } from './intelDiscoverySearch.js';
 import { requireFirecrawlKey, requireSerpApiKey } from './intelCloudKeys.js';
 import { firecrawlWebSearch, firecrawlScrapePage } from './intelFirecrawl.js';
@@ -108,7 +109,7 @@ export async function runIntelCloudTool(db, usage, opts) {
     targetType,
     discoveryQueryCount: discoveryQueries.length || 1,
   });
-  const markedUp = applyTokenMarkup(rawCost);
+  const { markedUsd: markedUp } = await markCostForUser(db, userId, rawCost);
 
   const check = await usage.checkTokenBudget(db, userId, markedUp, 'hive_cloud_intel', {
     email: opts.email,
