@@ -14,8 +14,8 @@ export default function VoiceCloneLab() {
     <main className="py-24">
       <SEO 
         title="AI Voice Cloning Lab - Instant Multilingual Voice Synthesis | AiBhive"
-        description="AiBhive's Voice Clone Lab allows you to replicate your unique vocal identity in over 10 languages. Maintain your tone, emotion, and personality across the globe with our advanced AI."
-        keywords="AI voice cloning, voice synthesis, multilingual AI voice, neural voice cloning, AiBhive, voice translation"
+        description="Clone your voice with AiBhive Voice Clone Lab and speak in 10+ languages while keeping your tone, emotion, and personality — ideal for creators, podcasters, and global brands."
+        keywords="AI voice cloning, voice synthesis, multilingual AI voice, neural voice cloning, AiBhive, voice translation, AI dubbing"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-20">
@@ -48,7 +48,7 @@ export default function VoiceCloneLab() {
         >
           <img
             src={aiVoiceCloneImg}
-            alt="Ai Voice Clone Lab"
+            alt="AiBhive Voice Clone Lab — multilingual AI voice cloning for creators and global content"
             className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bee-black/80 via-transparent to-transparent" />

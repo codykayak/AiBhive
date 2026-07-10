@@ -308,7 +308,8 @@ export default function HiveAppsBrowse() {
     <>
       <SEO
         title="Hive Apps Store — Install, Try & Build | AiBhive"
-        description="Your first app $1–$5. Browse the community pool — install free, tweak, share."
+        description="Browse AiBhive Hive Apps: install free community tools, try web demos, and build custom apps in plain English from a few dollars with Bhive Builder."
+        keywords="Hive Apps, community AI apps, AI app store, Bhive Builder, no-code apps, AiBhive"
       />
 
       <div className={`mx-auto px-4 sm:px-6 pb-16 ${showSplit ? 'max-w-7xl' : 'max-w-5xl'}`}>

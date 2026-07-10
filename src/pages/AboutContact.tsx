@@ -17,8 +17,8 @@ export default function AboutContact() {
     <main className="py-24">
       <SEO 
         title="About AiBhive - AI App Factory & Multi-Agent Automation | Contact Us"
-        description={`${SITE_TAGLINE} Learn about Bhive Builder, Hive Apps, and our multi-agent Hive architecture.`}
-        keywords="about AiBhive, Bhive Builder, AI app factory, multi-agent AI, AiBhive contact"
+        description="About AiBhive: the team behind Bhive Builder, Hive Apps, Research Lab, and multi-agent Hive architecture for transcription, real estate AI, and enterprise automation. Contact us."
+        keywords="about AiBhive, Bhive Builder, AI app factory, multi-agent AI, AiBhive contact, Research Lab"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-32 items-center">

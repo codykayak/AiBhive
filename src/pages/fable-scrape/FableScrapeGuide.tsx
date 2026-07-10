@@ -46,8 +46,8 @@ export default function FableScrapeGuide() {
     <main className="py-24">
       <SEO
         title="Fable Scrape — Complete User Guide | AiBhive"
-        description="How to use Fable Scrape: stealth engines, content filters, multi-page crawling, IP routing with residential proxies (DataImpulse, IPRoyal, Webshare), and one-pass OCR."
-        keywords="fable scrape guide, stealth scraper tutorial, residential proxy scraping, crawl depth, OCR archive"
+        description="Complete AiBhive Fable Scrape guide: AI Harvest, stealth engines, content filters, multi-page crawl depth, residential proxies (DataImpulse, IPRoyal, Webshare), Translation Lab, and one-pass OCR."
+        keywords="fable scrape guide, stealth scraper tutorial, residential proxy scraping, crawl depth, OCR archive, AI Harvest"
       />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link to="/fable-scrape" className="inline-flex items-center gap-2 text-bee-amber font-bold text-sm mb-6 hover:underline">

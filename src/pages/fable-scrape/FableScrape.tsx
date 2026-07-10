@@ -84,8 +84,8 @@ export default function FableScrape({ embedded = false }: { embedded?: boolean }
       {!embedded && (
       <SEO
         title="Fable Scrape — AI Research Harvester & Stealth Scraper | AiBhive"
-        description="Tell an AI what to find; it crawls bot-blocked archives undetected, reads and translates the documents with the model of your choice, and publishes them to a communal library."
-        keywords="AI web scraper, stealth scraper, residential proxy, historical document AI, cuneiform OCR translation, communal research library"
+        description="AiBhive Fable Scrape: tell AI what to find in bot-blocked archives. Stealth crawl, residential proxies, OCR, model-of-choice translation, and publish to a communal research library."
+        keywords="AI web scraper, stealth scraper, residential proxy, historical document AI, archive OCR translation, communal research library, Fable Scrape"
       />
       )}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

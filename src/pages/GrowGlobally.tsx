@@ -28,8 +28,8 @@ export default function GrowGlobally() {
     <main className="py-24">
       <SEO 
         title="Global AI Growth Strategies - Localization & Reach | AiBhive"
-        description="Unlock 2-5x more views and revenue by localizing your content. AiBhive's global growth hub provides data-driven insights into why AI translation and voice cloning are essential for creators."
-        keywords="global content growth, YouTube localization, AI translation ROI, multilingual content strategy, AiBhive, international reach"
+        description="Grow views 2–5x with AiBhive: AI translation and voice cloning help podcasters and YouTubers localize content for Hindi, Spanish, Portuguese, and more — with real creator ROI data."
+        keywords="global content growth, YouTube localization, AI translation ROI, multilingual content strategy, AiBhive, international reach, AI dubbing"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <header className="text-center mb-20">
@@ -62,7 +62,7 @@ export default function GrowGlobally() {
         >
           <img
             src={translationVoiceDubbingImg}
-            alt="Translation Voice Dubbing For Content Growth"
+            alt="AiBhive AI translation and voice dubbing multiplying podcast and YouTube audience growth"
             className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bee-black/70 via-transparent to-transparent" />
@@ -166,7 +166,7 @@ export default function GrowGlobally() {
         >
           <img
             src={growContentCreatorsImg}
-            alt="Grow Content Creators Podcast Viewership Translation"
+            alt="Content creators growing podcast and YouTube viewership with AiBhive multilingual translation"
             className="w-full object-cover max-h-[640px] transition-transform duration-[1500ms] group-hover:scale-[1.03]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bee-black/70 via-transparent to-transparent" />
@@ -196,7 +196,7 @@ export default function GrowGlobally() {
               >
                 <img
                   src={mrBeastMultiplierImg}
-                  alt="Mr Beast Translation Content Multiplier"
+                  alt="MrBeast-style localization case study — AI translation multiplying YouTube views with AiBhive"
                   className="w-full h-auto"
                 />
               </motion.div>

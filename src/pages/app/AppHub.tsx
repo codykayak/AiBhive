@@ -22,16 +22,15 @@ import { EXAMPLE_APP_IDS } from '../../lib/hiveExampleApps';
 import HiveAppCard, { HiveAppCardSkeleton } from '../../components/hive-apps/HiveAppCard';
 import FlipHeroWords from '../../components/FlipHeroWords';
 import DirectAnswer from '../../components/DirectAnswer';
-import { SITE_TAGLINE } from '../../constants/site';
 import type { HiveAppSpec } from '../../lib/hiveAppTypes';
 
 const GALLERY = [
-  { src: APP_STOCK_IMAGES.mobileApps, alt: 'Mobile app interfaces on phone', tag: 'Mobile apps' },
-  { src: APP_STOCK_IMAGES.websiteDashboard, alt: 'Analytics website dashboard', tag: 'Web dashboards' },
-  { src: APP_STOCK_IMAGES.adminPanel, alt: 'Admin dashboard on laptop', tag: 'Admin dashboards' },
-  { src: APP_STOCK_IMAGES.webAppMock, alt: 'Modern web application', tag: 'Web apps' },
-  { src: APP_STOCK_IMAGES.teamCollab, alt: 'Team collaborating on product', tag: 'Team tools' },
-  { src: APP_STOCK_IMAGES.heroCommandCenter, alt: 'Data dashboard screens', tag: 'Dashboards' },
+  { src: APP_STOCK_IMAGES.mobileApps, alt: 'AiBhive-built mobile app interfaces on a phone', tag: 'Mobile apps' },
+  { src: APP_STOCK_IMAGES.websiteDashboard, alt: 'AiBhive analytics website dashboard built with Bhive Builder', tag: 'Web dashboards' },
+  { src: APP_STOCK_IMAGES.adminPanel, alt: 'AiBhive admin dashboard on a laptop for operations teams', tag: 'Admin dashboards' },
+  { src: APP_STOCK_IMAGES.webAppMock, alt: 'Modern AiBhive web application UI mock', tag: 'Web apps' },
+  { src: APP_STOCK_IMAGES.teamCollab, alt: 'Team collaborating on an AiBhive product build', tag: 'Team tools' },
+  { src: APP_STOCK_IMAGES.heroCommandCenter, alt: 'AiBhive data dashboard screens in a command-center layout', tag: 'Dashboards' },
 ];
 
 export default function AppHub() {
@@ -56,7 +55,7 @@ export default function AppHub() {
     <>
       <SEO
         title="AiBhive App — Build Mobile Apps, Web Apps & Sites"
-        description={`${SITE_TAGLINE} No coding — Bhive Builder ships custom apps. BYOK or Hive credits.`}
+        description="Build mobile apps, web apps, and business dashboards in plain English with AiBhive Bhive Builder. No coding required — bring your own API keys or use Hive credits."
         keywords="AI app builder, Bhive Builder, BYOK AI, no-code automation, AiBhive app, custom business tools"
       />
 
@@ -64,7 +63,7 @@ export default function AppHub() {
         <div className="absolute inset-0">
           <img
             src={APP_STOCK_IMAGES.heroCommandCenter}
-            alt=""
+            alt="AiBhive Bhive Builder command center — build mobile apps, web apps, and sites in plain English"
             className="w-full h-full object-cover opacity-25"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-[#050810] via-[#050810]/90 to-[#050810]" />
@@ -156,7 +155,7 @@ export default function AppHub() {
           <div className="relative rounded-3xl overflow-hidden border border-white/10 aspect-[4/3]">
             <img
               src={APP_STOCK_IMAGES.adminPanel}
-              alt="Admin dashboard with analytics"
+              alt="AiBhive admin analytics dashboard for Hive Apps and agentic workflows"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#050810] via-transparent to-transparent" />

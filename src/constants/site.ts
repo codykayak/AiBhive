@@ -4,13 +4,16 @@ export const SITE_URL = 'https://aibhive.com';
 export const SITE_NAME = 'AiBhive';
 
 export const SITE_TAGLINE =
-  'AiBhive is an AI app factory and agentic automation platform: build mobile apps, web apps, and business dashboards in plain English (Bhive Builder), browse community tools, and deploy custom AI workflows for real estate, operations, and enterprise teams.';
+  'AiBhive is an AI app factory and agentic automation platform: build mobile apps, web apps, and business dashboards in plain English (Bhive Builder), browse community tools (Hive Apps), research with archive scraping and OCR (Research Lab), and deploy custom AI workflows for real estate, operations, and enterprise teams.';
+
+/** Default Open Graph / Twitter share image (absolute URL). */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export const DEFAULT_SEO = {
   title: 'AiBhive — AI App Factory, Community Apps & Enterprise Agentic AI',
   description: SITE_TAGLINE,
   keywords:
-    'AiBhive, Bhive Builder, AI app builder, real estate AI automation, no-code apps, agentic AI, Hive Apps, community app pool, enterprise AI workflows',
+    'AiBhive, Bhive Builder, AI app builder, real estate AI automation, no-code apps, agentic AI, Hive Apps, Research Lab, Fable Scrape, community app pool, enterprise AI workflows',
 } as const;
 
 export const ORGANIZATION_SCHEMA = {
@@ -19,4 +22,5 @@ export const ORGANIZATION_SCHEMA = {
   url: SITE_URL,
   description: SITE_TAGLINE,
   logo: `${SITE_URL}/favicon.svg`,
+  sameAs: [] as string[],
 } as const;

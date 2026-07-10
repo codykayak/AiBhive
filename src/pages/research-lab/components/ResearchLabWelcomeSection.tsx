@@ -39,7 +39,10 @@ export default function ResearchLabWelcomeSection() {
   return (
     <section ref={ref} className={styles.rlWelcomeParallax} aria-label="Research Lab welcome">
       <motion.div className={styles.rlWelcomeParallaxBg} style={{ y: bgY }} aria-hidden>
-        <img src={welcomeBg} alt="" />
+        <img
+          src={welcomeBg}
+          alt="AiBhive Research Lab — AI research tools, translation, and community knowledge library"
+        />
         <div className={styles.rlWelcomeParallaxOverlay} />
       </motion.div>
 
