@@ -6,7 +6,7 @@ import { SEO } from '../components/SEO';
 export default function NotFound() {
   return (
     <>
-      <SEO title="Page not found | AiBhive" description="This page does not exist. Try the App hub, Hive Apps, or Research." />
+      <SEO title="Page not found | AiBhive" description="This AiBhive page does not exist. Try the App hub, Hive Apps, Research Lab, or FAQ." noIndex />
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <p className="text-bee-amber text-xs font-bold uppercase tracking-widest mb-3">404</p>
         <h1 className="text-3xl md:text-4xl font-black text-white">This page does not exist</h1>

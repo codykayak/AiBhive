@@ -18,7 +18,7 @@ export default function TranscriptionStudio() {
     <main className="py-24">
       <SEO 
         title="AI Transcription Studio - High Accuracy Multi-Agent AI | AiBhive"
-        description="AiBhive's Transcription Studio uses a collaborative hive of AI agents to deliver 99.9% accurate transcriptions for legal, medical, and general fields. Better-than-human precision."
+        description="AiBhive Transcription Studio uses multi-agent AI for 99.9% accurate legal, medical, and general speech-to-text — domain specialists catch jargon single models miss."
         keywords="AI transcription, medical transcription, legal transcription, multi-agent AI, accurate speech to text, AiBhive"
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -93,7 +93,7 @@ export default function TranscriptionStudio() {
                 >
                   <img
                     src={transcriptionLegalMedicalImg}
-                    alt="Transcription Service Legal Medical Visualization"
+                    alt="AiBhive multi-agent AI transcription for legal and medical speech-to-text accuracy"
                     className="w-full h-auto"
                   />
                 </motion.div>

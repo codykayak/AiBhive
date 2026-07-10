@@ -1,25 +1,76 @@
+# AiBhive — https://aibhive.com
+# Prefer crawling public marketing, product guides, and tool pages.
+# Private product surfaces remain blocked.
+
 User-agent: *
 Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /sitemap.xml
 Disallow: /homework
 Disallow: /admin
+Disallow: /test
+Disallow: /hive-apps/embed
+Disallow: /app/settings
+Disallow: /research-lab/workspace
 
-# AI / LLM crawlers — public marketing and tool guides are indexable
+# --- Search engines ---
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# --- OpenAI (training + ChatGPT browsing + search) ---
 User-agent: GPTBot
 Allow: /
 
 User-agent: ChatGPT-User
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+# --- Google Gemini / AI Overviews training opt-in ---
 User-agent: Google-Extended
 Allow: /
 
+# --- Anthropic Claude ---
 User-agent: anthropic-ai
 Allow: /
 
 User-agent: ClaudeBot
 Allow: /
 
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+# --- Perplexity, Apple, Meta, Amazon, Cohere, Common Crawl ---
 User-agent: PerplexityBot
 Allow: /
 
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Discovery indexes for humans, crawlers, and LLM agents
 Sitemap: https://aibhive.com/sitemap.xml
+# llms.txt: https://aibhive.com/llms.txt
+# llms-full.txt: https://aibhive.com/llms-full.txt

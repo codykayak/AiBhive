@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 import { useLocation } from 'react-router-dom';
 import {
+  DEFAULT_OG_IMAGE,
   DEFAULT_SEO,
   ORGANIZATION_SCHEMA,
   SITE_NAME,
@@ -14,6 +15,8 @@ interface SEOProps {
   description?: string;
   keywords?: string;
   type?: 'WebSite' | 'SoftwareApplication';
+  /** Absolute or site-root path for social preview image */
+  image?: string;
   /** Extra JSON-LD nodes merged into @graph */
   jsonLd?: Record<string, unknown>[];
   /** Emit FAQPage schema (answers must also be visible in page HTML) */
@@ -22,11 +25,18 @@ interface SEOProps {
   noIndex?: boolean;
 }
 
+function resolveImageUrl(image?: string): string {
+  if (!image) return DEFAULT_OG_IMAGE;
+  if (image.startsWith('http://') || image.startsWith('https://')) return image;
+  return `${SITE_URL}${image.startsWith('/') ? image : `/${image}`}`;
+}
+
 export const SEO = ({
   title = DEFAULT_SEO.title,
   description = DEFAULT_SEO.description,
   keywords = DEFAULT_SEO.keywords,
   type = 'SoftwareApplication',
+  image,
   jsonLd = [],
   faqs,
   noIndex = false,
@@ -34,6 +44,7 @@ export const SEO = ({
   const location = useLocation();
   const path = location.pathname === '/' ? '' : location.pathname;
   const currentUrl = `${SITE_URL}${path}`;
+  const imageUrl = resolveImageUrl(image);
 
   const graph: Record<string, unknown>[] = [
     ORGANIZATION_SCHEMA,
@@ -46,9 +57,10 @@ export const SEO = ({
     },
     {
       '@type': type,
-      name: SITE_NAME,
-      url: SITE_URL,
+      name: title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`,
+      url: currentUrl,
       description,
+      image: imageUrl,
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Web, Android',
       offers: {
@@ -82,18 +94,28 @@ export const SEO = ({
   return (
     <Helmet>
       <title>{title}</title>
-      {noIndex && <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />}
+      {noIndex ? (
+        <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
+      ) : (
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+      )}
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
+      <meta name="author" content={SITE_NAME} />
       <link rel="canonical" href={currentUrl} />
+      <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms.txt`} title="LLM index" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
       <meta property="og:url" content={currentUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:image" content={imageUrl} />
+      <meta property="og:image:alt" content={title} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={imageUrl} />
+      <meta name="twitter:image:alt" content={title} />
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
     </Helmet>
   );

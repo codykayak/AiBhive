@@ -17,7 +17,8 @@ export default function FAQ() {
     <div className="min-h-screen bg-bee-black pt-24 pb-20 relative overflow-hidden">
       <SEO
         title="Frequently Asked Questions | AiBhive"
-        description={`${SITE_TAGLINE} Answers about Bhive Builder, Hive Apps, BYOK pricing, real estate AI, transcription, and enterprise automation.`}
+        description="AiBhive FAQ: how Bhive Builder works, Hive Apps pricing, BYOK keys, Research Lab tools, real estate AI, multi-agent transcription, and enterprise automation."
+        keywords="AiBhive FAQ, Bhive Builder, Hive Apps pricing, BYOK, Research Lab, real estate AI"
         faqs={faqs.map((f) => ({ question: f.question, answer: f.answer }))}
       />
 

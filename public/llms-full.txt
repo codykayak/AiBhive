@@ -1,0 +1,87 @@
+# AiBhive — full LLM corpus
+# https://aibhive.com/llms-full.txt
+# Companion to https://aibhive.com/llms.txt — curated page summaries for AI agents.
+
+> AiBhive is an AI app factory and agentic automation platform. Build apps in plain English (Bhive Builder), install community tools (Hive Apps), research with archive scraping/OCR/translation (Research Lab), and deploy enterprise multi-agent workflows.
+
+## What is AiBhive?
+
+AiBhive helps individuals and businesses ship software and automation without traditional development cycles. Three public product surfaces matter most:
+
+1. **Bhive Builder / App hub** (`/app`, `/hive-apps/build`) — describe a mobile app, web app, site, or dashboard in plain English; the builder delivers a working app. Bring your own API keys (BYOK) or use Hive credits.
+2. **Hive Apps** (`/hive-apps`) — a community pool of installable tools. Try demos, install free apps, tweak existing ones, or commission custom builds from a few dollars.
+3. **Research Lab** (`/research-lab`) — community-sourced research: Fable Scrape for stealth archive harvesting, OCR Lab for batch image-to-text, translation (including historical scripts), and a shared discovery library.
+
+Enterprise customers also deploy **agentic workflows** for real estate (listings, missed-call text-back, CRM), lead generation, customer ops, document/ERP processing, phone/SMS, and regulated medical/legal transcription.
+
+## Home — https://aibhive.com/
+
+AiBhive positions as an AI app factory plus agentic automation platform. Primary offers: build apps without coding, browse Hive Apps, run Research Lab tools, and book enterprise strategy for multi-agent operations. Best for founders, agents, operators, and creators who want production tools fast.
+
+## App hub — https://aibhive.com/app
+
+Command center for Bhive Builder on web. Users build mobile apps, web apps, and sites; explore topic hubs (automated social, phone intelligence, lead generation, productivity, research); and manage Hive credits. Same builder model as the Android app.
+
+## Build a Hive App — https://aibhive.com/hive-apps/build
+
+Guided flow: describe the app in plain English, review a quote, approve, and Bhive Builder constructs it in the browser. Designed for non-developers and power users who want custom tools without writing code.
+
+## Hive Apps store — https://aibhive.com/hive-apps
+
+Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, and a mock real estate dashboard.
+
+## Research Lab — https://aibhive.com/research-lab
+
+Landing for AiBhive’s community research suite. Users scrape archives (including sites that block naive bots via Fable Scrape), run OCR, translate texts (modern and historical scripts), ask smart questions over a RAG library, and share findings. Workspace tools require sign-in (`/research-lab/workspace` — not for indexing of private sessions).
+
+## Fable Scrape — https://aibhive.com/fable-scrape
+
+AI research harvester: tell agents what to find; they crawl with stealth engines, filter content, route through residential proxies when needed, OCR documents, translate with user-chosen models, and publish into a communal library. Guide: https://aibhive.com/fable-scrape/guide
+
+## OCR Lab — https://aibhive.com/ocr-lab
+
+Batch vision OCR: upload up to ~100 photos and export formatted text, Markdown, or PDF. Built for archives, scanned books, handwritten notes, and research images.
+
+## Real estate AI tools — https://aibhive.com/tools/real-estate-ai
+
+Intent-mapped guide for agents, investors, and property managers covering:
+
+- Listing description writers (MLS-ready copy)
+- Real estate video / content AI
+- CRM & lead automation
+- Missed-call text-back
+- Property management dashboards
+
+Enterprise depth: https://aibhive.com/solutions/real-estate-ai-automation
+
+## Transcription Studio — https://aibhive.com/transcription
+
+Multi-agent transcription for general, legal, and medical audio. Specialized agents cross-check acoustic, linguistic, and domain jargon claims to target higher accuracy than single-model STT. Related use cases: podcasters, YouTubers, legal, medical.
+
+## Voice Clone Lab — https://aibhive.com/voice-clone
+
+Neural voice cloning for creators and businesses. Preserve tone and emotion across 10+ languages for dubbed content and localized growth. Tied to Grow Globally ROI narrative (`/grow`).
+
+## Enterprise solutions (high priority)
+
+| Path | Focus |
+|------|--------|
+| /solutions/ai-lead-generation-automation | Signal ingestion, enrichment, autonomous outreach, booking |
+| /solutions/ai-customer-operations-automation | Omnichannel support, policy execution, HITL |
+| /solutions/intelligent-document-processing-erp | Classify/extract invoices & docs → ERP/CRM |
+| /solutions/enterprise-workflow-orchestration | Event-driven multi-step agent pipelines |
+| /solutions/medical-legal-multi-agent-compliance | Regulated dual-pass transcription + audit |
+| /solutions/phone-systems-ai-integration | Telephony webhooks, SMS dialogue, calendar book |
+| /solutions/real-estate-ai-automation | End-to-end listing-to-appointment agentic stack |
+
+## Getting help
+
+- FAQ: https://aibhive.com/faq
+- About / contact: https://aibhive.com/about
+- Book consultation: https://aibhive.com/book-consultation
+- Instant media quotes: https://aibhive.com/get-started
+- Privacy: https://aibhive.com/privacy-policy.html
+
+## Crawl policy notes
+
+Public marketing and product guide pages allow major search and AI crawlers (see robots.txt). Disallowed: `/homework`, `/admin`, `/test`, `/hive-apps/embed`, `/app/settings`, `/research-lab/workspace`.

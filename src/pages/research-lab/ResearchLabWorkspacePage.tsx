@@ -61,8 +61,9 @@ export default function ResearchLabWorkspacePage() {
     <div className={styles.rl}>
       <SEO
         title="Research Lab Workspace — Sign in to use tools | AiBhive"
-        description="Sign in to access Fable Scrape, OCR, RAG library, web research, and translation in the Research Lab workspace."
+        description="Sign in to AiBhive Research Lab workspace for Fable Scrape, OCR, RAG library, web research, and translation. Private sessions are not intended for search indexing."
         keywords="research lab workspace, Fable Scrape, OCR, RAG, sign in"
+        noIndex
       />
 
       {!ready ? (

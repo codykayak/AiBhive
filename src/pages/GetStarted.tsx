@@ -335,7 +335,8 @@ export default function GetStarted() {
     <div className="py-24">
       <SEO
         title="Get Started - Calculate Your AI Transcription Price | AiBhive"
-        description="Calculate your price for AI transcription, translation, and voice cloning. Upload your file and get an instant quote from AiBhive."
+        description="Get an instant AiBhive quote for AI transcription, translation, and voice cloning. Upload your file, choose legal/medical/general modes, and start free."
+        keywords="AI transcription pricing, voice cloning quote, translation quote, AiBhive get started"
       />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

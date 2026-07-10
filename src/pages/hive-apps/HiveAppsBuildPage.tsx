@@ -157,7 +157,8 @@ export default function HiveAppsBuildPage() {
     <>
       <SEO
         title="Build a Hive App — AiBhive"
-        description="Describe an app in plain English. Approve the quote and Bhive Builder builds it in your browser — same flow as mobile."
+        description="Describe a mobile app, web app, or dashboard in plain English. Approve the quote and AiBhive Bhive Builder builds it in your browser — same flow as the Android app."
+        keywords="build AI app, Bhive Builder, plain English app builder, no-code app, AiBhive"
       />
       <div className="min-h-screen bg-[#070a0f] flex flex-col">
       <AssistantTopSpacer />

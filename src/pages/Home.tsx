@@ -120,9 +120,8 @@ export default function Home() {
           >
             <img
               src={backgroundLogo}
-              alt=""
+              alt="AiBhive honeycombe brand atmosphere for the AI app factory home page"
               className="w-full h-full object-cover"
-              aria-hidden
             />
           </motion.div>
         </div>
@@ -211,7 +210,7 @@ export default function Home() {
             <figure className="mb-8 md:mb-4 md:float-right md:clear-right md:ml-10 md:max-w-[min(100%,22rem)] lg:max-w-sm">
               <img
                 src={orchestrationImg}
-                alt="Enterprise workflow orchestration visualization"
+                alt="AiBhive enterprise workflow orchestration — multi-agent AI automating business pipelines"
                 className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
               />
             </figure>
@@ -257,7 +256,7 @@ export default function Home() {
             <figure className="my-8 md:my-6 md:float-left md:clear-left md:mr-10 md:max-w-[min(100%,20rem)] lg:max-w-xs">
               <img
                 src={leadGenImg}
-                alt="Lead generation and pipeline automation"
+                alt="AiBhive AI lead generation and sales pipeline automation for real estate and B2B"
                 className="w-full rounded-2xl object-cover shadow-lg shadow-bee-amber/10 ring-1 ring-white/10"
               />
             </figure>

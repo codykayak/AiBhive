@@ -10,8 +10,8 @@ export default function ResearchLabLandingPage() {
     <div className={styles.rl}>
       <SEO
         title="Research Lab — Community Sourced Library | AiBhive"
-        description="You now have access to the most powerful research tools known to Humankind. Scrape archives, OCR, translate, ask smart questions, and share discoveries with the community."
-        keywords="research lab, community sourced library, Fable Scrape, OCR, RAG, translation, historical archives, AiBhive"
+        description="AiBhive Research Lab: scrape historical archives with Fable Scrape, batch OCR documents, translate modern and ancient scripts, ask smart RAG questions, and share discoveries in a community-sourced library."
+        keywords="research lab, community sourced library, Fable Scrape, OCR, RAG, translation, historical archives, AiBhive research tools"
       />
       <ResearchLabHero />
       <ResearchLabWelcomeSection />

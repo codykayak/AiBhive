@@ -11,7 +11,7 @@ export default function ToolsHubPage() {
     <main className="min-h-screen bg-bee-black pt-24 pb-20">
       <SEO
         title="AI Tools Directory — Public Guides | AiBhive"
-        description={`${SITE_TAGLINE} Browse public category guides for real estate AI tools and how AiBhive builds or automates each workflow.`}
+        description="Public AiBhive AI tool guides: real estate listing writers, CRM automation, missed-call text-back, property dashboards, and how Bhive Builder ships each workflow — no login required."
         keywords="AI tools directory, real estate AI tools, AiBhive tools, Bhive Builder, AI app categories"
       />
 

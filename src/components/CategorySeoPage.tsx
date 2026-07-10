@@ -91,7 +91,12 @@ export default function CategorySeoPage({
 }: CategorySeoPageProps) {
   return (
     <main className="relative py-16 md:py-24 overflow-hidden">
-      <SEO title={seo.title} description={seo.description} keywords={seo.keywords} />
+      <SEO
+        title={seo.title}
+        description={seo.description}
+        keywords={seo.keywords}
+        faqs={faqs.map((f) => ({ question: f.q, answer: f.a }))}
+      />
       <TechAmbienceLayer intensity="subtle" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-[1]">

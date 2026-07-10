@@ -19,7 +19,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 max-w-xs">
-              The world's most accurate multi-agent AI hive for transcription, translation, and voice cloning.
+              AI app factory and agentic automation: Bhive Builder, Hive Apps, Research Lab, transcription, voice cloning, and enterprise multi-agent workflows.
             </p>
           </div>
 
@@ -63,6 +63,8 @@ export default function Footer() {
             <ul className="space-y-2">
               <li><Link to="/app" className="text-slate-400 hover:text-bee-amber transition-colors">App hub</Link></li>
               <li><Link to="/hive-apps" className="text-slate-400 hover:text-bee-amber transition-colors">Hive Apps</Link></li>
+              <li><Link to="/research-lab" className="text-slate-400 hover:text-bee-amber transition-colors">Research Lab</Link></li>
+              <li><Link to="/tools" className="text-slate-400 hover:text-bee-amber transition-colors">AI tools guides</Link></li>
               <li><Link to="/about" className="text-slate-400 hover:text-bee-amber transition-colors">About</Link></li>
               <li><Link to="/faq" className="text-slate-400 hover:text-bee-amber transition-colors">FAQ</Link></li>
               <li>
@@ -79,8 +81,9 @@ export default function Footer() {
             © {new Date().getFullYear()} AiBHive. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link to="/privacy" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</Link>
-            <Link to="/terms" className="text-slate-500 hover:text-slate-300 text-sm">Terms of Service</Link>
+            <a href="/privacy-policy.html" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</a>
+            <a href="/llms.txt" className="text-slate-500 hover:text-slate-300 text-sm">LLM index</a>
+            <a href="/sitemap.xml" className="text-slate-500 hover:text-slate-300 text-sm">Sitemap</a>
           </div>
         </div>
       </div>
