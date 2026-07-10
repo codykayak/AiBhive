@@ -79,18 +79,24 @@ export function GuidedFlowPlayer({ flowId }: { flowId: string }) {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             if (step.yesNext) setStepId(step.yesNext);
           }}
-          className="min-h-[72px] items-center justify-center rounded-2xl bg-hive-success/20 border border-hive-success/40 active:opacity-80"
+          className="min-h-[72px] items-center justify-center rounded-2xl border active:opacity-80"
+          style={{ backgroundColor: 'rgba(61, 207, 142, 0.18)', borderColor: 'rgba(61, 207, 142, 0.55)' }}
         >
-          <Text className="text-xl font-bold text-hive-success">YES</Text>
+          <Text className="text-xl font-bold" style={{ color: theme.colors.success }}>
+            YES
+          </Text>
         </Pressable>
         <Pressable
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             if (step.noNext) setStepId(step.noNext);
           }}
-          className="min-h-[72px] items-center justify-center rounded-2xl bg-hive-danger/20 border border-hive-danger/40 active:opacity-80"
+          className="min-h-[72px] items-center justify-center rounded-2xl border active:opacity-80"
+          style={{ backgroundColor: 'rgba(232, 93, 76, 0.18)', borderColor: 'rgba(232, 93, 76, 0.55)' }}
         >
-          <Text className="text-xl font-bold text-hive-danger">NO</Text>
+          <Text className="text-xl font-bold" style={{ color: theme.colors.danger }}>
+            NO
+          </Text>
         </Pressable>
       </View>
     </View>
