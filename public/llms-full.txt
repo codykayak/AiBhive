@@ -10,7 +10,7 @@ AiBhive helps individuals and businesses ship software and automation without tr
 
 1. **Bhive Builder / App hub** (`/app`, `/hive-apps/build`) — describe a mobile app, web app, site, or dashboard in plain English; the builder delivers a working app. Bring your own API keys (BYOK) or use Hive credits.
 2. **Hive Apps** (`/hive-apps`) — a community pool of installable tools. Try demos, install free apps, tweak existing ones, or commission custom builds from a few dollars.
-3. **Research Lab** (`/research-lab`) — community-sourced research: Fable Scrape for stealth archive harvesting, OCR Lab for batch image-to-text, translation (including historical scripts), and a shared discovery library.
+3. **Research Lab** (`/research-lab`) — multi-agent community-sourced research: Fable Scrape, OCR Lab, translation (including historical scripts), Grok synthesis, and a shared discovery library. Category hubs: Historical & Ancient, Medical & Holistic, Legal Findings, Academia & Scholarly. Metered with Hive credits; monthly Pro/Unlimited plans renew research allowances.
 
 Enterprise customers also deploy **agentic workflows** for real estate (listings, missed-call text-back, CRM), lead generation, customer ops, document/ERP processing, phone/SMS, and regulated medical/legal transcription.
 
@@ -32,7 +32,23 @@ Community storefront. First apps are inexpensive ($1–$5 range messaging). User
 
 ## Research Lab — https://aibhive.com/research-lab
 
-Landing for AiBhive’s community research suite. Users scrape archives (including sites that block naive bots via Fable Scrape), run OCR, translate texts (modern and historical scripts), ask smart questions over a RAG library, and share findings. Workspace tools require sign-in (`/research-lab/workspace` — not for indexing of private sessions).
+Landing for AiBhive’s multi-agent research suite (Research tools). Users scrape archives (including sites that block naive bots via Fable Scrape), run OCR, translate texts (modern and historical scripts), ask Grok-powered questions over a RAG library, and publish findings to a community-sourced library so other researchers can build on shared sources. Hive credits meter usage; Pro ($20/mo) and Unlimited ($50/mo) renew monthly allowances. Workspace tools require sign-in (`/research-lab/workspace` — not for indexing of private sessions).
+
+### Research Lab · Historical & Ancient — https://aibhive.com/research-lab/historical-ancient
+
+Expert hub for archive harvest, ancient/modern script translation, OCR of fragile plates, and community corpus publishing. Emphasizes multi-agent start-to-finish historical investigation.
+
+### Research Lab · Medical & Holistic — https://aibhive.com/research-lab/medical-holistic
+
+Literature and protocol research for clinical and integrative work: OCR, translation, Grok synthesis, optional BYOK, and de-identified community literature packs.
+
+### Research Lab · Legal Findings — https://aibhive.com/research-lab/legal-findings
+
+Docket/exhibit OCR, foreign opinion translation, Grok issue outlines, and public-domain finding packs — not legal advice; confidentiality-minded.
+
+### Research Lab · Academia & Scholarly — https://aibhive.com/research-lab/academia-scholarly
+
+Corpus-first scholarly workflows: harvest, OCR, multilingual lit review, Grok literature maps, and open dataset publishing to the communal library.
 
 ## Fable Scrape — https://aibhive.com/fable-scrape
 

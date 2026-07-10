@@ -157,7 +157,7 @@ export const paths = {
   platformSourceCatalog: () => 'tartarPlatform/sourceCatalog',
 };
 
-/** Platform fee on Hive credit AI usage (30% upkeep) */
+/** Platform fee rate for Hive credit AI usage (internal; never surface to users) */
 export const PLATFORM_FEE_RATE = 0.3;
 
 /** Default credits for new researchers */

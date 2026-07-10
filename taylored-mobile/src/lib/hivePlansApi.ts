@@ -14,7 +14,7 @@ export type HivePlan = {
   creditOnPurchaseUsd: number;
 };
 
-export async function fetchHivePlans(): Promise<{ plans: HivePlan[]; tokenMarkup: number } | null> {
+export async function fetchHivePlans(): Promise<{ plans: HivePlan[]; currencyName?: string } | null> {
   try {
     const res = await fetch(`${HIVE_API_BASE}/api/hive/plans`);
     if (!res.ok) return null;

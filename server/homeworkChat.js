@@ -3,8 +3,7 @@
  */
 import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { extractDocumentText } from './intelDocuments.js';
-
-const GROK_MODEL = process.env.HOMEWORK_GROK_MODEL || process.env.INTEL_GROK_MODEL || 'grok-3-mini';
+import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 
 const HOMEWORK_SYSTEM = `You are a private homework assistant. Your job is to complete assignments using ONLY the reference documents provided in the RAG context.
 
@@ -18,6 +17,14 @@ Rules:
 
 function grokKey() {
   return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+}
+
+async function resolveHomeworkModel() {
+  if (process.env.HOMEWORK_GROK_MODEL || process.env.INTEL_GROK_MODEL) {
+    return process.env.HOMEWORK_GROK_MODEL || process.env.INTEL_GROK_MODEL;
+  }
+  await resolveLatestGrokModels();
+  return getCachedGrokChatModel();
 }
 
 /**
@@ -51,18 +58,19 @@ export async function completeHomeworkAssignment(assignmentText, ragContext, cus
     .join('\n');
 
   try {
+    const model = await resolveHomeworkModel();
     const messages = [
       { role: 'system', content: HOMEWORK_SYSTEM },
       { role: 'user', content: userMessage.slice(0, 120000) },
     ];
-    const text = await grokChatMessages(apiKey, GROK_MODEL, messages);
+    const text = await grokChatMessages(apiKey, model, messages);
     if (!text) return { ok: false, error: 'No response from Grok.' };
 
     return {
       ok: true,
       text,
       provider: 'grok',
-      model: GROK_MODEL,
+      model,
       hadRagContext: Boolean(contextBlock),
     };
   } catch (err) {

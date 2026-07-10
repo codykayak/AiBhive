@@ -1,27 +1,24 @@
 /**
  * Hive Home Assistant — web search relay + knowledge serving.
+ * Site chats use the latest Grok model (weekly refresh via grokModelResolver).
  */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
 import * as hiveUsage from './hiveUsage.js';
 import { runIntelCloudTool } from './intelOsint.js';
 import { HOME_ASSISTANT_KNOWLEDGE } from './homeAssistantKnowledgeBundled.js';
 import { parseHomeAssistantJson } from './assistantJson.js';
 import { enrichHomeAssistantAction } from './homeAssistOrchestrate.js';
+import { grokChatMessages } from './socialPosts/grokProvider.js';
+import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
+import { loadHiveMissionMarkdown } from '../shared/hiveMission.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const HOME_CHAT_MODEL = process.env.HOME_ASSIST_MODEL || 'gemini-2.5-flash';
 const HOME_CHAT_RAW_COST = 0.006;
 
-let aiClient;
-
-function getGemini() {
-  if (!aiClient && process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  }
-  return aiClient;
+function getXaiKey() {
+  return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
 }
 
 /** Pick Serp for short factual queries; Firecrawl search for deeper research. */
@@ -35,10 +32,24 @@ function pickSearchTool(query) {
 
 export function getHomeAssistantKnowledgeMarkdown() {
   const live = path.join(__dirname, '../shared/home-assistant-knowledge.md');
+  let base = HOME_ASSISTANT_KNOWLEDGE;
   if (fs.existsSync(live)) {
-    return fs.readFileSync(live, 'utf8');
+    base = fs.readFileSync(live, 'utf8');
   }
-  return HOME_ASSISTANT_KNOWLEDGE;
+  let mission = '';
+  try {
+    mission = loadHiveMissionMarkdown();
+  } catch {
+    mission = '';
+  }
+  return [
+    base,
+    '',
+    '--- COMPLETE PRODUCT MISSION (authoritative) ---',
+    String(mission || '').slice(0, 12000),
+    '',
+    'You understand AiBhive\'s complete product mission: build apps from plain English, research with multi-agent Research Lab, meter Hive credits fairly, and grow a community-sourced library. Never invent features. Never mention internal cost markups — only Hive credits and plans.',
+  ].join('\n');
 }
 
 /**
@@ -65,7 +76,7 @@ export async function runHomeAssistantWebSearch(db, userId, query) {
 }
 
 /**
- * Billed Hive Cloud chat turn for the mobile home assistant.
+ * Billed Hive Cloud chat turn for the home assistant (latest Grok).
  * @param {import('firebase-admin/firestore').Firestore} db
  */
 export async function runHomeAssistantChat(db, userId, opts) {
@@ -79,8 +90,8 @@ export async function runHomeAssistantChat(db, userId, opts) {
     return { ok: false, error: 'Image attachment is too large. Try a smaller photo.' };
   }
 
-  const gemini = getGemini();
-  if (!gemini) {
+  const apiKey = getXaiKey();
+  if (!apiKey) {
     return { ok: false, error: 'Hive AI is warming up. Try again in a moment.' };
   }
 
@@ -89,43 +100,46 @@ export async function runHomeAssistantChat(db, userId, opts) {
     return { ok: false, needPayment: true, amountUsd: budget.amountUsd ?? 0.02 };
   }
 
+  await resolveLatestGrokModels();
+  const model = process.env.HOME_ASSIST_MODEL || getCachedGrokChatModel();
+
   const history = (opts.history || [])
     .filter((t) => t?.content?.trim() && (t.role === 'user' || t.role === 'ai'))
     .slice(-10);
 
-  const contents = [];
+  const system =
+    String(opts.systemInstruction || getHomeAssistantKnowledgeMarkdown()).slice(0, 24000) +
+    '\n\nYou are powered by Grok on AiBhive. Follow the complete product mission. Prefer Hive credits language — never discuss markup percentages.';
+
+  const messages = [{ role: 'system', content: system }];
   for (const turn of history) {
-    contents.push({
-      role: turn.role === 'ai' ? 'model' : 'user',
-      parts: [{ text: String(turn.content).trim() }],
+    messages.push({
+      role: turn.role === 'ai' ? 'assistant' : 'user',
+      content: String(turn.content).trim(),
     });
   }
-  const userParts = [{ text: message }];
+
   if (attachment?.base64) {
-    userParts.push({
-      inlineData: {
-        mimeType: attachment.mime || 'image/jpeg',
-        data: attachment.base64,
-      },
+    const mime = attachment.mime || 'image/jpeg';
+    const dataUrl = `data:${mime};base64,${attachment.base64}`;
+    messages.push({
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text:
+            message +
+            `\n\n[User attached an image${attachment.width && attachment.height ? ` (${attachment.width}x${attachment.height})` : ''}. Describe it and help with their request. Respond with valid JSON only as specified.]`,
+        },
+        { type: 'image_url', image_url: { url: dataUrl } },
+      ],
     });
-    userParts[0].text =
-      message +
-      `\n\n[User attached an image${attachment.width && attachment.height ? ` (${attachment.width}x${attachment.height})` : ''}. Describe it and help with their request.]`;
+  } else {
+    messages.push({ role: 'user', content: message });
   }
-  contents.push({ role: 'user', parts: userParts });
 
   try {
-    const response = await gemini.models.generateContent({
-      model: HOME_CHAT_MODEL,
-      contents,
-      config: {
-        systemInstruction: String(opts.systemInstruction || '').slice(0, 24000),
-        temperature: 0.45,
-        maxOutputTokens: 1400,
-      },
-    });
-
-    const text = response.text?.trim();
+    const text = await grokChatMessages(apiKey, model, messages);
     if (!text) {
       return { ok: false, error: 'No response from Hive AI.' };
     }
@@ -139,7 +153,7 @@ export async function runHomeAssistantChat(db, userId, opts) {
     const charge = await hiveUsage.recordTokenUsage(db, userId, {
       rawCostUsd: HOME_CHAT_RAW_COST,
       feature: 'home_assist_chat',
-      summary: 'Home assistant chat',
+      summary: 'Home assistant chat (Grok)',
     });
     if (!charge.ok) {
       return { ok: false, needPayment: true, amountUsd: charge.amountUsd ?? 0.02 };
@@ -151,6 +165,7 @@ export async function runHomeAssistantChat(db, userId, opts) {
       reply: action.reply,
       action,
       chargedUsd: charge.chargedUsd ?? 0,
+      model,
     };
   } catch (err) {
     console.error('[hive/home-assist/chat]', err.message || err);

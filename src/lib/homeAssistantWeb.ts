@@ -46,13 +46,26 @@ export async function preloadHomeAssistantKnowledge(): Promise<string> {
 
 async function buildSystemPrompt(userMessage?: string): Promise<string> {
   const knowledge = await preloadHomeAssistantKnowledge();
+  let mission = '';
+  try {
+    const res = await fetch('/api/hive/mission');
+    if (res.ok) {
+      const data = await res.json();
+      mission = String(data.markdown || '').slice(0, 8000);
+    }
+  } catch {
+    // offline
+  }
   return [
-    'You are Bhive Builder — the user\'s smart operator for building apps and navigating AiBhive on the web.',
+    'You are Bhive Builder — powered by the latest Grok on AiBhive. You are the user\'s smart operator for building apps, Research Lab, and navigating the full product.',
     '--- HOME ASSISTANT KNOWLEDGE ---',
-    knowledge.slice(0, 20000),
+    knowledge.slice(0, 16000),
+    '--- COMPLETE PRODUCT MISSION ---',
+    mission ||
+      'AiBhive builds apps from plain English, runs multi-agent Research Lab (scrape/OCR/translate/publish), and deploys agentic automation. Meter Hive credits only — never mention markup.',
     '--- WEB CONTEXT ---',
-    'User is on aibhive.com in the browser. Route them to /app/research, /hive-apps/build, /hive-apps, /app/jobs.',
-    'Respond ONLY with valid JSON as specified in the knowledge doc. No markdown fences.',
+    'User is on aibhive.com. Route to /research-lab (and category pages), /app/research, /hive-apps/build, /hive-apps, /app/jobs.',
+    'Emphasize community library publishing when research is relevant. Respond ONLY with valid JSON as specified in the knowledge doc. No markdown fences.',
     userMessage ? `User is asking about: ${userMessage.slice(0, 200)}` : '',
   ]
     .filter(Boolean)

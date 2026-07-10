@@ -10,7 +10,7 @@ export const faqs = [
   },
   {
     question: 'How does BYOK pricing work?',
-    answer: 'Bring Your Own Keys means you connect your LLM and search providers in Settings. You pay your vendor directly for model usage; AiBhive adds a small platform pass-through on orchestration and build infrastructure — similar to dev tools that mark up LLM costs for convenience. Simple Hive credits remain available if you prefer not to manage keys.'
+    answer: 'Bring Your Own Keys means you connect your LLM and search providers in Settings. You pay your vendor directly for model usage; AiBhive may charge a small platform orchestration fee for builds and managed tooling. Simple Hive credits remain available if you prefer not to manage keys.',
   },
   {
     question: 'What is Mock Up Real Estate?',

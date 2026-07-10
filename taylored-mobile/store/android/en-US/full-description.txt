@@ -31,7 +31,7 @@ AiBhive is your pocket AI app factory — describe any tool in plain English and
 
 <b>How pricing works</b>
 • Job tools and on-device research are free
-• Hive credits power assistant chat and cloud features at API cost + 30%
+• Hive credits power assistant chat and cloud features
 • Stand-alone exported apps run from their own icon — no Hive credits for everyday use
 
 <b>Every build includes a User Guide</b>

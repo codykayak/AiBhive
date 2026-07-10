@@ -1,16 +1,22 @@
 /**
  * Intel Agent chat for web — Claude (Research), Grok, or Gemini fallback.
- * Billed via Hive credits (30% markup).
+ * Billed via Hive credits (Hive credits).
  */
 import { GoogleGenAI } from '@google/genai';
 import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { anthropicApiKey, claudeChatMessages, intelClaudeModel } from './anthropicProvider.js';
 import * as hiveUsage from './hiveUsage.js';
 import { applyTokenMarkup } from './hivePlans.js';
+import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 
-const GROK_MODEL = process.env.INTEL_GROK_MODEL || 'grok-3-mini';
 const GEMINI_MODEL = process.env.INTEL_GEMINI_MODEL || 'gemini-2.5-flash';
 const CHAT_RAW_COST = Number(process.env.INTEL_CHAT_RAW_COST ?? 0.008);
+
+async function resolveGrokModel() {
+  if (process.env.INTEL_GROK_MODEL) return process.env.INTEL_GROK_MODEL;
+  await resolveLatestGrokModels();
+  return getCachedGrokChatModel();
+}
 
 const DEFAULT_SYSTEM = `You are AiBhive Intel Agent — an OSINT research assistant for authorized business, security, and journalistic research.
 
@@ -42,7 +48,7 @@ export function intelLlmStatus() {
     gemini: Boolean(process.env.GEMINI_API_KEY),
     models: {
       claude: intelClaudeModel(),
-      grok: GROK_MODEL,
+      grok: process.env.INTEL_GROK_MODEL || getCachedGrokChatModel(),
       gemini: GEMINI_MODEL,
     },
     defaultProvider: process.env.INTEL_LLM_PROVIDER || (anthropicApiKey() ? 'claude' : grokKey() ? 'grok' : 'gemini'),
@@ -137,6 +143,8 @@ export async function runIntelResearchChat(db, userId, opts) {
     };
   }
 
+  let usedGrokModel = process.env.INTEL_GROK_MODEL || getCachedGrokChatModel();
+
   try {
     let text = '';
     if (provider === 'claude') {
@@ -152,7 +160,8 @@ export async function runIntelResearchChat(db, userId, opts) {
       );
     } else if (provider === 'grok') {
       const messages = buildGrokMessages(systemInstruction, history, userMessage);
-      text = await grokChatMessages(grokKey(), GROK_MODEL, messages);
+      usedGrokModel = await resolveGrokModel();
+      text = await grokChatMessages(grokKey(), usedGrokModel, messages);
     } else {
       const gemini = getGemini();
       if (!gemini) {
@@ -199,7 +208,7 @@ export async function runIntelResearchChat(db, userId, opts) {
         provider === 'claude'
           ? intelClaudeModel()
           : provider === 'grok'
-            ? GROK_MODEL
+            ? usedGrokModel
             : GEMINI_MODEL,
       chargedUsd: charge.chargedUsd ?? markedEstimate,
       budget: charge.budget,

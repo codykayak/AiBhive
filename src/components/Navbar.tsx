@@ -8,6 +8,7 @@ import {
   TRANSCRIPTION_SERVICES_LINKS,
   BOOK_CONSULTATION_PATH,
 } from '../constants/navigation';
+import { RESEARCH_LAB_NAV } from '../pages/research-lab/researchLabCategories';
 
 const aboutLinks = [
   { name: 'About Us', path: '/about' },
@@ -29,11 +30,16 @@ function isTranscriptionPath(pathname: string) {
   return isPathInList(pathname, TRANSCRIPTION_SERVICES_LINKS);
 }
 
+function isResearchLabPath(pathname: string) {
+  return pathname.startsWith('/research-lab') || pathname.startsWith('/old-world-research');
+}
+
 export default function Navbar() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const solutionsActive = isSolutionPath(location.pathname);
   const transcriptionActive = isTranscriptionPath(location.pathname);
+  const researchLabActive = isResearchLabPath(location.pathname);
 
   return (
     <nav className="sticky top-0 z-[100] bg-bee-black/60 backdrop-blur-xl border-b border-white/5">
@@ -63,18 +69,47 @@ export default function Navbar() {
                 Home
               </Link>
 
-              <Link
-                to="/research-lab"
-                className={cn(
-                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
-                  location.pathname.startsWith('/research-lab') ||
-                    location.pathname.startsWith('/old-world-research')
-                    ? 'text-bee-amber'
-                    : 'text-slate-300'
-                )}
-              >
-                Research Lab
-              </Link>
+              <HeadlessMenu as="div" className="relative inline-block text-left">
+                <HeadlessMenu.Button
+                  className={cn(
+                    'flex items-center text-sm font-semibold transition-all duration-300 hover:text-bee-amber outline-none',
+                    researchLabActive ? 'text-bee-amber' : 'text-slate-300'
+                  )}
+                >
+                  Research Lab
+                  <ChevronDown className="ml-1 h-4 w-4" aria-hidden />
+                </HeadlessMenu.Button>
+                <Transition
+                  as={Fragment}
+                  enter="transition ease-out duration-100"
+                  enterFrom="transform opacity-0 scale-95"
+                  enterTo="transform opacity-100 scale-100"
+                  leave="transition ease-in duration-75"
+                  leaveFrom="transform opacity-100 scale-100"
+                  leaveTo="transform opacity-0 scale-95"
+                >
+                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-64 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
+                    <div className="py-1">
+                      {RESEARCH_LAB_NAV.map((link) => (
+                        <HeadlessMenu.Item key={link.path}>
+                          {({ active }) => (
+                            <Link
+                              to={link.path}
+                              className={cn(
+                                active ? 'bg-white/5 text-bee-amber' : 'text-slate-300',
+                                'block px-4 py-2.5 text-sm transition-colors',
+                                location.pathname === link.path && 'text-bee-amber'
+                              )}
+                            >
+                              {link.name}
+                            </Link>
+                          )}
+                        </HeadlessMenu.Item>
+                      ))}
+                    </div>
+                  </HeadlessMenu.Items>
+                </Transition>
+              </HeadlessMenu>
 
               <Link
                 to="/hive-apps"
@@ -240,13 +275,19 @@ export default function Navbar() {
             >
               Home
             </Link>
-            <Link
-              to="/research-lab"
-              className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
-              onClick={() => setMobileOpen(false)}
-            >
+            <p className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
               Research Lab
-            </Link>
+            </p>
+            {RESEARCH_LAB_NAV.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className="block px-5 py-2 text-slate-400 hover:text-bee-amber text-sm"
+                onClick={() => setMobileOpen(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
             <Link
               to="/hive-apps"
               className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"

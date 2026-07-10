@@ -1,5 +1,5 @@
 /**
- * Hive token usage metering — 30% markup, plan allowances, ledger.
+ * Hive token usage metering — Hive credits, plan allowances, ledger.
  */
 import {
   applyTokenMarkup,

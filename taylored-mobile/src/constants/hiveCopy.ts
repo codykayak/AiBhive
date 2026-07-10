@@ -18,10 +18,7 @@ export const HIVE_COPY = {
   usageRemaining: (usd: number) => `$${usd.toFixed(2)} remaining`,
   usageThisMonth: (used: number, allowance: number) =>
     `$${used.toFixed(2)} used of $${allowance.toFixed(2)} this month`,
-  tokenMarkupNote: (markup: number) => {
-    const pct = Math.round((markup - 1) * 100);
-    return `Hive credits billed at API cost + ${pct}%`;
-  },
+  tokenMarkupNote: (_markup?: number) => 'Research and cloud AI use Hive credits — tracked in your plan.',
   tokensCurrency: 'Hive credits',
   freeWithoutTokens:
     'Job tools and on-device research are free. AiBhive assistant & cloud search use Hive credits.',

@@ -43,7 +43,8 @@ import {
   checkBuildCredits,
   createPlanCheckout,
 } from './hiveBilling.js';
-import { getPlan, listPlansForClient, TOKEN_MARKUP } from './hivePlans.js';
+import { getPlan, listPlansForClient } from './hivePlans.js';
+import { startWeeklyGrokModelRefresh } from './grokModelResolver.js';
 import { ensureUsagePeriod, setUserPlan, recordTokenUsage, checkTokenBudget } from './hiveUsage.js';
 import { verifyHiveAuth } from './hiveAuth.js';
 import { isHiveFreeBuildEmail } from './hiveAdmin.js';
@@ -1852,7 +1853,7 @@ app.get('/api/hive/status', async (_req, res) => {
     buildModel: process.env.HIVE_CURSOR_MODEL || 'composer-2.5',
     pricing: getPricingConfig(),
     plans: listPlansForClient(),
-    tokenMarkup: TOKEN_MARKUP,
+    currencyName: 'Hive credits',
     autoApproveDefaultUsd: getAutoApproveDefaultUsd(),
     buildUsage: usage,
     message: !geminiConfigured
@@ -1909,10 +1910,9 @@ app.post('/api/hive/auth/register', async (req, res) => {
 app.get('/api/hive/plans', (_req, res) => {
   res.json({
     plans: listPlansForClient(),
-    tokenMarkup: TOKEN_MARKUP,
-    currencyName: 'AiBhive Tokens',
+    currencyName: 'Hive credits',
     freeFeatures: [
-      'On-device OSINT (no tokens)',
+      'On-device OSINT (no Hive credits)',
       'Job tracker & resume tools',
       'Build & chat with your own API keys',
     ],
@@ -3069,4 +3069,5 @@ app.get('*', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  startWeeklyGrokModelRefresh();
 });
