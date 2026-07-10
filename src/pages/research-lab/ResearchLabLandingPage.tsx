@@ -2,7 +2,6 @@ import { SEO } from '../../components/SEO';
 import ResearchLabHero from './components/ResearchLabHero';
 import ResearchLabWelcomeSection from './components/ResearchLabWelcomeSection';
 import ResearchLabToolsSection from './components/ResearchLabToolsSection';
-import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
 import CommunalLibraryMapSection from './components/CommunalLibraryMapSection';
 import styles from './researchLab.module.css';
 
@@ -48,7 +47,6 @@ export default function ResearchLabLandingPage() {
         <CommunalLibraryMapSection headingLevel="h2" showFullLibraryCta />
       </section>
       <ResearchLabToolsSection />
-      <ResearchLabCustomizeFab />
     </div>
   );
 }

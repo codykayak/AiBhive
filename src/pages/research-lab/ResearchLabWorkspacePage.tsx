@@ -3,7 +3,6 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase';
 import { SEO } from '../../components/SEO';
 import OwrResearchWorkbench from './components/OwrResearchWorkbench';
-import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
 import ResearchLabWorkspaceHero from './components/ResearchLabWorkspaceHero';
 import { OwrWorkflowProvider } from './context/OwrWorkflowContext';
 import { ResearchLabUserProvider } from './context/ResearchLabUserContext';
@@ -31,7 +30,6 @@ function ResearchLabWorkspace({ userEmail }: { userEmail: string }) {
           </div>
         </header>
         <OwrResearchWorkbench />
-        <ResearchLabCustomizeFab />
       </div>
     </OwrWorkflowProvider>
   );

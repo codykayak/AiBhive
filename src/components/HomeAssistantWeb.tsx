@@ -43,7 +43,8 @@ function newId() {
 
 export default function HomeAssistantWeb() {
   const navigate = useNavigate();
-  const { dockMode, expanded, setExpanded, topBarHeight } = useAssistantDock();
+  const { dockMode, expanded, setExpanded, topBarHeight, fabLabel, fabPrefill, fabVariant } =
+    useAssistantDock();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<WebAssistantMessage[]>(() => {
@@ -420,11 +421,24 @@ export default function HomeAssistantWeb() {
       </AnimatePresence>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setOpen((o) => {
+            const next = !o;
+            if (next && fabPrefill) {
+              setInput((prev) => (prev.trim() ? prev : fabPrefill));
+            }
+            return next;
+          });
+        }}
         className="flex items-center gap-2 px-5 py-3.5 rounded-full bg-bee-amber text-bee-black font-extrabold shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:bg-bee-yellow transition-colors"
+        aria-label={fabVariant === 'customize' ? 'Customize this app with Bhive Builder' : 'Ask Bhive Builder'}
       >
-        <MessageCircle className="w-5 h-5" />
-        Ask Bhive
+        {fabVariant === 'customize' ? (
+          <Sparkles className="w-5 h-5" />
+        ) : (
+          <MessageCircle className="w-5 h-5" />
+        )}
+        {fabLabel}
       </button>
     </div>,
     document.body
