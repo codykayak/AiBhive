@@ -1,19 +1,6 @@
 import { Asset } from 'expo-asset';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Image,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { Image, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { theme } from '@/constants/theme';
@@ -23,12 +10,18 @@ const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
 
-const WORD_START_MS = 500;
-const WORD_STAGGER_MS = 700;
-const LOGO_AT_MS = WORD_START_MS + WORDS.length * WORD_STAGGER_MS + 800;
-const WORDS_HIDE_MS = LOGO_AT_MS - 250;
-const EXIT_AT_MS = 6200;
-const EXIT_FADE_MS = 550;
+const WORD_AT = [500, 1200, 1900, 2600] as const;
+const WORDS_HIDE_AT = 3400;
+const LOGO_AT = 3600;
+const EXIT_AT = 5600;
+const DONE_AT = 6200;
+
+/** Session lock — survives React Strict Mode remounts. */
+let introFinishedThisSession = false;
+
+export function hasIntroFinished() {
+  return introFinishedThisSession;
+}
 
 type Props = {
   onDone: () => void;
@@ -46,33 +39,26 @@ function WebVideo({ uri }: { uri: string }) {
     void el.play().catch(() => undefined);
   }, [uri]);
 
+  if (Platform.OS !== 'web') return null;
+
+  const React = require('react') as typeof import('react');
   return (
     <View style={StyleSheet.absoluteFill}>
-      {Platform.OS === 'web' ? (
-        <View style={StyleSheet.absoluteFill}>
-          {/**
-           * Using a plain DOM video keeps the intro reliable in Expo web.
-           */}
-          {(() => {
-            const React = require('react') as typeof import('react');
-            return React.createElement('video', {
-              ref,
-              src: uri,
-              muted: true,
-              autoPlay: true,
-              playsInline: true,
-              style: {
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              },
-            });
-          })()}
-        </View>
-      ) : null}
+      {React.createElement('video', {
+        ref,
+        src: uri,
+        muted: true,
+        autoPlay: true,
+        playsInline: true,
+        style: {
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        },
+      })}
     </View>
   );
 }
@@ -107,14 +93,13 @@ export function IntroSplash({ onDone }: Props) {
   const { width, height } = useWindowDimensions();
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  const startRef = useRef<number | null>(null);
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
   const [showWords, setShowWords] = useState(true);
   const [showLogo, setShowLogo] = useState(false);
-  const screenOpacity = useSharedValue(1);
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.88);
+  const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -122,13 +107,9 @@ export function IntroSplash({ onDone }: Props) {
       try {
         const asset = Asset.fromModule(INTRO_VIDEO);
         await asset.downloadAsync();
-        if (!cancelled) {
-          setVideoUri(asset.localUri ?? asset.uri);
-        }
+        if (!cancelled) setVideoUri(asset.localUri ?? asset.uri);
       } catch {
-        if (!cancelled && typeof INTRO_VIDEO === 'string') {
-          setVideoUri(INTRO_VIDEO);
-        }
+        if (!cancelled && typeof INTRO_VIDEO === 'string') setVideoUri(INTRO_VIDEO);
       }
     })();
     return () => {
@@ -137,55 +118,56 @@ export function IntroSplash({ onDone }: Props) {
   }, []);
 
   useEffect(() => {
-    const timers: Array<ReturnType<typeof setTimeout>> = [];
+    if (introFinishedThisSession) {
+      onDoneRef.current();
+      return;
+    }
 
-    WORDS.forEach((_, index) => {
-      timers.push(
-        setTimeout(() => {
-          setVisibleCount(index + 1);
-        }, WORD_START_MS + index * WORD_STAGGER_MS)
-      );
-    });
+    // Keep a stable start time across Strict Mode double-invoke.
+    if (startRef.current == null) {
+      startRef.current = Date.now();
+    }
+    const startedAt = startRef.current;
+    let raf = 0;
+    let done = false;
 
-    timers.push(
-      setTimeout(() => {
-        setShowWords(false);
-      }, WORDS_HIDE_MS)
-    );
+    const tick = () => {
+      const elapsed = Date.now() - startedAt;
 
-    timers.push(
-      setTimeout(() => {
-        setShowLogo(true);
-        logoOpacity.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
-        logoScale.value = withTiming(1, { duration: 650, easing: Easing.out(Easing.cubic) });
-      }, LOGO_AT_MS)
-    );
+      let words = 0;
+      for (let i = 0; i < WORD_AT.length; i += 1) {
+        if (elapsed >= WORD_AT[i]) words = i + 1;
+      }
+      setVisibleCount(words);
+      setShowWords(elapsed < WORDS_HIDE_AT);
+      setShowLogo(elapsed >= LOGO_AT);
 
-    timers.push(
-      setTimeout(() => {
-        screenOpacity.value = withTiming(0, { duration: EXIT_FADE_MS });
-      }, EXIT_AT_MS)
-    );
+      if (elapsed >= EXIT_AT) {
+        const fade = Math.max(0, 1 - (elapsed - EXIT_AT) / (DONE_AT - EXIT_AT));
+        setOpacity(fade);
+      }
 
-    timers.push(
-      setTimeout(() => {
-        onDoneRef.current();
-      }, EXIT_AT_MS + EXIT_FADE_MS)
-    );
+      if (elapsed >= DONE_AT) {
+        if (!done) {
+          done = true;
+          introFinishedThisSession = true;
+          setOpacity(0);
+          onDoneRef.current();
+        }
+        return;
+      }
 
-    return () => {
-      timers.forEach(clearTimeout);
+      raf = requestAnimationFrame(tick);
     };
-  }, [logoOpacity, logoScale, screenOpacity]);
 
-  const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   return (
-    <Animated.View style={[styles.root, { width, height }, screenStyle]}>
+    <View style={[styles.root, { width, height, opacity }]}>
       {Platform.OS === 'web' ? (
         videoUri ? <WebVideo uri={videoUri} /> : <View style={[StyleSheet.absoluteFill, styles.fallbackBg]} />
       ) : (
@@ -202,7 +184,7 @@ export function IntroSplash({ onDone }: Props) {
                 styles.word,
                 {
                   opacity: index < visibleCount ? 1 : 0,
-                  transform: [{ translateY: index < visibleCount ? 0 : 12 }],
+                  transform: [{ translateY: index < visibleCount ? 0 : 10 }],
                 },
               ]}
             >
@@ -213,7 +195,7 @@ export function IntroSplash({ onDone }: Props) {
       ) : null}
 
       {showLogo ? (
-        <Animated.View style={[styles.logoBlock, logoStyle]}>
+        <View style={styles.logoBlock}>
           <Image
             source={AIBHIVE_LOGO}
             style={styles.logo}
@@ -221,19 +203,20 @@ export function IntroSplash({ onDone }: Props) {
             accessibilityLabel="AiBhive"
           />
           <Text style={styles.product}>Diagnose</Text>
-        </Animated.View>
+        </View>
       ) : null}
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
     backgroundColor: theme.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    zIndex: 1000,
   },
   fallbackBg: {
     backgroundColor: theme.colors.bg,

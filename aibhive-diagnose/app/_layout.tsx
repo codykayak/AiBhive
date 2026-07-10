@@ -5,11 +5,11 @@ import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
-import { AnimatedSplash } from '@/components/motion';
+import { IntroSplash, hasIntroFinished } from '@/components/IntroSplash';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { theme } from '@/constants/theme';
 import { NetworkProvider } from '@/contexts/NetworkContext';
@@ -40,8 +40,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [showSplash, setShowSplash] = useState(true);
-  const splashDoneRef = useRef(false);
+  const [showIntro, setShowIntro] = useState(() => !hasIntroFinished());
 
   useEffect(() => {
     if (error) throw error;
@@ -53,18 +52,12 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
-  const finishSplash = useCallback(() => {
-    if (splashDoneRef.current) return;
-    splashDoneRef.current = true;
-    setShowSplash(false);
+  const finishIntro = useCallback(() => {
+    setShowIntro(false);
   }, []);
 
   if (!loaded) {
     return null;
-  }
-
-  if (showSplash) {
-    return <AnimatedSplash onDone={finishSplash} />;
   }
 
   return (
@@ -149,6 +142,7 @@ export default function RootLayout() {
                 }}
               />
             </Stack>
+            {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
           </View>
         </ThemeProvider>
       </PackProvider>

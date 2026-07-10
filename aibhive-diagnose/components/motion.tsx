@@ -153,5 +153,5 @@ export function PulseLoader({ text = 'Diagnosing…' }: { text?: string }) {
   );
 }
 
-/** @deprecated Use IntroSplash — kept as thin re-export for older imports. */
+/** @deprecated Use IntroSplash */
 export { IntroSplash as AnimatedSplash } from './IntroSplash';
