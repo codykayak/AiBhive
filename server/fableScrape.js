@@ -20,6 +20,7 @@ import dns from 'dns';
 import net from 'net';
 import { ProxyAgent } from 'undici';
 import { MAX_CRAWL_PAGES, MAX_OCR_IMAGES } from './costProtection.js';
+import { parseHttpUrl } from './urlNormalize.js';
 
 const dnsLookup = dns.promises.lookup;
 
@@ -224,15 +225,7 @@ function isPrivateIp(ip) {
 
 /** Reject non-http(s) schemes and anything resolving to a private / internal host (SSRF guard). */
 export async function assertPublicUrl(rawUrl) {
-  let parsed;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    throw new Error('Invalid URL.');
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new Error('Only http(s) URLs are supported.');
-  }
+  const parsed = parseHttpUrl(rawUrl);
   const host = parsed.hostname.toLowerCase();
   if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal')) {
     throw new Error('Refusing to fetch an internal host.');
@@ -639,8 +632,8 @@ async function firecrawlScrape(apiKey, url) {
  */
 export async function scanPage({ url, engine = 'auto', include, includeIcons = false, routing = {} }) {
   if (!url || typeof url !== 'string') throw new Error('A URL is required.');
-  const target = url.trim();
-  await assertPublicUrl(target);
+  const parsed = await assertPublicUrl(url);
+  const target = parsed.toString();
   const inc = { ...DEFAULT_INCLUDE, ...(include || {}) };
   const proxyUrl = resolveProxyForRequest(routing);
 
@@ -742,14 +735,14 @@ export async function crawlSite({
   sameHostOnly = true,
 }) {
   if (!url || typeof url !== 'string') throw new Error('A start URL is required.');
-  const start = url.trim();
-  await assertPublicUrl(start);
+  const parsed = await assertPublicUrl(url);
+  const start = parsed.toString();
   const inc = { ...DEFAULT_INCLUDE, ...(include || {}) };
   const proxyUrl = resolveProxyForRequest(routing);
 
   const pageCap = Math.max(1, Math.min(Number(maxPages) || 1, CRAWL_LIMITS.maxPages));
   const depthCap = Math.max(0, Math.min(Number(maxDepth) || 0, CRAWL_LIMITS.maxDepth));
-  const startHost = new URL(start).host;
+  const startHost = parsed.host;
 
   const images = new Map();
   const pdfs = new Map();

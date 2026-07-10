@@ -53,6 +53,7 @@ import {
   appendProjectReceipt,
   forkLibraryEntryIntoProject,
 } from './researchProjects.js';
+import { parseHttpUrl } from './urlNormalize.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -191,7 +192,11 @@ export function registerResearchLabRoutes(app, db) {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
       uid = authUser.uid;
-      const { routing } = req.body || {};
+      const body = req.body || {};
+      const { routing } = body;
+      // Validate URL before charging Hive credits
+      const parsed = parseHttpUrl(body.url);
+      body.url = parsed.toString();
       const rawCost = scrapeRawCost(routing);
       const gate = await gateAndCharge(
         db,
@@ -202,7 +207,7 @@ export function registerResearchLabRoutes(app, db) {
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
-        const result = await scanPage(req.body || {});
+        const result = await scanPage(body);
         return res.json({ ...result, chargedUsd: gate.chargedUsd });
       } finally {
         endUserJob(authUser.uid);
@@ -221,6 +226,8 @@ export function registerResearchLabRoutes(app, db) {
       uid = authUser.uid;
       const body = req.body || {};
       const { routing, maxPages } = body;
+      const parsed = parseHttpUrl(body.url);
+      body.url = parsed.toString();
       const pages = Math.max(1, Math.min(Number(maxPages) || 6, MAX_CRAWL_PAGES));
       const rawCost = scrapeRawCost(routing) * pages;
       const gate = await gateAndCharge(
@@ -319,6 +326,9 @@ export function registerResearchLabRoutes(app, db) {
       if (!authUser) return;
       uid = authUser.uid;
       const body = req.body || {};
+      // Validate URL before charging — incomplete/malformed addresses must not bill
+      const parsed = parseHttpUrl(body.url);
+      body.url = parsed.toString();
       const rawCost = harvestRawCost(
         body.keys,
         body.roles,

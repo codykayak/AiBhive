@@ -50,6 +50,7 @@ import {
 } from './shared';
 import { useFableApi } from './fableApiContext';
 import { useFableWorkflowBridge } from './fableWorkflowBridge';
+import { parseHttpUrl } from './urlNormalize';
 
 type Tab = 'harvest' | 'scrape' | 'translate' | 'library';
 type Engine = 'auto' | 'firecrawl' | 'stealth';
@@ -76,9 +77,12 @@ export default function FableScrape({ embedded = false }: { embedded?: boolean }
   const routing = useRouting();
   const roster = useRoster();
 
-  const normalizedUrl = () => {
-    const t = url.trim();
-    return /^https?:\/\//i.test(t) ? t : t ? `https://${t}` : '';
+  const requireUrl = () => {
+    try {
+      return parseHttpUrl(url);
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Invalid URL.');
+    }
   };
 
   return (
@@ -153,7 +157,7 @@ export default function FableScrape({ embedded = false }: { embedded?: boolean }
           <HarvestTab
             url={url}
             setUrl={setUrl}
-            normalizedUrl={normalizedUrl}
+            requireUrl={requireUrl}
             engine={engine}
             setEngine={setEngine}
             routing={routing}
@@ -164,7 +168,7 @@ export default function FableScrape({ embedded = false }: { embedded?: boolean }
           <ScrapeTab
             url={url}
             setUrl={setUrl}
-            normalizedUrl={normalizedUrl}
+            requireUrl={requireUrl}
             engine={engine}
             setEngine={setEngine}
             routing={routing}
@@ -182,7 +186,7 @@ export default function FableScrape({ embedded = false }: { embedded?: boolean }
 function HarvestTab({
   url,
   setUrl,
-  normalizedUrl,
+  requireUrl,
   engine,
   setEngine,
   routing,
@@ -190,7 +194,7 @@ function HarvestTab({
 }: {
   url: string;
   setUrl: (v: string) => void;
-  normalizedUrl: () => string;
+  requireUrl: () => string;
   engine: Engine;
   setEngine: (e: Engine) => void;
   routing: ReturnType<typeof useRouting>;
@@ -256,8 +260,12 @@ function HarvestTab({
   }, [bridge, count, routing.routing.mode, roster.roster, roster.keys]);
 
   const run = async () => {
-    const target = normalizedUrl();
-    if (!target) return setError('Enter an archive URL to search.');
+    let target = '';
+    try {
+      target = requireUrl();
+    } catch (err) {
+      return setError(err instanceof Error ? err.message : 'Enter a valid archive URL.');
+    }
     if (!prompt.trim()) return setError('Tell the AI what to find.');
     if (!routing.routingReady) return setError(routing.notReadyMessage);
     setError('');
@@ -389,13 +397,18 @@ function HarvestTab({
           <div className="relative">
             <Globe className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
-              type="text"
+              type="url"
+              inputMode="url"
+              autoComplete="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://digitalarchive.example.org/collection/tablets"
               className="w-full bg-[#0f1115]/70 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-slate-600 focus:border-bee-amber/50 focus:outline-none"
             />
           </div>
+          <p className="text-slate-500 text-xs mt-1.5">
+            Paste the full page address (must include the site name, e.g. archive.org/…). Domain-only is fine — we add https://.
+          </p>
         </div>
 
         {/* Scope row */}
@@ -626,14 +639,14 @@ function FindingCard({
 function ScrapeTab({
   url,
   setUrl,
-  normalizedUrl,
+  requireUrl,
   engine,
   setEngine,
   routing,
 }: {
   url: string;
   setUrl: (v: string) => void;
-  normalizedUrl: () => string;
+  requireUrl: () => string;
   engine: Engine;
   setEngine: (e: Engine) => void;
   routing: ReturnType<typeof useRouting>;
@@ -701,8 +714,12 @@ function ScrapeTab({
   }, [bridge, runMode, maxPages, routing.routing]);
 
   const scan = async () => {
-    const target = normalizedUrl();
-    if (!target) return setError('Enter a URL.');
+    let target = '';
+    try {
+      target = requireUrl();
+    } catch (err) {
+      return setError(err instanceof Error ? err.message : 'Enter a valid URL.');
+    }
     if (!routing.routingReady) return setError(routing.notReadyMessage);
     setError('');
     setResult(null);
