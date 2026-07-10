@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -13,7 +13,24 @@ import Animated, {
 
 import { theme } from '@/constants/theme';
 
-export function DiagnoseOrb({ size = 120, label = 'AiBhive' }: { size?: number; label?: string }) {
+const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
+
+export function AiBhiveLogo({ size = 48, rounded = true }: { size?: number; rounded?: boolean }) {
+  return (
+    <Image
+      source={AIBHIVE_LOGO}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: rounded ? size * 0.22 : 0,
+      }}
+      resizeMode="contain"
+      accessibilityLabel="AiBhive"
+    />
+  );
+}
+
+export function DiagnoseOrb({ size = 120 }: { size?: number }) {
   const spin = useSharedValue(0);
   const pulse = useSharedValue(0);
   const ring = useSharedValue(0);
@@ -39,8 +56,7 @@ export function DiagnoseOrb({ size = 120, label = 'AiBhive' }: { size?: number; 
   }, [pulse, ring, spin]);
 
   const coreStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.92, 1.08]) }],
-    opacity: interpolate(pulse.value, [0, 1], [0.85, 1]),
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [0.94, 1.05]) }],
   }));
 
   const orbitStyle = useAnimatedStyle(() => ({
@@ -51,6 +67,8 @@ export function DiagnoseOrb({ size = 120, label = 'AiBhive' }: { size?: number; 
     transform: [{ scale: interpolate(ring.value, [0, 1], [0.7, 1.35]) }],
     opacity: interpolate(ring.value, [0, 1], [0.55, 0]),
   }));
+
+  const logoSize = size * 0.62;
 
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
@@ -81,24 +99,8 @@ export function DiagnoseOrb({ size = 120, label = 'AiBhive' }: { size?: number; 
           orbitStyle,
         ]}
       />
-      <Animated.View
-        style={[
-          {
-            width: size * 0.58,
-            height: size * 0.58,
-            borderRadius: size,
-            backgroundColor: theme.colors.amber,
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: theme.colors.amber,
-            shadowOpacity: 0.55,
-            shadowRadius: 18,
-            shadowOffset: { width: 0, height: 0 },
-          },
-          coreStyle,
-        ]}
-      >
-        <Text style={{ color: theme.colors.bg, fontWeight: '800', fontSize: size * 0.11 }}>{label}</Text>
+      <Animated.View style={coreStyle}>
+        <AiBhiveLogo size={logoSize} />
       </Animated.View>
     </View>
   );
@@ -151,46 +153,5 @@ export function PulseLoader({ text = 'Diagnosing…' }: { text?: string }) {
   );
 }
 
-export function AnimatedSplash({ onDone }: { onDone: () => void }) {
-  const progress = useSharedValue(0);
-  const fade = useSharedValue(1);
-
-  useEffect(() => {
-    progress.value = withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) });
-    const fadeTimer = setTimeout(() => {
-      fade.value = withTiming(0, { duration: 400 });
-    }, 1700);
-    const doneTimer = setTimeout(onDone, 2100);
-    return () => {
-      clearTimeout(fadeTimer);
-      clearTimeout(doneTimer);
-    };
-  }, [fade, onDone, progress]);
-
-  const barStyle = useAnimatedStyle(() => ({
-    width: `${interpolate(progress.value, [0, 1], [8, 100])}%`,
-  }));
-
-  const wrapStyle = useAnimatedStyle(() => ({
-    opacity: fade.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        { flex: 1, backgroundColor: theme.colors.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-        wrapStyle,
-      ]}
-    >
-      <DiagnoseOrb size={140} label="Diagnose" />
-      <Text className="mt-8 font-mono text-xs font-bold uppercase tracking-[4px] text-hive-amber">TradeForge</Text>
-      <Text className="mt-2 text-3xl font-bold text-hive-mist">AiBhive Diagnose</Text>
-      <Text className="mt-2 text-center text-sm text-hive-steel">
-        Loading field intelligence for Pool + Electrical…
-      </Text>
-      <View className="mt-10 h-1.5 w-56 overflow-hidden rounded-full bg-hive-card">
-        <Animated.View style={[{ height: '100%', backgroundColor: theme.colors.amber, borderRadius: 99 }, barStyle]} />
-      </View>
-    </Animated.View>
-  );
-}
+/** @deprecated Use IntroSplash — kept as thin re-export for older imports. */
+export { IntroSplash as AnimatedSplash } from './IntroSplash';

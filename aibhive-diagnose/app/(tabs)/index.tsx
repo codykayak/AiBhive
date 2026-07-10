@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { BigButton } from '@/components/BigButton';
-import { DiagnoseOrb } from '@/components/motion';
+import { AiBhiveLogo, DiagnoseOrb } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { usePack } from '@/contexts/PackContext';
@@ -49,8 +49,15 @@ export default function HomeScreen() {
 
         <Animated.View entering={FadeInDown.duration(500)} className="flex-row items-center justify-between">
           <View className="flex-1 pr-3">
-            <Text className="font-mono text-xs font-bold uppercase tracking-[3px] text-hive-amber">TradeForge</Text>
-            <Text className="mt-2 text-4xl font-bold leading-tight text-hive-mist">AiBhive Diagnose</Text>
+            <View className="flex-row items-center gap-3">
+              <AiBhiveLogo size={52} />
+              <View>
+                <Text className="font-mono text-xs font-bold uppercase tracking-[3px] text-hive-amber">
+                  TradeForge
+                </Text>
+                <Text className="mt-1 text-2xl font-bold text-hive-mist">Diagnose</Text>
+              </View>
+            </View>
             <Text className="mt-3 max-w-[280px] text-base leading-6 text-hive-steel">
               Snap it. Say it. Fix it. Field intelligence that fits in a glove.
             </Text>
@@ -58,7 +65,7 @@ export default function HomeScreen() {
               <PackBadge pack={activePack} />
             </View>
           </View>
-          <DiagnoseOrb size={96} label="GO" />
+          <DiagnoseOrb size={96} />
         </Animated.View>
       </View>
 
