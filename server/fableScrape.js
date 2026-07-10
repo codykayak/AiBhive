@@ -790,6 +790,7 @@ export async function crawlSite({
     merge(pdfs, assets.pdfs);
     merge(documents, assets.documents);
     merge(videos, assets.videos);
+    const pageText = htmlToText(html).slice(0, 20000);
     pages.push({
       url: finalUrl,
       title: extractTitle(html) || finalUrl,
@@ -797,6 +798,8 @@ export async function crawlSite({
       pdfs: assets.pdfs.length,
       documents: assets.documents.length,
       videos: assets.videos.length,
+      text: pageText,
+      textChars: pageText.length,
     });
 
     if (images.size + pdfs.size + documents.size + videos.size > CRAWL_LIMITS.maxAssets) {
@@ -817,12 +820,20 @@ export async function crawlSite({
 
   if (!stoppedReason && queue.length) stoppedReason = 'page limit reached';
 
+  const aggregatedText = pages
+    .map((p) => `### ${p.title}\nSource: ${p.url}\n${p.text || ''}`)
+    .join('\n\n')
+    .slice(0, 200000);
+
   return {
     engine: 'stealth',
     routingMode: routing.mode || 'server',
     startUrl: start,
+    finalUrl: pages[0]?.url || start,
     pagesVisited: pages.length,
     pages,
+    text: aggregatedText,
+    textChars: aggregatedText.length,
     images: [...images.values()],
     pdfs: [...pdfs.values()],
     documents: [...documents.values()],

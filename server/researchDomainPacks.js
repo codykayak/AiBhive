@@ -91,6 +91,28 @@ export const DOMAIN_PACKS = [
     rosterHint: { director: 'grok', vision: 'gemini', translator: 'gemini' },
     estimateHint: 'Photo pack ≈ 0.10–0.30 Hive credits',
   },
+  {
+    id: 'chronicling-america-tartaria',
+    category: 'historical-ancient',
+    name: 'Chronicling America newspaper leads',
+    blurb:
+      'Start from a LOC Chronicling America search-results URL (not the homepage). Crawl results → text-corpus harvest extracts citable Tartarian / Old World leads under a tight credit budget.',
+    topicId: 'tartarian',
+    steps: [
+      {
+        step: 0,
+        action: 'harvest',
+        hint:
+          'Paste a search-results URL, e.g. chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20 — enable Crawl, max pages 8–12, findings 2–4.',
+      },
+      { step: 3, action: 'research', hint: 'Ask Grok to deepen the strongest lead with place/date cross-checks.' },
+      { step: 2, action: 'publish', hint: 'Publish only public-domain newspaper quotes with source URLs.' },
+    ],
+    rosterHint: { director: 'grok', vision: 'gemini', translator: 'grok' },
+    estimateHint: 'Text-corpus harvest (no Vision OCR) ≈ 0.05–0.25 Hive credits for 2–4 leads',
+    suggestedUrl:
+      'https://chroniclingamerica.loc.gov/search/pages/results/?state=&date1=1850&date2=1922&proxtext=Tartar&x=0&y=0&dateFilterType=yearRange&rows=20&searchType=basic',
+  },
 ];
 
 export function listDomainPacks(category) {

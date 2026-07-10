@@ -10,6 +10,7 @@ type Pack = {
   topicId: string;
   category: string;
   estimateHint: string;
+  suggestedUrl?: string;
   steps: Array<{ step: number; action: string; hint: string }>;
 };
 
@@ -33,7 +34,9 @@ export default function DomainPackPicker() {
     appendOutput({
       step: 'brief',
       title: `Domain pack · ${pack.name}`,
-      text: `${pack.blurb}\n\nRecipe:\n${pack.steps.map((s, i) => `${i + 1}. [step ${s.step}] ${s.hint}`).join('\n')}\n\n${pack.estimateHint}`,
+      text: `${pack.blurb}\n\nRecipe:\n${pack.steps.map((s, i) => `${i + 1}. [step ${s.step}] ${s.hint}`).join('\n')}\n\n${pack.estimateHint}${
+        pack.suggestedUrl ? `\n\nSuggested start URL:\n${pack.suggestedUrl}` : ''
+      }`,
     });
     setOpen(false);
   }
@@ -51,6 +54,11 @@ export default function DomainPackPicker() {
               <h3>{p.name}</h3>
               <p>{p.blurb}</p>
               <p className={styles.rlPackEst}>{p.estimateHint}</p>
+              {p.suggestedUrl ? (
+                <p className={styles.rlPackEst} style={{ wordBreak: 'break-all', opacity: 0.85 }}>
+                  Start URL ready in recipe notes
+                </p>
+              ) : null}
               <button type="button" className={`${styles.owrBtn} ${styles.owrBtnPrimary}`} onClick={() => applyPack(p)}>
                 <Play className="w-3.5 h-3.5 inline mr-1" />
                 Run this recipe

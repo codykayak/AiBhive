@@ -6,9 +6,10 @@
  *      the discovered candidates and intelligently SELECTS which items to pull.
  *   2. VISION/OCR (default Gemini 2.5) reads the actual selected images.
  *   3. TRANSLATOR (default Gemini 2.5) translates the OCR'd findings.
- * Each role's provider/model is configurable (Grok, Gemini, Claude, Kimi,
- * DeepSeek) with per-request BYOK keys. Findings can then be published to the
- * communal library.
+ *
+ * For text-heavy archives (newspapers, Chronicling America, catalogs) where few
+ * images are discoverable, falls back to a TEXT-CORPUS harvest: Director reads
+ * crawled page text and returns cited leads without Vision OCR.
  */
 import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
@@ -38,22 +39,159 @@ const OCR_PROMPT =
   'preserving line breaks and layout. If the script is ancient or non-Latin (e.g. cuneiform, hieroglyphic, ' +
   'medieval hand), transliterate what you can and describe any untranscribable marks. Do not invent content.';
 
+const TEXT_DIRECTOR_SYSTEM =
+  'You are the director of a primary-source research harvest over crawled archive/newspaper text. ' +
+  'Respond with strict JSON only. Never invent sources — only cite URLs and quotes present in the corpus. ' +
+  'Prefer under-discussed, specific, citable leads over vague summaries.';
+
+function buildCorpusFromDiscovery(discovery, startUrl) {
+  const chunks = [];
+  if (discovery.text && String(discovery.text).trim().length > 80) {
+    chunks.push({
+      url: discovery.finalUrl || discovery.startUrl || startUrl,
+      title: discovery.title || 'Start page',
+      text: String(discovery.text).slice(0, 24000),
+    });
+  }
+  for (const p of discovery.pages || []) {
+    if (!p?.text || String(p.text).trim().length < 80) continue;
+    // Avoid duplicating the start page text already added
+    if (chunks.some((c) => c.url === p.url)) continue;
+    chunks.push({
+      url: p.url,
+      title: p.title || p.url,
+      text: String(p.text).slice(0, 12000),
+    });
+  }
+  return chunks.slice(0, 12);
+}
+
+function formatCorpusForPrompt(chunks) {
+  return chunks
+    .map(
+      (c, i) =>
+        `--- CORPUS ${i} ---\nTitle: ${c.title}\nURL: ${c.url}\nExcerpt:\n${c.text.slice(0, 6000)}`,
+    )
+    .join('\n\n')
+    .slice(0, 48000);
+}
+
+/**
+ * Text-corpus path for newspaper / catalog archives with little image HTML.
+ */
+async function harvestFromTextCorpus({
+  prompt,
+  discovery,
+  roles,
+  keys,
+  wanted,
+  url,
+  warnings,
+  onProgress,
+}) {
+  const chunks = buildCorpusFromDiscovery(discovery, url);
+  const corpusChars = chunks.reduce((n, c) => n + c.text.length, 0);
+  if (!chunks.length || corpusChars < 400) {
+    return null;
+  }
+
+  onProgress({
+    stage: 'director',
+    message: `${PROVIDERS[roles.director.provider]?.label || roles.director.provider} is mining page text for leads…`,
+  });
+
+  const directorPrompt =
+    `Researcher request:\n"""${prompt.trim()}"""\n\n` +
+    `You are given crawled text from a primary-source archive (often newspapers or catalogs).\n` +
+    `Extract up to ${wanted} strong, specific leads worth deeper investigation.\n` +
+    `Rules:\n` +
+    `- Only use evidence present in the corpus below.\n` +
+    `- Each lead must include a short verbatim quote and the source URL from the corpus.\n` +
+    `- Prefer obscure / under-discussed items with clear place/date hooks.\n` +
+    `- If the corpus is mostly navigation chrome with no usable content, return selections:[].\n` +
+    `- Return ONLY JSON:\n` +
+    `{"strategy":"one sentence","mode":"text-corpus","selections":[{"title":"...","reason":"why promising","quote":"verbatim excerpt","sourceUrl":"https://...","confidence":0-1}]}\n\n` +
+    formatCorpusForPrompt(chunks);
+
+  let strategy = '';
+  let selections = [];
+  try {
+    const raw = await runChat({
+      provider: roles.director.provider,
+      model: roles.director.model,
+      byok: keys,
+      system: TEXT_DIRECTOR_SYSTEM,
+      prompt: directorPrompt,
+      json: true,
+      maxTokens: 2500,
+    });
+    const parsed = extractJson(raw) || {};
+    strategy = String(parsed.strategy || '').slice(0, 400);
+    selections = Array.isArray(parsed.selections) ? parsed.selections : [];
+  } catch (err) {
+    throw new Error(`Director text harvest failed: ${err instanceof Error ? err.message : 'AI error'}`);
+  }
+
+  const allowedUrls = new Set(chunks.map((c) => c.url));
+  const findings = selections
+    .slice(0, wanted)
+    .map((s, i) => {
+      const sourceUrl = String(s.sourceUrl || '').trim();
+      const quote = String(s.quote || '').trim();
+      const title = String(s.title || `Lead ${i + 1}`).slice(0, 200);
+      const reason = String(s.reason || '').slice(0, 400);
+      // Prefer corpus URL if model invented one
+      const safeUrl = allowedUrls.has(sourceUrl)
+        ? sourceUrl
+        : chunks.find((c) => sourceUrl && c.url.includes(sourceUrl))?.url ||
+          chunks[0]?.url ||
+          discovery.finalUrl ||
+          url;
+      return {
+        url: safeUrl,
+        filename: title,
+        alt: reason,
+        sourceUrl: safeUrl,
+        reason,
+        confidence: typeof s.confidence === 'number' ? s.confidence : null,
+        ocrText: quote || reason,
+        translation: reason
+          ? `Research lead: ${title}\n\nWhy it matters: ${reason}\n\nEvidence:\n${quote || '(see source page)'}\n\nSource: ${safeUrl}`
+          : quote,
+        targetLang: 'English',
+        mimeType: 'text/plain',
+        error: '',
+        kind: 'text-lead',
+      };
+    })
+    .filter((f) => f.ocrText || f.translation);
+
+  if (!findings.length) {
+    warnings.push(
+      'Text corpus was available, but the director found no citable leads matching your request. Try a search-results URL with your keywords (e.g. Chronicling America search for Tartar/Tartary), enable crawl, and raise max pages.',
+    );
+  } else {
+    warnings.push(
+      `Used text-corpus harvest (${chunks.length} page(s), ~${corpusChars} chars) because few/no document images were discoverable on this site.`,
+    );
+  }
+
+  return {
+    ok: true,
+    prompt: prompt.trim(),
+    strategy: strategy || 'Mine crawled archive text for citable leads.',
+    mode: 'text-corpus',
+    candidatesConsidered: chunks.length,
+    findings,
+    pdfs: discovery.pdfs || [],
+    roles,
+    warnings,
+    sourceUrl: discovery.finalUrl || discovery.startUrl || url,
+  };
+}
+
 /**
  * Run the full AI-directed harvest.
- * @param {object} params
- * @param {string} params.url          start URL
- * @param {string} params.prompt       user's natural-language instruction
- * @param {number} [params.count]      max findings to return (<=15)
- * @param {object} [params.roles]      { director, vision, translator } each { provider, model }
- * @param {object} [params.keys]       BYOK map provider->key
- * @param {object} [params.routing]    IP routing
- * @param {string} [params.engine]     stealth engine
- * @param {boolean}[params.crawl]      crawl vs single page
- * @param {number} [params.maxPages]
- * @param {number} [params.maxDepth]
- * @param {boolean}[params.translate]  translate findings (default true)
- * @param {string} [params.targetLang] translation target (default English)
- * @param {(ev:object)=>void} [params.onProgress]
  */
 export async function aiHarvest(params) {
   const {
@@ -80,144 +218,206 @@ export async function aiHarvest(params) {
 
   // ---- Discover candidates ----
   onProgress({ stage: 'discover', message: crawl ? 'Crawling site for candidates…' : 'Scanning page for candidates…' });
-  const include = { images: true, pdfs: true, docs: false, videos: false };
+  const include = { images: true, pdfs: true, docs: true, videos: false };
   const discovery = crawl
     ? await crawlSite({ url, engine, include, includeIcons: false, routing, maxPages, maxDepth, sameHostOnly: true })
     : await scanPage({ url, engine, include, includeIcons: false, routing });
 
+  if (discovery.blocked) {
+    warnings.push(
+      'The archive may be bot-blocking this route. Try Max stealth engine, residential routing, or a direct search-results URL.',
+    );
+  }
+
   const images = discovery.images || [];
   const pdfs = discovery.pdfs || [];
-  const candidates = [...images.map((it) => ({ ...it, kind: 'image' }))].slice(0, 150);
-  if (!candidates.length) {
-    return {
-      ok: true,
-      strategy: '',
-      candidatesConsidered: 0,
-      findings: [],
-      pdfs,
-      roles,
-      warnings: ['No images were discovered to analyze. Try crawl mode, a deeper link depth, or Max stealth.'],
-      sourceUrl: discovery.finalUrl || url,
-    };
-  }
+  const candidates = [
+    ...images.map((it) => ({ ...it, kind: 'image' })),
+    // PDFs are discoverable but Vision OCR needs images — keep as metadata for director context
+  ].slice(0, 150);
 
-  // ---- 1. DIRECTOR selects ----
-  onProgress({ stage: 'director', message: `${PROVIDERS[roles.director.provider]?.label || roles.director.provider} is choosing targets…` });
-  const catalog = candidates
-    .map((c, i) => `${i}. file="${c.filename}" alt="${(c.alt || '').slice(0, 120)}"`)
-    .join('\n');
-  const directorPrompt =
-    `Researcher request:\n"""${prompt.trim()}"""\n\n` +
-    `Source: ${discovery.finalUrl || url}\n` +
-    (discovery.pages ? `Pages crawled: ${discovery.pages.length}\n` : '') +
-    `\nCandidate assets (index. metadata):\n${catalog}\n\n` +
-    `Pick the up-to-${wanted} candidates that best match the request. Judge by filename/alt cues. ` +
-    `Return ONLY JSON: {"strategy":"one sentence on your approach","selections":[{"index":<number>,"reason":"why this one","confidence":0-1}]}. ` +
-    `Never select more than ${wanted}. Prefer likely primary-source document scans over decorative/UI images.`;
-
-  let strategy = '';
-  let selections = [];
-  try {
-    const raw = await runChat({
-      provider: roles.director.provider,
-      model: roles.director.model,
-      byok: keys,
-      system: 'You are the director of a research harvest. Respond with strict JSON only.',
-      prompt: directorPrompt,
-      json: true,
-      maxTokens: 2000,
+  // Prefer image OCR path when we have real document-like images
+  if (candidates.length >= 1) {
+    onProgress({
+      stage: 'director',
+      message: `${PROVIDERS[roles.director.provider]?.label || roles.director.provider} is choosing image targets…`,
     });
-    const parsed = extractJson(raw) || {};
-    strategy = String(parsed.strategy || '').slice(0, 400);
-    selections = Array.isArray(parsed.selections) ? parsed.selections : [];
-  } catch (err) {
-    throw new Error(`Director step failed: ${err instanceof Error ? err.message : 'AI error'}`);
-  }
+    const pageHint =
+      discovery.text && String(discovery.text).trim().length > 100
+        ? `\nPage text hint (first 1200 chars):\n"""${String(discovery.text).slice(0, 1200)}"""\n`
+        : '';
+    const catalog = candidates
+      .map((c, i) => `${i}. file="${c.filename}" alt="${(c.alt || '').slice(0, 120)}" url="${(c.url || '').slice(0, 120)}"`)
+      .join('\n');
+    const directorPrompt =
+      `Researcher request:\n"""${prompt.trim()}"""\n\n` +
+      `Source: ${discovery.finalUrl || url}\n` +
+      (discovery.pages ? `Pages crawled: ${discovery.pages.length}\n` : '') +
+      (pdfs.length ? `PDFs also found (not OCR'd here): ${pdfs.length}\n` : '') +
+      pageHint +
+      `\nCandidate image assets (index. metadata):\n${catalog}\n\n` +
+      `Pick the up-to-${wanted} candidates that best match the request. Judge by filename/alt/url cues. ` +
+      `Return ONLY JSON: {"strategy":"one sentence on your approach","selections":[{"index":<number>,"reason":"why this one","confidence":0-1}]}. ` +
+      `Never select more than ${wanted}. Prefer likely primary-source document scans over decorative/UI images. ` +
+      `If NONE of the images look like primary sources (only logos/icons/UI), return selections:[].`;
 
-  const chosen = selections
-    .map((s) => ({ ...s, index: Number(s.index) }))
-    .filter((s) => Number.isInteger(s.index) && s.index >= 0 && s.index < candidates.length)
-    .slice(0, wanted);
-
-  if (!chosen.length) {
-    warnings.push('The director did not select any candidates for this request.');
-    return { ok: true, strategy, candidatesConsidered: candidates.length, findings: [], pdfs, roles, warnings, sourceUrl: discovery.finalUrl || url };
-  }
-
-  // ---- 2 & 3. VISION (OCR) + TRANSLATE each finding ----
-  const findings = [];
-  for (let n = 0; n < chosen.length; n++) {
-    const sel = chosen[n];
-    const cand = candidates[sel.index];
-    onProgress({ stage: 'ocr', message: `Reading finding ${n + 1}/${chosen.length}: ${cand.filename}`, index: n });
-    const finding = {
-      url: cand.url,
-      filename: cand.filename,
-      alt: cand.alt || '',
-      sourceUrl: discovery.finalUrl || url,
-      reason: String(sel.reason || '').slice(0, 300),
-      confidence: typeof sel.confidence === 'number' ? sel.confidence : null,
-      ocrText: '',
-      translation: '',
-      targetLang: translate ? targetLang : '',
-      mimeType: '',
-      error: '',
-    };
+    let strategy = '';
+    let selections = [];
     try {
-      const asset = await downloadAsset({ url: cand.url, referer: discovery.finalUrl || url, cookies: discovery.cookies, routing });
-      finding.mimeType = asset.mimeType;
-      if (!asset.mimeType.startsWith('image/')) {
-        finding.error = 'Not an image — skipped OCR.';
-        findings.push(finding);
-        continue;
-      }
-      finding.ocrText = await runVision({
-        provider: roles.vision.provider,
-        model: roles.vision.model,
+      const raw = await runChat({
+        provider: roles.director.provider,
+        model: roles.director.model,
         byok: keys,
-        prompt: OCR_PROMPT,
-        images: [asset.base64],
-        mimeType: asset.mimeType,
-        maxTokens: 3000,
+        system: 'You are the director of a research harvest. Respond with strict JSON only.',
+        prompt: directorPrompt,
+        json: true,
+        maxTokens: 2000,
       });
-      if (translate && finding.ocrText) {
-        onProgress({ stage: 'translate', message: `Translating finding ${n + 1}/${chosen.length}…`, index: n });
+      const parsed = extractJson(raw) || {};
+      strategy = String(parsed.strategy || '').slice(0, 400);
+      selections = Array.isArray(parsed.selections) ? parsed.selections : [];
+    } catch (err) {
+      throw new Error(`Director step failed: ${err instanceof Error ? err.message : 'AI error'}`);
+    }
+
+    const chosen = selections
+      .map((s) => ({ ...s, index: Number(s.index) }))
+      .filter((s) => Number.isInteger(s.index) && s.index >= 0 && s.index < candidates.length)
+      .slice(0, wanted);
+
+    if (chosen.length) {
+      const findings = [];
+      for (let n = 0; n < chosen.length; n++) {
+        const sel = chosen[n];
+        const cand = candidates[sel.index];
+        onProgress({ stage: 'ocr', message: `Reading finding ${n + 1}/${chosen.length}: ${cand.filename}`, index: n });
+        const finding = {
+          url: cand.url,
+          filename: cand.filename,
+          alt: cand.alt || '',
+          sourceUrl: discovery.finalUrl || url,
+          reason: String(sel.reason || '').slice(0, 300),
+          confidence: typeof sel.confidence === 'number' ? sel.confidence : null,
+          ocrText: '',
+          translation: '',
+          targetLang: translate ? targetLang : '',
+          mimeType: '',
+          error: '',
+          kind: 'image',
+        };
         try {
-          finding.translation = await runChat({
-            provider: roles.translator.provider,
-            model: roles.translator.model,
+          const asset = await downloadAsset({
+            url: cand.url,
+            referer: discovery.finalUrl || url,
+            cookies: discovery.cookies,
+            routing,
+          });
+          finding.mimeType = asset.mimeType;
+          if (!asset.mimeType.startsWith('image/')) {
+            finding.error = 'Not an image — skipped OCR.';
+            findings.push(finding);
+            continue;
+          }
+          finding.ocrText = await runVision({
+            provider: roles.vision.provider,
+            model: roles.vision.model,
             byok: keys,
-            system: TRANSLATE_SYSTEM,
-            prompt: `Translate into ${targetLang}:\n\n${finding.ocrText.slice(0, 8000)}`,
+            prompt: OCR_PROMPT,
+            images: [asset.base64],
+            mimeType: asset.mimeType,
             maxTokens: 3000,
           });
-        } catch (tErr) {
-          warnings.push(`Translation failed for ${cand.filename}: ${tErr instanceof Error ? tErr.message : 'error'}`);
+          if (translate && finding.ocrText) {
+            onProgress({ stage: 'translate', message: `Translating finding ${n + 1}/${chosen.length}…`, index: n });
+            try {
+              finding.translation = await runChat({
+                provider: roles.translator.provider,
+                model: roles.translator.model,
+                byok: keys,
+                system: TRANSLATE_SYSTEM,
+                prompt: `Translate into ${targetLang}:\n\n${finding.ocrText.slice(0, 8000)}`,
+                maxTokens: 3000,
+              });
+            } catch (tErr) {
+              warnings.push(`Translation failed for ${cand.filename}: ${tErr instanceof Error ? tErr.message : 'error'}`);
+            }
+          }
+        } catch (err) {
+          finding.error = err instanceof Error ? err.message : 'Failed to process finding.';
         }
+        findings.push(finding);
       }
-    } catch (err) {
-      finding.error = err instanceof Error ? err.message : 'Failed to process finding.';
+
+      onProgress({ stage: 'done', message: `Harvest complete — ${findings.length} findings.` });
+      return {
+        ok: true,
+        prompt: prompt.trim(),
+        strategy,
+        mode: 'image-ocr',
+        candidatesConsidered: candidates.length,
+        findings,
+        pdfs,
+        roles,
+        warnings,
+        sourceUrl: discovery.finalUrl || url,
+      };
     }
-    findings.push(finding);
+
+    warnings.push(
+      'Images were found, but none looked like primary-source scans for your request — falling back to text-corpus harvest.',
+    );
   }
 
-  onProgress({ stage: 'done', message: `Harvest complete — ${findings.length} findings.` });
+  // ---- Text-corpus fallback (newspapers, catalogs, Chronicling America, etc.) ----
+  const textResult = await harvestFromTextCorpus({
+    prompt,
+    discovery,
+    roles,
+    keys,
+    wanted,
+    url,
+    warnings,
+    onProgress,
+  });
+  if (textResult) {
+    onProgress({ stage: 'done', message: `Text harvest complete — ${textResult.findings.length} lead(s).` });
+    return textResult;
+  }
+
+  const host = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return '';
+    }
+  })();
+  const isChronAm = /chroniclingamerica\.loc\.gov/i.test(host);
+  const tips = [
+    'No document images and not enough usable page text were discovered.',
+    'Tips: start from a search-results URL (not the homepage), turn Crawl on, raise max pages to 8–12, try Max stealth.',
+  ];
+  if (isChronAm) {
+    tips.push(
+      'For Chronicling America, use a results URL like: https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic — then crawl 1 link depth into article pages.',
+    );
+  }
+
   return {
     ok: true,
     prompt: prompt.trim(),
-    strategy,
+    strategy: '',
+    mode: 'empty',
     candidatesConsidered: candidates.length,
-    findings,
+    findings: [],
     pdfs,
     roles,
-    warnings,
-    sourceUrl: discovery.finalUrl || url,
+    warnings: [...warnings, ...tips],
+    sourceUrl: discovery.finalUrl || discovery.startUrl || url,
   };
 }
 
 /**
  * Standalone translate (Translation Lab), any configured provider.
- * @param {{ text:string, targetLang?:string, provider?:string, model?:string, keys?:object }} params
  */
 export async function translateText({ text, targetLang = 'English', provider = 'gemini', model = '', keys = {} }) {
   if (!text || !text.trim()) throw new Error('No text to translate.');
