@@ -1,20 +1,179 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Library, Share2, Users, Sparkles, ArrowRight } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import {
+  Library,
+  Share2,
+  Users,
+  Sparkles,
+  ArrowRight,
+  Search,
+  GitFork,
+  PencilLine,
+  ExternalLink,
+  Loader2,
+} from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import StartResearchingButton from './components/StartResearchingButton';
 import { COMMUNAL_TOPICS, getCommunalTopic } from './communalLibraryTopics';
+import { auth } from '../../firebase';
+import type { LibraryEntry } from '../fable-scrape/shared';
 import styles from './researchLab.module.css';
 
 const CommunalKnowledgeMap = lazy(() => import('./components/CommunalKnowledgeMap'));
 
+type LiveEntry = LibraryEntry & {
+  topicId?: string;
+  visibility?: string;
+  provenance?: Record<string, unknown>;
+  correctionCount?: number;
+};
+
+async function authHeaders(): Promise<Record<string, string>> {
+  const u = auth.currentUser;
+  if (!u) return {};
+  return { Authorization: `Bearer ${await u.getIdToken()}` };
+}
+
 export default function CommunalLibraryPage() {
-  const [selectedId, setSelectedId] = useState<string | null>('tartarian');
-  const selected = selectedId ? getCommunalTopic(selectedId) : null;
-  const totalDocs = useMemo(
-    () => COMMUNAL_TOPICS.reduce((sum, t) => sum + t.docs, 0),
-    [],
+  const [params, setParams] = useSearchParams();
+  const share = params.get('share') || '';
+  const topicParam = params.get('topic') || '';
+  const [selectedId, setSelectedId] = useState<string | null>(topicParam || 'tartarian');
+  const [liveStats, setLiveStats] = useState<Record<string, number>>({});
+  const [entries, setEntries] = useState<LiveEntry[]>([]);
+  const [q, setQ] = useState('');
+  const [qDraft, setQDraft] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [forkMsg, setForkMsg] = useState('');
+  const [correctingId, setCorrectingId] = useState<string | null>(null);
+  const [correction, setCorrection] = useState({ field: 'ocrText', text: '', note: '' });
+  const [glossary, setGlossary] = useState<
+    Array<{ id: string; original?: string; corrected?: string; field?: string; topicId?: string }>
+  >([]);
+
+  const topicsWithLive = useMemo(
+    () =>
+      COMMUNAL_TOPICS.map((t) => ({
+        ...t,
+        docs: Math.max(t.docs, liveStats[t.id] || 0),
+        liveDocs: liveStats[t.id] || 0,
+      })),
+    [liveStats],
   );
+
+  const selected = selectedId ? topicsWithLive.find((t) => t.id === selectedId) || getCommunalTopic(selectedId) : null;
+  const totalDocs = useMemo(
+    () => topicsWithLive.reduce((sum, t) => sum + t.docs, 0),
+    [topicsWithLive],
+  );
+  const liveTotal = useMemo(
+    () => Object.values(liveStats).reduce((s, n) => s + n, 0),
+    [liveStats],
+  );
+
+  useEffect(() => {
+    void fetch('/api/research-lab/library/topics')
+      .then((r) => r.json())
+      .then((d) => setLiveStats(d.stats || {}))
+      .catch(() => setLiveStats({}));
+  }, []);
+
+  const loadEntries = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const headers = await authHeaders();
+      const qs = new URLSearchParams();
+      qs.set('limit', '40');
+      if (selectedId) qs.set('topicId', selectedId);
+      if (q.trim()) qs.set('q', q.trim());
+      if (share) qs.set('share', share);
+      const res = await fetch(`/api/research-lab/fable-scrape/library?${qs}`, { headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load library');
+      setEntries(data.entries || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load library');
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedId, q, share]);
+
+  useEffect(() => {
+    void loadEntries();
+  }, [loadEntries]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    void fetch(`/api/research-lab/glossary?topicId=${encodeURIComponent(selectedId)}&limit=12`)
+      .then((r) => r.json())
+      .then((d) => setGlossary(d.entries || []))
+      .catch(() => setGlossary([]));
+  }, [selectedId]);
+
+  function selectTopic(id: string) {
+    setSelectedId(id);
+    const next = new URLSearchParams(params);
+    next.set('topic', id);
+    setParams(next, { replace: true });
+  }
+
+  async function forkEntry(entry: LiveEntry) {
+    setForkMsg('');
+    try {
+      const headers = {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      };
+      if (!headers.Authorization) {
+        setForkMsg('Sign in to fork into your Research Project.');
+        return;
+      }
+      const res = await fetch(`/api/research-lab/library/${encodeURIComponent(entry.id)}/fork`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ share: share || undefined, title: `Fork · ${entry.title}` }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fork failed');
+      setForkMsg(`Forked into project — open Research tools to continue.`);
+    } catch (err) {
+      setForkMsg(err instanceof Error ? err.message : 'Fork failed');
+    }
+  }
+
+  async function submitCorrection(entry: LiveEntry) {
+    try {
+      const headers = {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      };
+      if (!headers.Authorization) {
+        setForkMsg('Sign in to submit a glossary correction.');
+        return;
+      }
+      const res = await fetch(`/api/research-lab/library/${encodeURIComponent(entry.id)}/correct`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          field: correction.field,
+          original: entry[correction.field as 'ocrText' | 'translation' | 'title'] || '',
+          corrected: correction.text,
+          note: correction.note,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Correction failed');
+      setCorrectingId(null);
+      setCorrection({ field: 'ocrText', text: '', note: '' });
+      setForkMsg('Correction saved to the communal glossary.');
+      void loadEntries();
+    } catch (err) {
+      setForkMsg(err instanceof Error ? err.message : 'Correction failed');
+    }
+  }
 
   return (
     <div className={styles.rlLibPage}>
@@ -40,8 +199,8 @@ export default function CommunalLibraryPage() {
           One library. <span>Infinite trails.</span>
         </h1>
         <p className={styles.rlLibLead}>
-          A living knowledge lattice — rotate the map, open a topic, and follow document trails other
-          researchers already paved. Every contribution compounds the shared wealth of the hive.
+          A living knowledge lattice — rotate the map, search live corpora, fork entries into your project,
+          and correct glossaries so the next researcher starts ahead.
         </p>
         <div className={styles.rlLibHeroStats}>
           <div>
@@ -50,13 +209,18 @@ export default function CommunalLibraryPage() {
           </div>
           <div>
             <strong>{totalDocs.toLocaleString()}</strong>
-            <span>seed documents</span>
+            <span>mapped documents</span>
           </div>
           <div>
-            <strong>∞</strong>
-            <span>community forks</span>
+            <strong>{liveTotal.toLocaleString()}</strong>
+            <span>live published</span>
           </div>
         </div>
+        {share && (
+          <p className={styles.rlLibShareBanner}>
+            Viewing share-link corpus <code>{share}</code>
+          </p>
+        )}
       </header>
 
       <section className={styles.rlLibMapSection} aria-label="3D knowledge map">
@@ -69,7 +233,11 @@ export default function CommunalLibraryPage() {
               </div>
             }
           >
-            <CommunalKnowledgeMap selectedId={selectedId} onSelect={setSelectedId} />
+            <CommunalKnowledgeMap
+              selectedId={selectedId}
+              onSelect={selectTopic}
+              topics={topicsWithLive}
+            />
           </Suspense>
         </div>
 
@@ -79,12 +247,11 @@ export default function CommunalLibraryPage() {
               <p className={styles.rlLibDetailKicker}>Selected node</p>
               <h2>{selected.label}</h2>
               <p className={styles.rlLibDocCount}>
-                <button
-                  type="button"
-                  className={styles.rlLibDocBtn}
-                  onClick={() => setSelectedId(selected.id)}
-                >
+                <button type="button" className={styles.rlLibDocBtn} onClick={() => selectTopic(selected.id)}>
                   {selected.docs.toLocaleString()} documents
+                  {'liveDocs' in selected && (selected as { liveDocs?: number }).liveDocs
+                    ? ` · ${(selected as { liveDocs: number }).liveDocs} live`
+                    : ''}
                 </button>
               </p>
               <p>{selected.blurb}</p>
@@ -92,10 +259,10 @@ export default function CommunalLibraryPage() {
                 <p>Connected topics</p>
                 <div className={styles.rlLibChips}>
                   {selected.links.map((id) => {
-                    const t = getCommunalTopic(id);
+                    const t = topicsWithLive.find((x) => x.id === id) || getCommunalTopic(id);
                     if (!t) return null;
                     return (
-                      <button key={id} type="button" onClick={() => setSelectedId(id)}>
+                      <button key={id} type="button" onClick={() => selectTopic(id)}>
                         {t.label}
                         <span>{t.docs.toLocaleString()}</span>
                       </button>
@@ -111,22 +278,169 @@ export default function CommunalLibraryPage() {
         </aside>
       </section>
 
+      <section className={styles.rlLibLive} aria-label="Live corpus search">
+        <div className={styles.rlLibLiveHead}>
+          <h2>Live corpus</h2>
+          <p>Search published findings, fork into your Research Project, or correct OCR/translations for the glossary.</p>
+        </div>
+        <form
+          className={styles.rlLibSearch}
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQ(qDraft);
+          }}
+        >
+          <Search className={styles.rlLibSearchIcon} aria-hidden />
+          <input
+            value={qDraft}
+            onChange={(e) => setQDraft(e.target.value)}
+            placeholder="Search titles, OCR, translations…"
+            aria-label="Search communal library"
+          />
+          <button type="submit" className={styles.owrBtnPrimary}>
+            Search
+          </button>
+        </form>
+        {forkMsg && <p className={styles.rlLibForkMsg} role="status">{forkMsg}</p>}
+        {loading ? (
+          <p className={styles.rlLibLoading}>
+            <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
+            Loading entries…
+          </p>
+        ) : error ? (
+          <p className={styles.rlLibError}>{error}</p>
+        ) : entries.length === 0 ? (
+          <p className={styles.rlLibEmpty}>
+            No live entries for this filter yet — publish from Fable Scrape to seed the commons.
+          </p>
+        ) : (
+          <ul className={styles.rlLibEntryList}>
+            {entries.map((e) => (
+              <li key={e.id} className={styles.rlLibEntry}>
+                <div className={styles.rlLibEntryMain}>
+                  <h3>{e.title}</h3>
+                  <p className={styles.rlLibEntryMeta}>
+                    {e.topicId || 'general'}
+                    {e.visibility ? ` · ${e.visibility}` : ''}
+                    {e.contributor ? ` · ${e.contributor}` : ''}
+                    {e.correctionCount ? ` · ${e.correctionCount} corrections` : ''}
+                  </p>
+                  <p className={styles.rlLibEntryBody}>
+                    {(e.translation || e.ocrText || e.reason || '').slice(0, 320)}
+                    {(e.translation || e.ocrText || '').length > 320 ? '…' : ''}
+                  </p>
+                  {e.provenance?.sourceUrl || e.sourceUrl ? (
+                    <a
+                      href={String(e.provenance?.sourceUrl || e.sourceUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.rlLibEntrySource}
+                    >
+                      Provenance <ExternalLink className="w-3 h-3 inline" />
+                    </a>
+                  ) : null}
+                </div>
+                <div className={styles.rlLibEntryActions}>
+                  <button type="button" className={styles.owrBtn} onClick={() => void forkEntry(e)}>
+                    <GitFork className="w-3.5 h-3.5 inline mr-1" />
+                    Fork
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.owrBtn}
+                    onClick={() => {
+                      setCorrectingId(e.id);
+                      setCorrection({
+                        field: 'ocrText',
+                        text: e.ocrText || e.translation || '',
+                        note: '',
+                      });
+                    }}
+                  >
+                    <PencilLine className="w-3.5 h-3.5 inline mr-1" />
+                    Correct
+                  </button>
+                  <Link className={styles.owrBtn} to="/research-lab/workspace">
+                    Open tools
+                  </Link>
+                </div>
+                {correctingId === e.id && (
+                  <div className={styles.rlLibCorrect}>
+                    <label>
+                      Field
+                      <select
+                        value={correction.field}
+                        onChange={(ev) => setCorrection((c) => ({ ...c, field: ev.target.value }))}
+                      >
+                        <option value="ocrText">OCR text</option>
+                        <option value="translation">Translation</option>
+                        <option value="title">Title</option>
+                      </select>
+                    </label>
+                    <textarea
+                      value={correction.text}
+                      onChange={(ev) => setCorrection((c) => ({ ...c, text: ev.target.value }))}
+                      rows={4}
+                      placeholder="Corrected text"
+                    />
+                    <input
+                      value={correction.note}
+                      onChange={(ev) => setCorrection((c) => ({ ...c, note: ev.target.value }))}
+                      placeholder="Optional note for the glossary"
+                    />
+                    <div className={styles.rlLibCorrectActions}>
+                      <button
+                        type="button"
+                        className={`${styles.owrBtn} ${styles.owrBtnPrimary}`}
+                        onClick={() => void submitCorrection(e)}
+                      >
+                        Save to glossary
+                      </button>
+                      <button type="button" className={styles.owrBtn} onClick={() => setCorrectingId(null)}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {glossary.length > 0 && (
+          <div className={styles.rlLibGlossary}>
+            <h3>Recent glossary corrections</h3>
+            <ul>
+              {glossary.map((g) => (
+                <li key={g.id}>
+                  <strong>{g.field}</strong>: {(g.original || '').slice(0, 60)} →{' '}
+                  {(g.corrected || '').slice(0, 60)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
       <section className={styles.rlLibTopicsGrid} aria-label="All topics">
         <h2>Browse the lattice</h2>
         <p>Twenty-plus research domains already wired into one collective system — click any card.</p>
         <ul>
-          {COMMUNAL_TOPICS.map((t) => (
+          {topicsWithLive.map((t) => (
             <li key={t.id}>
               <button
                 type="button"
                 className={`${styles.rlLibTopicCard}${selectedId === t.id ? ` ${styles.rlLibTopicCardActive}` : ''}`}
                 onClick={() => {
-                  setSelectedId(t.id);
+                  selectTopic(t.id);
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
                 <strong>{t.label}</strong>
-                <span>{t.docs.toLocaleString()} docs</span>
+                <span>
+                  {t.docs.toLocaleString()} docs
+                  {t.liveDocs ? ` · ${t.liveDocs} live` : ''}
+                </span>
               </button>
             </li>
           ))}
@@ -138,8 +452,8 @@ export default function CommunalLibraryPage() {
         <p>
           The Communal Library is AiBhive’s shared research memory. When you scrape an archive, OCR a
           plate, translate a script, or synthesize a finding in Research Lab, you can{' '}
-          <strong>publish</strong> that work into this pool. Other investigators then search, remix,
-          and extend it — so nobody starts from a blank page.
+          <strong>publish</strong> that work into this pool — private, share-link, or public. Other
+          investigators then search, fork, correct, and extend it.
         </p>
         <div className={styles.rlLibExplainGrid}>
           <article>

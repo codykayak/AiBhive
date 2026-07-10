@@ -37,6 +37,7 @@ export type ScanResult = {
   pages?: CrawlPage[];
   stoppedReason?: string | null;
   truncated?: boolean;
+  chargedUsd?: number;
 };
 
 export type RouteMode = 'browser' | 'residential' | 'custom' | 'server';
@@ -80,6 +81,7 @@ export type HarvestResult = {
   roles?: Roster;
   warnings?: string[];
   sourceUrl?: string;
+  chargedUsd?: number;
 };
 
 export type LibraryEntry = {
@@ -96,7 +98,14 @@ export type LibraryEntry = {
   confidence: number | null;
   roles: Record<string, string>;
   contributor: string;
+  publishedBy?: string | null;
+  topicId?: string;
+  visibility?: 'private' | 'unlisted' | 'public';
+  shareToken?: string | null;
+  provenance?: Record<string, unknown>;
+  correctionCount?: number;
   createdAt: string | null;
+  updatedAt?: string | null;
 };
 
 export const PROVIDER_LABELS: Record<ProviderId, string> = {

@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { Loader2, Upload } from 'lucide-react';
 import styles from '../researchLab.module.css';
 import OwrCostGuard from './OwrCostGuard';
@@ -7,7 +7,7 @@ import { useResearchLabUser } from '../context/ResearchLabUserContext';
 import { adminJson } from '../../../lib/adminApi';
 
 const MAX_FILES = 50;
-const EST_COST_PER_IMAGE = 0.06;
+const FALLBACK_PER_IMAGE = 0.06;
 
 async function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -39,16 +39,47 @@ async function compressImage(file: File): Promise<string> {
 }
 
 export default function OwrOcrBatch() {
-  const { appendOutput, setOcrText, setActiveStep } = useOwrWorkflow();
+  const { appendOutput, setOcrText, setActiveStep, addReceipt, addReliability, authHeaders } =
+    useOwrWorkflow();
   const user = useResearchLabUser();
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
   const [showCostGuard, setShowCostGuard] = useState(false);
+  const [estimatedUsd, setEstimatedUsd] = useState(0);
+  const [lastCharge, setLastCharge] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const estimatedUsd = files.length * EST_COST_PER_IMAGE;
+  useEffect(() => {
+    if (!files.length || !user) {
+      setEstimatedUsd(files.length * FALLBACK_PER_IMAGE);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const headers = {
+          ...(await authHeaders()),
+          'Content-Type': 'application/json',
+        };
+        const res = await fetch('/api/research-lab/estimate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ op: 'ocr', params: { pages: files.length } }),
+        });
+        const data = await res.json();
+        if (!cancelled && res.ok) {
+          setEstimatedUsd(Number(data.estimatedCredits) || files.length * FALLBACK_PER_IMAGE);
+        }
+      } catch {
+        if (!cancelled) setEstimatedUsd(files.length * FALLBACK_PER_IMAGE);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [files.length, user, authHeaders]);
 
   function onFiles(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
@@ -70,6 +101,7 @@ export default function OwrOcrBatch() {
     setBusy(true);
     setError('');
     setResult('');
+    setLastCharge(null);
     try {
       const images: string[] = [];
       for (const f of batch) {
@@ -91,9 +123,29 @@ export default function OwrOcrBatch() {
         title: `OCR batch — ${batch.length} image(s)`,
         text,
       });
+      if (typeof data.chargedUsd === 'number') {
+        setLastCharge(data.chargedUsd);
+        addReceipt({
+          feature: 'research_lab_ocr',
+          summary: `OCR batch (${batch.length} images)`,
+          rawCostUsd: 0,
+          chargedUsd: data.chargedUsd,
+        });
+      }
+      addReliability({
+        op: 'ocr-batch',
+        ok: true,
+        engine: 'gemini',
+      });
       setActiveStep(2);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'OCR failed');
+      const msg = err instanceof Error ? err.message : 'OCR failed';
+      setError(msg);
+      addReliability({
+        op: 'ocr-batch',
+        ok: false,
+        reason: msg,
+      });
     } finally {
       setBusy(false);
     }
@@ -127,7 +179,7 @@ export default function OwrOcrBatch() {
         <Upload className="mx-auto mb-2 text-cyan-400" size={32} />
         <p className="font-semibold text-white mb-1">Batch OCR — up to {MAX_FILES} images</p>
         <p className="text-sm text-slate-400">
-          {files.length} selected · est. {estimatedUsd.toFixed(2)} Hive credits (processing + AI)
+          {files.length} selected · est. ${estimatedUsd.toFixed(2)} Hive credits (processing + AI)
         </p>
       </div>
       {files.length > 0 && (
@@ -139,6 +191,9 @@ export default function OwrOcrBatch() {
             Clear
           </button>
         </div>
+      )}
+      {lastCharge != null && (
+        <p className="text-emerald-400 text-sm mt-3">Receipt: ${lastCharge.toFixed(2)} Hive credits charged</p>
       )}
       {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
       {result && (

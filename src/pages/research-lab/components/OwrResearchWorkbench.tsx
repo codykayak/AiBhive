@@ -7,6 +7,10 @@ import OwrInlineWebResearch from './OwrInlineWebResearch';
 import OwrInlineTranslate from './OwrInlineTranslate';
 import OwrOutputPanel from './OwrOutputPanel';
 import ResearchLabWorkspaceGuide from './ResearchLabWorkspaceGuide';
+import ResearchProjectBar from './ResearchProjectBar';
+import DomainPackPicker from './DomainPackPicker';
+import CitationBriefPanel from './CitationBriefPanel';
+import ReliabilityPanel from './ReliabilityPanel';
 import styles from '../researchLab.module.css';
 
 const STEPS = [
@@ -23,6 +27,8 @@ export default function OwrResearchWorkbench() {
   return (
     <section className={styles.owrWorkbench} aria-label="Research Lab workbench">
       <ResearchLabWorkspaceGuide />
+      <ResearchProjectBar />
+      <DomainPackPicker />
 
       <header className={styles.owrWorkbenchHeader}>
         <h2>Research tools</h2>
@@ -53,8 +59,8 @@ export default function OwrResearchWorkbench() {
             <div className={styles.rlWsLibBridge}>
               <h3>Communal Library</h3>
               <p>
-                The shared knowledge lattice lives on its own landing page — rotate the 3D map, open
-                topic corpora, and publish discoveries from your harvests.
+                The shared knowledge lattice lives on its own landing page — rotate the 3D map, search live
+                corpora, fork entries into your project, and publish discoveries from your harvests.
               </p>
               <Link className={styles.rlWsCommunalCta} to="/research-lab/communal-library">
                 Open Communal Library
@@ -67,6 +73,8 @@ export default function OwrResearchWorkbench() {
         {activeStep === 4 && <OwrInlineTranslate />}
       </div>
 
+      <ReliabilityPanel />
+      <CitationBriefPanel />
       <OwrOutputPanel />
     </section>
   );
