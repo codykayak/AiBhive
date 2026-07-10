@@ -19,10 +19,11 @@ export default function ResearchLabPricingPlans() {
       <header className={styles.rlPaygHeader}>
         <h3>Pay as you go</h3>
         <p>
-          Start with <strong>$5</strong> — you receive <strong>5 Hive credits</strong> (1 credit = $1) to
-          run scrapes, OCR, translation, and Grok-powered analysis. Bring your own API keys on almost every
-          tool to pay vendors directly; AiBhive bills a small platform orchestration fee plus our standard
-          markup when you use in-house agents.
+          Start with <strong>$5</strong> — you receive <strong>5 Hive credits</strong> (1 credit ≈ $1 of metered
+          usage). At typical BYOK + browser-routing rates, that covers roughly{' '}
+          <strong>250 archive pages</strong> through scrape, OCR, and translate (~0.02 credits/page in the chart
+          above). Larger runs scale linearly — bring your own API keys to pay vendors directly; AiBhive charges a
+          smaller orchestration fee plus markup only when you use our in-house agents.
         </p>
       </header>
 
