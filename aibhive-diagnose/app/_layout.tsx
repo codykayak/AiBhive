@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
-import { IntroSplash, hasIntroFinished } from '@/components/IntroSplash';
+import { IntroSplash, shouldPlayIntro } from '@/components/IntroSplash';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { theme } from '@/constants/theme';
 import { NetworkProvider } from '@/contexts/NetworkContext';
@@ -40,7 +40,12 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [showIntro, setShowIntro] = useState(() => !hasIntroFinished());
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    // Decide after mount so web sessionStorage / ?intro=1 are available.
+    setShowIntro(shouldPlayIntro());
+  }, []);
 
   useEffect(() => {
     if (error) throw error;

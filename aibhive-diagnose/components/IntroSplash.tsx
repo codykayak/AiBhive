@@ -9,19 +9,35 @@ const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
 const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
+const STORAGE_KEY = 'aibhive.diagnose.introPlayed';
 
-const WORD_AT = [500, 1200, 1900, 2600] as const;
-const WORDS_HIDE_AT = 3400;
-const LOGO_AT = 3600;
-const EXIT_AT = 5600;
-const DONE_AT = 6200;
+const WORD_AT = [600, 1400, 2200, 3000];
+const WORDS_HIDE_AT = 3800;
+const LOGO_AT = 4000;
+const EXIT_AT = 5800;
+const DONE_AT = 6500;
 
-/** Session lock — survives React Strict Mode remounts. */
-let introFinishedThisSession = false;
-let introStartedAt: number | null = null;
+export function shouldPlayIntro(): boolean {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('intro') === '1') return true;
+    try {
+      return window.sessionStorage.getItem(STORAGE_KEY) !== '1';
+    } catch {
+      return true;
+    }
+  }
+  return true;
+}
 
-export function hasIntroFinished() {
-  return introFinishedThisSession;
+function markIntroPlayed() {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.setItem(STORAGE_KEY, '1');
+    } catch {
+      // ignore
+    }
+  }
 }
 
 type Props = {
@@ -94,6 +110,8 @@ export function IntroSplash({ onDone }: Props) {
   const { width, height } = useWindowDimensions();
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  const startedAtRef = useRef(Date.now());
+  const finishedRef = useRef(false);
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -118,19 +136,12 @@ export function IntroSplash({ onDone }: Props) {
   }, []);
 
   useEffect(() => {
-    if (introFinishedThisSession) {
-      onDoneRef.current();
-      return;
-    }
+    startedAtRef.current = Date.now();
+    finishedRef.current = false;
 
-    if (introStartedAt == null) {
-      introStartedAt = Date.now();
-    }
-    let raf = 0;
-    let done = false;
-
-    const tick = () => {
-      const elapsed = Date.now() - (introStartedAt ?? Date.now());
+    const id = setInterval(() => {
+      if (finishedRef.current) return;
+      const elapsed = Date.now() - startedAtRef.current;
 
       let words = 0;
       for (let i = 0; i < WORD_AT.length; i += 1) {
@@ -146,21 +157,15 @@ export function IntroSplash({ onDone }: Props) {
       }
 
       if (elapsed >= DONE_AT) {
-        if (!done) {
-          done = true;
-          introFinishedThisSession = true;
-          setOpacity(0);
-          onDoneRef.current();
-        }
-        return;
+        finishedRef.current = true;
+        markIntroPlayed();
+        setOpacity(0);
+        onDoneRef.current();
       }
+    }, 50);
 
-      raf = requestAnimationFrame(tick);
-    };
-
-    raf = requestAnimationFrame(tick);
     return () => {
-      cancelAnimationFrame(raf);
+      clearInterval(id);
     };
   }, []);
 
