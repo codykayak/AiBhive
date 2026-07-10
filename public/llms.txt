@@ -13,6 +13,8 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Build a Hive App](https://aibhive.com/hive-apps/build): Describe an app; Bhive Builder ships it in the browser
 - [Hive Apps store](https://aibhive.com/hive-apps): Browse, install, try, and share community apps
 - [Research Lab](https://aibhive.com/research-lab): Multi-agent research tools — scrape, OCR, translate, Grok synthesis, community library
+- [Research tools workspace](https://aibhive.com/research-lab/workspace): Signed-in Research Lab workbench
+- [Communal Library](https://aibhive.com/research-lab/communal-library): Shared 3D knowledge map and community-sourced corpora
 - [Research Lab · Historical & Ancient](https://aibhive.com/research-lab/historical-ancient): Archive harvest, ancient scripts, community corpus
 - [Research Lab · Medical & Holistic](https://aibhive.com/research-lab/medical-holistic): Literature, protocols, OCR, shared clinical knowledge packs
 - [Research Lab · Legal Findings](https://aibhive.com/research-lab/legal-findings): Docket/exhibit OCR, synthesis, public finding packs

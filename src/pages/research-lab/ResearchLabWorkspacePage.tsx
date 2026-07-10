@@ -4,6 +4,7 @@ import { auth, googleProvider } from '../../firebase';
 import { SEO } from '../../components/SEO';
 import OwrResearchWorkbench from './components/OwrResearchWorkbench';
 import ResearchLabCustomizeFab from './components/ResearchLabCustomizeFab';
+import ResearchLabWorkspaceHero from './components/ResearchLabWorkspaceHero';
 import { OwrWorkflowProvider } from './context/OwrWorkflowContext';
 import { ResearchLabUserProvider } from './context/ResearchLabUserContext';
 import workspaceBg from '../../research-ai-tools-translation-library.jpg';
@@ -16,6 +17,7 @@ function ResearchLabWorkspace({ userEmail }: { userEmail: string }) {
         className={`${styles.rlWorkspace} ${styles.rlWorkspaceBg}`}
         style={{ '--rl-workspace-bg': `url(${workspaceBg})` } as CSSProperties}
       >
+        <ResearchLabWorkspaceHero />
         <header className={styles.rlWorkspaceBar}>
           <div>
             <p className={styles.rlWorkspaceEyebrow}>Research Lab</p>

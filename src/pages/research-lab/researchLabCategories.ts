@@ -30,7 +30,9 @@ export interface ResearchLabCategory {
 }
 
 export const RESEARCH_LAB_NAV = [
-  { name: 'Research tools', path: '/research-lab' },
+  { name: 'Research Lab', path: '/research-lab' },
+  { name: 'Research tools', path: '/research-lab/workspace' },
+  { name: 'Communal Library', path: '/research-lab/communal-library' },
   { name: 'Historical - Ancient', path: '/research-lab/historical-ancient' },
   { name: 'Medical - Holistic', path: '/research-lab/medical-holistic' },
   { name: 'Legal - Findings', path: '/research-lab/legal-findings' },

@@ -88,7 +88,7 @@ export default function Navbar() {
                   leaveFrom="transform opacity-100 scale-100"
                   leaveTo="transform opacity-0 scale-95"
                 >
-                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-64 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
+                  <HeadlessMenu.Items className="absolute left-0 mt-4 w-72 origin-top-left rounded-xl bg-bee-black border border-white/10 shadow-lg focus:outline-none overflow-hidden z-[110]">
                     <div className="py-1">
                       {RESEARCH_LAB_NAV.map((link) => (
                         <HeadlessMenu.Item key={link.path}>

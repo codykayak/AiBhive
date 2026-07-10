@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, ScanSearch, Library, Ticket, Check, Loader2 } from 'lucide-react';
+import { Compass, ScanSearch, Library, Ticket, Check, Loader2, ArrowRight } from 'lucide-react';
 import { useResearchLabUser } from '../context/ResearchLabUserContext';
 import { useOwrWorkflow } from '../context/OwrWorkflowContext';
+import { COMMUNAL_TOPICS } from '../communalLibraryTopics';
 import styles from '../researchLab.module.css';
 
 const GUIDE_STEPS = [
@@ -95,6 +96,8 @@ export default function ResearchLabWorkspaceGuide() {
     }
   }
 
+  const previewTopics = COMMUNAL_TOPICS.slice(0, 8);
+
   return (
     <section className={styles.rlWsGuide} aria-label="How to use Research Lab">
       <div className={styles.rlWsGuideTop}>
@@ -138,10 +141,7 @@ export default function ResearchLabWorkspaceGuide() {
           <Ticket className={styles.rlWsPromoIcon} aria-hidden />
           <div>
             <h3>Creator / partner promo</h3>
-            <p>
-              Podcasters &amp; YouTubers: enter your code for near-cost Hive credits (API + server
-              usage). Publish discoveries to grow the shared library.
-            </p>
+            <p>Content Creators and Partners Code here</p>
             {promo?.code && (
               <p className={styles.rlWsPromoActive}>
                 <Check className="inline w-3.5 h-3.5 mr-1" aria-hidden />
@@ -172,6 +172,34 @@ export default function ResearchLabWorkspaceGuide() {
             {message}
           </p>
         )}
+      </div>
+
+      <div className={styles.rlWsCommunal}>
+        <div className={styles.rlWsCommunalTop}>
+          <div>
+            <p className={styles.rlWsGuideEyebrow}>Featured</p>
+            <h2 className={styles.rlWsCommunalTitle}>
+              <Library className={styles.rlWsCommunalIcon} aria-hidden />
+              Communal Library
+            </h2>
+            <p className={styles.rlWsGuideLead}>
+              Explore the 3D knowledge lattice — hieroglyphics, Tartarian archives, mycology, legal
+              findings, and more — then publish your own discoveries so the shared pool compounds.
+            </p>
+          </div>
+          <Link to="/research-lab/communal-library" className={styles.rlWsCommunalCta}>
+            Enter the library
+            <ArrowRight className="w-4 h-4" aria-hidden />
+          </Link>
+        </div>
+        <ul className={styles.rlWsCommunalTopics}>
+          {previewTopics.map((t) => (
+            <li key={t.id}>
+              <Link to="/research-lab/communal-library">{t.label}</Link>
+              <span>{t.docs.toLocaleString()} docs</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
