@@ -80,7 +80,8 @@ export type HivePlansResponse = {
     tagline: string;
     highlights: string[];
   }>;
-  tokenMarkup: number;
+  /** @deprecated Internal only — never display markup to users */
+  tokenMarkup?: number;
   currencyName: string;
   freeFeatures: string[];
 };

@@ -51,6 +51,7 @@ const HiveAppsBuildPage = lazy(() => import('./pages/hive-apps/HiveAppsBuildPage
 const OldWorldResearchRedirect = lazy(() => import('./pages/research-lab/OldWorldResearchRedirect'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
+const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
 
 function PageLoader() {
   return (
@@ -119,6 +120,22 @@ function AnimatedRoutes() {
             </Route>
             <Route path="/research-lab" element={<ResearchLabLandingPage />} />
             <Route path="/research-lab/workspace" element={<ResearchLabWorkspacePage />} />
+            <Route
+              path="/research-lab/historical-ancient"
+              element={<ResearchLabCategoryPage categoryId="historical-ancient" />}
+            />
+            <Route
+              path="/research-lab/medical-holistic"
+              element={<ResearchLabCategoryPage categoryId="medical-holistic" />}
+            />
+            <Route
+              path="/research-lab/legal-findings"
+              element={<ResearchLabCategoryPage categoryId="legal-findings" />}
+            />
+            <Route
+              path="/research-lab/academia-scholarly"
+              element={<ResearchLabCategoryPage categoryId="academia-scholarly" />}
+            />
             <Route path="/old-world-research" element={<OldWorldResearchRedirect />} />
             <Route path="/old-world-research/*" element={<OldWorldResearchRedirect />} />
             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />

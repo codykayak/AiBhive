@@ -88,7 +88,7 @@ Until then, sideload builds keep auth off (`GOOGLE_AUTH_ENABLED` defaults false)
 | Change | Why |
 |--------|-----|
 | Chat suggestions hide after first message | Cleaner composer once user starts chatting |
-| 30% Hive credit markup | Lower token pricing for users |
+| Hive credit pricing | Clear Hive credit plans for users |
 | Build-complete upsell + User Guide | Grok offers Hive vs stand-alone export; guide ships with every app |
 | ASO store listing files | `store/android/en-US/` for Play search optimization |
 

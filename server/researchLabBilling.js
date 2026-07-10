@@ -1,5 +1,5 @@
 /**
- * Research Lab utility billing — Hive credits (30% markup) or BYOK orchestration fee.
+ * Research Lab utility billing — Hive credits (Hive credits) or BYOK orchestration fee.
  */
 import { applyTokenMarkup } from './hivePlans.js';
 import * as hiveUsage from './hiveUsage.js';

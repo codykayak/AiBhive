@@ -12,7 +12,11 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [App hub / Bhive Builder](https://aibhive.com/app): Build mobile apps, web apps, and sites in plain English
 - [Build a Hive App](https://aibhive.com/hive-apps/build): Describe an app; Bhive Builder ships it in the browser
 - [Hive Apps store](https://aibhive.com/hive-apps): Browse, install, try, and share community apps
-- [Research Lab](https://aibhive.com/research-lab): Scrape archives, OCR, translate, ask questions, share discoveries
+- [Research Lab](https://aibhive.com/research-lab): Multi-agent research tools — scrape, OCR, translate, Grok synthesis, community library
+- [Research Lab · Historical & Ancient](https://aibhive.com/research-lab/historical-ancient): Archive harvest, ancient scripts, community corpus
+- [Research Lab · Medical & Holistic](https://aibhive.com/research-lab/medical-holistic): Literature, protocols, OCR, shared clinical knowledge packs
+- [Research Lab · Legal Findings](https://aibhive.com/research-lab/legal-findings): Docket/exhibit OCR, synthesis, public finding packs
+- [Research Lab · Academia & Scholarly](https://aibhive.com/research-lab/academia-scholarly): Corpora, literature synthesis, open scholarly datasets
 - [Fable Scrape](https://aibhive.com/fable-scrape): Stealth AI research harvester for bot-blocked archives + OCR + translation
 - [Fable Scrape guide](https://aibhive.com/fable-scrape/guide): How to use stealth engines, filters, proxies, and OCR
 - [OCR Lab](https://aibhive.com/ocr-lab): Batch image-to-text with vision models (Markdown/PDF export)

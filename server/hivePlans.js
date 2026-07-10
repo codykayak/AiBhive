@@ -1,9 +1,9 @@
 /**
- * AiBhive subscription plans and token pricing.
- * Token usage is billed at raw API cost × TOKEN_MARKUP (30% markup = 1.3×).
+ * AiBhive subscription plans and Hive credit pricing.
+ * Internal TOKEN_MARKUP applies server-side; never surface markup language to users.
  */
 
-/** 30% markup on all Hive-metered token/API usage (AiBhive Tokens) */
+/** Internal multiplier for Hive-metered usage (not shown to users) */
 export const TOKEN_MARKUP = Number(process.env.HIVE_TOKEN_MARKUP ?? 1.3);
 
 export const PLAN_IDS = ['free', 'starter', 'pro', 'unlimited'];
@@ -28,12 +28,13 @@ export const PLANS = {
     creditOnPurchaseUsd: 0,
     monthlyAllowanceUsd: 0,
     softCapUsd: 0,
-    tagline: 'Do, build & research on-device. Bring your own AI keys.',
+    tagline: 'Explore on-device tools and bring your own AI keys.',
     highlights: [
-      'Job tracker & resume tools',
+      'Browse Research Lab guides and community demos',
       'On-device OSINT (DNS, certs, tech stack, dorks)',
-      'Build & chat with your own API keys',
-      'No Hive token charges',
+      'Job tracker & resume tools',
+      'Build & chat with your own API keys (BYOK)',
+      'Publish discoveries to the community library when signed in',
     ],
   },
   starter: {
@@ -44,13 +45,14 @@ export const PLANS = {
     creditOnPurchaseUsd: 5,
     monthlyAllowanceUsd: 0,
     softCapUsd: 5,
-    tagline: '$5 AiBhive Token pool — tracked usage, Hive Cloud & AI when you need it.',
+    tagline: 'Pay as you go — 5 Hive credits to run Research Lab tools immediately.',
     highlights: [
       'Everything in Free',
-      '$5 AiBhive Tokens (pay-as-you-go)',
-      'Full usage tracking in app',
-      'Hive Cloud intel (Firecrawl / SerpAPI)',
-      'Token usage at cost + 30%',
+      '5 Hive credits (1 credit ≈ $1 of platform AI & processing)',
+      'Fable Scrape, OCR, translation & Grok analysis',
+      'Hive Cloud search (Firecrawl / SerpAPI) when you need it',
+      'Full usage tracking in your account',
+      'Publish findings to the communal research library',
     ],
   },
   pro: {
@@ -61,13 +63,15 @@ export const PLANS = {
     creditOnPurchaseUsd: 0,
     monthlyAllowanceUsd: 20,
     softCapUsd: 25,
-    tagline: '$20/month — generous AiBhive Token allowance.',
+    tagline: 'Best for active researchers — monthly Hive credits that renew.',
     highlights: [
-      'Everything in Free',
-      '$20/mo AiBhive Token allowance',
-      'Hive Cloud intel included',
-      'Priority builds & usage dashboard',
-      'Overage at cost + 30%',
+      'Everything in Starter',
+      '$20/mo Hive credit allowance that renews each month',
+      'Priority Research Lab capacity for scrapes & OCR batches',
+      'Hive Cloud intel included in your monthly pool',
+      'Ideal for weekly archive digs and multi-agent harvests',
+      'Publish & remix community library sources at scale',
+      'Additional usage billed in Hive credits when you exceed the pool',
     ],
   },
   unlimited: {
@@ -78,13 +82,15 @@ export const PLANS = {
     creditOnPurchaseUsd: 0,
     monthlyAllowanceUsd: 75,
     softCapUsd: 120,
-    tagline: '$50/month — nearly unlimited for power users.',
+    tagline: 'Power users & labs — the largest monthly Hive credit pool.',
     highlights: [
       'Everything in Pro',
-      '$75/mo marked-up allowance (fair-use ~$120)',
-      'Best for teams & heavy research',
-      'Custom tool builds included in allowance',
-      'Overage at cost + 30%',
+      '$75/mo Hive credit allowance for heavy research pipelines',
+      'Built for teams, dissertations, and multi-domain investigations',
+      'Custom tool builds can draw from your monthly pool',
+      'Highest fair-use headroom for start-to-finish agent stacks',
+      'Community library publishing for shared scholarly corpora',
+      'Additional usage billed in Hive credits beyond the pool',
     ],
   },
 };

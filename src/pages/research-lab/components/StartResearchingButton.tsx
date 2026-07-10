@@ -5,14 +5,16 @@ const WORKSPACE_PATH = '/research-lab/workspace';
 
 type Props = {
   className?: string;
-  size?: 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg';
 };
 
 export default function StartResearchingButton({ className = '', size = 'lg' }: Props) {
   const sizeClass =
     size === 'lg'
       ? 'px-8 py-4 text-base sm:text-lg'
-      : 'px-6 py-3 text-sm sm:text-base';
+      : size === 'sm'
+        ? 'px-4 py-2 text-xs sm:text-sm'
+        : 'px-6 py-3 text-sm sm:text-base';
 
   return (
     <Link

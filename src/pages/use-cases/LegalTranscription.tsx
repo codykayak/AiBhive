@@ -13,7 +13,7 @@ export default function LegalTranscription() {
       }}
       eyebrow="For Legal Teams"
       title="Court-grade transcripts,"
-      highlight="without the markup."
+      highlight="with multi-agent QA."
       subtitle="A multi-agent AI pipeline specifically tuned for depositions, court proceedings, and legal documentation — with citation awareness baked in."
       heroImage={heroImage}
       heroAlt="Legal transcription with AI accuracy"

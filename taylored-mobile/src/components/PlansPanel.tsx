@@ -22,7 +22,6 @@ function priceLabel(plan: HivePlan): string {
 
 export function PlansPanel({ usage, currentPlanId = 'free', onRefresh }: Props) {
   const [plans, setPlans] = useState<HivePlan[]>([]);
-  const [markup, setMarkup] = useState(1.3);
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState<string | null>(null);
 
@@ -31,7 +30,6 @@ export function PlansPanel({ usage, currentPlanId = 'free', onRefresh }: Props) 
     const data = await fetchHivePlans();
     if (data) {
       setPlans(data.plans);
-      setMarkup(data.tokenMarkup);
     }
     setLoading(false);
   }, []);
@@ -73,7 +71,7 @@ export function PlansPanel({ usage, currentPlanId = 'free', onRefresh }: Props) 
           {usage.creditBalanceUsd > 0 && (
             <Text style={styles.usageMeta}>{HIVE_COPY.balanceLabel(usage.creditBalanceUsd)}</Text>
           )}
-          <Text style={styles.usageMeta}>{HIVE_COPY.tokenMarkupNote(markup)}</Text>
+          <Text style={styles.usageMeta}>{HIVE_COPY.tokenMarkupNote()}</Text>
         </GlassCard>
       )}
 

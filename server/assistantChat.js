@@ -1,27 +1,15 @@
-import { GoogleGenAI } from '@google/genai';
+import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { AIBHIVE_ASSISTANT_SYSTEM_INSTRUCTION } from './assistantKnowledge.js';
+import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 
 const MAX_USER_MESSAGE_LENGTH = 2000;
 const MAX_HISTORY_TURNS = 8;
-const MODEL = 'gemini-2.5-pro';
 
 const TRANSCRIPTION_PRICING_REPLY =
   'When you visit our checkout cart you can drop your file in and get an exact price for your project instantly. Go to /get-started to upload and see your quote.';
 
 const AGENTIC_PRICING_REPLY =
   'The scope and multitude of variables that go into a project of any size are complex and require a human in the loop. Call or text us, or click Book a call at /book-consultation. We usually get back to you within the hour. You can also reach us at hello@aibhive.com.';
-
-let aiClient;
-
-function getGemini() {
-  if (!aiClient) {
-    if (!process.env.GEMINI_API_KEY) {
-      return null;
-    }
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  }
-  return aiClient;
-}
 
 function isTranscriptionPricingQuestion(lower) {
   const pricing = ['price', 'pricing', 'cost', 'how much', 'quote', 'rate'];
@@ -74,10 +62,14 @@ function isAgenticPricingQuestion(lower) {
   return pricing.some((p) => lower.includes(p)) && agentic.some((a) => lower.includes(a));
 }
 
+function getXaiKey() {
+  return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+}
+
 /**
  * @param {{ role: 'user' | 'model', text: string }[]} history
  * @param {string} message
- * @returns {Promise<{ reply: string, source: 'gemini' | 'fallback' }>}
+ * @returns {Promise<{ reply: string, source: 'grok' | 'fallback' }>}
  */
 export async function getAssistantReply(history, message) {
   const trimmed = String(message || '').trim().slice(0, MAX_USER_MESSAGE_LENGTH);
@@ -85,47 +77,40 @@ export async function getAssistantReply(history, message) {
     return { reply: 'Please type a question and I can help.', source: 'fallback' };
   }
 
-  const ai = getGemini();
-  if (!ai) {
+  const apiKey = getXaiKey();
+  if (!apiKey) {
     return { reply: getFallbackReply(trimmed), source: 'fallback' };
   }
+
+  await resolveLatestGrokModels();
+  const model = getCachedGrokChatModel();
 
   const recentHistory = (history || [])
     .filter((m) => m?.text?.trim() && (m.role === 'user' || m.role === 'model'))
     .slice(-MAX_HISTORY_TURNS);
 
-  const contents = [];
+  const messages = [{ role: 'system', content: AIBHIVE_ASSISTANT_SYSTEM_INSTRUCTION }];
   for (const turn of recentHistory) {
-    contents.push({
-      role: turn.role === 'model' ? 'model' : 'user',
-      parts: [{ text: turn.text.trim() }],
+    messages.push({
+      role: turn.role === 'model' ? 'assistant' : 'user',
+      content: turn.text.trim(),
     });
   }
-  contents.push({ role: 'user', parts: [{ text: trimmed }] });
+  messages.push({ role: 'user', content: trimmed });
 
   try {
-    const response = await ai.models.generateContent({
-      model: MODEL,
-      contents,
-      config: {
-        systemInstruction: AIBHIVE_ASSISTANT_SYSTEM_INSTRUCTION,
-        temperature: 0.4,
-        maxOutputTokens: 900,
-      },
-    });
-
-    const reply = response.text?.trim();
+    const reply = await grokChatMessages(apiKey, model, messages);
     if (reply) {
-      return { reply, source: 'gemini' };
+      return { reply, source: 'grok' };
     }
   } catch (err) {
-    console.error('[assistant-chat] Gemini error:', err.message || err);
+    console.error('[assistant-chat] Grok error:', err.message || err);
   }
 
   return { reply: getFallbackReply(trimmed), source: 'fallback' };
 }
 
-/** Keyword fallback when Gemini is unavailable */
+/** Keyword fallback when Grok is unavailable */
 function getFallbackReply(input) {
   const lower = input.toLowerCase();
 
@@ -137,6 +122,11 @@ function getFallbackReply(input) {
   }
 
   const rules = [
+    {
+      keys: ['research lab', 'fable scrape', 'ocr', 'archive', 'historical', 'ancient'],
+      reply:
+        'AiBhive Research Lab combines multi-agent scrape, OCR, translation, Grok analysis, and a community library. Start at /research-lab — categories cover Research tools, Historical-Ancient, Medical-Holistic, Legal-Findings, and Academia-scholarly.',
+    },
     {
       keys: ['real estate', 'wholesal', 'investor', 'realtor', 'broker', 'seller', 'fub', 'gohighlevel', 'ghl'],
       reply:
@@ -171,7 +161,7 @@ function getFallbackReply(input) {
     {
       keys: ['medical', 'legal', 'compliance', 'hipaa', 'court'],
       reply:
-        'Medical & Legal multi-agent hive: /solutions/medical-legal-multi-agent-compliance. Self-serve transcription: /transcription',
+        'Medical & Legal multi-agent hive: /solutions/medical-legal-multi-agent-compliance. Research Lab medical/legal categories: /research-lab/medical-holistic and /research-lab/legal-findings. Self-serve transcription: /transcription',
     },
     {
       keys: ['book', 'consult', 'demo', 'audit', 'strategy'],
@@ -188,8 +178,8 @@ function getFallbackReply(input) {
         'Transcription and translation: /transcription and /grow. Exact pricing at /get-started — drop your file in for an instant quote.',
     },
     {
-      keys: ['price', 'cost', 'pricing', 'how much'],
-      reply: `${AGENTIC_PRICING_REPLY}\n\nFor transcription/translation files only: ${TRANSCRIPTION_PRICING_REPLY}`,
+      keys: ['price', 'cost', 'pricing', 'how much', 'hive credit'],
+      reply: `${AGENTIC_PRICING_REPLY}\n\nFor transcription/translation files only: ${TRANSCRIPTION_PRICING_REPLY}\n\nResearch Lab and Hive Cloud AI use Hive credits — see plans inside /research-lab.`,
     },
     {
       keys: ['contact', 'email', 'support', 'hello', 'text us', 'call us'],
@@ -197,7 +187,7 @@ function getFallbackReply(input) {
     },
     {
       keys: ['hi', 'hello', 'hey'],
-      reply: "Hi, I'm Cody, your AI assistant. How can I help?",
+      reply: "Hi, I'm Cody — powered by the latest Grok on AiBhive. How can I help?",
     },
   ];
 
@@ -208,6 +198,6 @@ function getFallbackReply(input) {
   }
 
   return (
-    'AiBHive offers agentic B2B automation (see Solutions in the menu) and self-serve transcription at /get-started. Book a call: /book-consultation or hello@aibhive.com.'
+    'AiBHive offers agentic B2B automation (see Solutions), Research Lab multi-agent research at /research-lab, and self-serve transcription at /get-started. Book a call: /book-consultation or hello@aibhive.com.'
   );
 }

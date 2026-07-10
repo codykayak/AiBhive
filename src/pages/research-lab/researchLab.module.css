@@ -1523,3 +1523,340 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* —— Research tools landing polish (visual only) —— */
+.rlToolsLanding {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245, 158, 11, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 30%, rgba(34, 211, 238, 0.06), transparent 50%),
+    var(--owr-bg);
+}
+
+.rlToolsLanding :global(.rl-tools-hero)::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.45), transparent);
+  z-index: 30;
+}
+
+/* —— Elaborate pricing cards —— */
+.rlPlansGridElaborate {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 1rem;
+}
+
+.rlPlanCardElaborate {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 18, 32, 0.85);
+  padding: 1.25rem 1.15rem 1.35rem;
+  backdrop-filter: blur(10px);
+  transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.rlPlanCardElaborate:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.rlPlanCardFeatured {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(165deg, rgba(245, 158, 11, 0.12), rgba(12, 18, 32, 0.95));
+  box-shadow: 0 0 40px rgba(245, 158, 11, 0.08);
+}
+
+.rlPlanBadge {
+  position: absolute;
+  top: -0.55rem;
+  left: 1rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #050505;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.rlPlanCardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.35rem;
+}
+
+.rlPlanIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #f59e0b;
+}
+
+.rlPlanHighlights {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.rlPlanHighlights li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
+.rlPlanCheck {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #f59e0b;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.rlPlanCta {
+  margin-top: 1.1rem;
+}
+
+/* —— Category marketing pages —— */
+.rlCatPage {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.rlCatHero {
+  position: relative;
+  min-height: min(88vh, 820px);
+  display: flex;
+  align-items: flex-end;
+  padding: 7rem 1.25rem 4rem;
+}
+
+.rlCatHeroBg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.rlCatHeroBg img {
+  width: 100%;
+  height: 115%;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.rlCatHeroScrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(5, 8, 16, 0.55) 0%, rgba(5, 8, 16, 0.72) 45%, #050810 100%),
+    linear-gradient(90deg, rgba(5, 8, 16, 0.85) 0%, rgba(5, 8, 16, 0.35) 55%, rgba(5, 8, 16, 0.7) 100%);
+}
+
+.rlCatHeroInner {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.rlCatEyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.rlCatTitle {
+  font-size: clamp(2.4rem, 6vw, 4.25rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: #fff;
+  max-width: 16ch;
+  margin: 0 0 1.25rem;
+}
+
+.rlCatTitle span {
+  background: linear-gradient(90deg, #f59e0b, #fde68a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rlCatLead {
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  color: #cbd5e1;
+  max-width: 38rem;
+  line-height: 1.55;
+  margin: 0 0 1.75rem;
+}
+
+.rlCatCtaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.rlCatSection {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 3.5rem 1.25rem;
+}
+
+.rlCatSection h2 {
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 0.75rem;
+}
+
+.rlCatSection > p {
+  color: #94a3b8;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  max-width: 42rem;
+  margin: 0 0 2rem;
+}
+
+.rlCatGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.rlCatTile {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(12, 18, 32, 0.7);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.rlCatTile:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(12, 18, 32, 0.9);
+}
+
+.rlCatTile h3 {
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.45rem;
+}
+
+.rlCatTile p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rlCatCommunity {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(12, 18, 32, 0.9));
+  border-radius: 1.25rem;
+  padding: 1.75rem;
+}
+
+.rlCatCraft {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.25rem;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1.5rem;
+}
+
+.rlCatCraftLabel {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  margin-bottom: 0.75rem;
+}
+
+.rlCatChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rlCatChip {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.25s, background 0.25s, color 0.25s;
+}
+
+.rlCatChipActive,
+.rlCatChip:hover {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+}
+
+.rlCatCraftOut {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  min-height: 5.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 8, 16, 0.7);
+  padding: 1rem;
+}
+
+.rlCatFaq details {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.85rem;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.55rem;
+  background: rgba(12, 18, 32, 0.55);
+}
+
+.rlCatFaq summary {
+  cursor: pointer;
+  color: #fff;
+  font-weight: 600;
+  list-style: none;
+}
+
+.rlCatFaq p {
+  color: #94a3b8;
+  margin: 0.75rem 0 0;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .rlCatHero {
+    min-height: 72vh;
+    padding-top: 6rem;
+  }
+}
