@@ -1,4 +1,3 @@
-import { applyTokenMarkup } from './hivePlans.js';
 import * as hiveUsage from './hiveUsage.js';
 
 const OCR_PER_PAGE = Number(process.env.HOMEWORK_OCR_RAW_COST_PER_PAGE ?? 0.003);
@@ -21,7 +20,7 @@ export function homeworkIngestRawCost() {
  * @param {import('firebase-admin/firestore').Firestore} db
  */
 export async function requireHomeworkBudget(db, userId, rawCostUsd, feature) {
-  const marked = applyTokenMarkup(rawCostUsd);
+  const { markedUsd: marked } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
   const budget = await hiveUsage.checkTokenBudget(db, userId, marked, feature);
   if (!budget.ok) {
     return {
@@ -44,10 +43,11 @@ export async function chargeHomeworkUsage(db, userId, rawCostUsd, feature, summa
     summary,
   });
   if (!charge.ok) {
+    const { markedUsd } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
     return {
       ok: false,
       needPayment: true,
-      amountUsd: charge.amountUsd ?? applyTokenMarkup(rawCostUsd),
+      amountUsd: charge.amountUsd ?? markedUsd,
     };
   }
   return { ok: true, chargedUsd: charge.chargedUsd };
