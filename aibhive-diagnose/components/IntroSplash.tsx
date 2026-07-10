@@ -9,27 +9,8 @@ const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
 const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
-const STORAGE_KEY = 'aibhive.diagnose.introPlayed';
 
-const WORD_AT = [600, 1400, 2200, 3000];
-const WORDS_HIDE_AT = 3800;
-const LOGO_AT = 4000;
-const EXIT_AT = 5800;
-const DONE_AT = 6500;
-
-export function shouldPlayIntro(): boolean {
-  // Always play on open for now — branding intro is part of the product feel.
-  // ?intro=0 can skip for automated checks.
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('intro') === '0') return false;
-  }
-  return true;
-}
-
-function markIntroPlayed() {
-  // Reserved for a future “play once per install” preference.
-}
+type Phase = 'words' | 'logo' | 'exit';
 
 type Props = {
   onDone: () => void;
@@ -97,17 +78,21 @@ function NativeVideo() {
   );
 }
 
+/**
+ * Sequential branded intro:
+ * video + words one-by-one → fade to AiBhive logo → dismiss.
+ * Uses chained timeouts (not rAF) so web automation / background tabs can't skip.
+ */
 export function IntroSplash({ onDone }: Props) {
   const { width, height } = useWindowDimensions();
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
-  const startedAtRef = useRef(Date.now());
-  const finishedRef = useRef(false);
+  const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  const generationRef = useRef(0);
 
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(0);
-  const [showWords, setShowWords] = useState(true);
-  const [showLogo, setShowLogo] = useState(false);
+  const [phase, setPhase] = useState<Phase>('words');
   const [opacity, setOpacity] = useState(1);
 
   useEffect(() => {
@@ -127,41 +112,66 @@ export function IntroSplash({ onDone }: Props) {
   }, []);
 
   useEffect(() => {
-    startedAtRef.current = Date.now();
-    finishedRef.current = false;
+    const generation = ++generationRef.current;
+    const timers = timersRef.current;
+    timers.forEach(clearTimeout);
+    timers.length = 0;
 
-    const id = setInterval(() => {
-      if (finishedRef.current) return;
-      const elapsed = Date.now() - startedAtRef.current;
+    const safe = (fn: () => void) => () => {
+      if (generationRef.current !== generation) return;
+      fn();
+    };
 
-      let words = 0;
-      for (let i = 0; i < WORD_AT.length; i += 1) {
-        if (elapsed >= WORD_AT[i]) words = i + 1;
-      }
-      setVisibleCount(words);
-      setShowWords(elapsed < WORDS_HIDE_AT);
-      setShowLogo(elapsed >= LOGO_AT);
+    const schedule = (fn: () => void, ms: number) => {
+      timers.push(setTimeout(safe(fn), ms));
+    };
 
-      if (elapsed >= EXIT_AT) {
-        const fade = Math.max(0, 1 - (elapsed - EXIT_AT) / (DONE_AT - EXIT_AT));
-        setOpacity(fade);
-      }
+    // Reset visual state for this generation
+    setVisibleCount(0);
+    setPhase('words');
+    setOpacity(1);
 
-      if (elapsed >= DONE_AT) {
-        finishedRef.current = true;
-        markIntroPlayed();
-        setOpacity(0);
-        onDoneRef.current();
-      }
-    }, 50);
+    // Words one at a time
+    WORDS.forEach((_, index) => {
+      schedule(() => setVisibleCount(index + 1), 700 + index * 850);
+    });
+
+    // Hold last word, then logo
+    schedule(() => setPhase('logo'), 700 + WORDS.length * 850 + 500);
+
+    // Fade out
+    schedule(() => {
+      setPhase('exit');
+      setOpacity(0);
+    }, 700 + WORDS.length * 850 + 500 + 2200);
+
+    // Done
+    schedule(() => {
+      onDoneRef.current();
+    }, 700 + WORDS.length * 850 + 500 + 2200 + 600);
 
     return () => {
-      clearInterval(id);
+      // Invalidate this generation so late timers no-op.
+      // Do NOT bump generation here — only clear timers.
+      timers.forEach(clearTimeout);
+      timers.length = 0;
     };
   }, []);
 
+  const showWords = phase === 'words';
+  const showLogo = phase === 'logo' || phase === 'exit';
+
   return (
-    <View style={[styles.root, { width, height, opacity }]}>
+    <View
+      style={[
+        styles.root,
+        {
+          width: Math.max(width, 320),
+          height: Math.max(height, 568),
+          opacity,
+        },
+      ]}
+    >
       {Platform.OS === 'web' ? (
         videoUri ? <WebVideo uri={videoUri} /> : <View style={[StyleSheet.absoluteFill, styles.fallbackBg]} />
       ) : (
@@ -178,7 +188,6 @@ export function IntroSplash({ onDone }: Props) {
                 styles.word,
                 {
                   opacity: index < visibleCount ? 1 : 0,
-                  transform: [{ translateY: index < visibleCount ? 0 : 10 }],
                 },
               ]}
             >
@@ -205,12 +214,16 @@ export function IntroSplash({ onDone }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: theme.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    zIndex: 1000,
+    zIndex: 9999,
   },
   fallbackBg: {
     backgroundColor: theme.colors.bg,
