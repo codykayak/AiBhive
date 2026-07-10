@@ -2,7 +2,7 @@
 
 Voice-first AI co-pilot for tradespeople. MVP Trade Packs: **Pool Services** and **Electrical**.
 
-Built with Expo SDK 57, Expo Router, NativeWind, and Grok as the reasoning engine.
+Built with Expo SDK 57, Expo Router, NativeWind, Reanimated motion, and Grok + offline pack intelligence.
 
 ## Quick start
 
@@ -12,36 +12,36 @@ npm install
 npx expo start
 ```
 
-Optional: set a Grok key for live AI (otherwise local pack guidance is used):
+Optional live AI:
 
 ```bash
 export EXPO_PUBLIC_GROK_API_KEY=xai-...
 ```
 
-## App structure
+## What’s inside
 
-| Tab | Purpose |
+- Animated splash + pulsing diagnose loaders
+- Home dashboard with guided flows, tips, recent diagnoses
+- Diagnose chat (camera / voice / text) backed by a searchable fault library
+- Jobs tracker with status cycling
+- Trade Pack switcher (Pool + Electrical)
+- Field tools: fault library, error codes, pool chemistry dosing, wire/torque charts, safety checklists
+- Offline-capable local diagnosis engine (works without Grok)
+
+## Structure
+
+| Path | Purpose |
 | --- | --- |
-| Home | Dashboard — voice chat, camera diagnosis, Trade Packs |
-| Diagnose | Main AI chat with voice + photo input |
-| Jobs | Placeholder job list for field work |
-| Packs | Switch Pool / Electrical packs |
+| `app/(tabs)` | Home, Diagnose, Jobs, Packs |
+| `app/tools` | Field reference tools |
+| `app/fault/[id]` | Full fault playbooks |
+| `app/guided/[id]` | Yes/No guided triage |
+| `lib/knowledge` | Faults, codes, chemistry, electrical refs |
+| `lib/grok.ts` | Grok client + library grounding |
 
-## Trade Packs
+## Next
 
-Packs live in `lib/packs/`. Each pack owns:
-
-- System prompt for Grok
-- Quick prompts
-- Equipment categories
-- Accent / icon metadata
-
-Add a new pack by creating a file under `lib/packs/` and registering it in `lib/packs/index.ts`.
-
-## Next up
-
-- Pool Services Pack depth (pumps, filters, salt, automation)
-- Electrical Pack depth (panels, breakers, wiring, code)
 - Real speech-to-text
-- Offline pack knowledge cache
-- Invoicing / parts ordering
+- Deeper brand-specific code matrices
+- Parts ordering / invoicing
+- Offline pack sync

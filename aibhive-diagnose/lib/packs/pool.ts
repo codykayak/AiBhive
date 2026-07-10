@@ -40,6 +40,8 @@ Prefer common field fixes before parts replacement. Ask for model/brand when it 
     'Salt cell shows low salt but chemistry is fine',
     'Heater ignites then shuts off',
     'Automation relay stuck on spa mode',
+    'Filter pressure high / weak returns',
+    'Green algae bloom after rain',
   ],
   commonEquipment: [
     'Variable-speed pump',

@@ -1,24 +1,28 @@
-import { Check, Waves, Zap } from 'lucide-react-native';
+import { BookOpen, Check, Route, Waves, Zap } from 'lucide-react-native';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 import { BigButton } from '@/components/BigButton';
 import { theme } from '@/constants/theme';
 import { usePack } from '@/contexts/PackContext';
+import { getGuidedFlows } from '@/lib/knowledge/guided';
+import { ALL_FAULTS } from '@/lib/knowledge/search';
 import type { TradePackId } from '@/lib/packs';
 
 export default function PacksScreen() {
   const { activePackId, setActivePackId, packs, activePack } = usePack();
+  const flows = getGuidedFlows(activePack.id);
+  const faultCount = ALL_FAULTS.filter((f) => f.packId === activePack.id).length;
 
   const selectPack = (id: TradePackId) => {
     setActivePackId(id);
   };
 
   return (
-    <ScrollView className="flex-1 bg-hive-bg" contentContainerClassName="px-5 pb-10 pt-4">
+    <ScrollView className="flex-1 bg-hive-bg" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text className="text-2xl font-bold text-hive-mist">Trade Packs</Text>
       <Text className="mt-1 text-base text-hive-steel">
-        Switch packs anytime. Each pack tunes diagnosis prompts, quick actions, and equipment knowledge.
+        Switch packs anytime. Each pack retunes chat, guided flows, codes, and the fault library.
       </Text>
 
       <View className="mt-6 gap-4">
@@ -60,26 +64,41 @@ export default function PacksScreen() {
                   </View>
                 ))}
               </View>
-
-              <View className="mt-4 border-t border-hive-border pt-4">
-                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-hive-steel">
-                  Common equipment
-                </Text>
-                {pack.commonEquipment.map((item) => (
-                  <Text key={item} className="mb-1 text-sm text-hive-mist">
-                    • {item}
-                  </Text>
-                ))}
-              </View>
             </Pressable>
           );
         })}
       </View>
 
+      <View className="mt-8 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+        <Text className="text-lg font-bold text-hive-mist">{activePack.shortName} intelligence</Text>
+        <Text className="mt-1 text-sm text-hive-steel">
+          {faultCount} fault playbooks loaded for this pack.
+        </Text>
+        <View className="mt-4 gap-3">
+          <Pressable
+            onPress={() => router.push('/tools/library')}
+            className="min-h-[56px] flex-row items-center gap-3 rounded-2xl border border-hive-border bg-hive-card px-4 active:opacity-80"
+          >
+            <BookOpen color={theme.colors.amber} size={22} />
+            <Text className="font-bold text-hive-mist">Open fault library</Text>
+          </Pressable>
+          {flows.map((flow) => (
+            <Pressable
+              key={flow.id}
+              onPress={() => router.push(`/guided/${flow.id}`)}
+              className="min-h-[56px] flex-row items-center gap-3 rounded-2xl border border-hive-border bg-hive-card px-4 active:opacity-80"
+            >
+              <Route color={activePack.accentColor} size={22} />
+              <Text className="flex-1 font-bold text-hive-mist">{flow.title}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       <View className="mt-6">
         <BigButton
           label={`Start ${activePack.shortName} Diagnosis`}
-          subtitle="Opens camera + chat with this pack"
+          subtitle="Camera + chat with this pack"
           accentColor={activePack.accentColor}
           onPress={() => router.push({ pathname: '/diagnose-session', params: { camera: '1' } })}
         />

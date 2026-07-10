@@ -5,10 +5,11 @@ import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import 'react-native-reanimated';
 
+import { AnimatedSplash } from '@/components/motion';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { theme } from '@/constants/theme';
 import { NetworkProvider } from '@/contexts/NetworkContext';
@@ -39,6 +40,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     if (error) throw error;
@@ -50,8 +52,14 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  const finishSplash = useCallback(() => setShowSplash(false), []);
+
   if (!loaded) {
     return null;
+  }
+
+  if (showSplash) {
+    return <AnimatedSplash onDone={finishSplash} />;
   }
 
   return (
@@ -69,7 +77,70 @@ export default function RootLayout() {
                   title: 'Diagnosis',
                   headerStyle: { backgroundColor: theme.colors.elevated },
                   headerTintColor: theme.colors.mist,
-                  presentation: 'card',
+                }}
+              />
+              <Stack.Screen
+                name="fault/[id]"
+                options={{
+                  title: 'Fault playbook',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="guided/[id]"
+                options={{
+                  title: 'Guided diagnose',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/index"
+                options={{
+                  title: 'Field tools',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/chemistry"
+                options={{
+                  title: 'Pool chemistry',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/wire-chart"
+                options={{
+                  title: 'Wire & torque',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/codes"
+                options={{
+                  title: 'Error codes',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/library"
+                options={{
+                  title: 'Fault library',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                }}
+              />
+              <Stack.Screen
+                name="tools/safety"
+                options={{
+                  title: 'Safety checklists',
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
                 }}
               />
             </Stack>

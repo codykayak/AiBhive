@@ -4,7 +4,6 @@ import * as Speech from 'expo-speech';
 import { Camera, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -15,12 +14,14 @@ import {
 } from 'react-native';
 
 import { ChatBubble } from '@/components/ChatBubble';
+import { PulseLoader } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
 import { askGrok } from '@/lib/grok';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
+import { pushRecent } from '@/lib/recents';
 
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -41,6 +42,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
   const [pendingAttachment, setPendingAttachment] = useState<ChatAttachment | null>(null);
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState('Diagnosing…');
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const seededRef = useRef(false);
   const cameraOpenedRef = useRef(false);
@@ -50,7 +52,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       {
         id: uid(),
         role: 'assistant',
-        content: `Ready on **${activePack.name}**. Snap a photo of the equipment or tell me what’s failing.`,
+        content: `Ready on **${activePack.name}**. Snap a photo, tap a quick prompt, or describe the fault — I’ll match the field library and walk the fix.`,
         createdAt: Date.now(),
       },
     ]);
@@ -85,11 +87,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
     }
 
     const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({
-          quality: 0.7,
-          base64: true,
-          allowsEditing: false,
-        })
+      ? await ImagePicker.launchCameraAsync({ quality: 0.7, base64: true, allowsEditing: false })
       : await ImagePicker.launchImageLibraryAsync({
           quality: 0.7,
           base64: true,
@@ -98,7 +96,6 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
         });
 
     if (result.canceled || !result.assets?.[0]) return;
-
     const asset = result.assets[0];
     setPendingAttachment({
       uri: asset.uri,
@@ -133,6 +130,9 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       setInput('');
       setPendingAttachment(null);
       setBusy(true);
+      setLoadingPhase('Scanning pack library…');
+
+      const phaseTimer = setTimeout(() => setLoadingPhase('Building repair steps…'), 450);
 
       try {
         const reply = await askGrok({
@@ -151,12 +151,15 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
         };
         setMessages((prev) => [...prev, assistantMessage]);
 
+        void pushRecent({
+          title: userMessage.content.slice(0, 80),
+          packId: activePack.id,
+          preview: reply.replace(/\*\*/g, '').slice(0, 120),
+        });
+
         if (!offline) {
           Speech.stop();
-          Speech.speak(reply.replace(/\*\*/g, '').slice(0, 400), {
-            rate: 0.95,
-            pitch: 0.95,
-          });
+          Speech.speak(reply.replace(/\*\*/g, '').slice(0, 420), { rate: 0.95, pitch: 0.95 });
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Diagnosis failed.';
@@ -165,11 +168,12 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
           {
             id: uid(),
             role: 'assistant',
-            content: `Couldn’t reach Grok. ${message}`,
+            content: `Couldn’t complete diagnosis. ${message}`,
             createdAt: Date.now(),
           },
         ]);
       } finally {
+        clearTimeout(phaseTimer);
         setBusy(false);
       }
     },
@@ -183,7 +187,6 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       return;
     }
     setListening(true);
-    // Speech-to-text native module lands in a follow-up; for MVP we seed a field-style prompt.
     setTimeout(() => {
       setListening(false);
       const sample =
@@ -191,7 +194,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
           ? 'Pump is humming but not moving water after backwash'
           : 'Breaker trips as soon as the load kicks on';
       setInput(sample);
-    }, 1200);
+    }, 1100);
   };
 
   return (
@@ -203,7 +206,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
         <PackBadge pack={activePack} />
         <Text className="text-xs font-semibold uppercase tracking-wider text-hive-steel">
-          {offline ? 'Local mode' : 'Grok ready'}
+          {offline ? 'Local mode' : 'Grok + library'}
         </Text>
       </View>
 
@@ -216,19 +219,14 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         ListFooterComponent={
           <View className="pb-2">
-            {busy ? (
-              <View className="mb-3 flex-row items-center gap-2 self-start rounded-2xl border border-hive-border bg-hive-card px-4 py-3">
-                <ActivityIndicator color={theme.colors.amber} />
-                <Text className="text-hive-steel">Diagnosing…</Text>
-              </View>
-            ) : null}
+            {busy ? <PulseLoader text={loadingPhase} /> : null}
           </View>
         }
       />
 
       <View className="border-t border-hive-border bg-hive-elevated px-3 pb-3 pt-2">
         <View className="mb-2 flex-row flex-wrap gap-2">
-          {activePack.quickPrompts.slice(0, 2).map((prompt) => (
+          {activePack.quickPrompts.slice(0, 3).map((prompt) => (
             <Pressable
               key={prompt}
               onPress={() => void send(prompt)}

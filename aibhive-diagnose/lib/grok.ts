@@ -1,4 +1,5 @@
 import type { ChatAttachment, ChatMessage, TradePack } from './packs/types';
+import { diagnoseLocally } from './knowledge/diagnoseEngine';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 const DEFAULT_MODEL = 'grok-2-vision-1212';
@@ -27,7 +28,6 @@ Keep language concise for a tech on a job site.`
   return `${pack.systemPrompt}${diagnosisExtra}`;
 }
 
-/** Offline / no-key fallback so the UI stays usable during MVP scaffolding. */
 export function buildLocalDiagnosisReply(pack: TradePack, userText: string, hasPhoto: boolean): string {
   const equipmentHint = pack.commonEquipment.slice(0, 2).join(' / ');
   const firstCategory = pack.categories[0];
@@ -58,7 +58,7 @@ export function buildLocalDiagnosisReply(pack: TradePack, userText: string, hasP
       ? '- De-energize and verify absence of voltage before opening enclosures.'
       : '- Kill power at the breaker before opening pump or heater compartments. Mind chemical exposure.',
     '',
-    `_Connect a Grok API key in settings to unlock live AI diagnosis._`,
+    `_Tip: try Guided Diagnose or Fault Library for faster matches._`,
   ].join('\n');
 }
 
@@ -72,8 +72,9 @@ export async function askGrok({
   const key = apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
   const isDiagnosis = Boolean(attachment);
 
+  // Always prefer rich local pack intelligence when offline or no key.
   if (!key) {
-    return buildLocalDiagnosisReply(pack, userText, isDiagnosis);
+    return diagnoseLocally(pack, userText, isDiagnosis).reply;
   }
 
   const history = messages
@@ -85,7 +86,10 @@ export async function askGrok({
     }));
 
   const userContent: Array<Record<string, unknown>> = [
-    { type: 'text', text: userText || (isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.') },
+    {
+      type: 'text',
+      text: userText || (isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.'),
+    },
   ];
 
   if (attachment?.base64) {
@@ -97,35 +101,40 @@ export async function askGrok({
     });
   }
 
-  const response = await fetch(GROK_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({
-      model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
-      messages: [
-        { role: 'system', content: buildSystemPrompt(pack, isDiagnosis) },
-        ...history,
-        { role: 'user', content: userContent },
-      ],
-      temperature: 0.3,
-    }),
-  });
+  // Enrich with local library hits so Grok stays grounded in field knowledge.
+  const local = diagnoseLocally(pack, userText, isDiagnosis);
 
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error(`Grok API error ${response.status}: ${errText.slice(0, 200)}`);
+  try {
+    const response = await fetch(GROK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `${buildSystemPrompt(pack, isDiagnosis)}\n\nLocal library context:\n${local.reply.slice(0, 2500)}`,
+          },
+          ...history,
+          { role: 'user', content: userContent },
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      return `${local.reply}\n\n_(Grok unreachable — showing pack library result.)_`;
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    return data.choices?.[0]?.message?.content?.trim() || local.reply;
+  } catch {
+    return `${local.reply}\n\n_(Network error — pack library result.)_`;
   }
-
-  const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-
-  const content = data.choices?.[0]?.message?.content?.trim();
-  if (!content) {
-    throw new Error('Grok returned an empty response.');
-  }
-  return content;
 }

@@ -40,6 +40,8 @@ Give clear step-by-step troubleshooting. Note when a licensed electrician or uti
     'Panel feels warm near main lugs',
     'GFCI won’t reset after rain',
     'Open neutral symptoms in kitchen',
+    'AFCI trips with vacuum',
+    'Tingle at pool ladder',
   ],
   commonEquipment: [
     'Main service panel',

@@ -1,76 +1,135 @@
-import { Briefcase, Clock, MapPin, Plus } from 'lucide-react-native';
-import { ScrollView, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { Briefcase, MapPin, Plus, Trash2 } from 'lucide-react-native';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { BigButton } from '@/components/BigButton';
 import { theme } from '@/constants/theme';
 import { usePack } from '@/contexts/PackContext';
+import {
+  deleteJob,
+  loadJobs,
+  newJob,
+  upsertJob,
+  type FieldJob,
+  type JobStatus,
+} from '@/lib/jobs/storage';
 
-const PLACEHOLDER_JOBS = [
-  {
-    id: '1',
-    title: 'Filter pressure high — backwash overdue',
-    address: '1420 Palm Court',
-    status: 'In progress',
-    pack: 'pool' as const,
-  },
-  {
-    id: '2',
-    title: 'Panel warm at main lugs',
-    address: '88 Industrial Way',
-    status: 'Queued',
-    pack: 'electrical' as const,
-  },
-  {
-    id: '3',
-    title: 'Salt cell no output',
-    address: '6 Harbor Lane',
-    status: 'Scheduled',
-    pack: 'pool' as const,
-  },
-];
+const STATUS_LABEL: Record<JobStatus, string> = {
+  queued: 'Queued',
+  in_progress: 'In progress',
+  needs_parts: 'Needs parts',
+  done: 'Done',
+};
 
 export default function JobsScreen() {
   const { activePack } = usePack();
+  const [jobs, setJobs] = useState<FieldJob[]>([]);
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftAddress, setDraftAddress] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadJobs().then(setJobs);
+    }, [])
+  );
+
+  const addJob = async () => {
+    if (!draftTitle.trim()) return;
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const job = newJob({
+      title: draftTitle.trim(),
+      address: draftAddress.trim() || 'Address TBD',
+      packId: activePack.id,
+      status: 'queued',
+    });
+    const next = await upsertJob(job);
+    setJobs(next);
+    setDraftTitle('');
+    setDraftAddress('');
+  };
+
+  const cycleStatus = async (job: FieldJob) => {
+    const order: JobStatus[] = ['queued', 'in_progress', 'needs_parts', 'done'];
+    const nextStatus = order[(order.indexOf(job.status) + 1) % order.length];
+    const next = await upsertJob({ ...job, status: nextStatus, updatedAt: Date.now() });
+    setJobs(next);
+    void Haptics.selectionAsync();
+  };
+
+  const remove = (job: FieldJob) => {
+    Alert.alert('Delete job?', job.title, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          void deleteJob(job.id).then(setJobs);
+        },
+      },
+    ]);
+  };
 
   return (
-    <ScrollView className="flex-1 bg-hive-bg" contentContainerClassName="px-5 pb-10 pt-4">
+    <ScrollView className="flex-1 bg-hive-bg" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text className="text-2xl font-bold text-hive-mist">Jobs</Text>
       <Text className="mt-1 text-base text-hive-steel">
-        Field job list scaffold — invoicing and parts ordering come next.
+        Track today’s stops. Tap status to advance. Defaults to {activePack.shortName} Pack.
       </Text>
 
-      <View className="mt-5">
-        <BigButton
-          label="New Job"
-          subtitle={`Defaults to ${activePack.shortName} Pack`}
-          icon={<Plus color={theme.colors.bg} size={26} strokeWidth={2.5} />}
-          onPress={() => {}}
+      <View className="mt-5 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+        <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-hive-steel">New job</Text>
+        <TextInput
+          value={draftTitle}
+          onChangeText={setDraftTitle}
+          placeholder="What’s broken?"
+          placeholderTextColor={theme.colors.steel}
+          className="min-h-[52px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
         />
+        <TextInput
+          value={draftAddress}
+          onChangeText={setDraftAddress}
+          placeholder="Address"
+          placeholderTextColor={theme.colors.steel}
+          className="mt-2 min-h-[48px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+        />
+        <View className="mt-3">
+          <BigButton
+            label="Add job"
+            icon={<Plus color={theme.colors.bg} size={22} strokeWidth={2.5} />}
+            onPress={() => void addJob()}
+            disabled={!draftTitle.trim()}
+          />
+        </View>
       </View>
 
       <View className="mt-6 gap-3">
-        {PLACEHOLDER_JOBS.map((job) => (
-          <View
-            key={job.id}
-            className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4"
-          >
-            <View className="mb-2 flex-row items-center gap-2">
-              <Briefcase color={theme.colors.amber} size={18} strokeWidth={2.4} />
-              <Text className="text-xs font-bold uppercase tracking-wide text-hive-amber">
-                {job.status}
-              </Text>
+        {jobs.map((job) => (
+          <View key={job.id} className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4">
+            <View className="mb-2 flex-row items-center justify-between">
+              <Pressable
+                onPress={() => void cycleStatus(job)}
+                className="flex-row items-center gap-2 rounded-full bg-hive-amber/15 px-3 py-1"
+              >
+                <Briefcase color={theme.colors.amber} size={14} strokeWidth={2.4} />
+                <Text className="text-xs font-bold uppercase tracking-wide text-hive-amber">
+                  {STATUS_LABEL[job.status]}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => remove(job)} hitSlop={8}>
+                <Trash2 color={theme.colors.steel} size={18} />
+              </Pressable>
             </View>
             <Text className="text-lg font-bold text-hive-mist">{job.title}</Text>
             <View className="mt-2 flex-row items-center gap-2">
               <MapPin color={theme.colors.steel} size={16} />
               <Text className="text-sm text-hive-steel">{job.address}</Text>
             </View>
-            <View className="mt-1 flex-row items-center gap-2">
-              <Clock color={theme.colors.steel} size={16} />
-              <Text className="text-sm text-hive-steel">
-                {job.pack === 'pool' ? 'Pool Services' : 'Electrical'} Pack
-              </Text>
-            </View>
+            <Text className="mt-1 text-xs text-hive-steel">
+              {job.packId === 'pool' ? 'Pool Services' : 'Electrical'} Pack
+            </Text>
+            {job.notes ? <Text className="mt-2 text-sm text-hive-mist">{job.notes}</Text> : null}
           </View>
         ))}
       </View>
