@@ -18,31 +18,17 @@ const EXIT_AT = 5800;
 const DONE_AT = 6500;
 
 export function shouldPlayIntro(): boolean {
+  // Always play on open for now — branding intro is part of the product feel.
+  // ?intro=0 can skip for automated checks.
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('intro') === '1') return true;
-    // Always play in Expo web/dev so reloads show the branded intro.
-    if (typeof __DEV__ !== 'undefined' && __DEV__) return true;
-    try {
-      return window.sessionStorage.getItem(STORAGE_KEY) !== '1';
-    } catch {
-      return true;
-    }
+    if (params.get('intro') === '0') return false;
   }
   return true;
 }
 
 function markIntroPlayed() {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('intro') === '1') return;
-    if (typeof __DEV__ !== 'undefined' && __DEV__) return;
-    try {
-      window.sessionStorage.setItem(STORAGE_KEY, '1');
-    } catch {
-      // ignore
-    }
-  }
+  // Reserved for a future “play once per install” preference.
 }
 
 type Props = {
