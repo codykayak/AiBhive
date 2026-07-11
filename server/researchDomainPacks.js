@@ -147,6 +147,28 @@ export const DOMAIN_PACKS = [
     suggestedUrl: 'https://www.davidrumsey.com/luna/servlet/view/search?q=fort%20bastion',
   },
   {
+    id: 'cdli-cuneiform-tablets',
+    category: 'historical-ancient',
+    name: 'CDLI cuneiform tablet dig',
+    blurb:
+      'Start from a CDLI search-results URL (not the homepage). Crawl into /artifacts/N pages → tablet photo OCR / transliteration notes → Communal Library · Cuneiform.',
+    topicId: 'cuneiform',
+    steps: [
+      {
+        step: 0,
+        action: 'harvest',
+        hint:
+          'Paste https://cdli.earth/search?q=Sumerian (or your keywords) — Crawl on, max pages 10–12, depth 1, findings 3–5. Homepages return zero tablets.',
+      },
+      { step: 1, action: 'ocr', hint: 'Vision OCR / transliterate selected tablet photos (P######).' },
+      { step: 4, action: 'translate', hint: 'Modern-language notes; keep P-numbers and periods intact.' },
+      { step: 2, action: 'publish', hint: 'Publish to Communal Library · Cuneiform with CDLI provenance URLs.' },
+    ],
+    rosterHint: { director: 'grok', vision: 'gemini', translator: 'gemini' },
+    estimateHint: 'Tablet photo harvest ≈ 0.15–0.45 Hive credits for 3–5 findings',
+    suggestedUrl: 'https://cdli.earth/search?q=Sumerian',
+  },
+  {
     id: 'orphan-train-press',
     category: 'historical-ancient',
     name: 'Orphan train press dig',
