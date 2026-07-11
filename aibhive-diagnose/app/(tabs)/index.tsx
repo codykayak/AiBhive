@@ -1,13 +1,14 @@
 import { Camera, Mic, Route, Sparkles, Wrench, Waves, Zap } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigButton } from '@/components/BigButton';
 import { AiBhiveLogo, DiagnoseOrb } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
 import { getGuidedFlows } from '@/lib/knowledge/guided';
 import { loadRecents, type RecentDiagnosis } from '@/lib/recents';
@@ -27,6 +28,7 @@ const TIPS = [
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { activePack, setActivePackId, packs } = usePack();
+  const { profile } = useAuth();
   const [recents, setRecents] = useState<RecentDiagnosis[]>([]);
   const tip = TIPS[new Date().getDate() % TIPS.length];
   const flows = getGuidedFlows(activePack.id);
@@ -47,9 +49,19 @@ export default function HomeScreen() {
         <View style={styles.heroRow}>
           <View style={styles.heroCopy}>
             <View style={styles.brandRow}>
-              <AiBhiveLogo size={52} />
+              {profile?.photoUrl ? (
+                <Image
+                  source={{ uri: profile.photoUrl }}
+                  style={{ width: 52, height: 52, borderRadius: 14 }}
+                  accessibilityLabel={profile.displayName || 'You'}
+                />
+              ) : (
+                <AiBhiveLogo size={52} />
+              )}
               <View>
-                <Text style={styles.brandEyebrow}>TradeForge</Text>
+                <Text style={styles.brandEyebrow}>
+                  {profile?.displayName ? profile.displayName : 'TradeForge'}
+                </Text>
                 <Text style={styles.brandTitle}>Diagnose</Text>
               </View>
             </View>

@@ -22,6 +22,7 @@ const AboutContact = lazy(() => import('./pages/AboutContact'));
 const GetStarted = lazy(() => import('./pages/GetStarted'));
 const FAQ = lazy(() => import('./pages/FAQ'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ProsDashboard = lazy(() => import('./pages/ProsDashboard'));
 const Homework = lazy(() => import('./pages/Homework'));
 const TestGetStarted = lazy(() => import('./pages/TestGetStarted'));
 const Podcasters = lazy(() => import('./pages/use-cases/Podcasters'));
@@ -89,6 +90,7 @@ function AnimatedRoutes() {
             <Route path="/tools/real-estate-ai" element={<RealEstateAiToolsPage />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/pros" element={<ProsDashboard />} />
             <Route path="/test" element={<TestGetStarted />} />
             <Route path="/use-cases/podcasters" element={<Podcasters />} />
             <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -160,8 +162,9 @@ function AnimatedRoutes() {
 function AppShell() {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin');
+  const isProsRoute = pathname.startsWith('/pros');
   const isHomeworkRoute = pathname.startsWith('/homework');
-  const isPrivateRoute = isAdminRoute || isHomeworkRoute;
+  const isPrivateRoute = isAdminRoute || isProsRoute || isHomeworkRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
@@ -187,6 +190,7 @@ function AppShell() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/pros" element={<ProsDashboard />} />
                 <Route path="/homework" element={<Homework />} />
               </Routes>
             </Suspense>

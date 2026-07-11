@@ -2,6 +2,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type JobStatus = 'queued' | 'in_progress' | 'done' | 'needs_parts';
 
+export type FieldNote = {
+  id: string;
+  text: string;
+  authorUid?: string;
+  createdAt: number;
+};
+
+export type FieldPhoto = {
+  id: string;
+  url: string;
+  caption?: string;
+  createdAt: number;
+};
+
 export type FieldJob = {
   id: string;
   title: string;
@@ -12,6 +26,13 @@ export type FieldJob = {
   createdAt: number;
   updatedAt: number;
   faultIds: string[];
+  customerName?: string;
+  adminNotes?: string;
+  priority?: 'low' | 'normal' | 'high' | 'emergency';
+  assigneeUid?: string | null;
+  fieldNotes?: FieldNote[];
+  photos?: FieldPhoto[];
+  cloudSynced?: boolean;
 };
 
 const KEY = 'aibhive.diagnose.jobs.v1';
@@ -27,6 +48,8 @@ const SEED: FieldJob[] = [
     createdAt: Date.now() - 86400000,
     updatedAt: Date.now() - 3600000,
     faultIds: ['pool-filter-high-pressure'],
+    fieldNotes: [],
+    photos: [],
   },
   {
     id: 'seed-2',
@@ -38,6 +61,8 @@ const SEED: FieldJob[] = [
     createdAt: Date.now() - 7200000,
     updatedAt: Date.now() - 7200000,
     faultIds: ['elec-panel-hot'],
+    fieldNotes: [],
+    photos: [],
   },
 ];
 
@@ -84,6 +109,8 @@ export function newJob(partial: Partial<FieldJob> & Pick<FieldJob, 'title' | 'pa
     createdAt: now,
     updatedAt: now,
     faultIds: [],
+    fieldNotes: [],
+    photos: [],
     ...partial,
   };
 }
