@@ -284,15 +284,14 @@ export default function CommunalArchiveTopicPage() {
                   <button
                     type="button"
                     className={styles.archThumbBtn}
-                    onClick={() => c.imageUrl && !broken[c.id] && setLightbox(c)}
-                    disabled={!c.imageUrl || broken[c.id]}
+                    onClick={() => setLightbox(c)}
+                    aria-label={`Inspect ${c.title}`}
                   >
                     {c.imageUrl && !broken[c.id] ? (
                       <img
                         src={c.imageUrl}
                         alt={c.title}
                         loading="lazy"
-                        referrerPolicy="no-referrer"
                         onError={() => setBroken((b) => ({ ...b, [c.id]: true }))}
                       />
                     ) : (
