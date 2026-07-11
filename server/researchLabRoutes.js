@@ -12,7 +12,7 @@ import {
   residentialProxyStatus,
   testProxyConnection,
 } from './fableScrape.js';
-import { aiHarvest, translateText } from './fableScrapeAgent.js';
+import { aiHarvest, translateText, scoutDigPlaces } from './fableScrapeAgent.js';
 import {
   publishFindings,
   listLibrary,
@@ -324,6 +324,27 @@ export function registerResearchLabRoutes(app, db) {
     }
   });
 
+  app.post('/api/research-lab/fable-scrape/scout-digs', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      const body = req.body || {};
+      const query = String(body.query || body.prompt || '').trim();
+      if (!query) return res.status(400).json({ error: 'Describe what you want to find.' });
+      // Free scout — template hubs + optional light director ranking (no harvest charge)
+      const result = await scoutDigPlaces({
+        query,
+        count: Math.min(Number(body.count) || 3, 6),
+        roles: body.roles,
+        keys: body.keys,
+        useDirector: body.useDirector !== false,
+      });
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Scout failed.' });
+    }
+  });
+
   app.post('/api/research-lab/fable-scrape/ai-harvest', json2mb, async (req, res) => {
     let uid = null;
     try {
@@ -331,9 +352,18 @@ export function registerResearchLabRoutes(app, db) {
       if (!authUser) return;
       uid = authUser.uid;
       const body = req.body || {};
-      // Validate URL before charging — incomplete/malformed addresses must not bill
-      const parsed = parseHttpUrl(body.url);
-      body.url = parsed.toString();
+      const rawUrl = String(body.url || '').trim();
+      const prompt = String(body.prompt || '').trim();
+      if (!prompt) {
+        return res.status(400).json({ error: 'Describe what you want the AI to find.' });
+      }
+      // URL is optional — DROC scout resolves dig sites from the prompt when blank
+      if (rawUrl) {
+        const parsed = parseHttpUrl(rawUrl);
+        body.url = parsed.toString();
+      } else {
+        body.url = '';
+      }
       const rawCost = harvestRawCost(
         body.keys,
         body.roles,

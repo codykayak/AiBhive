@@ -55,6 +55,7 @@ const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchL
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
 const CommunalLibraryPage = lazy(() => import('./pages/research-lab/CommunalLibraryPage'));
+const CommunalArchiveTopicPage = lazy(() => import('./pages/research-lab/CommunalArchiveTopicPage'));
 
 function PageLoader() {
   return (
@@ -125,6 +126,10 @@ function AnimatedRoutes() {
             <Route path="/research-lab" element={<ResearchLabLandingPage />} />
             <Route path="/research-lab/workspace" element={<ResearchLabWorkspacePage />} />
             <Route path="/research-lab/communal-library" element={<CommunalLibraryPage />} />
+            <Route
+              path="/research-lab/communal-library/:topicId"
+              element={<CommunalArchiveTopicPage />}
+            />
             <Route
               path="/research-lab/historical-ancient"
               element={<ResearchLabCategoryPage categoryId="historical-ancient" />}

@@ -15,6 +15,7 @@ import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
 import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
 import { getTartarianStarterBrief, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
+import { resolveStartUrlFromQuery } from './drocScout.js';
 
 const DEFAULT_ROLES = {
   director: { provider: 'grok', model: '' },
@@ -198,7 +199,7 @@ async function harvestFromTextCorpus({
  * Run the full AI-directed harvest.
  */
 export async function aiHarvest(params) {
-  const {
+  let {
     url,
     prompt,
     count = 10,
@@ -214,11 +215,34 @@ export async function aiHarvest(params) {
     onProgress = () => {},
   } = params;
 
-  if (!url) throw new Error('A start URL is required.');
   if (!prompt || !prompt.trim()) throw new Error('Describe what you want the AI to find.');
   const roles = mergeRoles(rawRoles);
   const wanted = Math.max(1, Math.min(Number(count) || 8, MAX_HARVEST_FINDINGS));
   const warnings = [];
+  let scoutMeta = null;
+
+  // ---- Optional URL: DROC scout finds dig places from the query ----
+  if (!url || !String(url).trim()) {
+    onProgress({ stage: 'scout', message: 'DROC is finding archive dig sites for your query…' });
+    const resolved = await resolveStartUrlFromQuery({
+      query: prompt.trim(),
+      count: 3,
+      roles,
+      keys,
+      useDirector: true,
+    });
+    url = resolved.url;
+    scoutMeta = resolved.scout;
+    warnings.push(
+      `No start URL provided — DROC scout started at: ${scoutMeta?.digs?.[0]?.title || url}`,
+    );
+    // Prefer crawl on scout-resolved search pages so we get past index pages
+    if (!crawl) {
+      crawl = true;
+      maxPages = Math.max(Number(maxPages) || 6, 8);
+      warnings.push('Auto-enabled crawl (8+ pages) because DROC started from a search-results URL.');
+    }
+  }
 
   // ---- Discover candidates ----
   onProgress({ stage: 'discover', message: crawl ? 'Crawling site for candidates…' : 'Scanning page for candidates…' });
@@ -261,8 +285,10 @@ export async function aiHarvest(params) {
       pageHint +
       `\nCandidate image assets (index. metadata):\n${catalog}\n\n` +
       `Pick the up-to-${wanted} candidates that best match the request. Judge by filename/alt/url cues. ` +
-      `Return ONLY JSON: {"strategy":"one sentence on your approach","selections":[{"index":<number>,"reason":"why this one","confidence":0-1}]}. ` +
+      `Return ONLY JSON: {"strategy":"one sentence on your approach","selections":[{"index":<number>,"reason":"why this one","confidence":0-1,"ocr":true|false}]}. ` +
       `Never select more than ${wanted}. Prefer likely primary-source document scans over decorative/UI images. ` +
+      `Set ocr:true only when the image likely contains readable text worth transcribing (plates with captions, manuscripts, newspaper pages, tablets). ` +
+      `Set ocr:false for maps/photos best inspected visually without OCR. Do NOT OCR every image — be selective. ` +
       `If NONE of the images look like primary sources (only logos/icons/UI), return selections:[].`;
 
     let strategy = '';
@@ -309,6 +335,8 @@ export async function aiHarvest(params) {
           error: '',
           kind: 'image',
         };
+        const wantsOcr = sel.ocr !== false;
+        finding.ocrSkipped = !wantsOcr;
         try {
           const asset = await downloadAsset({
             url: cand.url,
@@ -319,6 +347,12 @@ export async function aiHarvest(params) {
           finding.mimeType = asset.mimeType;
           if (!asset.mimeType.startsWith('image/')) {
             finding.error = 'Not an image — skipped OCR.';
+            findings.push(finding);
+            continue;
+          }
+          if (!wantsOcr) {
+            finding.ocrText = '';
+            finding.reason = `${finding.reason || ''} (visual inspect — OCR skipped by director)`.trim();
             findings.push(finding);
             continue;
           }
@@ -364,6 +398,7 @@ export async function aiHarvest(params) {
         roles,
         warnings,
         sourceUrl: discovery.finalUrl || url,
+        scout: scoutMeta,
       };
     }
 
@@ -385,7 +420,7 @@ export async function aiHarvest(params) {
   });
   if (textResult) {
     onProgress({ stage: 'done', message: `Text harvest complete — ${textResult.findings.length} lead(s).` });
-    return textResult;
+    return { ...textResult, scout: scoutMeta };
   }
 
   const host = (() => {
@@ -417,8 +452,11 @@ export async function aiHarvest(params) {
     roles,
     warnings: [...warnings, ...tips],
     sourceUrl: discovery.finalUrl || discovery.startUrl || url,
+    scout: scoutMeta,
   };
 }
+
+export { scoutDigPlaces } from './drocScout.js';
 
 /**
  * Standalone translate (Translation Lab), any configured provider.
