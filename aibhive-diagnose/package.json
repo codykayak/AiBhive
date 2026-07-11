@@ -41,13 +41,13 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "dev": "expo start",
+    "dev": "node scripts/serve-web.mjs",
     "dev:start": "node scripts/serve-web.mjs",
     "dev:metro": "expo start --web --port 8082 --host lan",
     "dev:8081": "expo start --web --port 8081 --host lan",
     "dev:check": "tsc --noEmit",
     "export:web": "expo export --platform web",
-    "start": "expo start",
+    "start": "node scripts/serve-web.mjs",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "node scripts/serve-web.mjs",
