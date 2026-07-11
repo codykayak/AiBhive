@@ -15,7 +15,7 @@ import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
 import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
 import { getTartarianStarterBrief, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
-import { resolveStartUrlFromQuery, resolveArchiveStartUrl, scorePrimarySourceImage } from './drocScout.js';
+import { resolveStartUrlFromQuery, resolveArchiveStartUrl, scorePrimarySourceImage, buildEmptyHarvestAdvice } from './drocScout.js';
 
 const DEFAULT_ROLES = {
   director: { provider: 'grok', model: '' },
@@ -34,6 +34,38 @@ function mergeRoles(roles = {}) {
 /** Prefer full CDLI scans over tiny search-result thumbs when OCR'ing. */
 function preferFullResolutionScan(url = '') {
   return String(url).replace(/\/dl\/tn_photo\//i, '/dl/photo/');
+}
+
+async function attachRetryAdvice(result, ctx) {
+  if (!result || (result.findings && result.findings.length > 0)) return result;
+  try {
+    onProgressSafe(ctx.onProgress, { stage: 'advice', message: 'Director is drafting retry advice…' });
+    const retryAdvice = await buildEmptyHarvestAdvice({
+      prompt: ctx.prompt,
+      url: ctx.url,
+      discovery: ctx.discovery || {},
+      candidates: ctx.candidates || [],
+      warnings: result.warnings || [],
+      roles: ctx.roles,
+      keys: ctx.keys,
+      crawl: ctx.crawl,
+      maxPages: ctx.maxPages,
+      maxDepth: ctx.maxDepth,
+      mode: result.mode || 'empty',
+      useDirector: true,
+    });
+    return { ...result, retryAdvice };
+  } catch {
+    return result;
+  }
+}
+
+function onProgressSafe(onProgress, payload) {
+  try {
+    if (typeof onProgress === 'function') onProgress(payload);
+  } catch {
+    /* ignore */
+  }
 }
 
 const TRANSLATE_SYSTEM =
@@ -179,7 +211,7 @@ async function harvestFromTextCorpus({
 
   if (!findings.length) {
     warnings.push(
-      'Text corpus was available, but the director found no citable leads matching your request. Try a search-results URL with your keywords (e.g. Chronicling America search for Tartar/Tartary), enable crawl, and raise max pages.',
+      'Text corpus was available, but the director found no citable leads matching your request.',
     );
   } else {
     warnings.push(
@@ -198,6 +230,12 @@ async function harvestFromTextCorpus({
     roles,
     warnings,
     sourceUrl: discovery.finalUrl || discovery.startUrl || url,
+    discoveryMeta: {
+      blocked: !!discovery.blocked,
+      textChars: corpusChars,
+      pages: (discovery.pages || []).length,
+      imageCandidates: (discovery.images || []).length,
+    },
   };
 }
 
@@ -464,38 +502,34 @@ export async function aiHarvest(params) {
     onProgress,
   });
   if (textResult) {
-    onProgress({ stage: 'done', message: `Text harvest complete — ${textResult.findings.length} lead(s).` });
-    return { ...textResult, scout: scoutMeta };
-  }
-
-  const host = (() => {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return '';
+    const merged = { ...textResult, scout: scoutMeta };
+    if (merged.findings?.length) {
+      onProgress({ stage: 'done', message: `Text harvest complete — ${merged.findings.length} lead(s).` });
+      return merged;
     }
-  })();
-  const isChronAm = /chroniclingamerica\.loc\.gov/i.test(host);
-  const isCdli = /cdli\.(earth|org|ucla\.edu)/i.test(host);
-  const tips = [
-    'No document images and not enough usable page text were discovered.',
-    'Tips: start from a search-results URL (not the homepage), turn Crawl on, raise max pages to 8–12, try Max stealth.',
-  ];
-  if (isChronAm) {
-    tips.push(
-      'For Chronicling America, use a results URL like: https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic — then crawl 1 link depth into article pages.',
-    );
-  }
-  if (isCdli) {
-    tips.push(
-      'For CDLI, start on a search-results URL such as https://cdli.earth/search?q=Sumerian (not https://cdli.earth). Enable Crawl so harvest can open /artifacts/N pages with tablet photos.',
-    );
+    onProgress({ stage: 'done', message: 'Text harvest returned no leads — drafting retry advice…' });
+    return attachRetryAdvice(merged, {
+      prompt: prompt.trim(),
+      url,
+      discovery,
+      candidates,
+      roles,
+      keys,
+      crawl,
+      maxPages,
+      maxDepth,
+      onProgress,
+    });
   }
 
-  return {
+  const tips = [
+    'No document images and not enough usable page text were discovered on this start URL.',
+  ];
+
+  const emptyResult = {
     ok: true,
     prompt: prompt.trim(),
-    strategy: '',
+    strategy: 'No primary-source scans or citable text leads were recoverable from this start point.',
     mode: 'empty',
     candidatesConsidered: candidates.length,
     findings: [],
@@ -505,6 +539,20 @@ export async function aiHarvest(params) {
     sourceUrl: discovery.finalUrl || discovery.startUrl || url,
     scout: scoutMeta,
   };
+
+  onProgress({ stage: 'advice', message: 'Director is drafting retry advice…' });
+  return attachRetryAdvice(emptyResult, {
+    prompt: prompt.trim(),
+    url,
+    discovery,
+    candidates,
+    roles,
+    keys,
+    crawl,
+    maxPages,
+    maxDepth,
+    onProgress,
+  });
 }
 
 export { scoutDigPlaces } from './drocScout.js';
