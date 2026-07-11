@@ -21,7 +21,7 @@ export type FieldJob = {
   title: string;
   address: string;
   notes: string;
-  packId: 'pool' | 'electrical';
+  packId: 'pool' | 'electrical' | 'property';
   status: JobStatus;
   createdAt: number;
   updatedAt: number;
@@ -61,6 +61,19 @@ const SEED: FieldJob[] = [
     createdAt: Date.now() - 7200000,
     updatedAt: Date.now() - 7200000,
     faultIds: ['elec-panel-hot'],
+    fieldNotes: [],
+    photos: [],
+  },
+  {
+    id: 'seed-3',
+    title: 'Washer won’t drain — Unit 204',
+    address: '12 Desert Ridge #204',
+    notes: 'Resident reports standing water after rinse. Check pump filter.',
+    packId: 'property',
+    status: 'queued',
+    createdAt: Date.now() - 5400000,
+    updatedAt: Date.now() - 5400000,
+    faultIds: ['prop-washer-no-drain'],
     fieldNotes: [],
     photos: [],
   },

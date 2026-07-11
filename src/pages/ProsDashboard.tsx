@@ -78,7 +78,7 @@ export default function ProsDashboard() {
 
   // onboarding
   const [companyName, setCompanyName] = useState('');
-  const [tradeType, setTradeType] = useState<'pool' | 'electrical' | 'multi'>('pool');
+  const [tradeType, setTradeType] = useState<'pool' | 'electrical' | 'property' | 'multi'>('pool');
   const [inviteCode, setInviteCode] = useState('');
   const [onboardingBusy, setOnboardingBusy] = useState(false);
 
@@ -86,7 +86,7 @@ export default function ProsDashboard() {
   const [jobTitle, setJobTitle] = useState('');
   const [jobAddress, setJobAddress] = useState('');
   const [jobAssignee, setJobAssignee] = useState('');
-  const [jobPack, setJobPack] = useState<'pool' | 'electrical'>('pool');
+  const [jobPack, setJobPack] = useState<'pool' | 'electrical' | 'property'>('pool');
   const [jobPriority, setJobPriority] = useState<'normal' | 'high' | 'emergency'>('normal');
 
   const isManager = membership?.role === 'owner' || membership?.role === 'manager';
@@ -301,6 +301,7 @@ export default function ProsDashboard() {
               >
                 <option value="pool">Pool services</option>
                 <option value="electrical">Electrical</option>
+                <option value="property">Property maintenance</option>
                 <option value="multi">Multi-trade</option>
               </select>
               <button
@@ -504,11 +505,12 @@ export default function ProsDashboard() {
                   <div className="flex gap-2">
                     <select
                       value={jobPack}
-                      onChange={(e) => setJobPack(e.target.value as 'pool' | 'electrical')}
+                      onChange={(e) => setJobPack(e.target.value as 'pool' | 'electrical' | 'property')}
                       className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
                     >
                       <option value="pool">Pool pack</option>
                       <option value="electrical">Electrical pack</option>
+                      <option value="property">Property pack</option>
                     </select>
                     <select
                       value={jobPriority}

@@ -25,9 +25,23 @@ const ELEC_CHECKS: CheckItem[] = [
   { id: 'e6', label: 'Keep working clearances clear; photo documentation' },
 ];
 
+const PROPERTY_CHECKS: CheckItem[] = [
+  { id: 'm1', label: 'Unplug / kill breaker before opening appliances' },
+  { id: 'm2', label: 'Shut gas / water before water heater or disposal work' },
+  { id: 'm3', label: 'Never put hands in a disposal with power available' },
+  { id: 'm4', label: 'Confirm dryer vent clear before replacing thermal fuse' },
+  { id: 'm5', label: 'Photo serial / model before ordering parts' },
+  { id: 'm6', label: 'If electrical panel or pool gear — switch to that pack checklist' },
+];
+
 export default function SafetyScreen() {
   const { activePack } = usePack();
-  const items = activePack.id === 'pool' ? POOL_CHECKS : ELEC_CHECKS;
+  const items =
+    activePack.id === 'pool'
+      ? POOL_CHECKS
+      : activePack.id === 'property'
+        ? PROPERTY_CHECKS
+        : ELEC_CHECKS;
   const [done, setDone] = useState<Record<string, boolean>>({});
 
   const completed = items.filter((i) => done[i.id]).length;

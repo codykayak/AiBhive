@@ -1,4 +1,4 @@
-import { Camera, Mic, Route, Sparkles, Wrench, Waves, Zap } from 'lucide-react-native';
+import { Camera, Mic, Route, Sparkles, Wrench } from 'lucide-react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
@@ -11,6 +11,7 @@ import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
 import { getGuidedFlows } from '@/lib/knowledge/guided';
+import { packIconComponent } from '@/lib/packs/icons';
 import { loadRecents, type RecentDiagnosis } from '@/lib/recents';
 
 const TIPS = [
@@ -19,6 +20,9 @@ const TIPS = [
   'A dirty salt cell lies — clean before you condemn.',
   'Open neutrals swing L1-N / L2-N under load. Treat as urgent.',
   'Brushing is not optional on green pools.',
+  'Photo the model/serial before ordering appliance parts.',
+  'Always clear the dryer vent when you replace a thermal fuse.',
+  'Disposal jam: hex key first — fingers never.',
 ];
 
 /**
@@ -131,7 +135,7 @@ export default function HomeScreen() {
         <View style={styles.gap}>
           {packs.map((pack) => {
             const active = pack.id === activePack.id;
-            const Icon = pack.icon === 'waves' ? Waves : Zap;
+            const Icon = packIconComponent(pack);
             return (
               <Pressable
                 key={pack.id}

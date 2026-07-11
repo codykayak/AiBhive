@@ -22,7 +22,7 @@ export function PackProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!cancelled && (stored === 'pool' || stored === 'electrical')) {
+        if (!cancelled && (stored === 'pool' || stored === 'electrical' || stored === 'property')) {
           setActivePackIdState(stored);
         }
       } catch {

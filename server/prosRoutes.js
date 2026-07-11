@@ -160,7 +160,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
 
       await companyRef.set({
         name: name.trim(),
-        tradeType: ['pool', 'electrical', 'multi'].includes(tradeType) ? tradeType : 'pool',
+        tradeType: ['pool', 'electrical', 'property', 'multi'].includes(tradeType) ? tradeType : 'pool',
         timezone,
         ownerUid: user.uid,
         ownerEmail: user.email || null,
@@ -168,7 +168,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         createdAt: now,
         updatedAt: now,
         settings: {
-          defaultPack: tradeType === 'electrical' ? 'electrical' : 'pool',
+          defaultPack:
+            tradeType === 'electrical'
+              ? 'electrical'
+              : tradeType === 'property'
+                ? 'property'
+                : 'pool',
           requireJobPhotos: false,
           preferredAiProvider: 'grok',
         },
@@ -181,7 +186,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         photoUrl: null,
         role: 'owner',
         status: 'active',
-        tradePack: tradeType === 'electrical' ? 'electrical' : 'pool',
+        tradePack:
+          tradeType === 'electrical'
+            ? 'electrical'
+            : tradeType === 'property'
+              ? 'property'
+              : 'pool',
         joinedAt: now,
       });
 
@@ -344,7 +354,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
       if (req.body?.role && ['owner', 'manager', 'tech'].includes(req.body.role)) updates.role = req.body.role;
       if (req.body?.status && ['active', 'inactive'].includes(req.body.status)) updates.status = req.body.status;
       if (typeof req.body?.displayName === 'string') updates.displayName = req.body.displayName.trim();
-      if (req.body?.tradePack && ['pool', 'electrical'].includes(req.body.tradePack)) {
+      if (req.body?.tradePack && ['pool', 'electrical', 'property'].includes(req.body.tradePack)) {
         updates.tradePack = req.body.tradePack;
       }
       updates.updatedAt = FieldValue().serverTimestamp();
@@ -419,7 +429,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         customerPhone,
         notes,
         adminNotes,
-        packId: packId === 'electrical' ? 'electrical' : 'pool',
+        packId: ['pool', 'electrical', 'property'].includes(packId) ? packId : 'pool',
         priority: ['low', 'normal', 'high', 'emergency'].includes(priority) ? priority : 'normal',
         status: 'queued',
         assigneeUid,
@@ -485,6 +495,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
       const keys = isManager ? allowedManager : allowedTech;
       for (const key of keys) {
         if (req.body?.[key] !== undefined) updates[key] = req.body[key];
+      }
+      if (updates.packId && !['pool', 'electrical', 'property'].includes(updates.packId)) {
+        updates.packId = 'pool';
       }
 
       if (req.body?.fieldNote?.trim()) {
@@ -664,7 +677,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
 
       const updates = { updatedAt: FieldValue().serverTimestamp() };
       if (typeof req.body?.name === 'string' && req.body.name.trim()) updates.name = req.body.name.trim();
-      if (['pool', 'electrical', 'multi'].includes(req.body?.tradeType)) updates.tradeType = req.body.tradeType;
+      if (['pool', 'electrical', 'property', 'multi'].includes(req.body?.tradeType)) updates.tradeType = req.body.tradeType;
       if (typeof req.body?.timezone === 'string') updates.timezone = req.body.timezone;
       if (req.body?.settings && typeof req.body.settings === 'object') {
         updates.settings = req.body.settings;

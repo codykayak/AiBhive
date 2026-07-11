@@ -1,8 +1,10 @@
+import type { TradePackId } from '../packs/types';
+
 export type Severity = 'low' | 'medium' | 'high' | 'critical';
 
 export type FaultEntry = {
   id: string;
-  packId: 'pool' | 'electrical';
+  packId: TradePackId;
   category: string;
   title: string;
   aliases: string[];
@@ -18,7 +20,7 @@ export type FaultEntry = {
 
 export type ErrorCode = {
   id: string;
-  packId: 'pool' | 'electrical';
+  packId: TradePackId;
   brand?: string;
   code: string;
   meaning: string;
@@ -28,7 +30,7 @@ export type ErrorCode = {
 
 export type PartItem = {
   id: string;
-  packId: 'pool' | 'electrical';
+  packId: TradePackId;
   name: string;
   category: string;
   commonFor: string[];
@@ -45,7 +47,7 @@ export type GuidedStep = {
 
 export type GuidedFlow = {
   id: string;
-  packId: 'pool' | 'electrical';
+  packId: TradePackId;
   title: string;
   description: string;
   startStepId: string;

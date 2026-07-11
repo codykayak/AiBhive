@@ -171,7 +171,12 @@ export default function JobsScreen() {
               <Text className="text-sm text-hive-steel">{job.address}</Text>
             </View>
             <Text className="mt-1 text-xs text-hive-steel">
-              {job.packId === 'pool' ? 'Pool Services' : 'Electrical'} Pack
+              {job.packId === 'pool'
+                ? 'Pool Services'
+                : job.packId === 'property'
+                  ? 'Property Maintenance'
+                  : 'Electrical'}{' '}
+              Pack
               {job.cloudSynced ? ' · Pros' : ''}
               {job.fieldNotes?.length ? ` · ${job.fieldNotes.length} notes` : ''}
             </Text>

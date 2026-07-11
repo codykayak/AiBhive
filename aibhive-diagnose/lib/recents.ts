@@ -5,7 +5,7 @@ const KEY = 'aibhive.diagnose.recents.v1';
 export type RecentDiagnosis = {
   id: string;
   title: string;
-  packId: 'pool' | 'electrical';
+  packId: 'pool' | 'electrical' | 'property';
   preview: string;
   createdAt: number;
   faultId?: string;

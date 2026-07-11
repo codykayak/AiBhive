@@ -1,6 +1,6 @@
 import type { TradePack } from '@/lib/packs';
 import { buildLocalDiagnosisReply } from '@/lib/localReply';
-import { formatFaultAsReply, searchCodes, searchFaults } from './search';
+import { formatFaultAsReply, formatRagAppendix, searchCodes, searchFaults } from './search';
 
 export type LocalDiagnosis = {
   reply: string;
@@ -14,8 +14,9 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
   const codes = searchCodes(text, pack.id).slice(0, 2);
 
   if (faults.length === 0 && codes.length === 0) {
+    const rag = pack.id === 'property' ? formatRagAppendix(text) : '';
     return {
-      reply: buildLocalDiagnosisReply(pack, text, hasPhoto),
+      reply: `${buildLocalDiagnosisReply(pack, text, hasPhoto)}${rag}`,
       matchedFaultIds: [],
       matchedCodes: [],
     };
@@ -45,8 +46,13 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
     sections.push('');
     sections.push(`**Also consider**`);
     for (const f of faults.slice(1)) {
-      sections.push(`- ${f.title} (${f.severity})`);
+      sections.push(`- ${f.title} (${f.severity}) · ${f.packId}`);
     }
+  }
+
+  if (pack.id === 'property') {
+    const rag = formatRagAppendix(text);
+    if (rag) sections.push(rag);
   }
 
   sections.push('');

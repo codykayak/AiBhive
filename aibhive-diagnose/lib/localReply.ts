@@ -29,7 +29,9 @@ export function buildLocalDiagnosisReply(pack: TradePack, userText: string, hasP
     `**Safety**`,
     pack.id === 'electrical'
       ? '- De-energize and verify absence of voltage before opening enclosures.'
-      : '- Kill power at the breaker before opening pump or heater compartments. Mind chemical exposure.',
+      : pack.id === 'property'
+        ? '- Lock out power/gas/water before opening cabinets. Never reach into a live disposal.'
+        : '- Kill power at the breaker before opening pump or heater compartments. Mind chemical exposure.',
     '',
     `_Tip: try Guided Diagnose or Fault Library for faster matches._`,
   ].join('\n');
