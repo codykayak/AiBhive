@@ -121,6 +121,16 @@ export default function Navbar() {
                 Hive Apps
               </Link>
 
+              <Link
+                to="/pros"
+                className={cn(
+                  'text-sm font-semibold transition-all duration-300 hover:text-bee-amber',
+                  location.pathname.startsWith('/pros') ? 'text-bee-amber' : 'text-slate-300'
+                )}
+              >
+                Pros
+              </Link>
+
               <HeadlessMenu as="div" className="relative inline-block text-left">
                 <HeadlessMenu.Button
                   className={cn(
@@ -294,6 +304,13 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
             >
               Hive Apps
+            </Link>
+            <Link
+              to="/pros"
+              className="block px-3 py-2.5 text-slate-300 hover:text-bee-amber font-medium"
+              onClick={() => setMobileOpen(false)}
+            >
+              Pros
             </Link>
             <p className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
               Solutions

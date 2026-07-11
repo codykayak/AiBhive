@@ -1,12 +1,14 @@
 import * as Haptics from 'expo-haptics';
-import { Briefcase, MapPin, Plus, Trash2 } from 'lucide-react-native';
+import { Briefcase, MapPin, Plus, RefreshCw, Trash2 } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { BigButton } from '@/components/BigButton';
 import { theme } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
+import { syncJobsFromPros } from '@/lib/jobs/prosSync';
 import {
   deleteJob,
   loadJobs,
@@ -25,14 +27,30 @@ const STATUS_LABEL: Record<JobStatus, string> = {
 
 export default function JobsScreen() {
   const { activePack } = usePack();
+  const { getIdToken, user } = useAuth();
   const [jobs, setJobs] = useState<FieldJob[]>([]);
   const [draftTitle, setDraftTitle] = useState('');
   const [draftAddress, setDraftAddress] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const token = await getIdToken();
+    if (token) {
+      setSyncing(true);
+      try {
+        setJobs(await syncJobsFromPros(token));
+      } finally {
+        setSyncing(false);
+      }
+    } else {
+      setJobs(await loadJobs());
+    }
+  }, [getIdToken]);
 
   useFocusEffect(
     useCallback(() => {
-      void loadJobs().then(setJobs);
-    }, [])
+      void refresh();
+    }, [refresh])
   );
 
   const addJob = async () => {
@@ -73,10 +91,23 @@ export default function JobsScreen() {
 
   return (
     <ScrollView className="flex-1 bg-hive-bg" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-      <Text className="text-2xl font-bold text-hive-mist">Jobs</Text>
-      <Text className="mt-1 text-base text-hive-steel">
-        Track today’s stops. Tap status to advance. Defaults to {activePack.shortName} Pack.
-      </Text>
+      <View className="flex-row items-center justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-2xl font-bold text-hive-mist">Jobs</Text>
+          <Text className="mt-1 text-base text-hive-steel">
+            {user
+              ? 'Synced from Pros dispatch. Tap a card for notes & photos.'
+              : `Local stops · sign in to sync with Pros. Defaults to ${activePack.shortName}.`}
+          </Text>
+        </View>
+        <Pressable
+          onPress={() => void refresh()}
+          className="h-11 w-11 items-center justify-center rounded-xl border border-hive-border bg-hive-elevated"
+        >
+          <RefreshCw color={theme.colors.amber} size={18} />
+        </Pressable>
+      </View>
+      {syncing ? <Text className="mt-2 text-xs text-hive-steel">Syncing with Pros…</Text> : null}
 
       <View className="mt-5 rounded-2xl border border-hive-border bg-hive-elevated p-4">
         <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-hive-steel">New job</Text>
@@ -106,10 +137,17 @@ export default function JobsScreen() {
 
       <View className="mt-6 gap-3">
         {jobs.map((job) => (
-          <View key={job.id} className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4">
+          <Pressable
+            key={job.id}
+            onPress={() => router.push(`/job/${job.id}` as never)}
+            className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
+          >
             <View className="mb-2 flex-row items-center justify-between">
               <Pressable
-                onPress={() => void cycleStatus(job)}
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  void cycleStatus(job);
+                }}
                 className="flex-row items-center gap-2 rounded-full bg-hive-amber/15 px-3 py-1"
               >
                 <Briefcase color={theme.colors.amber} size={14} strokeWidth={2.4} />
@@ -117,7 +155,13 @@ export default function JobsScreen() {
                   {STATUS_LABEL[job.status]}
                 </Text>
               </Pressable>
-              <Pressable onPress={() => remove(job)} hitSlop={8}>
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  remove(job);
+                }}
+                hitSlop={8}
+              >
                 <Trash2 color={theme.colors.steel} size={18} />
               </Pressable>
             </View>
@@ -128,9 +172,10 @@ export default function JobsScreen() {
             </View>
             <Text className="mt-1 text-xs text-hive-steel">
               {job.packId === 'pool' ? 'Pool Services' : 'Electrical'} Pack
+              {job.cloudSynced ? ' · Pros' : ''}
+              {job.fieldNotes?.length ? ` · ${job.fieldNotes.length} notes` : ''}
             </Text>
-            {job.notes ? <Text className="mt-2 text-sm text-hive-mist">{job.notes}</Text> : null}
-          </View>
+          </Pressable>
         ))}
       </View>
     </ScrollView>

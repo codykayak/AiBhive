@@ -1,4 +1,4 @@
-import { Briefcase, Home, Layers, Stethoscope } from 'lucide-react-native';
+import { Briefcase, Home, Layers, Stethoscope, UserRound } from 'lucide-react-native';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 
@@ -52,6 +52,13 @@ export default function TabLayout() {
         options={{
           title: 'Packs',
           tabBarIcon: ({ color, size }) => <Layers color={color} size={size} strokeWidth={2.4} />,
+        }}
+      />
+      <Tabs.Screen
+        name="account"
+        options={{
+          title: 'Account',
+          tabBarIcon: ({ color, size }) => <UserRound color={color} size={size} strokeWidth={2.4} />,
         }}
       />
     </Tabs>

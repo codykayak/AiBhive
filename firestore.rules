@@ -82,5 +82,42 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if false;
     }
+
+    // ===============================================================
+    // AiBhive Pros — company field ops (Diagnose)
+    // Most reads/writes go through Admin SDK (/api/pros/*).
+    // Client rules below are a safety net for direct SDK access.
+    // ===============================================================
+    function prosMemberOf(companyId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/pros_memberships/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/pros_memberships/$(request.auth.uid)).data.companyId == companyId;
+    }
+
+    match /pros_memberships/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow write: if false;
+    }
+
+    match /pros_companies/{companyId} {
+      allow read: if prosMemberOf(companyId) || isAdmin();
+      allow write: if false;
+
+      match /members/{memberId} {
+        allow read: if prosMemberOf(companyId) || isAdmin();
+        allow write: if false;
+      }
+      match /jobs/{jobId} {
+        allow read: if prosMemberOf(companyId) || isAdmin();
+        allow write: if false;
+      }
+      match /activity/{eventId} {
+        allow read: if prosMemberOf(companyId) || isAdmin();
+        allow write: if false;
+      }
+      match /secrets/{docId} {
+        allow read, write: if false;
+      }
+    }
   }
 }

@@ -1,0 +1,700 @@
+/**
+ * AiBhive Pros — field ops for trade companies (pool, electrical, …).
+ * Firestore paths (Admin SDK):
+ *   pros_companies/{companyId}
+ *   pros_companies/{companyId}/secrets/aiKeys   (server-only)
+ *   pros_companies/{companyId}/members/{uid}
+ *   pros_companies/{companyId}/jobs/{jobId}
+ *   pros_companies/{companyId}/activity/{id}
+ *   pros_memberships/{uid}
+ */
+
+import admin from 'firebase-admin';
+import { verifyHiveAuth } from './hiveAuth.js';
+
+const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
+
+const PROVIDER_META = {
+  grok: { label: 'Grok (xAI)', hint: 'XAI_API_KEY / grok-2-vision', envFallback: ['XAI_API_KEY', 'GROK_API_KEY'] },
+  claude: { label: 'Claude (Anthropic)', hint: 'ANTHROPIC_API_KEY', envFallback: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'] },
+  kimi: { label: 'Kimi / Kimmy (Moonshot)', hint: 'MOONSHOT_API_KEY', envFallback: ['MOONSHOT_API_KEY', 'KIMI_API_KEY', 'KIMMY_API_KEY'] },
+  gemini: { label: 'Gemini (Google)', hint: 'GEMINI_API_KEY', envFallback: ['GEMINI_API_KEY'] },
+};
+
+function FieldValue() {
+  return admin.firestore.FieldValue;
+}
+
+function maskKey(key) {
+  if (!key || typeof key !== 'string') return null;
+  const trimmed = key.trim();
+  if (trimmed.length < 8) return '••••';
+  return `••••${trimmed.slice(-4)}`;
+}
+
+function envHas(provider) {
+  const meta = PROVIDER_META[provider];
+  if (!meta) return false;
+  return meta.envFallback.some((name) => Boolean(process.env[name]?.trim()));
+}
+
+async function requireProsUser(req, res) {
+  const user = await verifyHiveAuth(req);
+  if (!user?.uid) {
+    res.status(401).json({ error: 'Sign in required' });
+    return null;
+  }
+  return user;
+}
+
+async function getMembership(db, uid) {
+  const snap = await db.collection('pros_memberships').doc(uid).get();
+  if (!snap.exists) return null;
+  return { uid, ...snap.data() };
+}
+
+async function assertCompanyAccess(db, uid, companyId, roles = ['owner', 'manager', 'tech']) {
+  const mem = await getMembership(db, uid);
+  if (!mem || mem.companyId !== companyId) return null;
+  if (!roles.includes(mem.role)) return null;
+  return mem;
+}
+
+async function requireManager(db, uid) {
+  const membership = await getMembership(db, uid);
+  if (!membership?.companyId) return null;
+  const mem = await assertCompanyAccess(db, uid, membership.companyId, ['owner', 'manager']);
+  if (!mem) return null;
+  return { ...mem, companyId: membership.companyId };
+}
+
+
+async function logActivity(db, companyId, event) {
+  const ref = db.collection('pros_companies').doc(companyId).collection('activity').doc();
+  await ref.set({
+    ...event,
+    id: ref.id,
+    createdAt: FieldValue().serverTimestamp(),
+  });
+}
+
+function serializeJob(id, data) {
+  return {
+    id,
+    title: data.title || '',
+    address: data.address || '',
+    customerName: data.customerName || '',
+    customerPhone: data.customerPhone || '',
+    notes: data.notes || '',
+    adminNotes: data.adminNotes || '',
+    packId: data.packId || 'pool',
+    status: data.status || 'queued',
+    priority: data.priority || 'normal',
+    assigneeUid: data.assigneeUid || null,
+    assigneeName: data.assigneeName || null,
+    scheduledFor: data.scheduledFor || null,
+    fieldNotes: data.fieldNotes || [],
+    photos: data.photos || [],
+    faultIds: data.faultIds || [],
+    createdAt: data.createdAt?.toMillis?.() ?? data.createdAt ?? null,
+    updatedAt: data.updatedAt?.toMillis?.() ?? data.updatedAt ?? null,
+    completedAt: data.completedAt?.toMillis?.() ?? data.completedAt ?? null,
+  };
+}
+
+export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
+  const platformAdmin = typeof isPlatformAdmin === 'function' ? isPlatformAdmin : () => false;
+
+  // Bootstrap / me
+  app.get('/api/pros/me', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) {
+        return res.json({
+          user: { uid: user.uid, email: user.email },
+          company: null,
+          membership: null,
+          isPlatformAdmin: platformAdmin(user.email),
+        });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(mem.companyId).get();
+      const company = companySnap.exists ? { id: companySnap.id, ...companySnap.data(), secrets: undefined } : null;
+      if (company?.aiKeys) {
+        // never leak; strip if somehow present
+        delete company.aiKeys;
+      }
+
+      return res.json({
+        user: { uid: user.uid, email: user.email },
+        company,
+        membership: mem,
+        isPlatformAdmin: platformAdmin(user.email),
+      });
+    } catch (err) {
+      console.error('[pros/me]', err);
+      return res.status(500).json({ error: 'Failed to load Pros profile' });
+    }
+  });
+
+  // Create company (first-time owner)
+  app.post('/api/pros/companies', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+
+      const existing = await getMembership(db, user.uid);
+      if (existing?.companyId) {
+        return res.status(400).json({ error: 'You already belong to a company' });
+      }
+
+      const { name, tradeType = 'pool', timezone = 'America/Phoenix' } = req.body || {};
+      if (!name?.trim()) return res.status(400).json({ error: 'Company name required' });
+
+      const companyRef = db.collection('pros_companies').doc();
+      const companyId = companyRef.id;
+      const now = FieldValue().serverTimestamp();
+
+      await companyRef.set({
+        name: name.trim(),
+        tradeType: ['pool', 'electrical', 'multi'].includes(tradeType) ? tradeType : 'pool',
+        timezone,
+        ownerUid: user.uid,
+        ownerEmail: user.email || null,
+        inviteCode: `PROS-${companyId.slice(0, 6).toUpperCase()}`,
+        createdAt: now,
+        updatedAt: now,
+        settings: {
+          defaultPack: tradeType === 'electrical' ? 'electrical' : 'pool',
+          requireJobPhotos: false,
+          preferredAiProvider: 'grok',
+        },
+      });
+
+      await companyRef.collection('members').doc(user.uid).set({
+        uid: user.uid,
+        email: user.email || null,
+        displayName: user.email?.split('@')[0] || 'Owner',
+        photoUrl: null,
+        role: 'owner',
+        status: 'active',
+        tradePack: tradeType === 'electrical' ? 'electrical' : 'pool',
+        joinedAt: now,
+      });
+
+      await db.collection('pros_memberships').doc(user.uid).set({
+        companyId,
+        role: 'owner',
+        joinedAt: now,
+      });
+
+      await logActivity(db, companyId, {
+        type: 'company_created',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Company “${name.trim()}” created`,
+      });
+
+      return res.json({ companyId, inviteCode: `PROS-${companyId.slice(0, 6).toUpperCase()}` });
+    } catch (err) {
+      console.error('[pros/companies]', err);
+      return res.status(500).json({ error: 'Failed to create company' });
+    }
+  });
+
+  // Join via invite code
+  app.post('/api/pros/join', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+
+      const existing = await getMembership(db, user.uid);
+      if (existing?.companyId) {
+        return res.status(400).json({ error: 'Already on a company roster' });
+      }
+
+      const code = String(req.body?.inviteCode || '').trim().toUpperCase();
+      if (!code) return res.status(400).json({ error: 'Invite code required' });
+
+      const snap = await db.collection('pros_companies').where('inviteCode', '==', code).limit(1).get();
+      if (snap.empty) return res.status(404).json({ error: 'Invalid invite code' });
+
+      const companyDoc = snap.docs[0];
+      const companyId = companyDoc.id;
+      const now = FieldValue().serverTimestamp();
+      const role = req.body?.role === 'manager' ? 'manager' : 'tech';
+
+      await companyDoc.ref.collection('members').doc(user.uid).set({
+        uid: user.uid,
+        email: user.email || null,
+        displayName: req.body?.displayName || user.email?.split('@')[0] || 'Tech',
+        photoUrl: null,
+        role,
+        status: 'active',
+        tradePack: companyDoc.data().settings?.defaultPack || 'pool',
+        joinedAt: now,
+      });
+
+      await db.collection('pros_memberships').doc(user.uid).set({
+        companyId,
+        role,
+        joinedAt: now,
+      });
+
+      await logActivity(db, companyId, {
+        type: 'member_joined',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `${user.email || user.uid} joined as ${role}`,
+      });
+
+      return res.json({ companyId, role });
+    } catch (err) {
+      console.error('[pros/join]', err);
+      return res.status(500).json({ error: 'Failed to join company' });
+    }
+  });
+
+  // Overview stats
+  app.get('/api/pros/overview', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const companyId = mem.companyId;
+      const [membersSnap, jobsSnap, activitySnap] = await Promise.all([
+        db.collection('pros_companies').doc(companyId).collection('members').get(),
+        db.collection('pros_companies').doc(companyId).collection('jobs').get(),
+        db
+          .collection('pros_companies')
+          .doc(companyId)
+          .collection('activity')
+          .orderBy('createdAt', 'desc')
+          .limit(12)
+          .get(),
+      ]);
+
+      const jobs = jobsSnap.docs.map((d) => serializeJob(d.id, d.data()));
+      const byStatus = { queued: 0, in_progress: 0, needs_parts: 0, done: 0 };
+      for (const j of jobs) {
+        byStatus[j.status] = (byStatus[j.status] || 0) + 1;
+      }
+
+      return res.json({
+        members: membersSnap.size,
+        techs: membersSnap.docs.filter((d) => d.data().role === 'tech').length,
+        jobsTotal: jobs.length,
+        jobsByStatus: byStatus,
+        openJobs: jobs.filter((j) => j.status !== 'done').length,
+        recentActivity: activitySnap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            ...data,
+            createdAt: data.createdAt?.toMillis?.() ?? null,
+          };
+        }),
+      });
+    } catch (err) {
+      console.error('[pros/overview]', err);
+      return res.status(500).json({ error: 'Failed to load overview' });
+    }
+  });
+
+  // Team
+  app.get('/api/pros/team', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const snap = await db.collection('pros_companies').doc(mem.companyId).collection('members').get();
+      const members = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          uid: d.id,
+          ...data,
+          joinedAt: data.joinedAt?.toMillis?.() ?? null,
+        };
+      });
+      return res.json({ members });
+    } catch (err) {
+      console.error('[pros/team]', err);
+      return res.status(500).json({ error: 'Failed to load team' });
+    }
+  });
+
+  app.patch('/api/pros/team/:uid', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(404).json({ error: 'No company' });
+      const mem = await assertCompanyAccess(db, user.uid, membership.companyId, ['owner', 'manager']);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const targetUid = req.params.uid;
+      const updates = {};
+      if (req.body?.role && ['owner', 'manager', 'tech'].includes(req.body.role)) updates.role = req.body.role;
+      if (req.body?.status && ['active', 'inactive'].includes(req.body.status)) updates.status = req.body.status;
+      if (typeof req.body?.displayName === 'string') updates.displayName = req.body.displayName.trim();
+      if (req.body?.tradePack && ['pool', 'electrical'].includes(req.body.tradePack)) {
+        updates.tradePack = req.body.tradePack;
+      }
+      updates.updatedAt = FieldValue().serverTimestamp();
+
+      await db.collection('pros_companies').doc(mem.companyId).collection('members').doc(targetUid).set(updates, {
+        merge: true,
+      });
+
+      if (updates.role) {
+        await db.collection('pros_memberships').doc(targetUid).set({ role: updates.role }, { merge: true });
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/team patch]', err);
+      return res.status(500).json({ error: 'Failed to update member' });
+    }
+  });
+
+  // Jobs CRUD
+  app.get('/api/pros/jobs', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      let query = db.collection('pros_companies').doc(mem.companyId).collection('jobs');
+      // techs only see their jobs unless manager
+      const snap = await query.get();
+      let jobs = snap.docs.map((d) => serializeJob(d.id, d.data()));
+      if (mem.role === 'tech') {
+        jobs = jobs.filter((j) => j.assigneeUid === user.uid);
+      }
+      jobs.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      return res.json({ jobs });
+    } catch (err) {
+      console.error('[pros/jobs]', err);
+      return res.status(500).json({ error: 'Failed to load jobs' });
+    }
+  });
+
+  app.post('/api/pros/jobs', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const {
+        title,
+        address = '',
+        customerName = '',
+        customerPhone = '',
+        notes = '',
+        adminNotes = '',
+        packId = 'pool',
+        priority = 'normal',
+        assigneeUid = null,
+        assigneeName = null,
+        scheduledFor = null,
+      } = req.body || {};
+
+      if (!title?.trim()) return res.status(400).json({ error: 'Title required' });
+
+      const ref = db.collection('pros_companies').doc(mem.companyId).collection('jobs').doc();
+      const now = FieldValue().serverTimestamp();
+      const payload = {
+        title: title.trim(),
+        address,
+        customerName,
+        customerPhone,
+        notes,
+        adminNotes,
+        packId: packId === 'electrical' ? 'electrical' : 'pool',
+        priority: ['low', 'normal', 'high', 'emergency'].includes(priority) ? priority : 'normal',
+        status: 'queued',
+        assigneeUid,
+        assigneeName,
+        scheduledFor,
+        fieldNotes: [],
+        photos: [],
+        faultIds: [],
+        createdAt: now,
+        updatedAt: now,
+        createdBy: user.uid,
+      };
+      await ref.set(payload);
+
+      await logActivity(db, mem.companyId, {
+        type: 'job_created',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        jobId: ref.id,
+        message: `Job created: ${payload.title}`,
+      });
+
+      return res.json({ job: serializeJob(ref.id, { ...payload, createdAt: Date.now(), updatedAt: Date.now() }) });
+    } catch (err) {
+      console.error('[pros/jobs create]', err);
+      return res.status(500).json({ error: 'Failed to create job' });
+    }
+  });
+
+  app.patch('/api/pros/jobs/:jobId', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const jobRef = db.collection('pros_companies').doc(membership.companyId).collection('jobs').doc(req.params.jobId);
+      const jobSnap = await jobRef.get();
+      if (!jobSnap.exists) return res.status(404).json({ error: 'Job not found' });
+
+      const job = jobSnap.data();
+      const isManager = membership.role === 'owner' || membership.role === 'manager';
+      const isAssignee = job.assigneeUid === user.uid;
+      if (!isManager && !isAssignee) return res.status(403).json({ error: 'Not allowed' });
+
+      const updates = { updatedAt: FieldValue().serverTimestamp() };
+      const allowedManager = [
+        'title',
+        'address',
+        'customerName',
+        'customerPhone',
+        'notes',
+        'adminNotes',
+        'packId',
+        'priority',
+        'assigneeUid',
+        'assigneeName',
+        'scheduledFor',
+        'status',
+      ];
+      const allowedTech = ['status', 'notes'];
+
+      const keys = isManager ? allowedManager : allowedTech;
+      for (const key of keys) {
+        if (req.body?.[key] !== undefined) updates[key] = req.body[key];
+      }
+
+      if (req.body?.fieldNote?.trim()) {
+        const note = {
+          id: `n-${Date.now()}`,
+          text: String(req.body.fieldNote).trim(),
+          authorUid: user.uid,
+          authorEmail: user.email || null,
+          createdAt: Date.now(),
+        };
+        updates.fieldNotes = FieldValue().arrayUnion(note);
+      }
+
+      if (req.body?.photoUrl) {
+        const photo = {
+          id: `p-${Date.now()}`,
+          url: String(req.body.photoUrl),
+          caption: req.body.photoCaption || '',
+          authorUid: user.uid,
+          createdAt: Date.now(),
+        };
+        updates.photos = FieldValue().arrayUnion(photo);
+      }
+
+      if (updates.status === 'done') updates.completedAt = FieldValue().serverTimestamp();
+
+      await jobRef.set(updates, { merge: true });
+      const next = (await jobRef.get()).data();
+
+      await logActivity(db, membership.companyId, {
+        type: 'job_updated',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        jobId: req.params.jobId,
+        message: `Job updated: ${next.title}`,
+      });
+
+      return res.json({ job: serializeJob(req.params.jobId, next) });
+    } catch (err) {
+      console.error('[pros/jobs patch]', err);
+      return res.status(500).json({ error: 'Failed to update job' });
+    }
+  });
+
+  app.delete('/api/pros/jobs/:jobId', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      await db.collection('pros_companies').doc(mem.companyId).collection('jobs').doc(req.params.jobId).delete();
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/jobs delete]', err);
+      return res.status(500).json({ error: 'Failed to delete job' });
+    }
+  });
+
+  // AI provider keys (Grok, Claude, Kimi/Kimmy, Gemini)
+  app.get('/api/pros/ai-keys', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const secretsSnap = await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('secrets')
+        .doc('aiKeys')
+        .get();
+      const secrets = secretsSnap.exists ? secretsSnap.data() : {};
+      const companySnap = await db.collection('pros_companies').doc(mem.companyId).get();
+      const preferred = companySnap.data()?.settings?.preferredAiProvider || 'grok';
+
+      const providers = PROVIDERS.map((id) => {
+        const stored = secrets[id];
+        const configured = Boolean(stored?.key) || envHas(id);
+        return {
+          id,
+          label: PROVIDER_META[id].label,
+          hint: PROVIDER_META[id].hint,
+          configured,
+          source: stored?.key ? 'company' : envHas(id) ? 'platform_env' : 'none',
+          last4: stored?.key ? maskKey(stored.key) : envHas(id) ? 'env' : null,
+          updatedAt: stored?.updatedAt?.toMillis?.() ?? stored?.updatedAt ?? null,
+        };
+      });
+
+      return res.json({ preferredAiProvider: preferred, providers });
+    } catch (err) {
+      console.error('[pros/ai-keys get]', err);
+      return res.status(500).json({ error: 'Failed to load AI keys' });
+    }
+  });
+
+  app.post('/api/pros/ai-keys', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const { provider, apiKey, preferredAiProvider, clear } = req.body || {};
+      const secretsRef = db.collection('pros_companies').doc(mem.companyId).collection('secrets').doc('aiKeys');
+
+      if (preferredAiProvider && PROVIDERS.includes(preferredAiProvider)) {
+        await db
+          .collection('pros_companies')
+          .doc(mem.companyId)
+          .set(
+            {
+              settings: { preferredAiProvider },
+              updatedAt: FieldValue().serverTimestamp(),
+            },
+            { merge: true }
+          );
+      }
+
+      if (provider) {
+        if (!PROVIDERS.includes(provider)) {
+          return res.status(400).json({ error: 'Invalid provider. Use grok, claude, kimi, or gemini.' });
+        }
+
+        if (clear) {
+          await secretsRef.set(
+            {
+              [provider]: FieldValue().delete(),
+              updatedAt: FieldValue().serverTimestamp(),
+              updatedBy: user.email || user.uid,
+            },
+            { merge: true }
+          );
+        } else if (typeof apiKey === 'string' && apiKey.trim()) {
+          await secretsRef.set(
+            {
+              [provider]: {
+                key: apiKey.trim(),
+                updatedAt: FieldValue().serverTimestamp(),
+                updatedBy: user.email || user.uid,
+              },
+              updatedAt: FieldValue().serverTimestamp(),
+              updatedBy: user.email || user.uid,
+            },
+            { merge: true }
+          );
+        }
+      }
+
+      await logActivity(db, mem.companyId, {
+        type: 'ai_keys_updated',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: provider
+          ? clear
+            ? `Cleared ${provider} API key`
+            : `Updated ${provider} API key`
+          : `Preferred AI set to ${preferredAiProvider}`,
+      });
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/ai-keys post]', err);
+      return res.status(500).json({ error: 'Failed to save AI keys' });
+    }
+  });
+
+  // Company settings
+  app.patch('/api/pros/company', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const updates = { updatedAt: FieldValue().serverTimestamp() };
+      if (typeof req.body?.name === 'string' && req.body.name.trim()) updates.name = req.body.name.trim();
+      if (['pool', 'electrical', 'multi'].includes(req.body?.tradeType)) updates.tradeType = req.body.tradeType;
+      if (typeof req.body?.timezone === 'string') updates.timezone = req.body.timezone;
+      if (req.body?.settings && typeof req.body.settings === 'object') {
+        updates.settings = req.body.settings;
+      }
+
+      await db.collection('pros_companies').doc(mem.companyId).set(updates, { merge: true });
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/company]', err);
+      return res.status(500).json({ error: 'Failed to update company' });
+    }
+  });
+
+  // Rotate invite code
+  app.post('/api/pros/invite/rotate', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const inviteCode = `PROS-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      await db.collection('pros_companies').doc(mem.companyId).set(
+        { inviteCode, updatedAt: FieldValue().serverTimestamp() },
+        { merge: true }
+      );
+      return res.json({ inviteCode });
+    } catch (err) {
+      console.error('[pros/invite]', err);
+      return res.status(500).json({ error: 'Failed to rotate invite' });
+    }
+  });
+}
