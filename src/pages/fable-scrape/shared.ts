@@ -83,6 +83,22 @@ export type ScoutDig = {
   fableHint?: string;
 };
 
+export type HarvestRetryAdvice = {
+  explanation?: string;
+  retryHint?: string;
+  suggestedUrl?: string;
+  settings?: {
+    crawl?: boolean;
+    maxPages?: number;
+    maxDepth?: number;
+    findings?: number;
+    engineHint?: string;
+  };
+  steps?: string[];
+  digs?: ScoutDig[];
+  why?: string[];
+};
+
 export type HarvestResult = {
   ok: boolean;
   prompt?: string;
@@ -96,6 +112,7 @@ export type HarvestResult = {
   sourceUrl?: string;
   chargedUsd?: number;
   scout?: { digs?: ScoutDig[]; strategy?: string; query?: string };
+  retryAdvice?: HarvestRetryAdvice;
 };
 
 export type LibraryEntry = {

@@ -379,3 +379,149 @@ export async function resolveStartUrlFromQuery(params) {
   if (!top?.url) throw new Error('DROC could not find a dig site for that query.');
   return { url: top.url, scout };
 }
+
+/**
+ * When a harvest returns 0 findings, explain why and suggest a concrete retry.
+ * Combines deterministic hub knowledge with a short Director explanation.
+ */
+export async function buildEmptyHarvestAdvice({
+  prompt = '',
+  url = '',
+  discovery = {},
+  candidates = [],
+  warnings = [],
+  roles = {},
+  keys = {},
+  crawl = false,
+  maxPages = 6,
+  maxDepth = 1,
+  mode = 'empty',
+  useDirector = true,
+} = {}) {
+  const q = clipQuery(prompt, 200);
+  const startUrl = String(url || discovery.finalUrl || discovery.startUrl || '').trim();
+  let host = '';
+  let path = '/';
+  try {
+    const u = new URL(startUrl);
+    host = u.hostname.replace(/^www\./i, '');
+    path = (u.pathname || '/').replace(/\/+$/, '') || '/';
+  } catch {
+    /* ignore */
+  }
+
+  const bareHub =
+    path === '/' ||
+    path === '' ||
+    ['/home', '/browse', '/about', '/index'].includes(path.toLowerCase());
+  const rewritten = startUrl ? resolveArchiveStartUrl(startUrl, q) : { rewritten: false, url: '' };
+  const digs = buildHubDigs(extractSearchKeywords(q) || q || 'primary sources').slice(0, 3);
+  const primaryHits = (candidates || []).filter((c) => scorePrimarySourceImage(c) >= 8).length;
+  const imageCount = Array.isArray(candidates) ? candidates.length : 0;
+  const textChars = String(discovery.text || '').length;
+  const pagesVisited = Array.isArray(discovery.pages) ? discovery.pages.length : 0;
+
+  const whyBits = [];
+  if (discovery.blocked) {
+    whyBits.push('The archive may be bot-blocking this route (try Max stealth or residential routing).');
+  }
+  if (bareHub) {
+    whyBits.push(
+      `The start URL looks like a site homepage (${host || 'hub'}), which usually has navigation chrome—not searchable document results.`,
+    );
+  }
+  if (imageCount > 0 && primaryHits === 0) {
+    whyBits.push(
+      `Found ${imageCount} image(s), but none looked like primary-source scans (logos/UI), so image OCR did not run.`,
+    );
+  }
+  if (imageCount === 0) {
+    whyBits.push('No document images were discovered on the pages crawled.');
+  }
+  if (mode === 'text-corpus' || textChars > 0) {
+    whyBits.push(
+      textChars > 400
+        ? 'Page text was available, but it did not contain citable leads matching your request (often nav/index copy).'
+        : 'Not enough usable page text was available to mine leads.',
+    );
+  }
+  if (!crawl) {
+    whyBits.push('Crawl was off — only the start page was scanned. Search indexes usually need crawl into result/item pages.');
+  } else if (Number(maxPages) < 8) {
+    whyBits.push(`Crawl budget was low (max pages ${maxPages}). Raising to 10–12 often reaches artifact/result pages.`);
+  }
+
+  const suggestedUrl =
+    (rewritten.rewritten && rewritten.url) || digs[0]?.url || startUrl || '';
+  const settings = {
+    crawl: true,
+    maxPages: Math.max(12, Number(maxPages) || 6),
+    maxDepth: Math.max(1, Number(maxDepth) || 0),
+    findings: 4,
+    engineHint: discovery.blocked ? 'Max stealth' : 'Auto',
+  };
+
+  const steps = [
+    suggestedUrl ? `Paste this start URL: ${suggestedUrl}` : 'Use Find dig sites (A/B/C) to pick a search-results URL.',
+    `Turn Crawl on · max pages ${settings.maxPages} · link depth ${settings.maxDepth} · findings ~${settings.findings}.`,
+    settings.engineHint === 'Max stealth' ? 'Switch engine to Max stealth if the site bot-blocks.' : null,
+    'Re-run AI Harvest with the same research question (or narrow it to a keyword + place/period).',
+  ].filter(Boolean);
+
+  let explanation =
+    whyBits.join(' ') ||
+    'This run did not find primary-source scans or citable text leads for your request.';
+  let retryHint = `Retry from a keyword search-results page for “${extractSearchKeywords(q) || q}”, not a homepage.`;
+  let suggestedUrlFinal = suggestedUrl;
+
+  if (useDirector) {
+    try {
+      const raw = await runChat({
+        provider: roles?.director?.provider || 'grok',
+        model: roles?.director?.model || '',
+        byok: keys,
+        system:
+          'You coach archive researchers after an empty harvest. Be concrete and kind. Respond with strict JSON only.',
+        prompt:
+          `Researcher asked:\n"""${q}"""\n\n` +
+          `Start URL: ${startUrl || '(none)'}\n` +
+          `Host: ${host || 'unknown'} · path: ${path}\n` +
+          `Mode reached: ${mode}\n` +
+          `Discovered: ${imageCount} image candidates (${primaryHits} look like primary scans), ` +
+          `${pagesVisited} crawled pages, ~${textChars} chars page text, blocked=${!!discovery.blocked}, crawl=${!!crawl}, maxPages=${maxPages}, maxDepth=${maxDepth}.\n` +
+          `Warnings so far:\n- ${(warnings || []).slice(0, 8).join('\n- ') || '(none)'}\n\n` +
+          `Deterministic diagnosis:\n- ${whyBits.join('\n- ') || '(none)'}\n` +
+          `Suggested retry URL: ${suggestedUrl || '(pick from digs)'}\n` +
+          `Alternate digs:\n${digs.map((d, i) => `${i + 1}. ${d.title}: ${d.url}`).join('\n')}\n\n` +
+          `Return JSON:\n` +
+          `{"explanation":"2-4 sentences explaining why 0 findings in plain English",` +
+          `"retryHint":"one short paragraph on how to refine",` +
+          `"suggestedUrl":"best http(s) retry URL",` +
+          `"settingsHint":"crawl/pages/depth/findings tip"}\n` +
+          `Prefer the deterministic suggested URL when it fits. Do not invent archives that are not CDLI, Archive.org, LOC, Chron Am, Rumsey, or Wikimedia unless the start host already was one.`,
+        json: true,
+        maxTokens: 900,
+      });
+      const parsed = extractJson(raw) || {};
+      if (parsed.explanation) explanation = String(parsed.explanation).slice(0, 900);
+      if (parsed.retryHint) retryHint = String(parsed.retryHint).slice(0, 600);
+      const maybeUrl = String(parsed.suggestedUrl || '').trim();
+      if (/^https?:\/\//i.test(maybeUrl)) suggestedUrlFinal = maybeUrl;
+      if (parsed.settingsHint) {
+        steps.push(String(parsed.settingsHint).slice(0, 240));
+      }
+    } catch {
+      // Deterministic advice is enough if director is unavailable
+    }
+  }
+
+  return {
+    explanation,
+    retryHint,
+    suggestedUrl: suggestedUrlFinal,
+    settings,
+    steps: [...new Set(steps)].slice(0, 6),
+    digs,
+    why: whyBits,
+  };
+}

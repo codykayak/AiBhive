@@ -626,12 +626,102 @@ function HarvestTab({
           )}
 
           {result.findings.length === 0 && (
-            <div className="glass-card p-6 rounded-2xl border border-white/10 text-slate-300 text-sm space-y-2">
-              <p className="font-bold text-white">No findings this run</p>
-              <p>
-                For text-heavy sites, start on a keyword search-results page (not the homepage), enable Crawl, and
-                raise max pages. Try the Chronicling America tip button above if you’re researching American newspapers.
-              </p>
+            <div className="glass-card p-6 rounded-2xl border border-amber-500/25 bg-amber-500/[0.04] text-slate-300 text-sm space-y-4">
+              <div>
+                <p className="font-bold text-white text-base">No findings this run — here’s why, and what to try next</p>
+                {result.retryAdvice?.explanation ? (
+                  <p className="mt-2 text-slate-200 leading-relaxed">{result.retryAdvice.explanation}</p>
+                ) : (
+                  <p className="mt-2">
+                    This start URL did not yield primary-source scans or citable leads. Homepages and thin index pages
+                    are the usual cause — switch to a keyword search-results URL and crawl into item pages.
+                  </p>
+                )}
+              </div>
+
+              {result.retryAdvice?.retryHint && (
+                <p className="text-slate-300 leading-relaxed border-l-2 border-bee-amber/50 pl-3">
+                  {result.retryAdvice.retryHint}
+                </p>
+              )}
+
+              {result.retryAdvice?.suggestedUrl && (
+                <div className="rounded-xl border border-white/10 bg-[#0f1115]/60 p-3 space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Suggested retry URL</p>
+                  <p className="text-sky-300 text-xs break-all">{result.retryAdvice.suggestedUrl}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-bee-amber text-bee-black hover:bg-bee-yellow"
+                      onClick={() => {
+                        const advice = result.retryAdvice;
+                        if (!advice?.suggestedUrl) return;
+                        setUrl(advice.suggestedUrl);
+                        setCrawl(advice.settings?.crawl !== false);
+                        if (advice.settings?.maxPages) setMaxPages(advice.settings.maxPages);
+                        if (advice.settings?.maxDepth != null) setMaxDepth(advice.settings.maxDepth);
+                        if (advice.settings?.findings) setCount(Math.min(8, advice.settings.findings));
+                        if (advice.settings?.engineHint === 'Max stealth') setEngine('firecrawl');
+                      }}
+                    >
+                      Apply retry settings
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-white/15 text-slate-200 hover:bg-white/5"
+                      onClick={() => {
+                        if (result.retryAdvice?.suggestedUrl) setUrl(result.retryAdvice.suggestedUrl);
+                      }}
+                    >
+                      Load URL only
+                    </button>
+                  </div>
+                  {result.retryAdvice.settings && (
+                    <p className="text-[11px] text-slate-500">
+                      Recommended: Crawl {result.retryAdvice.settings.crawl ? 'on' : 'off'} · pages{' '}
+                      {result.retryAdvice.settings.maxPages ?? 12} · depth {result.retryAdvice.settings.maxDepth ?? 1} ·
+                      findings ~{result.retryAdvice.settings.findings ?? 4}
+                      {result.retryAdvice.settings.engineHint
+                        ? ` · engine ${result.retryAdvice.settings.engineHint}`
+                        : ''}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {Array.isArray(result.retryAdvice?.steps) && result.retryAdvice!.steps!.length > 0 && (
+                <ol className="list-decimal pl-5 space-y-1 text-slate-300">
+                  {result.retryAdvice!.steps!.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              )}
+
+              {Array.isArray(result.retryAdvice?.digs) && result.retryAdvice!.digs!.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Alternate digs</p>
+                  <ul className="space-y-1.5">
+                    {result.retryAdvice!.digs!.slice(0, 3).map((d, i) => (
+                      <li key={`${d.url}-${i}`}>
+                        <button
+                          type="button"
+                          className="text-left text-xs text-slate-300 hover:text-white"
+                          onClick={() => {
+                            setUrl(d.url);
+                            setCrawl(true);
+                            setMaxPages((n) => Math.max(n, 10));
+                            setMaxDepth((n) => Math.max(n, 1));
+                          }}
+                        >
+                          <span className="font-bold text-bee-amber mr-1">{String.fromCharCode(65 + i)}.</span>
+                          {d.title}
+                          <span className="block text-sky-400/90 truncate">{d.url}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
