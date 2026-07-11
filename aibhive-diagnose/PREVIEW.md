@@ -1,32 +1,34 @@
-# AiBhive Diagnose — how to preview (simple)
+# AiBhive Diagnose — how to preview
 
-This is a **phone app**. The web preview is only for a quick look.
+## Important
 
-## See the app (2 minutes)
+Those `Web Bundled` / `Require cycle` logs mean **Metro** (`expo start`) is running.
+In Cursor that often shows a **black screen**. Use the static preview instead.
 
-1. In the terminal, run:
-   ```bash
-   cd aibhive-diagnose
-   npm run dev:start
-   ```
-   Wait until you see: `Accepting connections at http://0.0.0.0:8082`
+## Correct way (copy/paste)
 
-2. In Cursor, open the **Ports** tab (near Terminal).
-3. Find port **8082** → click **Open in Browser** (globe / browser icon).
-   - Prefer your real Chrome/Edge window, not a tiny embedded preview.
-4. You should see **TradeForge Diagnose** with an orange **Voice Chat** button.
+```bash
+cd aibhive-diagnose
+# Stop anything old first (Ctrl+C in other terminals), then:
+npm run dev:start
+```
 
-## If you still see a black screen
+Wait for:
 
-1. Hard refresh: `Ctrl+Shift+R` (Mac: `Cmd+Shift+R`).
-2. Confirm Ports shows **8082**, not a random number like 41907.
-3. Stop the old server (`Ctrl+C` in that terminal) and run `npm run dev:start` again.
-4. Open **8082** in a normal browser window again.
+```
+Open:  http://localhost:8082
+```
 
-## Optional: play the video intro
+Then in Cursor: **Ports** → **8082** → **Open in Browser** → hard refresh (`Ctrl+Shift+R`).
 
-Add `?intro=1` to the URL, e.g. `http://localhost:8082/?intro=1`
+You should see orange **TradeForge** and a big orange **Voice Chat** button.
 
-## Cloud Run note
+## Do not run these for web preview
 
-Merging this app does **not** put it on Google Cloud Run. Cloud Run is for the website (`aibhive.com`). Diagnose is a separate mobile package until we wire EAS/APK deploy.
+- `npx expo start`
+- `npm start` used to start Metro — it now starts the static preview
+- `npm run dev:metro` (only if you know you want Metro)
+
+## Require cycle warning
+
+Fixed in the latest code (`lib/localReply.ts`). If you still see it, you’re on an old Metro process — stop it and use `npm run dev:start`.

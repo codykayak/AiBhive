@@ -1,5 +1,5 @@
-import { buildLocalDiagnosisReply } from '@/lib/grok';
 import type { TradePack } from '@/lib/packs';
+import { buildLocalDiagnosisReply } from '@/lib/localReply';
 import { formatFaultAsReply, searchCodes, searchFaults } from './search';
 
 export type LocalDiagnosis = {

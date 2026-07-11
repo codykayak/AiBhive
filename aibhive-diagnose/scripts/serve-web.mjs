@@ -7,8 +7,8 @@
  * Always binds the requested port (default 8082). Never silently hops
  * to a random port like 41907 — that breaks Cursor port forwards.
  */
-import { spawn, execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync, readlinkSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,17 +35,54 @@ function run(cmd, args, opts = {}) {
 }
 
 function pidsOnPort(targetPort) {
-  try {
-    const out = execSync(`fuser ${targetPort}/tcp 2>/dev/null || true`, {
-      encoding: 'utf8',
-    });
-    return out
-      .trim()
-      .split(/\s+/)
-      .map((p) => p.trim())
-      .filter((p) => /^\d+$/.test(p));
-  } catch {
-    return [];
+  const found = new Set();
+  for (const procPath of ['/proc/net/tcp', '/proc/net/tcp6']) {
+    let lines;
+    try {
+      lines = readFileSync(procPath, 'utf8').trim().split('\n').slice(1);
+    } catch {
+      continue;
+    }
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length < 10) continue;
+      const local = parts[1];
+      const state = parts[3];
+      const inode = parts[9];
+      if (state !== '0A') continue; // LISTEN
+      const portHex = local.split(':').pop();
+      if (parseInt(portHex, 16) !== targetPort) continue;
+
+      try {
+        for (const pid of readdirSync('/proc')) {
+          if (!/^\d+$/.test(pid)) continue;
+          const fdDir = `/proc/${pid}/fd`;
+          let fds;
+          try {
+            fds = readdirSync(fdDir);
+          } catch {
+            continue;
+          }
+          for (const fd of fds) {
+            try {
+              if (readlinkSync(`${fdDir}/${fd}`) === `socket:[${inode}]`) found.add(pid);
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return [...found];
+}
+
+function sleepSync(ms) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    /* spin */
   }
 }
 
@@ -65,7 +102,7 @@ function freePort(targetPort) {
   const deadline = Date.now() + 4000;
   while (Date.now() < deadline) {
     if (!pidsOnPort(targetPort).length) return;
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 150);
+    sleepSync(150);
   }
 
   for (const pid of pidsOnPort(targetPort)) {
@@ -104,7 +141,14 @@ async function main() {
   const listen = `tcp://0.0.0.0:${port}`;
   const serveArgs = ['-s', 'dist', '-l', listen, '-n'];
 
-  console.log(`Serving AiBhive Diagnose at http://0.0.0.0:${port} (forward this port)`);
+  console.log('');
+  console.log('════════════════════════════════════════════════════');
+  console.log(`  AiBhive Diagnose preview`);
+  console.log(`  Open:  http://localhost:${port}`);
+  console.log(`  Cursor Ports → ${port} → Open in Browser`);
+  console.log(`  Do NOT run "expo start" — that causes a black screen`);
+  console.log('════════════════════════════════════════════════════');
+  console.log('');
   if (serveBin) {
     await run(process.execPath, [serveBin, ...serveArgs]);
   } else {
