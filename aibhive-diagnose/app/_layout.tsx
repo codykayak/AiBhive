@@ -197,6 +197,30 @@ export default function RootLayout() {
                     headerTintColor: theme.colors.mist,
                   }}
                 />
+                <Stack.Screen
+                  name="tools/howtos"
+                  options={{
+                    title: 'How-to guides',
+                    headerStyle: { backgroundColor: theme.colors.elevated },
+                    headerTintColor: theme.colors.mist,
+                  }}
+                />
+                <Stack.Screen
+                  name="tools/howto/[id]"
+                  options={{
+                    title: 'How-to',
+                    headerStyle: { backgroundColor: theme.colors.elevated },
+                    headerTintColor: theme.colors.mist,
+                  }}
+                />
+                <Stack.Screen
+                  name="pack-category/[packId]/[categoryId]"
+                  options={{
+                    title: 'Category',
+                    headerStyle: { backgroundColor: theme.colors.elevated },
+                    headerTintColor: theme.colors.mist,
+                  }}
+                />
               </Stack>
               {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
             </View>

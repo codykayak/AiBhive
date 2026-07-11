@@ -1,17 +1,30 @@
 import { BookOpen, Calculator, Cable, ListChecks, ScanSearch, Shield } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 import { usePack } from '@/contexts/PackContext';
 
-const TOOLS = [
+const TOOLS: Array<{
+  href: Href;
+  title: string;
+  subtitle: string;
+  icon: typeof BookOpen;
+  color: string;
+}> = [
   {
     href: '/tools/library',
     title: 'Fault library',
     subtitle: 'Search every common field failure',
     icon: BookOpen,
     color: theme.colors.amber,
+  },
+  {
+    href: '/tools/howtos' as Href,
+    title: 'How-to guides',
+    subtitle: 'Filters, disposal, fridge, water heaters',
+    icon: BookOpen,
+    color: '#7C9A6E',
   },
   {
     href: '/tools/codes',
@@ -41,7 +54,7 @@ const TOOLS = [
     icon: Shield,
     color: theme.colors.danger,
   },
-] as const;
+];
 
 export default function ToolsHubScreen() {
   const { activePack } = usePack();
@@ -58,7 +71,7 @@ export default function ToolsHubScreen() {
           const Icon = tool.icon;
           return (
             <Pressable
-              key={tool.href}
+              key={tool.title}
               onPress={() => router.push(tool.href)}
               className="min-h-[76px] flex-row items-center gap-4 rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
             >

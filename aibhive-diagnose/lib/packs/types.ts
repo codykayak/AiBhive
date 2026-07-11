@@ -1,9 +1,11 @@
-export type TradePackId = 'pool' | 'electrical';
+export type TradePackId = 'pool' | 'electrical' | 'property';
 
 export type DiagnosisCategory = {
   id: string;
   label: string;
   examples: string[];
+  /** Optional hero image (require() module id) for category home. */
+  heroImage?: number;
 };
 
 export type TradePack = {
@@ -13,11 +15,15 @@ export type TradePack = {
   tagline: string;
   description: string;
   accentColor: string;
-  icon: 'waves' | 'zap';
+  icon: 'waves' | 'zap' | 'wrench';
+  /** Pack-level hero for Packs / Home cards */
+  heroImage?: number;
   categories: DiagnosisCategory[];
   systemPrompt: string;
   quickPrompts: string[];
   commonEquipment: string[];
+  /** When true, diagnosis also searches other packs (property maintenance). */
+  crossPackSearch?: boolean;
 };
 
 export type ChatRole = 'user' | 'assistant' | 'system';

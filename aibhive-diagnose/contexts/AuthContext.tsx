@@ -16,7 +16,7 @@ const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
 export type DiagnoseProfile = {
   displayName: string;
   photoUrl: string | null;
-  tradePack?: 'pool' | 'electrical';
+  tradePack?: 'pool' | 'electrical' | 'property';
 };
 
 type AuthContextValue = {

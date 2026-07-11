@@ -25,7 +25,10 @@ function mapCloudJob(j: Record<string, unknown>): FieldJob {
     title: String(j.title || ''),
     address: String(j.address || ''),
     notes: String(j.notes || ''),
-    packId: j.packId === 'electrical' ? 'electrical' : 'pool',
+    packId:
+      j.packId === 'electrical' || j.packId === 'property' || j.packId === 'pool'
+        ? (j.packId as FieldJob['packId'])
+        : 'pool',
     status: (j.status as FieldJob['status']) || 'queued',
     createdAt: Number(j.createdAt) || Date.now(),
     updatedAt: Number(j.updatedAt) || Date.now(),

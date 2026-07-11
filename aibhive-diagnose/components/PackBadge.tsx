@@ -1,11 +1,12 @@
-import { Waves, Zap } from 'lucide-react-native';
+import { Waves, Wrench, Zap } from 'lucide-react-native';
 import { Text, View } from 'react-native';
 
 import type { TradePack } from '@/lib/packs';
 import { theme } from '@/constants/theme';
+import { packIconComponent } from '@/lib/packs/icons';
 
 export function PackBadge({ pack, compact = false }: { pack: TradePack; compact?: boolean }) {
-  const Icon = pack.icon === 'waves' ? Waves : Zap;
+  const Icon = packIconComponent(pack);
 
   return (
     <View
@@ -21,6 +22,9 @@ export function PackBadge({ pack, compact = false }: { pack: TradePack; compact?
 }
 
 export function PackIcon({ pack, size = 28 }: { pack: TradePack; size?: number }) {
-  const Icon = pack.icon === 'waves' ? Waves : Zap;
+  const Icon = packIconComponent(pack);
   return <Icon color={pack.accentColor || theme.colors.amber} size={size} strokeWidth={2.4} />;
 }
+
+/** Keep lucide named exports available for older imports. */
+export { Waves, Zap, Wrench };

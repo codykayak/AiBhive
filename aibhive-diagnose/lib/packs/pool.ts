@@ -9,6 +9,7 @@ export const poolPack: TradePack = {
     'Field diagnosis for pool equipment — pumps, filters, salt systems, heaters, and automation controllers.',
   accentColor: '#2BB8C8',
   icon: 'waves',
+  heroImage: require('../../assets/categories/pool.jpg'),
   categories: [
     {
       id: 'pumps',

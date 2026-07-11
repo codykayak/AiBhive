@@ -9,6 +9,7 @@ export const electricalPack: TradePack = {
     'Field diagnosis for electrical panels, breakers, wiring faults, and common code lookups for service techs.',
   accentColor: '#F0B429',
   icon: 'zap',
+  heroImage: require('../assets/categories/electrical.jpg'),
   categories: [
     {
       id: 'panels',
