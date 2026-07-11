@@ -69,6 +69,18 @@ export type Finding = {
   targetLang?: string;
   mimeType?: string;
   error?: string;
+  kind?: string;
+  ocrSkipped?: boolean;
+};
+
+export type ScoutDig = {
+  id?: string;
+  title: string;
+  hub?: string;
+  probability?: string;
+  why?: string;
+  url: string;
+  fableHint?: string;
 };
 
 export type HarvestResult = {
@@ -83,6 +95,7 @@ export type HarvestResult = {
   warnings?: string[];
   sourceUrl?: string;
   chargedUsd?: number;
+  scout?: { digs?: ScoutDig[]; strategy?: string; query?: string };
 };
 
 export type LibraryEntry = {

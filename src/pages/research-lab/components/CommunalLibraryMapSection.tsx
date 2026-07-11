@@ -151,6 +151,13 @@ export default function CommunalLibraryMapSection({
                 </div>
               </div>
               <div className={styles.rlLibPreviewActions}>
+                <Link
+                  className={styles.owrBtnPrimary}
+                  to={`/research-lab/communal-library/${selected.id}`}
+                >
+                  Open {selected.label} archive
+                  <ArrowRight className="w-4 h-4 inline ml-1" aria-hidden />
+                </Link>
                 <StartResearchingButton size="md" />
                 {showFullLibraryCta && (
                   <Link className={styles.rlWsCommunalCta} to="/research-lab/communal-library">

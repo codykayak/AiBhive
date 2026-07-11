@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Share2,
   Users,
@@ -33,7 +33,8 @@ async function authHeaders(): Promise<Record<string, string>> {
 }
 
 export default function CommunalLibraryPage() {
-  const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const share = params.get('share') || '';
   const topicParam = params.get('topic') || '';
   const [selectedId, setSelectedId] = useState<string | null>(topicParam || 'tartarian');
@@ -102,11 +103,13 @@ export default function CommunalLibraryPage() {
   }, [selectedId]);
 
   function selectTopic(id: string) {
-    setSelectedId(id);
-    const next = new URLSearchParams(params);
-    next.set('topic', id);
-    setParams(next, { replace: true });
+    navigate(`/research-lab/communal-library/${id}`);
   }
+
+  // Keep ?topic= in sync for deep links that still use query params
+  useEffect(() => {
+    if (topicParam && topicParam !== selectedId) setSelectedId(topicParam);
+  }, [topicParam, selectedId]);
 
   async function forkEntry(entry: LiveEntry) {
     setForkMsg('');
@@ -340,24 +343,20 @@ export default function CommunalLibraryPage() {
 
       <section className={styles.rlLibTopicsGrid} aria-label="All topics">
         <h2>Browse the lattice</h2>
-        <p>Twenty-plus research domains already wired into one collective system — click any card.</p>
+        <p>Twenty-plus research domains already wired into one collective system — click any card to open its archive.</p>
         <ul>
           {topicsWithLive.map((t) => (
             <li key={t.id}>
-              <button
-                type="button"
+              <Link
+                to={`/research-lab/communal-library/${t.id}`}
                 className={`${styles.rlLibTopicCard}${selectedId === t.id ? ` ${styles.rlLibTopicCardActive}` : ''}`}
-                onClick={() => {
-                  selectTopic(t.id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
               >
                 <strong>{t.label}</strong>
                 <span>
                   {t.docs.toLocaleString()} docs
                   {t.liveDocs ? ` · ${t.liveDocs} live` : ''}
                 </span>
-              </button>
+              </Link>
             </li>
           ))}
         </ul>

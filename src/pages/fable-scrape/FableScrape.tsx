@@ -28,6 +28,7 @@ import {
   Cpu,
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
+import ArchiveImageLightbox from '../../components/ArchiveImageLightbox';
 import { useRouting } from './useRouting';
 import { useRoster } from './useRoster';
 import {
@@ -35,6 +36,7 @@ import {
   type ScanResult,
   type HarvestResult,
   type Finding,
+  type ScoutDig,
   type LibraryEntry,
   type ProviderId,
   PROVIDER_LABELS,
@@ -214,6 +216,9 @@ function HarvestTab({
   const [publishState, setPublishState] = useState<{ busy: boolean; msg?: string; err?: string }>({ busy: false });
   const [visibility, setVisibility] = useState<'private' | 'unlisted' | 'public'>('public');
   const [estimateMsg, setEstimateMsg] = useState('');
+  const [scoutDigs, setScoutDigs] = useState<ScoutDig[]>([]);
+  const [scoutStrategy, setScoutStrategy] = useState('');
+  const [scouting, setScouting] = useState(false);
   const api = useFableApi();
   const bridge = useFableWorkflowBridge();
 
@@ -259,12 +264,35 @@ function HarvestTab({
     };
   }, [bridge, count, routing.routing.mode, roster.roster, roster.keys]);
 
+  const runScout = async () => {
+    if (!prompt.trim()) return setError('Describe what to find (e.g. an architect’s name or a Sumerian god).');
+    setError('');
+    setScouting(true);
+    try {
+      const data = await fablePost(api, '/scout-digs', {
+        query: prompt.trim(),
+        count: 3,
+        roles: roster.roster,
+        keys: roster.keys,
+      });
+      setScoutDigs(Array.isArray(data.digs) ? data.digs : []);
+      setScoutStrategy(String(data.strategy || ''));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Scout failed.');
+    } finally {
+      setScouting(false);
+    }
+  };
+
   const run = async () => {
     let target = '';
-    try {
-      target = requireUrl();
-    } catch (err) {
-      return setError(err instanceof Error ? err.message : 'Enter a valid archive URL.');
+    const raw = url.trim();
+    if (raw) {
+      try {
+        target = requireUrl();
+      } catch (err) {
+        return setError(err instanceof Error ? err.message : 'Enter a valid archive URL, or leave it blank for DROC scout.');
+      }
     }
     if (!prompt.trim()) return setError('Tell the AI what to find.');
     if (!routing.routingReady) return setError(routing.notReadyMessage);
@@ -277,8 +305,8 @@ function HarvestTab({
           url: target,
           prompt: prompt.trim(),
           count,
-          crawl,
-          maxPages,
+          crawl: target ? crawl : true,
+          maxPages: target ? maxPages : Math.max(maxPages, 8),
           maxDepth,
           engine,
           routing: routing.routing,
@@ -288,6 +316,11 @@ function HarvestTab({
           targetLang,
         });
       setResult(data as HarvestResult);
+      if (data.scout?.digs?.length) {
+        setScoutDigs(data.scout.digs);
+        setScoutStrategy(String(data.scout.strategy || ''));
+      }
+      if (!target && data.sourceUrl) setUrl(String(data.sourceUrl));
       const text = (data.findings || [])
         .map((f: Finding) => [f.translation, f.ocrText, f.reason].filter(Boolean).join('\n'))
         .filter(Boolean)
@@ -391,9 +424,11 @@ function HarvestTab({
           />
         </div>
 
-        {/* URL */}
+        {/* URL — optional; DROC scout fills dig sites when blank */}
         <div>
-          <label className="block text-slate-300 text-sm font-bold mb-2">Archive / start URL</label>
+          <label className="block text-slate-300 text-sm font-bold mb-2">
+            Archive / start URL <span className="text-slate-500 font-normal">(optional)</span>
+          </label>
           <div className="relative">
             <Globe className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
             <input
@@ -402,31 +437,76 @@ function HarvestTab({
               autoComplete="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://digitalarchive.example.org/collection/tablets"
+              placeholder="Leave blank — DROC finds dig sites from your query"
               className="w-full bg-[#0f1115]/70 border border-white/10 rounded-xl pl-12 pr-4 py-3.5 text-white placeholder:text-slate-600 focus:border-bee-amber/50 focus:outline-none"
             />
           </div>
           <p className="text-slate-500 text-xs mt-1.5">
-            Paste the full page address (must include the site name, e.g. archive.org/…). Domain-only is fine — we add https://.
+            Don’t know which site to search? Leave this blank and describe a name, place, or topic above — DROC will
+            pick Archive.org, Chronicling America, LOC, or Rumsey digs for you.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void runScout()}
+              disabled={scouting || !prompt.trim()}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg border border-violet-400/40 text-violet-200 hover:bg-violet-500/10 disabled:opacity-40"
+            >
+              {scouting ? 'Scouting…' : 'Find dig sites (A/B/C)'}
+            </button>
+            <button
+              type="button"
+              className="text-xs text-bee-amber underline underline-offset-2"
+              onClick={() =>
+                setUrl(
+                  'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic',
+                )
+              }
+            >
+              Load Chron Am “Tartar” example
+            </button>
+          </div>
+          {scoutDigs.length > 0 && (
+            <div className="mt-3 rounded-xl border border-violet-500/30 bg-violet-500/5 p-3 space-y-2">
+              <p className="text-xs font-bold text-violet-200">DROC dig directions</p>
+              {scoutStrategy && <p className="text-[11px] text-slate-400 italic">{scoutStrategy}</p>}
+              <ol className="space-y-2">
+                {scoutDigs.map((d, i) => (
+                  <li key={`${d.url}-${i}`} className="text-xs text-slate-300">
+                    <button
+                      type="button"
+                      className="text-left w-full hover:bg-white/5 rounded-lg p-2 -m-1"
+                      onClick={() => {
+                        setUrl(d.url);
+                        setCrawl(true);
+                        setMaxPages((n) => Math.max(n, 8));
+                      }}
+                    >
+                      <span className="font-bold text-bee-amber mr-1">{String.fromCharCode(65 + i)}.</span>
+                      <span className="font-semibold text-white">{d.title}</span>
+                      {d.probability ? (
+                        <span className="ml-2 text-[10px] uppercase tracking-wide text-emerald-300/90">
+                          {d.probability}
+                        </span>
+                      ) : null}
+                      <span className="block text-slate-400 mt-0.5">{d.why}</span>
+                      <span className="block text-sky-400/90 truncate mt-0.5">{d.url}</span>
+                      {d.fableHint ? (
+                        <span className="block text-[10px] text-slate-500 mt-0.5">{d.fableHint}</span>
+                      ) : null}
+                    </button>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-[11px] text-slate-500">Click a dig to load its URL, or run Harvest with URL blank to auto-start at A.</p>
+            </div>
+          )}
           <div className="mt-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-cyan-100/90 leading-relaxed">
             <p className="font-bold text-cyan-300 mb-1">Newspaper / text archives tip</p>
             <p>
-              Sites like Chronicling America rarely expose document images on the homepage. Start from a{' '}
-              <strong>search-results URL</strong> with your keywords, enable <strong>Crawl</strong>, set max pages
-              to 8–12, and keep findings at 2–4 to stay cheap. Example:{' '}
-              <button
-                type="button"
-                className="text-bee-amber underline underline-offset-2 text-left"
-                onClick={() =>
-                  setUrl(
-                    'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic',
-                  )
-                }
-              >
-                Load Chronicling America “Tartar” search
-              </button>
-              . AI Harvest will mine page text when images aren’t available.
+              Prefer <strong>search-results URLs</strong> (not homepages). Enable <strong>Crawl</strong>, max pages
+              8–12, findings 2–4. AI Harvest mines page text when images aren’t available. OCR runs only on images the
+              Director flags as text-bearing — maps/photos can be returned for visual inspect without OCR.
             </p>
           </div>
         </div>
@@ -600,6 +680,7 @@ function FindingCard({
 }) {
   const [broken, setBroken] = useState(false);
   const [dl, setDl] = useState('');
+  const [lightbox, setLightbox] = useState(false);
   const api = useFableApi();
 
   const download = async () => {
@@ -625,7 +706,13 @@ function FindingCard({
   return (
     <div className="glass-card rounded-2xl p-4 sm:p-5 grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4">
       <div>
-        <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0f1115] aspect-square">
+        <button
+          type="button"
+          className="rounded-xl overflow-hidden border border-white/10 bg-[#0f1115] aspect-square w-full cursor-zoom-in disabled:cursor-default"
+          onClick={() => !broken && finding.url && setLightbox(true)}
+          disabled={broken || !finding.url}
+          aria-label={`Inspect ${finding.alt || finding.filename}`}
+        >
           {broken ? (
             <span className="w-full h-full flex flex-col items-center justify-center text-slate-500">
               <ImageIcon className="w-8 h-8 opacity-40" />
@@ -633,7 +720,7 @@ function FindingCard({
           ) : (
             <img src={finding.url} alt={finding.alt || finding.filename} referrerPolicy="no-referrer" loading="lazy" className="w-full h-full object-cover" onError={() => setBroken(true)} />
           )}
-        </div>
+        </button>
         <p className="text-[11px] text-slate-400 truncate mt-1" title={finding.filename}>{finding.filename}</p>
         <button onClick={download} className="mt-1 text-[11px] font-bold text-bee-amber inline-flex items-center gap-1 hover:underline">
           <Download className="w-3 h-3" /> {dl || 'Download'}
@@ -645,7 +732,12 @@ function FindingCard({
           {typeof finding.confidence === 'number' && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/5 text-slate-300">confidence {(finding.confidence * 100).toFixed(0)}%</span>
           )}
-          <a href={finding.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-sky-400 inline-flex items-center gap-1 hover:underline ml-auto">source <ExternalLink className="w-3 h-3" /></a>
+          {finding.ocrSkipped && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-200">visual · OCR skipped</span>
+          )}
+          {finding.sourceUrl && (
+            <a href={finding.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-sky-400 inline-flex items-center gap-1 hover:underline ml-auto">source <ExternalLink className="w-3 h-3" /></a>
+          )}
         </div>
         {finding.reason && <p className="text-slate-400 text-xs italic mb-2">“{finding.reason}”</p>}
         {finding.error ? (
@@ -655,7 +747,11 @@ function FindingCard({
             <div>
               <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-1">Transcription (OCR)</p>
               <div className="bg-[#0f1115]/60 border border-white/10 rounded-lg p-3 max-h-56 overflow-y-auto text-xs text-slate-300 whitespace-pre-wrap font-mono">
-                {finding.ocrText || <span className="text-slate-600">—</span>}
+                {finding.ocrText || (
+                  <span className="text-slate-600">
+                    {finding.ocrSkipped ? 'Director skipped OCR — inspect the image.' : '—'}
+                  </span>
+                )}
               </div>
             </div>
             {finding.translation && (
@@ -669,6 +765,16 @@ function FindingCard({
           </div>
         )}
       </div>
+      {lightbox && finding.url && (
+        <ArchiveImageLightbox
+          src={finding.url}
+          alt={finding.alt || finding.filename}
+          title={finding.filename}
+          caption={finding.reason}
+          sourceUrl={finding.sourceUrl}
+          onClose={() => setLightbox(false)}
+        />
+      )}
     </div>
   );
 }
