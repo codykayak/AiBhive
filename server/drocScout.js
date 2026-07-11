@@ -2,6 +2,9 @@
  * DROC scout — find good dig places when the user has no start URL.
  * Builds paste-ready archive search URLs from a plain-English query
  * (architect name, deity, place, keyword, etc.).
+ *
+ * Also rewrites catalog *homepages* (e.g. cdli.earth) into keyword search
+ * result URLs so harvest does not crawl empty nav chrome.
  */
 import { runChat, extractJson } from './fableScrapeProviders.js';
 import { getTartarianDigPacks, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
@@ -17,6 +20,157 @@ function clipQuery(q, max = 80) {
     .slice(0, max);
 }
 
+const STOP = new Set(
+  'a an the and or but for with from that this these those find me five get show return please want wanna into onto about which who what when where why how not been have has had was were are is be been being of to in on at by as it its they them their you your we our would could should think high value content that have not been translated'.split(
+    /\s+/,
+  ),
+);
+
+/**
+ * Pull search keywords from a research prompt (keeps proper nouns / domain terms).
+ */
+export function extractSearchKeywords(prompt, { maxTerms = 6 } = {}) {
+  const raw = String(prompt || '');
+  const preferred = [];
+  const bump = (term) => {
+    const t = term.trim();
+    if (!t) return;
+    const low = t.toLowerCase();
+    if (preferred.some((x) => {
+      const y = x.toLowerCase();
+      return y === low || y === `${low}s` || `${y}s` === low || y.replace(/s$/, '') === low.replace(/s$/, '');
+    })) {
+      return;
+    }
+    preferred.push(t);
+  };
+
+  // Domain phrases first
+  if (/sumerian/i.test(raw)) bump('Sumerian');
+  if (/akkadian/i.test(raw)) bump('Akkadian');
+  if (/cuneiform/i.test(raw)) bump('cuneiform');
+  if (/hieroglyph/i.test(raw)) bump('hieroglyph');
+  if (/ur\s*iii/i.test(raw)) bump('Ur III');
+  if (/tablet/i.test(raw)) bump('tablet');
+  if (/tartar/i.test(raw)) bump('Tartar');
+  if (/mud[\s-]?flood/i.test(raw)) bump('mud flood');
+  if (/star\s*fort/i.test(raw)) bump('star fort');
+  if (/orphan\s*train/i.test(raw)) bump('orphan train');
+
+  const tokens = raw
+    .replace(/[“”"']/g, '')
+    .split(/[^A-Za-z0-9\-]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3 && !STOP.has(t.toLowerCase()));
+
+  for (const t of tokens) {
+    if (/^[A-Z]/.test(t) || /cuneiform|tablet|translat|sumer|akkad|egypt|god|enlil|inanna/i.test(t)) {
+      bump(t);
+    }
+    if (preferred.length >= maxTerms) break;
+  }
+  if (!preferred.length) {
+    for (const t of tokens) {
+      bump(t);
+      if (preferred.length >= Math.min(3, maxTerms)) break;
+    }
+  }
+  return preferred.slice(0, maxTerms).join(' ') || clipQuery(raw, 40);
+}
+
+/**
+ * If the user pasted a catalog homepage, rewrite to a keyword search-results URL.
+ */
+export function resolveArchiveStartUrl(url, prompt = '') {
+  let parsed;
+  try {
+    parsed = new URL(String(url || '').trim());
+  } catch {
+    return { url: String(url || ''), rewritten: false };
+  }
+
+  const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+  const path = (parsed.pathname || '/').replace(/\/+$/, '') || '/';
+  const bareHub =
+    path === '/' ||
+    path === '' ||
+    ['/home', '/browse', '/about', '/index', '/index.html'].includes(path.toLowerCase());
+  const emptySearch = path.toLowerCase() === '/search' && !parsed.search;
+  const q = extractSearchKeywords(prompt);
+
+  // CDLI — homepage has zero tablet photos; search results have /dl/tn_photo/P######.jpg
+  if (/(^|\.)cdli\.(earth|org|ucla\.edu)$/i.test(host) || host === 'cdli.ucla.edu') {
+    if (bareHub || emptySearch) {
+      const next = `https://cdli.earth/search?q=${enc(q || 'Sumerian')}`;
+      return {
+        url: next,
+        rewritten: true,
+        reason:
+          'CDLI homepage / empty search has no tablet results — switched to a keyword search-results URL (where thumbnail scans live).',
+        autoCrawl: true,
+        hub: 'cdli',
+      };
+    }
+  }
+
+  if (host === 'archive.org' && bareHub) {
+    return {
+      url: `https://archive.org/search?query=${enc(q)}&and[]=year%3A%5B1700+TO+1950%5D`,
+      rewritten: true,
+      reason: 'Archive.org homepage rewritten to a catalog search for your keywords.',
+      autoCrawl: true,
+      hub: 'archive.org',
+    };
+  }
+
+  if (/chroniclingamerica\.loc\.gov$/i.test(host) && (bareHub || path === '/search')) {
+    return {
+      url: `https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=${enc(q)}&date1=1836&date2=1922&rows=20&searchType=basic`,
+      rewritten: true,
+      reason: 'Chronicling America homepage rewritten to a newspaper search-results URL.',
+      autoCrawl: true,
+      hub: 'chroniclingamerica',
+    };
+  }
+
+  if (host === 'davidrumsey.com' && bareHub) {
+    return {
+      url: `https://www.davidrumsey.com/luna/servlet/view/search?q=${enc(q)}`,
+      rewritten: true,
+      reason: 'David Rumsey homepage rewritten to a map search.',
+      autoCrawl: true,
+      hub: 'rumsey',
+    };
+  }
+
+  if (host === 'loc.gov' && bareHub) {
+    return {
+      url: `https://www.loc.gov/search/?q=${enc(q)}&fa=online-format:image`,
+      rewritten: true,
+      reason: 'Library of Congress homepage rewritten to an image search.',
+      autoCrawl: true,
+      hub: 'loc',
+    };
+  }
+
+  return { url: parsed.toString(), rewritten: false };
+}
+
+/**
+ * Score image candidates that look like primary-source tablet/scan photos.
+ */
+export function scorePrimarySourceImage(candidate = {}) {
+  const s = `${candidate.url || ''} ${candidate.filename || ''} ${candidate.alt || ''}`.toLowerCase();
+  let score = 0;
+  if (/\/dl\/(tn_)?photo\/|\/dl\/tn_lineart\/|\/dl\/photo\//i.test(s)) score += 12;
+  if (/\bp\d{5,}\b/i.test(s)) score += 8;
+  if (/cuneiform|tablet|artifact|manuscript|scan|plate|recto|verso|obverse|reverse/i.test(s)) score += 5;
+  if (/tn_photo|lineart/i.test(s)) score += 4;
+  if (candidate.iconLikely) score -= 20;
+  if (/(logo|favicon|sprite|icon|avatar|arrow\d)/i.test(s)) score -= 15;
+  return score;
+}
+
 /**
  * Deterministic hub URLs for any research query.
  */
@@ -25,8 +179,19 @@ export function buildHubDigs(query) {
   if (!q) return [];
   const qPlus = q.replace(/\s+/g, '+');
   const qEnc = enc(q);
+  const kw = extractSearchKeywords(query) || q;
+  const kwEnc = enc(kw);
 
-  return [
+  const digs = [
+    {
+      id: 'cdli-sumerian',
+      title: 'CDLI tablet search (cuneiform)',
+      hub: 'cdli.earth',
+      probability: 'High',
+      why: 'Cuneiform Digital Library — search results include tablet photo thumbnails (/dl/tn_photo/).',
+      url: `https://cdli.earth/search?q=${kwEnc}`,
+      fableHint: 'Never start at cdli.earth homepage. Crawl on · pages 8–12 · depth 1 into /artifacts/N · findings 3–5.',
+    },
     {
       id: 'archive-org',
       title: 'Internet Archive catalog dig',
@@ -90,7 +255,15 @@ export function buildHubDigs(query) {
       url: `https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=%22${qEnc}%22&date1=1850&date2=1922&rows=20&searchType=basic`,
       fableHint: 'If 0 hits, fall back to the unquoted Chron Am dig.',
     },
-  ].map((d) => ({ ...d, query: q, qPlus }));
+  ];
+
+  // Promote CDLI when the query is clearly about cuneiform / Sumerian / tablets
+  if (/cuneiform|sumer|akkad|tablet|cdli|enlil|inanna|uruk|ur\s*iii/i.test(query)) {
+    return digs.map((d) => ({ ...d, query: q, qPlus }));
+  }
+  // Otherwise put CDLI after general hubs
+  const [cdli, ...rest] = digs;
+  return [...rest.slice(0, 2), cdli, ...rest.slice(2)].map((d) => ({ ...d, query: q, qPlus }));
 }
 
 /**

@@ -465,6 +465,18 @@ function HarvestTab({
             >
               Load Chron Am “Tartar” example
             </button>
+            <button
+              type="button"
+              className="text-xs text-bee-amber underline underline-offset-2"
+              onClick={() => {
+                setUrl('https://cdli.earth/search?q=Sumerian');
+                setCrawl(true);
+                setMaxPages((n) => Math.max(n, 10));
+                setMaxDepth((n) => Math.max(n, 1));
+              }}
+            >
+              Load CDLI Sumerian tablet search
+            </button>
           </div>
           {scoutDigs.length > 0 && (
             <div className="mt-3 rounded-xl border border-violet-500/30 bg-violet-500/5 p-3 space-y-2">
@@ -502,11 +514,13 @@ function HarvestTab({
             </div>
           )}
           <div className="mt-3 rounded-xl border border-cyan-500/25 bg-cyan-500/5 p-3 text-xs text-cyan-100/90 leading-relaxed">
-            <p className="font-bold text-cyan-300 mb-1">Newspaper / text archives tip</p>
+            <p className="font-bold text-cyan-300 mb-1">Catalog / newspaper tip</p>
             <p>
-              Prefer <strong>search-results URLs</strong> (not homepages). Enable <strong>Crawl</strong>, max pages
-              8–12, findings 2–4. AI Harvest mines page text when images aren’t available. OCR runs only on images the
-              Director flags as text-bearing — maps/photos can be returned for visual inspect without OCR.
+              Prefer <strong>search-results URLs</strong> (not homepages). Pasting{' '}
+              <code className="text-cyan-200">cdli.earth</code> alone crawls nav chrome — use{' '}
+              <code className="text-cyan-200">cdli.earth/search?q=Sumerian</code> (or leave blank and we’ll rewrite
+              hubs automatically). Enable <strong>Crawl</strong>, max pages 8–12, findings 3–5. OCR runs only on
+              images the Director (or tablet-photo heuristics) flags as primary sources.
             </p>
           </div>
         </div>

@@ -15,7 +15,7 @@ import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
 import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
 import { getTartarianStarterBrief, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
-import { resolveStartUrlFromQuery } from './drocScout.js';
+import { resolveStartUrlFromQuery, resolveArchiveStartUrl, scorePrimarySourceImage } from './drocScout.js';
 
 const DEFAULT_ROLES = {
   director: { provider: 'grok', model: '' },
@@ -29,6 +29,11 @@ function mergeRoles(roles = {}) {
     vision: { ...DEFAULT_ROLES.vision, ...(roles.vision || {}) },
     translator: { ...DEFAULT_ROLES.translator, ...(roles.translator || {}) },
   };
+}
+
+/** Prefer full CDLI scans over tiny search-result thumbs when OCR'ing. */
+function preferFullResolutionScan(url = '') {
+  return String(url).replace(/\/dl\/tn_photo\//i, '/dl/photo/');
 }
 
 const TRANSLATE_SYSTEM =
@@ -110,6 +115,7 @@ async function harvestFromTextCorpus({
     `- Only use evidence present in the corpus below.\n` +
     `- Each lead must include a short verbatim quote and the source URL from the corpus.\n` +
     `- Prefer obscure / under-discussed items with clear place/date hooks.\n` +
+    `- For CDLI / museum catalogs: artifact IDs (P######), designations, periods, and /artifacts/N URLs count as citable leads even without a long quote.\n` +
     `- If the corpus is mostly navigation chrome with no usable content, return selections:[].\n` +
     `- Return ONLY JSON:\n` +
     `{"strategy":"one sentence","mode":"text-corpus","selections":[{"title":"...","reason":"why promising","quote":"verbatim excerpt","sourceUrl":"https://...","confidence":0-1}]}\n\n` +
@@ -242,6 +248,19 @@ export async function aiHarvest(params) {
       maxPages = Math.max(Number(maxPages) || 6, 8);
       warnings.push('Auto-enabled crawl (8+ pages) because DROC started from a search-results URL.');
     }
+  } else {
+    // Hub homepage → keyword search-results URL (critical for CDLI, Chron Am, etc.)
+    const rewritten = resolveArchiveStartUrl(url, prompt.trim());
+    if (rewritten.rewritten) {
+      warnings.push(rewritten.reason);
+      url = rewritten.url;
+      if (rewritten.autoCrawl) {
+        crawl = true;
+        maxPages = Math.max(Number(maxPages) || 6, 10);
+        maxDepth = Math.max(Number(maxDepth) || 0, 1);
+        warnings.push('Auto-enabled crawl into result / artifact pages from the rewritten search URL.');
+      }
+    }
   }
 
   // ---- Discover candidates ----
@@ -287,7 +306,9 @@ export async function aiHarvest(params) {
       `Pick the up-to-${wanted} candidates that best match the request. Judge by filename/alt/url cues. ` +
       `Return ONLY JSON: {"strategy":"one sentence on your approach","selections":[{"index":<number>,"reason":"why this one","confidence":0-1,"ocr":true|false}]}. ` +
       `Never select more than ${wanted}. Prefer likely primary-source document scans over decorative/UI images. ` +
-      `Set ocr:true only when the image likely contains readable text worth transcribing (plates with captions, manuscripts, newspaper pages, tablets). ` +
+      `On CDLI / tablet catalogs, prefer URLs containing /dl/tn_photo/, /dl/photo/, /dl/tn_lineart/, or filenames like P000123.jpg — those ARE tablet scans. ` +
+      `For "untranslated / high value" tablet requests: select clear tablet photos even when catalog text is thin; OCR/transliteration is the point. ` +
+      `Set ocr:true for tablets, manuscripts, newspaper pages, and captioned plates. ` +
       `Set ocr:false for maps/photos best inspected visually without OCR. Do NOT OCR every image — be selective. ` +
       `If NONE of the images look like primary sources (only logos/icons/UI), return selections:[].`;
 
@@ -310,19 +331,43 @@ export async function aiHarvest(params) {
       throw new Error(`Director step failed: ${err instanceof Error ? err.message : 'AI error'}`);
     }
 
-    const chosen = selections
+    let chosen = selections
       .map((s) => ({ ...s, index: Number(s.index) }))
       .filter((s) => Number.isInteger(s.index) && s.index >= 0 && s.index < candidates.length)
       .slice(0, wanted);
+
+    // Heuristic fallback: CDLI-style tablet thumbs scored as primary sources
+    if (!chosen.length) {
+      const scored = candidates
+        .map((c, index) => ({ index, score: scorePrimarySourceImage(c), c }))
+        .filter((x) => x.score >= 8)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, wanted);
+      if (scored.length) {
+        chosen = scored.map((x) => ({
+          index: x.index,
+          reason: 'Primary-source tablet/scan heuristic (catalog photo path).',
+          confidence: Math.min(0.9, 0.55 + x.score / 40),
+          ocr: true,
+        }));
+        strategy =
+          strategy ||
+          'Director returned no picks; selected catalog tablet/scan thumbnails by URL heuristics.';
+        warnings.push(
+          `Director skipped image picks — auto-selected ${chosen.length} catalog scan(s) that look like primary sources (e.g. CDLI /dl/tn_photo/).`,
+        );
+      }
+    }
 
     if (chosen.length) {
       const findings = [];
       for (let n = 0; n < chosen.length; n++) {
         const sel = chosen[n];
         const cand = candidates[sel.index];
+        const scanUrl = preferFullResolutionScan(cand.url);
         onProgress({ stage: 'ocr', message: `Reading finding ${n + 1}/${chosen.length}: ${cand.filename}`, index: n });
         const finding = {
-          url: cand.url,
+          url: scanUrl,
           filename: cand.filename,
           alt: cand.alt || '',
           sourceUrl: discovery.finalUrl || url,
@@ -339,7 +384,7 @@ export async function aiHarvest(params) {
         finding.ocrSkipped = !wantsOcr;
         try {
           const asset = await downloadAsset({
-            url: cand.url,
+            url: scanUrl,
             referer: discovery.finalUrl || url,
             cookies: discovery.cookies,
             routing,
@@ -431,6 +476,7 @@ export async function aiHarvest(params) {
     }
   })();
   const isChronAm = /chroniclingamerica\.loc\.gov/i.test(host);
+  const isCdli = /cdli\.(earth|org|ucla\.edu)/i.test(host);
   const tips = [
     'No document images and not enough usable page text were discovered.',
     'Tips: start from a search-results URL (not the homepage), turn Crawl on, raise max pages to 8–12, try Max stealth.',
@@ -438,6 +484,11 @@ export async function aiHarvest(params) {
   if (isChronAm) {
     tips.push(
       'For Chronicling America, use a results URL like: https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=Tartar&date1=1850&date2=1922&rows=20&searchType=basic — then crawl 1 link depth into article pages.',
+    );
+  }
+  if (isCdli) {
+    tips.push(
+      'For CDLI, start on a search-results URL such as https://cdli.earth/search?q=Sumerian (not https://cdli.earth). Enable Crawl so harvest can open /artifacts/N pages with tablet photos.',
     );
   }
 
