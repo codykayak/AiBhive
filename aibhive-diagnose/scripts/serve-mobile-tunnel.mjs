@@ -22,7 +22,13 @@ const QR_FILE = '/opt/cursor/artifacts/aibhive-diagnose-expo-qr.png';
 function run(cmd, args, opts = {}) {
   return spawn(cmd, args, {
     cwd: ROOT,
-    env: { ...process.env, CI: '1', EXPO_NO_TELEMETRY: '1', ...opts.env },
+    env: {
+      ...process.env,
+      CI: '1',
+      EXPO_NO_TELEMETRY: '1',
+      EXPO_NO_METRO_LAZY: '1',
+      ...opts.env,
+    },
     stdio: opts.stdio || ['ignore', 'pipe', 'pipe'],
   });
 }
