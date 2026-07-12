@@ -159,7 +159,7 @@ async function startRecordingSession(
     const token = getIdToken ? await getIdToken() : null;
     if (!token || !API_BASE) {
       throw new Error(
-        'Voice transcription needs Pros sign-in. Type the fault, or sign in under Account.'
+        'Recording works in Expo Go, but speech-to-text needs Pros sign-in or the field APK. Type your fault for now.'
       );
     }
 

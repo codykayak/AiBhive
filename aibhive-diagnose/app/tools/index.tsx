@@ -18,6 +18,13 @@ type ToolEntry = {
 
 const ALL_TOOLS: ToolEntry[] = [
   {
+    href: '/tools/manuals' as Href,
+    title: 'Equipment manuals',
+    subtitle: 'Search model number → OEM install & service docs',
+    icon: BookOpen,
+    color: theme.colors.amber,
+  },
+  {
     href: '/tools/library',
     title: 'Fault library',
     subtitle: 'Search every common field failure',

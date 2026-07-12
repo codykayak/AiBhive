@@ -51,3 +51,5 @@ export {
   plumbingErrorCodes,
   hvacErrorCodes,
 } from './codes';
+export { formatManualHit, getManualById, searchManuals, MANUAL_CORPUS } from './manuals';
+export type { EquipmentManual } from './manuals/types';

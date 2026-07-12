@@ -202,6 +202,14 @@ export default function RootLayout() {
                     }}
                   />
                   <Stack.Screen
+                    name="tools/manuals"
+                    options={{
+                      title: 'Equipment manuals',
+                      headerStyle: { backgroundColor: theme.colors.elevated },
+                      headerTintColor: theme.colors.mist,
+                    }}
+                  />
+                  <Stack.Screen
                     name="tools/library"
                     options={{
                       title: 'Fault library',

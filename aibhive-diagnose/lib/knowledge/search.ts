@@ -5,6 +5,7 @@ import { plumbingFaults } from './plumbing/faults';
 import { poolFaults } from './pool/faults';
 import { propertyFaults } from './property/faults';
 import { formatCorpusHit, searchApplianceCorpus } from './property/applianceCorpus';
+import { formatManualHit, searchManuals } from './manuals';
 import type { TradePackId } from '../packs/types';
 import type { ErrorCode, FaultEntry } from './types';
 
@@ -376,7 +377,7 @@ export function getFaultById(id: string): FaultEntry | undefined {
 export function searchWithApplianceRag(query: string, packId?: TradePackId) {
   const faults = searchFaults(query, packId);
   const corpus =
-    packId === 'property' || !packId || detectEquipment(query).length
+    packId === 'property' || !packId || detectEquipment(query).length || /\b[A-Z0-9]{4,}\b/.test(query)
       ? searchApplianceCorpus(query).slice(0, 3)
       : [];
   return { faults, corpus };
@@ -421,6 +422,19 @@ export function formatFaultAsReply(fault: FaultEntry): string {
 
 export function formatRagAppendix(query: string): string {
   const hits = searchApplianceCorpus(query).slice(0, 2);
-  if (!hits.length) return '';
-  return ['', '**Model / code hits (local corpus)**', ...hits.map((h) => formatCorpusHit(h))].join('\n');
+  const manualHits = searchManuals(query).slice(0, 2);
+  const parts: string[] = [];
+  if (hits.length) {
+    parts.push('**Model / code hits (local corpus)**', ...hits.map((h) => formatCorpusHit(h)));
+  }
+  if (manualHits.length) {
+    parts.push(
+      '**Manual index**',
+      ...manualHits.map(
+        (m) => `${formatManualHit(m)}\nManual: ${m.manualUrl}`
+      )
+    );
+  }
+  if (!parts.length) return '';
+  return ['', ...parts].join('\n');
 }

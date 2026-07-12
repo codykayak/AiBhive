@@ -2,8 +2,8 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from 'expo-router';
-import { Camera, Mic, Send, Square } from 'lucide-react-native';
+import { useNavigation, useRouter } from 'expo-router';
+import { Camera, FileText, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
@@ -70,6 +70,7 @@ export function DiagnoseChat({
   const { isOnline, isInternetReachable } = useNetwork();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const router = useRouter();
   const offline = !isOnline || isInternetReachable === false;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -536,7 +537,11 @@ export function DiagnoseChat({
 
   const restingFooterPad = embedInTabs ? 10 : Math.max(insets.bottom, 10);
   const footerPad =
-    keyboardHeight > 0 ? keyboardHeight + Math.max(insets.bottom, 8) : restingFooterPad;
+    keyboardHeight > 0
+      ? Platform.OS === 'android'
+        ? Math.round(keyboardHeight * 0.18) + Math.max(insets.bottom, 6)
+        : keyboardHeight + Math.max(insets.bottom, 8)
+      : restingFooterPad;
 
   const modeLabel = offline
     ? 'Local · offline'
@@ -649,6 +654,17 @@ export function DiagnoseChat({
             ) : (
               <Mic color={theme.colors.mist} size={26} strokeWidth={2.4} />
             )}
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel="Look up equipment manual"
+            onPress={() => {
+              const q = input.trim();
+              router.push(q ? `/tools/manuals?q=${encodeURIComponent(q)}` : '/tools/manuals');
+            }}
+            className="h-14 w-14 items-center justify-center rounded-2xl border border-hive-border bg-hive-card active:opacity-70"
+          >
+            <FileText color={theme.colors.steel} size={24} strokeWidth={2.2} />
           </Pressable>
 
           <View className="min-h-14 flex-1 justify-center rounded-2xl border border-hive-border bg-hive-card px-3">
