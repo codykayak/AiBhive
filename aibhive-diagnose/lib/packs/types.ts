@@ -49,7 +49,12 @@ export type ChatMessage = {
     source: 'local' | 'pros' | 'direct';
     packId: TradePackId;
     tipIdsUsed?: string[];
+    matchedFaultIds?: string[];
+    jobId?: string;
+    notice?: string;
   };
+  /** Parsed structured diagnosis for checkbox UI */
+  structured?: DiagnosisResult;
 };
 
 export type DiagnosisResult = {

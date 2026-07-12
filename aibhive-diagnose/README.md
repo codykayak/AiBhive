@@ -58,7 +58,9 @@ export EXPO_PUBLIC_GROK_API_KEY=xai-...
 ## What’s inside
 
 - Home dashboard with guided flows, tips, recent diagnoses
-- Diagnose chat (camera / voice / text) + searchable fault library
-- Jobs tracker (local + Pros sync when signed in)
+- Diagnose chat (camera / real voice / text) with session persistence + structured step cards
+- Offline-first routing (pack library when offline; Pros AI when signed in)
+- Jobs tracker (local + Pros sync) with “Diagnose this job”
 - Trade Packs: Pool, Electrical, Property Maintenance (cross-pack + appliance RAG)
-- Field tools: library, how-tos, codes, chemistry, wire charts, safety
+- Field tools: library, shop tips, how-tos, codes, chemistry, wire charts, safety
+- Native Google sign-in via Expo Auth Session (set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`)

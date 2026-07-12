@@ -206,6 +206,14 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen
+                  name="tools/shop-tips"
+                  options={{
+                    title: 'Shop tips',
+                    headerStyle: { backgroundColor: theme.colors.elevated },
+                    headerTintColor: theme.colors.mist,
+                  }}
+                />
+                <Stack.Screen
                   name="tools/howto/[id]"
                   options={{
                     title: 'How-to',

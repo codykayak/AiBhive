@@ -36,6 +36,7 @@ export type FieldJob = {
 };
 
 const KEY = 'aibhive.diagnose.jobs.v1';
+const SEEDED_FLAG = 'aibhive.diagnose.jobs.seeded.v1';
 
 const SEED: FieldJob[] = [
   {
@@ -82,13 +83,21 @@ const SEED: FieldJob[] = [
 export async function loadJobs(): Promise<FieldJob[]> {
   const raw = await AsyncStorage.getItem(KEY);
   if (!raw) {
-    await AsyncStorage.setItem(KEY, JSON.stringify(SEED));
-    return SEED;
+    // Demo jobs only in development — keep production installs empty.
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const seeded = await AsyncStorage.getItem(SEEDED_FLAG);
+      if (!seeded) {
+        await AsyncStorage.setItem(KEY, JSON.stringify(SEED));
+        await AsyncStorage.setItem(SEEDED_FLAG, '1');
+        return SEED;
+      }
+    }
+    return [];
   }
   try {
     return JSON.parse(raw) as FieldJob[];
   } catch {
-    return SEED;
+    return typeof __DEV__ !== 'undefined' && __DEV__ ? SEED : [];
   }
 }
 

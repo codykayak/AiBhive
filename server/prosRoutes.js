@@ -134,7 +134,7 @@ function serializeJob(id, data) {
   };
 }
 
-export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
+export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {}) {
   const platformAdmin = typeof isPlatformAdmin === 'function' ? isPlatformAdmin : () => false;
 
   // Bootstrap / me
@@ -974,6 +974,157 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
     } catch (err) {
       console.error('[pros/knowledge feedback]', err);
       return res.status(500).json({ error: 'Failed to save feedback' });
+    }
+  });
+
+  /**
+   * Upload field photos to GCS — returns a public HTTPS URL (no base64 in Firestore).
+   */
+  app.post('/api/pros/upload', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company to upload' });
+      }
+      if (!gcsBucket) {
+        return res.status(503).json({ error: 'Media storage not configured', code: 'no_storage' });
+      }
+
+      const { base64, mimeType = 'image/jpeg', folder = 'diagnose' } = req.body || {};
+      if (!base64 || typeof base64 !== 'string') {
+        return res.status(400).json({ error: 'base64 required' });
+      }
+      if (base64.length > 12_000_000) {
+        return res.status(413).json({ error: 'Image too large' });
+      }
+
+      const buffer = Buffer.from(base64, 'base64');
+      const ext =
+        String(mimeType).includes('png')
+          ? 'png'
+          : String(mimeType).includes('webp')
+            ? 'webp'
+            : 'jpg';
+      const safeFolder = String(folder || 'diagnose')
+        .replace(/[^a-zA-Z0-9/_-]/g, '')
+        .slice(0, 80);
+      const path = `pros/${membership.companyId}/${safeFolder}/${Date.now()}-${user.uid.slice(0, 8)}.${ext}`;
+
+      const file = gcsBucket.file(path);
+      await file.save(buffer, {
+        contentType: mimeType || 'image/jpeg',
+        resumable: false,
+        metadata: { cacheControl: 'public, max-age=31536000' },
+      });
+      try {
+        await file.makePublic();
+      } catch {
+        // Bucket may already use uniform public access
+      }
+
+      const url = `https://storage.googleapis.com/${gcsBucket.name}/${path}`;
+      return res.json({ url, path });
+    } catch (err) {
+      console.error('[pros/upload]', err);
+      return res.status(500).json({ error: err?.message || 'Upload failed' });
+    }
+  });
+
+  /**
+   * Transcribe field voice notes (Gemini). Used by Diagnose mic on native / Expo Go.
+   */
+  app.post('/api/pros/transcribe', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company to use voice transcription' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      if (!['trial', 'active'].includes(billingStatus)) {
+        return res.status(402).json({
+          error: 'Subscription required for voice transcription',
+          code: 'billing_required',
+        });
+      }
+
+      const geminiKey =
+        envKey('gemini') ||
+        process.env.GEMINI_API_KEY?.trim() ||
+        '';
+      // Prefer company gemini key when present
+      let key = geminiKey;
+      try {
+        const secrets = await db
+          .collection('pros_companies')
+          .doc(membership.companyId)
+          .collection('secrets')
+          .doc('aiKeys')
+          .get();
+        const stored = secrets.data()?.gemini;
+        const companyGemini =
+          (typeof stored === 'object' && stored?.key ? String(stored.key) : '') ||
+          (typeof stored === 'string' ? stored : '');
+        if (companyGemini.trim()) key = companyGemini.trim();
+      } catch {
+        // use env
+      }
+
+      if (!key) {
+        return res.status(503).json({
+          error: 'No Gemini key configured for transcription. Add one in Pros → AI Keys.',
+          code: 'no_key',
+        });
+      }
+
+      const { audioBase64, mimeType = 'audio/mp4' } = req.body || {};
+      if (!audioBase64 || typeof audioBase64 !== 'string') {
+        return res.status(400).json({ error: 'audioBase64 required' });
+      }
+      if (audioBase64.length > 20_000_000) {
+        return res.status(413).json({ error: 'Audio too large' });
+      }
+
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      });
+
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            mimeType: String(mimeType || 'audio/mp4'),
+            data: audioBase64,
+          },
+        },
+        {
+          text: 'Transcribe this field technician voice note into plain English. Return only the transcript, no commentary.',
+        },
+      ]);
+
+      const text = result?.response?.text?.()?.trim?.() || '';
+      if (!text) {
+        return res.status(502).json({ error: 'Empty transcription' });
+      }
+
+      await logActivity(db, membership.companyId, {
+        type: 'diagnose_transcribe',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: 'Voice transcription',
+      });
+
+      return res.json({ text });
+    } catch (err) {
+      console.error('[pros/transcribe]', err);
+      return res.status(500).json({ error: err?.message || 'Transcription failed' });
     }
   });
 }

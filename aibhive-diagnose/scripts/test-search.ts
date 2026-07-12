@@ -1,0 +1,66 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+
+import { parseDiagnosis } from '../lib/diagnose/parseDiagnosis';
+import { detectEquipment, searchFaults } from '../lib/knowledge/search';
+
+describe('searchFaults equipment disambiguation', () => {
+  it('keeps dishwasher queries on dishwasher faults', () => {
+    const hits = searchFaults('dishwasher won’t drain standing water', 'property');
+    assert.ok(hits.length > 0, 'expected dishwasher hits');
+    assert.ok(
+      hits[0]!.id.includes('dishwasher') || hits[0]!.title.toLowerCase().includes('dishwasher'),
+      `unexpected top hit ${hits[0]!.id}`
+    );
+    assert.ok(!hits[0]!.id.startsWith('prop-washer'), 'should not rank laundry washer first');
+  });
+
+  it('ranks washer drain for laundry wording', () => {
+    const hits = searchFaults('washing machine will not drain standing water in drum', 'property');
+    assert.ok(hits.length > 0);
+    assert.ok(hits[0]!.id.includes('washer'), `unexpected ${hits[0]!.id}`);
+  });
+
+  it('detects dishwasher equipment tokens', () => {
+    const eq = detectEquipment('My dishwasher leaked under the door');
+    assert.ok(eq.includes('dishwasher'));
+  });
+
+  it('finds pool pump no prime', () => {
+    const hits = searchFaults('pump humming air in basket no prime', 'pool');
+    assert.ok(hits.some((h) => h.id.includes('pump')));
+  });
+});
+
+describe('parseDiagnosis', () => {
+  it('parses structured markdown into checkbox sections', () => {
+    const result = parseDiagnosis(`**Quick summary**
+Pump has lost prime after backwash.
+
+**Likely causes**
+- Loose lid o-ring
+- Low water in basket
+
+**Step-by-step checks**
+1. Fill basket and seal lid
+2. Check suction side unions for air
+
+**Safety notes**
+- Lock out pump power before opening strainer
+
+**Parts / tools**
+- Lid o-ring
+- PTFE tape`);
+
+    assert.ok(result);
+    assert.match(result!.summary, /lost prime/i);
+    assert.equal(result!.likelyCauses.length, 2);
+    assert.equal(result!.steps.length, 2);
+    assert.equal(result!.safetyNotes.length, 1);
+    assert.equal(result!.partsToCheck.length, 2);
+  });
+
+  it('returns null for unstructured short replies', () => {
+    assert.equal(parseDiagnosis('Try cleaning the filter.'), null);
+  });
+});

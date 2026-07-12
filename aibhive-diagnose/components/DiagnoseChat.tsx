@@ -31,10 +31,16 @@ import { buildTabBarStyle } from '@/constants/tabBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
+import { parseDiagnosis } from '@/lib/diagnose/parseDiagnosis';
+import { loadSession, saveSession, welcomeMessage } from '@/lib/diagnose/sessionStore';
 import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
+import { pushJobNoteToPros } from '@/lib/jobs/prosSync';
+import { loadJobs, upsertJob } from '@/lib/jobs/storage';
 import { submitFieldFeedback } from '@/lib/knowledge/fieldKnowledge';
+import { refreshRemoteTips } from '@/lib/knowledge/remotePackCache';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
+import { startVoiceCapture, type VoiceSession } from '@/lib/voice/speechInput';
 
 const SPEECH_KEY = 'aibhive.diagnose.speechEnabled';
 
@@ -45,6 +51,8 @@ function uid() {
 type DiagnoseChatProps = {
   initialPrompt?: string;
   autoCamera?: boolean;
+  autoVoice?: boolean;
+  jobId?: string;
   keyboardOffset?: number;
   embedInTabs?: boolean;
 };
@@ -52,17 +60,20 @@ type DiagnoseChatProps = {
 export function DiagnoseChat({
   initialPrompt,
   autoCamera,
+  autoVoice,
+  jobId,
   keyboardOffset,
   embedInTabs = false,
 }: DiagnoseChatProps) {
-  const { activePack } = usePack();
-  const { getIdToken, profile, saveProfile } = useAuth();
+  const { activePack, setActivePackId } = usePack();
+  const { getIdToken, profile, saveProfile, user } = useAuth();
   const { isOnline, isInternetReachable } = useNetwork();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const offline = !isOnline || isInternetReachable === false;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sessionReady, setSessionReady] = useState(false);
   const [input, setInput] = useState('');
   const [pendingAttachment, setPendingAttachment] = useState<ChatAttachment | null>(null);
   const [busy, setBusy] = useState(false);
@@ -77,7 +88,14 @@ export function DiagnoseChat({
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const seededRef = useRef(false);
   const cameraOpenedRef = useRef(false);
+  const voiceOpenedRef = useRef(false);
   const inputRef = useRef<TextInput>(null);
+  const voiceRef = useRef<VoiceSession | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     void AsyncStorage.getItem(SPEECH_KEY).then((v) => {
@@ -88,8 +106,45 @@ export function DiagnoseChat({
   useEffect(() => {
     return () => {
       Speech.stop();
+      void voiceRef.current?.cancel();
     };
   }, []);
+
+  // Load / restore session per pack (+ optional job)
+  useEffect(() => {
+    let cancelled = false;
+    setSessionReady(false);
+    (async () => {
+      const stored = await loadSession(activePack.id, jobId);
+      if (cancelled) return;
+      if (stored.length) {
+        setMessages(stored);
+      } else {
+        setMessages([welcomeMessage(activePack.name)]);
+      }
+      setAiSource(null);
+      seededRef.current = false;
+      setSessionReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activePack.id, activePack.name, jobId]);
+
+  // Persist session
+  useEffect(() => {
+    if (!sessionReady || messages.length === 0) return;
+    void saveSession(activePack.id, messages, jobId);
+  }, [messages, sessionReady, activePack.id, jobId]);
+
+  // Warm remote tip cache when online + signed in
+  useEffect(() => {
+    if (offline || !user) return;
+    void (async () => {
+      const token = await getIdToken();
+      if (token) void refreshRemoteTips(token, activePack.id);
+    })();
+  }, [offline, user, activePack.id, getIdToken]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -128,26 +183,11 @@ export function DiagnoseChat({
   }, [embedInTabs, insets.bottom, navigation]);
 
   useEffect(() => {
-    setMessages([
-      {
-        id: uid(),
-        role: 'assistant',
-        content: `Ready on **${activePack.name}**. Snap a photo, tap a quick prompt, or describe the fault — I’ll match the field library and walk the fix.`,
-        createdAt: Date.now(),
-      },
-    ]);
-    seededRef.current = false;
-    Speech.stop();
-    setSpeaking(false);
-    setAiSource(null);
-  }, [activePack.id]);
-
-  useEffect(() => {
-    if (initialPrompt && !seededRef.current) {
+    if (initialPrompt && sessionReady && !seededRef.current) {
       seededRef.current = true;
       setInput(initialPrompt);
     }
-  }, [initialPrompt]);
+  }, [initialPrompt, sessionReady]);
 
   const toggleSpeech = useCallback(() => {
     setSpeechEnabled((prev) => {
@@ -207,11 +247,41 @@ export function DiagnoseChat({
   }, []);
 
   useEffect(() => {
-    if (autoCamera && !cameraOpenedRef.current) {
+    if (autoCamera && sessionReady && !cameraOpenedRef.current) {
       cameraOpenedRef.current = true;
       void pickImage(true);
     }
-  }, [autoCamera, pickImage]);
+  }, [autoCamera, pickImage, sessionReady]);
+
+  const writeDiagnosisToJob = useCallback(
+    async (reply: string) => {
+      if (!jobId) return;
+      try {
+        const jobs = await loadJobs();
+        const job = jobs.find((j) => j.id === jobId);
+        if (!job) return;
+        const fieldNote = {
+          id: `n-${Date.now()}`,
+          text: `Diagnose: ${reply.replace(/\*\*/g, '').slice(0, 500)}`,
+          authorUid: user?.uid,
+          createdAt: Date.now(),
+        };
+        const next = {
+          ...job,
+          fieldNotes: [...(job.fieldNotes || []), fieldNote],
+          updatedAt: Date.now(),
+        };
+        await upsertJob(next);
+        const token = await getIdToken();
+        if (token && job.cloudSynced) {
+          await pushJobNoteToPros(token, job.id, fieldNote.text);
+        }
+      } catch {
+        // non-fatal
+      }
+    },
+    [getIdToken, jobId, user?.uid]
+  );
 
   const send = useCallback(
     async (overrideText?: string) => {
@@ -227,39 +297,49 @@ export function DiagnoseChat({
         isDiagnosis: Boolean(pendingAttachment),
       };
 
+      const history = messagesRef.current;
       setMessages((prev) => [...prev, userMessage]);
       setInput('');
       setPendingAttachment(null);
       setBusy(true);
-      setLoadingPhase('Scanning pack library…');
+      setLoadingPhase(offline ? 'Searching pack library…' : 'Scanning pack library…');
       Speech.stop();
       setSpeaking(false);
 
-      const phaseTimer = setTimeout(() => setLoadingPhase('Building repair steps…'), 450);
+      const phaseTimer = setTimeout(
+        () => setLoadingPhase(offline ? 'Building repair steps…' : 'Building repair steps…'),
+        450
+      );
 
       try {
-        const { reply, source, tipIdsUsed } = await askGrokDetailed({
+        const { reply, source, tipIdsUsed, matchedFaultIds, notice } = await askGrokDetailed({
           pack: activePack,
-          messages,
+          messages: history,
           userText: userMessage.content,
           attachment: userMessage.attachment,
           getIdToken,
+          offline,
         });
         setAiSource(source);
 
+        const structured = parseDiagnosis(reply);
         const assistantMessage: ChatMessage = {
           id: uid(),
           role: 'assistant',
           content: reply,
           createdAt: Date.now(),
-          isDiagnosis: Boolean(userMessage.attachment),
+          isDiagnosis: Boolean(userMessage.attachment) || Boolean(structured),
           askFeedback: true,
           feedbackStatus: 'pending',
+          structured: structured || undefined,
           diagnoseMeta: {
             userQuery: userMessage.content,
             source,
             packId: activePack.id,
             tipIdsUsed: tipIdsUsed || [],
+            matchedFaultIds: matchedFaultIds || [],
+            jobId,
+            notice,
           },
         };
         setMessages((prev) => [...prev, assistantMessage]);
@@ -269,6 +349,8 @@ export function DiagnoseChat({
           packId: activePack.id,
           preview: reply.replace(/\*\*/g, '').slice(0, 120),
         });
+
+        void writeDiagnosisToJob(reply);
 
         if (!offline && speechEnabled) {
           const spoken = reply.replace(/\*\*/g, '').slice(0, 420);
@@ -300,7 +382,17 @@ export function DiagnoseChat({
         setBusy(false);
       }
     },
-    [activePack, busy, getIdToken, input, messages, offline, pendingAttachment, speechEnabled]
+    [
+      activePack,
+      busy,
+      getIdToken,
+      input,
+      jobId,
+      offline,
+      pendingAttachment,
+      speechEnabled,
+      writeDiagnosisToJob,
+    ]
   );
 
   const skipFeedback = useCallback((messageId: string) => {
@@ -338,6 +430,7 @@ export function DiagnoseChat({
           packId: meta?.packId || activePack.id,
           source: meta?.source || 'local',
           tipIdsUsed: meta?.tipIdsUsed || [],
+          matchedFaultIds: meta?.matchedFaultIds || [],
           messageId: message.id,
           equipment: values.equipmentLabel ? [values.equipmentLabel] : [],
           equipmentSymptom: values.equipmentSymptom,
@@ -359,6 +452,7 @@ export function DiagnoseChat({
           )
         );
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        void refreshRemoteTips(token, activePack.id);
       } catch (err) {
         const msg =
           err instanceof Error && err.message?.trim()
@@ -372,25 +466,69 @@ export function DiagnoseChat({
     [activePack.id, getIdToken, profile?.shareAnonymously, saveProfile]
   );
 
-  const toggleVoicePlaceholder = () => {
+  const toggleVoice = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    if (listening) {
+    if (listening && voiceRef.current) {
       setListening(false);
+      try {
+        const text = await voiceRef.current.stop();
+        voiceRef.current = null;
+        if (text) {
+          setInput(text);
+          inputRef.current?.focus();
+        }
+      } catch (err) {
+        voiceRef.current = null;
+        const msg =
+          err instanceof Error && err.message?.trim()
+            ? err.message.trim()
+            : 'Voice capture failed.';
+        setMessages((prev) => [
+          ...prev,
+          { id: uid(), role: 'assistant', content: msg, createdAt: Date.now() },
+        ]);
+      }
       return;
     }
-    setListening(true);
-    setTimeout(() => {
+
+    try {
+      setListening(true);
+      voiceRef.current = await startVoiceCapture({
+        getIdToken,
+        onPartial: (partial) => setInput(partial),
+      });
+    } catch (err) {
       setListening(false);
-      const sample =
-        activePack.id === 'pool'
-          ? 'Pump is humming but not moving water after backwash'
-          : activePack.id === 'property'
-            ? 'Dishwasher won’t drain — standing water after cycle'
-            : 'Breaker trips as soon as the load kicks on';
-      setInput(sample);
-      inputRef.current?.focus();
-    }, 1100);
-  };
+      voiceRef.current = null;
+      const msg =
+        err instanceof Error && err.message?.trim()
+          ? err.message.trim()
+          : 'Could not start microphone.';
+      setMessages((prev) => [
+        ...prev,
+        { id: uid(), role: 'assistant', content: msg, createdAt: Date.now() },
+      ]);
+    }
+  }, [getIdToken, listening]);
+
+  useEffect(() => {
+    if (autoVoice && sessionReady && !voiceOpenedRef.current) {
+      voiceOpenedRef.current = true;
+      void toggleVoice();
+    }
+  }, [autoVoice, sessionReady, toggleVoice]);
+
+  // Ensure pack matches job when opened from a job
+  useEffect(() => {
+    if (!jobId) return;
+    void (async () => {
+      const jobs = await loadJobs();
+      const job = jobs.find((j) => j.id === jobId);
+      if (job?.packId && job.packId !== activePack.id) {
+        setActivePackId(job.packId);
+      }
+    })();
+  }, [jobId, activePack.id, setActivePackId]);
 
   const offset =
     keyboardOffset ??
@@ -406,7 +544,7 @@ export function DiagnoseChat({
         : Math.max(insets.bottom, 10);
 
   const modeLabel = offline
-    ? 'Local mode'
+    ? 'Local · offline'
     : aiSource === 'pros'
       ? 'Pros AI'
       : aiSource === 'direct'
@@ -507,7 +645,7 @@ export function DiagnoseChat({
 
           <Pressable
             accessibilityLabel={listening ? 'Stop voice' : 'Voice input'}
-            onPress={toggleVoicePlaceholder}
+            onPress={() => void toggleVoice()}
             className={`h-14 w-14 items-center justify-center rounded-2xl border active:opacity-70 ${listening ? 'border-hive-danger bg-hive-danger/20' : 'border-hive-border bg-hive-card'}`}
           >
             {listening ? (
@@ -522,7 +660,7 @@ export function DiagnoseChat({
               ref={inputRef}
               value={input}
               onChangeText={setInput}
-              placeholder="Describe the fault…"
+              placeholder={listening ? 'Listening…' : 'Describe the fault…'}
               placeholderTextColor={theme.colors.steel}
               multiline
               className="max-h-28 py-3 text-base text-hive-mist"

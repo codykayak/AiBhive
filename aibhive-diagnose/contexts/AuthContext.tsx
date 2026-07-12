@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import {
+  GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
@@ -11,7 +15,16 @@ import { Platform } from 'react-native';
 
 import { auth, googleProvider } from '@/lib/firebase';
 
+WebBrowser.maybeCompleteAuthSession();
+
 const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
+
+const GOOGLE_WEB_CLIENT_ID =
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID ||
+  '';
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
 
 export type DiagnoseProfile = {
   displayName: string;
@@ -54,6 +67,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<DiagnoseProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [request, , promptAsync] = Google.useIdTokenAuthRequest({
+    // Expo Go resolves android/ios client ids first; fall back to web client.
+    webClientId: GOOGLE_WEB_CLIENT_ID || 'placeholder.apps.googleusercontent.com',
+    iosClientId: GOOGLE_IOS_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || 'placeholder.apps.googleusercontent.com',
+    androidClientId:
+      GOOGLE_ANDROID_CLIENT_ID || GOOGLE_WEB_CLIENT_ID || 'placeholder.apps.googleusercontent.com',
+  });
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (next) => {
       setUser(next);
@@ -78,24 +99,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    if (Platform.OS !== 'web') {
+    if (Platform.OS === 'web') {
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (err) {
+        if (err instanceof Error && err.message?.trim()) throw err;
+        const wrapped = new Error('Sign-in failed. Please try again.');
+        const code = (err as { code?: string })?.code;
+        if (code) (wrapped as Error & { code?: string }).code = code;
+        throw wrapped;
+      }
+      return;
+    }
+
+    if (!GOOGLE_WEB_CLIENT_ID && !GOOGLE_IOS_CLIENT_ID && !GOOGLE_ANDROID_CLIENT_ID) {
       const err = new Error(
-        'Google sign-in on phone needs the EAS build. For now, open Account on web preview, or ask your manager to add you at aibhive.com/pros.'
+        'Google sign-in needs EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID (OAuth client from Firebase / Google Cloud).'
       );
-      (err as Error & { code?: string }).code = 'auth/native-pending';
+      (err as Error & { code?: string }).code = 'auth/missing-client-id';
       throw err;
     }
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      // Re-throw with a guaranteed message so Alerts never show blank.
-      if (err instanceof Error && err.message?.trim()) throw err;
-      const wrapped = new Error('Sign-in failed. Please try again.');
-      const code = (err as { code?: string })?.code;
-      if (code) (wrapped as Error & { code?: string }).code = code;
-      throw wrapped;
+
+    if (!request) {
+      const err = new Error('Google sign-in is still loading. Try again in a moment.');
+      (err as Error & { code?: string }).code = 'auth/request-pending';
+      throw err;
     }
-  }, []);
+
+    const result = await promptAsync();
+    if (result.type === 'cancel' || result.type === 'dismiss') {
+      const err = new Error('Sign-in was cancelled.');
+      (err as Error & { code?: string }).code = 'auth/popup-closed-by-user';
+      throw err;
+    }
+    if (result.type !== 'success') {
+      throw new Error('Google sign-in failed. Please try again.');
+    }
+
+    const idToken =
+      (result.params as { id_token?: string })?.id_token ||
+      result.authentication?.idToken;
+    if (!idToken) {
+      throw new Error('Google did not return an ID token. Check the OAuth client ID.');
+    }
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
+  }, [promptAsync, request]);
 
   const signOut = useCallback(async () => {
     await firebaseSignOut(auth);

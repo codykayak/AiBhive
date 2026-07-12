@@ -64,7 +64,7 @@ export default function HomeScreen() {
               )}
               <View>
                 <Text style={styles.brandEyebrow}>
-                  {profile?.displayName ? profile.displayName : 'TradeForge'}
+                  {profile?.displayName ? profile.displayName : 'AiBhive'}
                 </Text>
                 <Text style={styles.brandTitle}>Diagnose</Text>
               </View>
@@ -93,7 +93,9 @@ export default function HomeScreen() {
           label="Voice Chat"
           subtitle="Talk the fault — hands stay free"
           icon={<Mic color={theme.colors.bg} size={26} strokeWidth={2.5} />}
-          onPress={() => router.push('/(tabs)/diagnose')}
+          onPress={() =>
+            router.push({ pathname: '/(tabs)/diagnose', params: { voice: '1' } })
+          }
         />
         <BigButton
           label="Camera Diagnosis"

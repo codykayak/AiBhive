@@ -21,7 +21,7 @@ Open:  http://localhost:8082
 
 Then in Cursor: **Ports** → **8082** → **Open in Browser** → hard refresh (`Ctrl+Shift+R`).
 
-You should see orange **TradeForge** and a big orange **Voice Chat** button.
+You should see orange **AiBhive** and a big orange **Voice Chat** button.
 
 ## Do not run these for web preview
 

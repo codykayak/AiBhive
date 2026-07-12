@@ -1,5 +1,6 @@
 import type { ChatAttachment, ChatMessage, TradePack } from './packs/types';
 import { diagnoseLocally } from './knowledge/diagnoseEngine';
+import { getCachedTipsContext } from './knowledge/remotePackCache';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 const DEFAULT_MODEL = 'grok-2-vision-1212';
@@ -14,14 +15,28 @@ export type GrokChatRequest = {
   apiKey?: string;
   /** Firebase ID token — enables server-side company/platform Grok. */
   getIdToken?: () => Promise<string | null>;
+  /** When true, skip all network AI and return pack library only. */
+  offline?: boolean;
 };
 
 export type DiagnoseSource = 'local' | 'pros' | 'direct';
+
+export type DiagnoseNoticeCode =
+  | 'offline'
+  | 'billing_required'
+  | 'no_key'
+  | 'no_company'
+  | 'auth_required'
+  | 'network_error'
+  | 'diagnose_failed';
 
 export type DiagnoseReply = {
   reply: string;
   source: DiagnoseSource;
   tipIdsUsed?: string[];
+  matchedFaultIds?: string[];
+  notice?: string;
+  noticeCode?: DiagnoseNoticeCode;
 };
 
 export { buildLocalDiagnosisReply } from './localReply';
@@ -30,19 +45,29 @@ function buildSystemPrompt(pack: TradePack, isDiagnosis: boolean): string {
   const diagnosisExtra = isDiagnosis
     ? `
 
-The user attached a photo of equipment. Respond with a structured field diagnosis:
-1) Quick summary (1-2 sentences)
-2) Likely causes (bulleted)
-3) Step-by-step checks / repair guidance
-4) Safety notes
-5) Parts / tools to have ready
+The user attached a photo of equipment. Respond with a structured field diagnosis using these exact markdown headers:
+**Quick summary**
+**Likely causes**
+**Step-by-step checks**
+**Safety notes**
+**Parts / tools**
 Keep language concise for a tech on a job site.`
-    : '';
+    : `
+
+When giving repair guidance, prefer these markdown headers when it fits:
+**Quick summary**
+**Likely causes**
+**Step-by-step checks**
+**Safety notes**
+**Parts / tools**`;
 
   return `${pack.systemPrompt}
 
 CRITICAL: Stay on the equipment the user named. If they say dishwasher, do not discuss pools, dryers, or unrelated gear unless they clearly ask. Prefer the local library context when it matches. If local context looks off-topic, ignore it and answer for the named equipment only.${diagnosisExtra}`;
 }
+
+type ProsDiagnoseOk = { reply: string; tipIdsUsed: string[] };
+type ProsDiagnoseErr = { error: true; notice: string; noticeCode: DiagnoseNoticeCode };
 
 async function askProsDiagnose(opts: {
   token: string;
@@ -52,40 +77,66 @@ async function askProsDiagnose(opts: {
   attachment?: ChatAttachment;
   localContext: string;
   isDiagnosis: boolean;
-}): Promise<{ reply: string; tipIdsUsed: string[] } | null> {
+}): Promise<ProsDiagnoseOk | ProsDiagnoseErr | null> {
   if (!API_BASE) return null;
-  const res = await fetch(`${API_BASE}/api/pros/diagnose`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${opts.token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      systemPrompt: buildSystemPrompt(opts.pack, opts.isDiagnosis),
-      localContext: opts.localContext,
-      userText: opts.userText,
-      packId: opts.pack.id,
-      messages: opts.messages
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .slice(-8)
-        .map((m) => ({ role: m.role, content: m.content })),
-      attachment: opts.attachment?.base64
-        ? { base64: opts.attachment.base64, mimeType: opts.attachment.mimeType || 'image/jpeg' }
-        : null,
-      model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
-    }),
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api/pros/diagnose`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${opts.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        systemPrompt: buildSystemPrompt(opts.pack, opts.isDiagnosis),
+        localContext: opts.localContext,
+        userText: opts.userText,
+        packId: opts.pack.id,
+        messages: opts.messages
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .slice(-8)
+          .map((m) => ({ role: m.role, content: m.content })),
+        attachment: opts.attachment?.base64
+          ? { base64: opts.attachment.base64, mimeType: opts.attachment.mimeType || 'image/jpeg' }
+          : null,
+        model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
+      }),
+    });
 
-  if (res.status === 402 || res.status === 403 || res.status === 503) {
-    return null;
+    if (res.ok) {
+      const data = (await res.json()) as { reply?: string; tipIdsUsed?: string[] };
+      const reply = data.reply?.trim();
+      if (!reply) return null;
+      return { reply, tipIdsUsed: Array.isArray(data.tipIdsUsed) ? data.tipIdsUsed : [] };
+    }
+
+    let notice = 'Pros AI unavailable — showing pack library.';
+    let noticeCode: DiagnoseNoticeCode = 'diagnose_failed';
+    try {
+      const body = (await res.json()) as { error?: string; code?: string };
+      if (body.error) notice = body.error;
+      if (body.code === 'billing_required' || res.status === 402) noticeCode = 'billing_required';
+      else if (body.code === 'no_key' || res.status === 503) noticeCode = 'no_key';
+      else if (body.code === 'no_company' || res.status === 403) noticeCode = 'no_company';
+    } catch {
+      if (res.status === 402) {
+        notice = 'Subscription required for live AI.';
+        noticeCode = 'billing_required';
+      } else if (res.status === 403) {
+        notice = 'Join a Pros company to use live AI.';
+        noticeCode = 'no_company';
+      } else if (res.status === 503) {
+        notice = 'No Grok key configured in Pros → AI Keys.';
+        noticeCode = 'no_key';
+      }
+    }
+    return { error: true, notice, noticeCode };
+  } catch {
+    return {
+      error: true,
+      notice: 'Network error reaching Pros AI — showing pack library.',
+      noticeCode: 'network_error',
+    };
   }
-  if (!res.ok) {
-    return null;
-  }
-  const data = (await res.json()) as { reply?: string; tipIdsUsed?: string[] };
-  const reply = data.reply?.trim();
-  if (!reply) return null;
-  return { reply, tipIdsUsed: Array.isArray(data.tipIdsUsed) ? data.tipIdsUsed : [] };
 }
 
 /** Prefer Pros proxy (paid/trial company keys). Fall back to local pack library. */
@@ -101,9 +152,30 @@ export async function askGrokDetailed({
   attachment,
   apiKey,
   getIdToken,
+  offline = false,
 }: GrokChatRequest): Promise<DiagnoseReply> {
   const isDiagnosis = Boolean(attachment);
   const local = diagnoseLocally(pack, userText, isDiagnosis);
+  const remoteTips = await getCachedTipsContext(pack.id, userText);
+  const localWithTips = remoteTips
+    ? `${local.reply}\n\n**Shop / network tips**\n${remoteTips}`
+    : local.reply;
+
+  const baseLocal: DiagnoseReply = {
+    reply: localWithTips,
+    source: 'local',
+    tipIdsUsed: [],
+    matchedFaultIds: local.matchedFaultIds,
+  };
+
+  // Offline-first: never hang on bad cell service.
+  if (offline) {
+    return {
+      ...baseLocal,
+      notice: 'Offline — using pack library only.',
+      noticeCode: 'offline',
+    };
+  }
 
   // 1) Pros company / platform key via server proxy (keys never on device)
   if (getIdToken && API_BASE) {
@@ -116,25 +188,98 @@ export async function askGrokDetailed({
           messages,
           userText,
           attachment,
-          localContext: local.reply,
+          localContext: localWithTips,
           isDiagnosis,
         });
-        if (proxied) {
-          return { reply: proxied.reply, source: 'pros', tipIdsUsed: proxied.tipIdsUsed };
+        if (proxied && !('error' in proxied)) {
+          return {
+            reply: proxied.reply,
+            source: 'pros',
+            tipIdsUsed: proxied.tipIdsUsed,
+            matchedFaultIds: local.matchedFaultIds,
+          };
         }
+        if (proxied && 'error' in proxied) {
+          // Fall through to direct key / local, but keep the notice.
+          const direct = await tryDirectGrok({
+            pack,
+            messages,
+            userText,
+            attachment,
+            apiKey,
+            localContext: localWithTips,
+            isDiagnosis,
+            localReply: localWithTips,
+            matchedFaultIds: local.matchedFaultIds,
+          });
+          if (direct.source !== 'local') return direct;
+          return {
+            ...baseLocal,
+            reply: `${localWithTips}\n\n_(${proxied.notice})_`,
+            notice: proxied.notice,
+            noticeCode: proxied.noticeCode,
+          };
+        }
+      } else {
+        // Signed-out: try direct key, else local with hint
+        const direct = await tryDirectGrok({
+          pack,
+          messages,
+          userText,
+          attachment,
+          apiKey,
+          localContext: localWithTips,
+          isDiagnosis,
+          localReply: localWithTips,
+          matchedFaultIds: local.matchedFaultIds,
+        });
+        if (direct.source !== 'local') return direct;
+        return {
+          ...baseLocal,
+          notice: 'Sign in for Pros AI — showing pack library.',
+          noticeCode: 'auth_required',
+        };
       }
     } catch {
       // Fall through
     }
   }
 
-  // 2) Optional direct key for local/dev builds only
-  const key = apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
+  return tryDirectGrok({
+    pack,
+    messages,
+    userText,
+    attachment,
+    apiKey,
+    localContext: localWithTips,
+    isDiagnosis,
+    localReply: localWithTips,
+    matchedFaultIds: local.matchedFaultIds,
+  });
+}
+
+async function tryDirectGrok(opts: {
+  pack: TradePack;
+  messages: ChatMessage[];
+  userText: string;
+  attachment?: ChatAttachment;
+  apiKey?: string;
+  localContext: string;
+  isDiagnosis: boolean;
+  localReply: string;
+  matchedFaultIds: string[];
+}): Promise<DiagnoseReply> {
+  const key = opts.apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
   if (!key) {
-    return { reply: local.reply, source: 'local', tipIdsUsed: [] };
+    return {
+      reply: opts.localReply,
+      source: 'local',
+      tipIdsUsed: [],
+      matchedFaultIds: opts.matchedFaultIds,
+    };
   }
 
-  const history = messages
+  const history = opts.messages
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .slice(-8)
     .map((m) => ({
@@ -145,15 +290,15 @@ export async function askGrokDetailed({
   const userContent: Array<Record<string, unknown>> = [
     {
       type: 'text',
-      text: userText || (isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.'),
+      text: opts.userText || (opts.isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.'),
     },
   ];
 
-  if (attachment?.base64) {
+  if (opts.attachment?.base64) {
     userContent.push({
       type: 'image_url',
       image_url: {
-        url: `data:${attachment.mimeType || 'image/jpeg'};base64,${attachment.base64}`,
+        url: `data:${opts.attachment.mimeType || 'image/jpeg'};base64,${opts.attachment.base64}`,
       },
     });
   }
@@ -170,7 +315,7 @@ export async function askGrokDetailed({
         messages: [
           {
             role: 'system',
-            content: `${buildSystemPrompt(pack, isDiagnosis)}\n\nLocal library context:\n${local.reply.slice(0, 2500)}`,
+            content: `${buildSystemPrompt(opts.pack, opts.isDiagnosis)}\n\nLocal library context:\n${opts.localContext.slice(0, 2500)}`,
           },
           ...history,
           { role: 'user', content: userContent },
@@ -181,9 +326,12 @@ export async function askGrokDetailed({
 
     if (!response.ok) {
       return {
-        reply: `${local.reply}\n\n_(Grok unreachable — showing pack library result.)_`,
+        reply: `${opts.localReply}\n\n_(Grok unreachable — showing pack library result.)_`,
         source: 'local',
         tipIdsUsed: [],
+        matchedFaultIds: opts.matchedFaultIds,
+        notice: 'Grok unreachable',
+        noticeCode: 'network_error',
       };
     }
 
@@ -192,15 +340,19 @@ export async function askGrokDetailed({
     };
 
     return {
-      reply: data.choices?.[0]?.message?.content?.trim() || local.reply,
+      reply: data.choices?.[0]?.message?.content?.trim() || opts.localReply,
       source: 'direct',
       tipIdsUsed: [],
+      matchedFaultIds: opts.matchedFaultIds,
     };
   } catch {
     return {
-      reply: `${local.reply}\n\n_(Network error — pack library result.)_`,
+      reply: `${opts.localReply}\n\n_(Network error — pack library result.)_`,
       source: 'local',
       tipIdsUsed: [],
+      matchedFaultIds: opts.matchedFaultIds,
+      notice: 'Network error',
+      noticeCode: 'network_error',
     };
   }
 }

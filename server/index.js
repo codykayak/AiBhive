@@ -1542,7 +1542,7 @@ app.post('/api/homework/complete', verifyHomeworkUser, async (req, res) => {
 // --- Old Tartar Research (historical anomaly detection) ---
 registerTartarRoutes(app, db);
 registerResearchLabRoutes(app, db);
-registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail });
+registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
