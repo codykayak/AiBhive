@@ -1,6 +1,6 @@
 import '../global.css';
 
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -22,20 +22,6 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
-
-
-const DiagnoseTheme = {
-  ...(DarkTheme ?? {}),
-  colors: {
-    ...(DarkTheme?.colors ?? {}),
-    primary: theme.colors.amber,
-    background: theme.colors.bg,
-    card: theme.colors.elevated,
-    text: theme.colors.mist,
-    border: theme.colors.border,
-    notification: theme.colors.amber,
-  },
-};
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -86,11 +72,16 @@ export default function RootLayout() {
       <AuthProvider>
         <NetworkProvider>
           <PackProvider>
-            <ThemeProvider value={DiagnoseTheme}>
-              <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+            <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
               <StatusBar style="light" />
               <OfflineIndicator />
-              <Stack>
+              <Stack
+                screenOptions={{
+                  headerStyle: { backgroundColor: theme.colors.elevated },
+                  headerTintColor: theme.colors.mist,
+                  contentStyle: { backgroundColor: theme.colors.bg },
+                }}
+              >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen
                   name="job/[id]"
@@ -206,10 +197,9 @@ export default function RootLayout() {
                 />
               </Stack>
             </View>
-          </ThemeProvider>
-        </PackProvider>
-      </NetworkProvider>
-    </AuthProvider>
+          </PackProvider>
+        </NetworkProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

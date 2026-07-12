@@ -1,9 +1,10 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    // NativeWind already injects react-native-worklets/plugin.
-    // Disabling Expo's auto-injection avoids the duplicate transform that
-    // crashes Reanimated 4 / Hermes on Expo Go launch.
+    // Expo preset first (reanimated/worklets disabled — we add worklets LAST below).
+    // Do NOT use the nativewind/babel preset: it injects worklets mid-stack, then
+    // babel-preset-expo adds more plugins after it, so worklets are not last →
+    // Hermes throws "Failed to create a worklet" on launch → "Something went wrong".
     presets: [
       [
         'babel-preset-expo',
@@ -13,7 +14,17 @@ module.exports = function (api) {
           reanimated: false,
         },
       ],
-      'nativewind/babel',
+    ],
+    plugins: [
+      require('react-native-css-interop/dist/babel-plugin').default,
+      [
+        '@babel/plugin-transform-react-jsx',
+        {
+          runtime: 'automatic',
+          importSource: 'react-native-css-interop',
+        },
+      ],
+      'react-native-worklets/plugin',
     ],
   };
 };
