@@ -81,32 +81,42 @@ function usesPlatformRouting(routing) {
  * Budget + daily spend + concurrency gate. Charges credits BEFORE work so
  * failed charges cannot leave platform API spend unpaid.
  */
-async function gateAndCharge(db, uid, rawCost, feature, summary) {
+async function gateAndCharge(db, uid, rawCost, feature, summary, { email } = {}) {
   const job = beginUserJob(uid);
   if (!job.ok) return { ok: false, status: 429, body: { error: job.reason, code: 'CONCURRENCY' } };
 
   try {
     await ensureHiveUser(db, uid);
-    const budget = await requireResearchLabBudget(db, uid, rawCost, feature);
+    if (email) {
+      await db
+        .collection('hive_users')
+        .doc(uid)
+        .set({ email: String(email).toLowerCase() }, { merge: true });
+    }
+    const budget = await requireResearchLabBudget(db, uid, rawCost, feature, { email });
     if (!budget.ok) {
       endUserJob(uid);
       return { ok: false, status: 402, body: budget };
     }
 
     const { markedUsd: marked } = await markCostForUser(db, uid, rawCost);
-    const daily = await assertDailySpendCap(db, uid, marked, { reserve: true });
+    const daily = await assertDailySpendCap(db, uid, marked, { reserve: true, email });
     if (!daily.ok) {
       endUserJob(uid);
       return { ok: false, status: 429, body: { error: daily.reason, code: 'DAILY_CAP' } };
     }
 
-    const charge = await chargeResearchLabUsage(db, uid, rawCost, feature, summary);
+    const charge = await chargeResearchLabUsage(db, uid, rawCost, feature, summary, { email });
     if (!charge.ok) {
       endUserJob(uid);
       return { ok: false, status: 402, body: charge };
     }
 
-    return { ok: true, chargedUsd: charge.chargedUsd };
+    return {
+      ok: true,
+      chargedUsd: charge.chargedUsd ?? 0,
+      adminExempt: !!(daily.adminExempt || charge.adminExempt),
+    };
   } catch (err) {
     endUserJob(uid);
     throw err;
@@ -147,6 +157,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_ocr',
         `Research Lab OCR (${pageCount} pages, ${ocrKey.billingMode})`,
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
 
@@ -209,6 +220,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_scrape',
         `Research Lab scan (${routing?.mode || 'browser'})`,
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -241,6 +253,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_scrape',
         `Research Lab crawl (${pages} pages max)`,
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -268,6 +281,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_scrape',
         'Research Lab asset download',
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -303,6 +317,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_ocr',
         `Research Lab Fable OCR (${pageCount} images)`,
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -376,6 +391,7 @@ export function registerResearchLabRoutes(app, db) {
         rawCost,
         'research_lab_ai_harvest',
         'Research Lab AI harvest',
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -405,6 +421,7 @@ export function registerResearchLabRoutes(app, db) {
         RESEARCH_TRANSLATE_RAW,
         'research_lab_translate',
         'Research Lab translation',
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {
@@ -431,6 +448,7 @@ export function registerResearchLabRoutes(app, db) {
         RESEARCH_PUBLISH_RAW,
         'research_lab_publish',
         'Research Lab library publish',
+        { email: authUser.email },
       );
       if (!gate.ok) return res.status(gate.status).json(gate.body);
       try {

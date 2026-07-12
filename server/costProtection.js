@@ -2,6 +2,8 @@
  * Platform cost protection — daily spend caps, concurrency, and IP rate limits.
  * Mirrors hiveBuildLimits.js for Research Lab / OCR / scrape / harvest.
  */
+import { isHiveBillingExempt } from './hiveAdmin.js';
+
 const USAGE_COL = 'platform_cost_usage';
 
 const MAX_PLATFORM_DAILY_USD = Number(process.env.PLATFORM_DAILY_USD_CAP ?? 200);
@@ -110,6 +112,11 @@ export async function assertDailySpendCap(db, userId, costUsd, opts = {}) {
   const cost = Math.max(0, Number(costUsd) || 0);
   if (cost === 0 && !opts.reserve) {
     return { ok: true };
+  }
+
+  // Admins / billing-exempt testers skip daily spend caps
+  if (await isHiveBillingExempt(db, { userId, email: opts.email })) {
+    return { ok: true, adminExempt: true };
   }
 
   const day = utcDayKey();

@@ -133,6 +133,60 @@ async function openaiChat({ base, apiKey, model, system, prompt, json, maxTokens
   return text;
 }
 
+function isGeminiBillingExhausted(err) {
+  const msg = String(err?.message || err || '');
+  return (
+    /prepayment credits are depleted|RESOURCE_EXHAUSTED|Quota exceeded|billing/i.test(msg) &&
+    (/ai\.studio|gemini|google|generativelanguage/i.test(msg) || /429/.test(msg) || /RESOURCE_EXHAUSTED/i.test(msg))
+  ) || /prepayment credits are depleted/i.test(msg);
+}
+
+function friendlyGeminiBillingError(err) {
+  const raw = String(err?.message || err || '');
+  if (!isGeminiBillingExhausted(err) && !/prepayment credits are depleted/i.test(raw)) {
+    return raw;
+  }
+  return (
+    'Gemini platform credits are depleted (Google AI Studio prepaid). ' +
+    'This is Google’s bill for the server GEMINI_API_KEY — not your Hive credit balance. ' +
+    'Fixes: (1) switch Vision/OCR to Grok in the AI roster, (2) paste your own Gemini key (BYOK), ' +
+    'or (3) top up prepaid credits at https://ai.studio/projects. Admins are not charged Hive credits.'
+  );
+}
+
+async function geminiGenerateText({ apiKey, model, system, prompt, json }) {
+  try {
+    const ai = geminiClient(apiKey);
+    const response = await ai.models.generateContent({
+      model,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        ...(system ? { systemInstruction: system } : {}),
+        temperature: 0.4,
+        ...(json ? { responseMimeType: 'application/json' } : {}),
+      },
+    });
+    const text = response.text?.trim();
+    if (!text) throw new Error('Empty response from Gemini.');
+    return text;
+  } catch (err) {
+    throw new Error(friendlyGeminiBillingError(err));
+  }
+}
+
+async function geminiVisionText({ apiKey, model, prompt, imgs, mimeType }) {
+  try {
+    const ai = geminiClient(apiKey);
+    const contents = [{ text: prompt }, ...imgs.map((b) => ({ inlineData: { mimeType, data: b } }))];
+    const response = await ai.models.generateContent({ model, contents });
+    const text = response.text?.trim();
+    if (!text) throw new Error('Vision model returned no text.');
+    return text;
+  } catch (err) {
+    throw new Error(friendlyGeminiBillingError(err));
+  }
+}
+
 /**
  * Text chat across any provider.
  * @param {{ provider:string, model?:string, byok?:object, system?:string, prompt:string, json?:boolean, maxTokens?:number }} args
@@ -145,19 +199,23 @@ export async function runChat({ provider, model, byok, system, prompt, json = fa
   const useModel = model || cfg.defaultChat;
 
   if (cfg.style === 'gemini') {
-    const ai = geminiClient(apiKey);
-    const response = await ai.models.generateContent({
-      model: useModel,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        ...(system ? { systemInstruction: system } : {}),
-        temperature: 0.4,
-        ...(json ? { responseMimeType: 'application/json' } : {}),
-      },
-    });
-    const text = response.text?.trim();
-    if (!text) throw new Error('Empty response from Gemini.');
-    return text;
+    try {
+      return await geminiGenerateText({ apiKey, model: useModel, system, prompt, json });
+    } catch (err) {
+      // Fall back to Grok when Gemini prepaid is empty and a Grok key exists
+      if (isGeminiBillingExhausted(err) && resolveKey('grok', byok)) {
+        return openaiChat({
+          base: PROVIDERS.grok.base,
+          apiKey: resolveKey('grok', byok),
+          model: PROVIDERS.grok.defaultChat,
+          system,
+          prompt,
+          json,
+          maxTokens,
+        });
+      }
+      throw err;
+    }
   }
   if (cfg.style === 'anthropic') {
     const text = await claudeChatMessages(apiKey, useModel, [{ role: 'user', content: prompt }], system, maxTokens || 4096);
@@ -183,13 +241,38 @@ export async function runVision({ provider, model, byok, prompt, images, mimeTyp
   const imgs = (images || []).slice(0, 20);
   if (!imgs.length) throw new Error('No images supplied to vision model.');
 
-  if (cfg.style === 'gemini') {
-    const ai = geminiClient(apiKey);
-    const contents = [{ text: prompt }, ...imgs.map((b) => ({ inlineData: { mimeType, data: b } }))];
-    const response = await ai.models.generateContent({ model: useModel, contents });
-    const text = response.text?.trim();
+  const runGrokVision = async () => {
+    const grokKey = resolveKey('grok', byok);
+    if (!grokKey) throw new Error('No Grok key available for vision fallback.');
+    const content = [
+      { type: 'text', text: prompt },
+      ...imgs.map((b) => ({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${b}` } })),
+    ];
+    const res = await fetch(`${PROVIDERS.grok.base}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${grokKey}` },
+      body: JSON.stringify({
+        model: PROVIDERS.grok.defaultVision,
+        messages: [{ role: 'user', content }],
+        max_tokens: maxTokens || 4096,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error?.message || `Vision API error (${res.status})`);
+    const text = data.choices?.[0]?.message?.content?.trim();
     if (!text) throw new Error('Vision model returned no text.');
     return text;
+  };
+
+  if (cfg.style === 'gemini') {
+    try {
+      return await geminiVisionText({ apiKey, model: useModel, prompt, imgs, mimeType });
+    } catch (err) {
+      if (isGeminiBillingExhausted(err) && resolveKey('grok', byok)) {
+        return runGrokVision();
+      }
+      throw err;
+    }
   }
   if (cfg.style === 'anthropic') {
     const content = [

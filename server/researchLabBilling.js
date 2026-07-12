@@ -56,9 +56,9 @@ export function harvestRawCost(keys = {}, roles = {}, usesPlatformRouting = fals
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
  */
-export async function requireResearchLabBudget(db, userId, rawCostUsd, feature) {
+export async function requireResearchLabBudget(db, userId, rawCostUsd, feature, { email } = {}) {
   const { markedUsd: marked } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
-  const budget = await hiveUsage.checkTokenBudget(db, userId, marked, feature);
+  const budget = await hiveUsage.checkTokenBudget(db, userId, marked, feature, { email });
   if (!budget.ok) {
     return {
       ok: false,
@@ -67,17 +67,18 @@ export async function requireResearchLabBudget(db, userId, rawCostUsd, feature) 
       suggestedPlan: budget.suggestedPlan ?? 'starter',
     };
   }
-  return { ok: true, marked };
+  return { ok: true, marked, adminExempt: !!budget.adminExempt };
 }
 
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
  */
-export async function chargeResearchLabUsage(db, userId, rawCostUsd, feature, summary) {
+export async function chargeResearchLabUsage(db, userId, rawCostUsd, feature, summary, { email } = {}) {
   const charge = await hiveUsage.recordTokenUsage(db, userId, {
     rawCostUsd,
     feature,
     summary,
+    email,
   });
   if (!charge.ok) {
     const { markedUsd } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
@@ -87,7 +88,7 @@ export async function chargeResearchLabUsage(db, userId, rawCostUsd, feature, su
       amountUsd: charge.amountUsd ?? markedUsd,
     };
   }
-  return { ok: true, chargedUsd: charge.chargedUsd };
+  return { ok: true, chargedUsd: charge.chargedUsd, adminExempt: !!charge.adminExempt };
 }
 
 /**
