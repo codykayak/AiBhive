@@ -14,13 +14,21 @@ npm install
 npm run dev:mobile
 ```
 
-That starts Metro with an ngrok tunnel. In Expo Go, open:
+That starts Metro + a **Cloudflare** tunnel (more reliable than Expo’s built-in ngrok from cloud agents). In Expo Go, open the printed URL:
 
 ```text
-exp://<the-host-shown>.exp.direct
+exp://<something>.trycloudflare.com:443
 ```
 
-Or scan the QR printed in the terminal.
+Or scan the QR printed / shared by the agent.
+
+> First open can take **30–90 seconds** while Metro builds the Hermes bundle (~13MB). If it spins longer than ~2 minutes, you likely have the wrong Expo Go SDK — install SDK 57 from expo.dev/go.
+
+Fallback (often flaky from cloud IPs):
+
+```bash
+npm run dev:mobile:expo-tunnel
+```
 
 > Do **not** use `npm start` / `npm run dev` for Expo Go — those serve a static **web** preview on port 8082 for Cursor browser testing.
 
