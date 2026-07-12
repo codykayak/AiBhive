@@ -3,7 +3,6 @@ import * as Linking from 'expo-linking';
 import { LogIn, LogOut, Users, UserRound } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -24,6 +23,7 @@ import {
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { joinProsCompany } from '@/lib/jobs/prosSync';
+import { safeAlert } from '@/lib/safeAlert';
 
 function formatAuthError(err: unknown): string {
   if (!err || typeof err !== 'object') return 'Sign-in failed. Try again.';
@@ -59,12 +59,13 @@ export default function AccountScreen() {
     if (profile?.displayName) setName(profile.displayName);
   }, [profile?.displayName]);
 
-  // After first successful sign-in, offer join-team code once.
+  // After first successful sign-in, offer join-team code once (clean modal, no error).
   useEffect(() => {
     if (!user || promptedRef.current) return;
     promptedRef.current = true;
     void (async () => {
       if (await shouldShowJoinPrompt()) {
+        setJoinError(null);
         setJoinVisible(true);
       }
     })();
@@ -83,7 +84,7 @@ export default function AccountScreen() {
 
   const saveName = async () => {
     await saveProfile({ displayName: name.trim() || 'Tech' });
-    Alert.alert('Saved', 'Profile updated.');
+    safeAlert('Saved', 'Profile updated.');
   };
 
   const handleSignIn = async () => {
@@ -93,7 +94,7 @@ export default function AccountScreen() {
     } catch (err) {
       const msg = formatAuthError(err);
       setAuthError(msg);
-      Alert.alert('Sign-in', msg);
+      safeAlert('Sign-in', msg);
     }
   };
 
@@ -109,13 +110,13 @@ export default function AccountScreen() {
     try {
       const token = await getIdToken();
       if (!token) {
-        setJoinError('Sign in first, then enter your team code.');
+        setJoinError('Sign in first, then enter your invite code.');
         return;
       }
       await joinProsCompany(token, code, name || profile?.displayName);
       await markJoinPromptSkipped();
       setJoinVisible(false);
-      Alert.alert('Joined', 'You’re on the Pros roster. Jobs will sync when available.');
+      safeAlert('Joined', 'You’re on the Pros roster. Jobs will sync when available.');
     } catch (err) {
       let msg = formatAuthError(err);
       try {
@@ -220,10 +221,13 @@ export default function AccountScreen() {
                 variant="secondary"
                 icon={<Users color={theme.colors.amber} size={22} />}
                 onPress={() => {
-                  setJoinError('Sign in first, then enter your invite code.');
+                  setJoinError(null);
                   setJoinVisible(true);
                 }}
               />
+              <Text className="text-sm text-hive-steel">
+                Sign in first, then enter your shop invite code to unlock Pros AI + job sync.
+              </Text>
             </>
           )}
           {authError ? <Text className="text-sm text-hive-danger">{authError}</Text> : null}

@@ -3,13 +3,24 @@ import { diagnoseLocally } from './knowledge/diagnoseEngine';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 const DEFAULT_MODEL = 'grok-2-vision-1212';
+const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
 export type GrokChatRequest = {
   pack: TradePack;
   messages: ChatMessage[];
   userText: string;
   attachment?: ChatAttachment;
+  /** Optional direct key (dev only). Prefer Pros proxy via getIdToken. */
   apiKey?: string;
+  /** Firebase ID token — enables server-side company/platform Grok. */
+  getIdToken?: () => Promise<string | null>;
+};
+
+export type DiagnoseSource = 'local' | 'pros' | 'direct';
+
+export type DiagnoseReply = {
+  reply: string;
+  source: DiagnoseSource;
 };
 
 export { buildLocalDiagnosisReply } from './localReply';
@@ -32,19 +43,92 @@ Keep language concise for a tech on a job site.`
 CRITICAL: Stay on the equipment the user named. If they say dishwasher, do not discuss pools, dryers, or unrelated gear unless they clearly ask. Prefer the local library context when it matches. If local context looks off-topic, ignore it and answer for the named equipment only.${diagnosisExtra}`;
 }
 
-export async function askGrok({
+async function askProsDiagnose(opts: {
+  token: string;
+  pack: TradePack;
+  messages: ChatMessage[];
+  userText: string;
+  attachment?: ChatAttachment;
+  localContext: string;
+  isDiagnosis: boolean;
+}): Promise<string | null> {
+  if (!API_BASE) return null;
+  const res = await fetch(`${API_BASE}/api/pros/diagnose`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${opts.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      systemPrompt: buildSystemPrompt(opts.pack, opts.isDiagnosis),
+      localContext: opts.localContext,
+      userText: opts.userText,
+      messages: opts.messages
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .slice(-8)
+        .map((m) => ({ role: m.role, content: m.content })),
+      attachment: opts.attachment?.base64
+        ? { base64: opts.attachment.base64, mimeType: opts.attachment.mimeType || 'image/jpeg' }
+        : null,
+      model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
+    }),
+  });
+
+  if (res.status === 402 || res.status === 403 || res.status === 503) {
+    // Billing / no company / no key — fall through to local.
+    return null;
+  }
+  if (!res.ok) {
+    return null;
+  }
+  const data = (await res.json()) as { reply?: string };
+  return data.reply?.trim() || null;
+}
+
+/** Prefer Pros proxy (paid/trial company keys). Fall back to local pack library. */
+export async function askGrok(req: GrokChatRequest): Promise<string> {
+  const result = await askGrokDetailed(req);
+  return result.reply;
+}
+
+export async function askGrokDetailed({
   pack,
   messages,
   userText,
   attachment,
   apiKey,
-}: GrokChatRequest): Promise<string> {
-  const key = apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
+  getIdToken,
+}: GrokChatRequest): Promise<DiagnoseReply> {
   const isDiagnosis = Boolean(attachment);
+  const local = diagnoseLocally(pack, userText, isDiagnosis);
 
-  // Always prefer rich local pack intelligence when offline or no key.
+  // 1) Pros company / platform key via server proxy (keys never on device)
+  if (getIdToken && API_BASE) {
+    try {
+      const token = await getIdToken();
+      if (token) {
+        const proxied = await askProsDiagnose({
+          token,
+          pack,
+          messages,
+          userText,
+          attachment,
+          localContext: local.reply,
+          isDiagnosis,
+        });
+        if (proxied) {
+          return { reply: proxied, source: 'pros' };
+        }
+      }
+    } catch {
+      // Fall through
+    }
+  }
+
+  // 2) Optional direct key for local/dev builds only
+  const key = apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
   if (!key) {
-    return diagnoseLocally(pack, userText, isDiagnosis).reply;
+    return { reply: local.reply, source: 'local' };
   }
 
   const history = messages
@@ -71,9 +155,6 @@ export async function askGrok({
     });
   }
 
-  // Enrich with local library hits so Grok stays grounded in field knowledge.
-  const local = diagnoseLocally(pack, userText, isDiagnosis);
-
   try {
     const response = await fetch(GROK_API_URL, {
       method: 'POST',
@@ -96,15 +177,24 @@ export async function askGrok({
     });
 
     if (!response.ok) {
-      return `${local.reply}\n\n_(Grok unreachable — showing pack library result.)_`;
+      return {
+        reply: `${local.reply}\n\n_(Grok unreachable — showing pack library result.)_`,
+        source: 'local',
+      };
     }
 
     const data = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    return data.choices?.[0]?.message?.content?.trim() || local.reply;
+    return {
+      reply: data.choices?.[0]?.message?.content?.trim() || local.reply,
+      source: 'direct',
+    };
   } catch {
-    return `${local.reply}\n\n_(Network error — pack library result.)_`;
+    return {
+      reply: `${local.reply}\n\n_(Network error — pack library result.)_`,
+      source: 'local',
+    };
   }
 }

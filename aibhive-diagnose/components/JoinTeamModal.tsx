@@ -63,7 +63,9 @@ export function JoinTeamModal({
             className="mt-4 min-h-[52px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
           />
 
-          {error ? <Text className="mt-2 text-sm text-hive-danger">{error}</Text> : null}
+          {error ? (
+            <Text className="mt-2 text-sm text-hive-danger">{String(error).trim() || 'Something went wrong.'}</Text>
+          ) : null}
 
           <Pressable
             disabled={busy || !code.trim()}

@@ -38,6 +38,33 @@ function envHas(provider) {
   return meta.envFallback.some((name) => Boolean(process.env[name]?.trim()));
 }
 
+function envKey(provider) {
+  const meta = PROVIDER_META[provider];
+  if (!meta) return '';
+  for (const name of meta.envFallback) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+  return '';
+}
+
+/** Resolve Grok key for Diagnose — company secret first, then platform env. Never return to clients. */
+async function resolveGrokKey(db, companyId) {
+  const secretsSnap = await db
+    .collection('pros_companies')
+    .doc(companyId)
+    .collection('secrets')
+    .doc('aiKeys')
+    .get();
+  const secrets = secretsSnap.exists ? secretsSnap.data() : {};
+  if (secrets.grok?.key) {
+    return { key: String(secrets.grok.key).trim(), source: 'company' };
+  }
+  const platform = envKey('grok');
+  if (platform) return { key: platform, source: 'platform_env' };
+  return null;
+}
+
 async function requireProsUser(req, res) {
   const user = await verifyHiveAuth(req);
   if (!user?.uid) {
@@ -176,6 +203,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
                 : 'pool',
           requireJobPhotos: false,
           preferredAiProvider: 'grok',
+          // trial | active | past_due | none — Stripe will flip this later
+          billingStatus: 'trial',
         },
       });
 
@@ -708,6 +737,140 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
     } catch (err) {
       console.error('[pros/invite]', err);
       return res.status(500).json({ error: 'Failed to rotate invite' });
+    }
+  });
+
+  // AI status for any company member (no secrets)
+  app.get('/api/pros/ai-status', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.json({
+          configured: false,
+          provider: null,
+          source: 'none',
+          billingStatus: 'none',
+          aiEnabled: false,
+        });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      const billingOk = ['trial', 'active'].includes(billingStatus);
+      const resolved = await resolveGrokKey(db, membership.companyId);
+
+      return res.json({
+        configured: Boolean(resolved),
+        provider: resolved ? 'grok' : null,
+        source: resolved?.source || 'none',
+        billingStatus,
+        aiEnabled: Boolean(resolved) && billingOk,
+      });
+    } catch (err) {
+      console.error('[pros/ai-status]', err);
+      return res.status(500).json({ error: 'Failed to load AI status' });
+    }
+  });
+
+  /**
+   * Field Diagnose proxy — runs Grok on the server with company/platform key.
+   * Keys never leave the server. Unpaid/suspended companies get 402.
+   */
+  app.post('/api/pros/diagnose', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({
+          error: 'Join a Pros company to use live AI',
+          code: 'no_company',
+        });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      if (!['trial', 'active'].includes(billingStatus)) {
+        return res.status(402).json({
+          error: 'Subscription required for live AI. Pack library still works offline.',
+          code: 'billing_required',
+          billingStatus,
+        });
+      }
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (!resolved?.key) {
+        return res.status(503).json({
+          error: 'No Grok key configured. Add one in Pros → AI Keys.',
+          code: 'no_key',
+        });
+      }
+
+      const {
+        systemPrompt = '',
+        localContext = '',
+        userText = '',
+        messages = [],
+        attachment = null,
+        model = process.env.GROK_DIAGNOSE_MODEL || process.env.EXPO_PUBLIC_GROK_MODEL || 'grok-2-vision-1212',
+      } = req.body || {};
+
+      const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
+
+      const history = (Array.isArray(messages) ? messages : [])
+        .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+        .slice(-8)
+        .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+
+      const system = [
+        String(systemPrompt || '').slice(0, 4000),
+        localContext ? `\nLocal library context:\n${String(localContext).slice(0, 2500)}` : '',
+        '\nCRITICAL: Stay on the equipment the user named. Prefer local library context when it matches.',
+      ].join('');
+
+      const userContent = [];
+      userContent.push({
+        type: 'text',
+        text: String(userText || 'Help me on this job.').slice(0, 4000),
+      });
+      if (attachment?.base64) {
+        const mime = attachment.mimeType || 'image/jpeg';
+        userContent.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:${mime};base64,${attachment.base64}`,
+          },
+        });
+      }
+
+      const reply = await grokChatMessages(resolved.key, model, [
+        { role: 'system', content: system },
+        ...history,
+        { role: 'user', content: userContent },
+      ]);
+
+      await logActivity(db, membership.companyId, {
+        type: 'diagnose_ai',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Diagnose AI (${resolved.source})`,
+      });
+
+      return res.json({
+        reply,
+        source: resolved.source,
+        provider: 'grok',
+      });
+    } catch (err) {
+      console.error('[pros/diagnose]', err);
+      return res.status(500).json({
+        error: err?.message || 'Diagnose AI failed',
+        code: 'diagnose_failed',
+      });
     }
   });
 }
