@@ -85,7 +85,7 @@ export function JoinTeamModal({
             className="mt-3 min-h-[48px] items-center justify-center rounded-2xl border border-hive-border"
           >
             <Text className="text-sm font-bold text-hive-mist">Create / manage team on Pros</Text>
-            <Text className="text-xs text-hive-steel">aibhive.com/pros</Text>
+            <Text className="text-xs text-hive-steel">aibhive.com/pros/app</Text>
           </Pressable>
 
           <Pressable onPress={onSkip} className="mt-3 min-h-[44px] items-center justify-center">

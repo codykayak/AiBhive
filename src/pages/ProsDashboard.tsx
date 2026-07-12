@@ -5,6 +5,8 @@ import { motion } from 'motion/react';
 import {
   Activity,
   AlertCircle,
+  Bell,
+  BookOpen,
   Briefcase,
   Building2,
   ClipboardList,
@@ -13,6 +15,7 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  Navigation,
   Plus,
   RefreshCw,
   Settings,
@@ -22,17 +25,37 @@ import {
 import { auth, googleProvider } from '../firebase';
 import { SEO } from '../components/SEO';
 import { cn } from '../lib/utils';
+import ProsAiKeysPanel from '../components/pros/ProsAiKeysPanel';
 import {
+  ProsJobsPipelineChart,
+  ProsKnowledgeGrowthChart,
+} from '../components/pros/ProsKnowledgeCharts';
+import ProsManualIngestPanel from '../components/pros/ProsManualIngestPanel';
+import ProsNotificationsPanel from '../components/pros/ProsNotificationsPanel';
+import ProsSettingsPanel from '../components/pros/ProsSettingsPanel';
+import ProsWhereIsEverybody from '../components/pros/ProsWhereIsEverybody';
+import {
+  prosExportJobsCsv,
+  prosAnalytics,
   prosJson,
   prosMe,
+  prosNotifications,
+  prosSettings,
+  prosTeamLocations,
+  type ProsAnalytics,
+  type ProsCompanySettings,
   type ProsJob,
   type ProsMember,
+  type ProsNotification,
+  type ProsTeamLocation,
 } from '../lib/prosApi';
-import ProsAiKeysPanel from '../components/pros/ProsAiKeysPanel';
 
 type Tab =
   | 'overview'
   | 'dispatch'
+  | 'whereabouts'
+  | 'notifications'
+  | 'knowledge'
   | 'team'
   | 'ai-keys'
   | 'activity'
@@ -40,7 +63,10 @@ type Tab =
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'dispatch', label: 'Dispatch', icon: ClipboardList },
+  { id: 'dispatch', label: 'Jobs', icon: ClipboardList },
+  { id: 'whereabouts', label: 'Where is everybody?', icon: Navigation },
+  { id: 'notifications', label: 'Notify', icon: Bell },
+  { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
   { id: 'team', label: 'Team', icon: Users },
   { id: 'ai-keys', label: 'AI Keys', icon: KeyRound },
   { id: 'activity', label: 'Activity', icon: Activity },
@@ -52,6 +78,15 @@ const STATUS_COLORS: Record<string, string> = {
   in_progress: 'bg-sky-500/20 text-sky-300',
   needs_parts: 'bg-amber-500/20 text-amber-300',
   done: 'bg-emerald-500/20 text-emerald-300',
+};
+
+const DEFAULT_SETTINGS: ProsCompanySettings = {
+  locationTrackingEnabled: false,
+  locationPingIntervalMinutes: 15,
+  requireJobPhotos: false,
+  preferredAiProvider: 'grok',
+  defaultPack: 'pool',
+  billingStatus: 'trial',
 };
 
 export default function ProsDashboard() {
@@ -72,22 +107,31 @@ export default function ProsDashboard() {
     jobsByStatus: Record<string, number>;
     recentActivity: Array<{ id: string; message?: string; type?: string; createdAt?: number | null }>;
   } | null>(null);
+  const [analytics, setAnalytics] = useState<ProsAnalytics | null>(null);
   const [jobs, setJobs] = useState<ProsJob[]>([]);
   const [members, setMembers] = useState<ProsMember[]>([]);
+  const [notifications, setNotifications] = useState<ProsNotification[]>([]);
+  const [locations, setLocations] = useState<ProsTeamLocation[]>([]);
+  const [trackingEnabled, setTrackingEnabled] = useState(false);
+  const [pingInterval, setPingInterval] = useState(15);
+  const [settings, setSettings] = useState<ProsCompanySettings>(DEFAULT_SETTINGS);
   const [loadingData, setLoadingData] = useState(false);
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
 
-  // onboarding
   const [companyName, setCompanyName] = useState('');
   const [tradeType, setTradeType] = useState<'pool' | 'electrical' | 'property' | 'multi'>('pool');
   const [inviteCode, setInviteCode] = useState('');
   const [onboardingBusy, setOnboardingBusy] = useState(false);
 
-  // new job form
   const [jobTitle, setJobTitle] = useState('');
   const [jobAddress, setJobAddress] = useState('');
   const [jobAssignee, setJobAssignee] = useState('');
   const [jobPack, setJobPack] = useState<'pool' | 'electrical' | 'property'>('pool');
-  const [jobPriority, setJobPriority] = useState<'normal' | 'high' | 'emergency'>('normal');
+  const [jobNotes, setJobNotes] = useState('');
+  const [jobCustomer, setJobCustomer] = useState('');
+  const [jobPhone, setJobPhone] = useState('');
+  const [jobScheduled, setJobScheduled] = useState('');
+  const [jobFilter, setJobFilter] = useState<'all' | ProsJob['status']>('all');
 
   const isManager = membership?.role === 'owner' || membership?.role === 'manager';
 
@@ -99,36 +143,51 @@ export default function ProsDashboard() {
     return () => unsub();
   }, []);
 
-  const refreshAll = useCallback(
-    async (current: User) => {
-      setLoadingData(true);
-      setBootError(null);
-      try {
-        const me = await prosMe(current);
-        setCompany(me.company);
-        setMembership(me.membership);
-        if (!me.company) {
-          setOverview(null);
-          setJobs([]);
-          setMembers([]);
-          return;
-        }
-        const [ov, jobsRes, teamRes] = await Promise.all([
-          prosJson<NonNullable<typeof overview>>('/api/pros/overview', current),
-          prosJson<{ jobs: ProsJob[] }>('/api/pros/jobs', current),
-          prosJson<{ members: ProsMember[] }>('/api/pros/team', current),
-        ]);
-        setOverview(ov);
-        setJobs(jobsRes.jobs);
-        setMembers(teamRes.members);
-      } catch (err) {
-        setBootError(err instanceof Error ? err.message : 'Failed to load Pros');
-      } finally {
-        setLoadingData(false);
+  const refreshAll = useCallback(async (current: User) => {
+    setLoadingData(true);
+    setBootError(null);
+    try {
+      const me = await prosMe(current);
+      setCompany(me.company);
+      setMembership(me.membership);
+      if (!me.company) {
+        setOverview(null);
+        setAnalytics(null);
+        setJobs([]);
+        setMembers([]);
+        setNotifications([]);
+        setLocations([]);
+        return;
       }
-    },
-    []
-  );
+
+      const [ov, jobsRes, teamRes, notifRes, settingsRes, analyticsRes] = await Promise.all([
+        prosJson<NonNullable<typeof overview>>('/api/pros/overview', current),
+        prosJson<{ jobs: ProsJob[] }>('/api/pros/jobs', current),
+        prosJson<{ members: ProsMember[] }>('/api/pros/team', current),
+        prosNotifications(current),
+        prosSettings(current),
+        prosAnalytics(current),
+      ]);
+
+      setOverview(ov);
+      setJobs(jobsRes.jobs);
+      setMembers(teamRes.members);
+      setNotifications(notifRes.notifications);
+      setSettings(settingsRes.settings);
+      setAnalytics(analyticsRes);
+
+      if (me.membership?.role === 'owner' || me.membership?.role === 'manager') {
+        const locRes = await prosTeamLocations(current);
+        setLocations(locRes.locations);
+        setTrackingEnabled(locRes.trackingEnabled);
+        setPingInterval(locRes.pingIntervalMinutes);
+      }
+    } catch (err) {
+      setBootError(err instanceof Error ? err.message : 'Failed to load Pros');
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) void refreshAll(user);
@@ -179,9 +238,13 @@ export default function ProsDashboard() {
     const assignee = members.find((m) => m.uid === jobAssignee);
     await prosJson('/api/pros/jobs', user, {
       method: 'POST',
-      body: JSON.stringify({
+        body: JSON.stringify({
         title: jobTitle.trim(),
         address: jobAddress.trim(),
+        customerName: jobCustomer.trim(),
+        customerPhone: jobPhone.trim(),
+        notes: jobNotes.trim(),
+        scheduledFor: jobScheduled.trim() || null,
         packId: jobPack,
         priority: jobPriority,
         assigneeUid: jobAssignee || null,
@@ -190,6 +253,10 @@ export default function ProsDashboard() {
     });
     setJobTitle('');
     setJobAddress('');
+    setJobCustomer('');
+    setJobPhone('');
+    setJobNotes('');
+    setJobScheduled('');
     setJobAssignee('');
     await refreshAll(user);
     setTab('dispatch');
@@ -212,10 +279,48 @@ export default function ProsDashboard() {
     setCompany((c) => (c ? { ...c, inviteCode: res.inviteCode } : c));
   };
 
+  const filteredJobs = useMemo(() => {
+    if (jobFilter === 'all') return jobs;
+    return jobs.filter((j) => j.status === jobFilter);
+  }, [jobs, jobFilter]);
+
+  const exportCsv = async () => {
+    if (!user) return;
+    try {
+      const blob = await prosExportJobsCsv(user);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pros-jobs-export.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setBootError(err instanceof Error ? err.message : 'Export failed');
+    }
+  };
+
   const techOptions = useMemo(
     () => members.filter((m) => m.status !== 'inactive'),
     [members]
   );
+
+  const pipelineChart = useMemo(() => {
+    if (!overview) return [];
+    return Object.entries(overview.jobsByStatus).map(([status, count]) => ({
+      label: status.replace('_', ' '),
+      count,
+    }));
+  }, [overview]);
+
+  const knowledgeChart = useMemo(() => {
+    if (!analytics?.knowledgeGrowth?.length) return [];
+    return analytics.knowledgeGrowth.map((row) => ({
+      label: row.label,
+      tips: row.tips,
+      feedback: row.feedback,
+      jobsDone: row.jobsDone,
+    }));
+  }, [analytics]);
 
   if (loadingAuth) {
     return (
@@ -228,32 +333,31 @@ export default function ProsDashboard() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0B0F14] text-white flex items-center justify-center px-4">
-        <SEO title="AiBhive Pros" description="Field ops admin for trade companies" />
+        <SEO title="Pros Admin — Sign in" />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-8 text-center"
+          className="max-w-md w-full rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-8"
         >
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center mb-5">
-            <Wrench className="w-7 h-7 text-amber-400" />
+          <Link to="/pros" className="text-xs text-amber-400 hover:underline">
+            ← Pros overview
+          </Link>
+          <div className="mt-6 text-center">
+            <div className="mx-auto w-14 h-14 rounded-xl bg-amber-500/20 flex items-center justify-center mb-5">
+              <Wrench className="w-7 h-7 text-amber-400" />
+            </div>
+            <h1 className="text-2xl font-black">Company HQ sign-in</h1>
+            <p className="mt-3 text-slate-400 text-sm leading-relaxed">
+              Dispatch jobs, track your team, and grow your living knowledge base.
+            </p>
+            <button
+              type="button"
+              onClick={() => void signIn()}
+              className="mt-8 w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold py-3.5"
+            >
+              Continue with Google
+            </button>
           </div>
-          <h1 className="text-3xl font-black tracking-tight">
-            AiB<span className="text-amber-400">hive</span> Pros
-          </h1>
-          <p className="mt-3 text-slate-400 text-sm leading-relaxed">
-            Dispatch jobs, manage techs, and plug in Grok, Claude, Kimi, and Gemini for Diagnose —
-            all from one company HQ.
-          </p>
-          <button
-            type="button"
-            onClick={() => void signIn()}
-            className="mt-8 w-full rounded-2xl bg-amber-500 hover:bg-amber-400 text-black font-bold py-3.5"
-          >
-            Continue with Google
-          </button>
-          <p className="mt-4 text-xs text-slate-500">
-            Field app: Diagnose · Admin: <span className="text-slate-400">aibhive.com/pros</span>
-          </p>
         </motion.div>
       </div>
     );
@@ -266,7 +370,10 @@ export default function ProsDashboard() {
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-2xl font-black">Welcome to Pros</h1>
+              <Link to="/pros" className="text-xs text-amber-400 hover:underline">
+                ← Pros overview
+              </Link>
+              <h1 className="text-2xl font-black mt-2">Welcome to Pros</h1>
               <p className="text-slate-400 text-sm mt-1">Signed in as {user.email}</p>
             </div>
             <button
@@ -349,8 +456,12 @@ export default function ProsDashboard() {
               <Briefcase className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/80">
-                AiBhive Pros
+              <div className="flex items-center gap-2">
+                <Link to="/pros" className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/80 hover:text-amber-300">
+                  AiBhive Pros
+                </Link>
+                <span className="text-[10px] text-slate-600">·</span>
+                <span className="text-[10px] uppercase text-slate-500">Living KB</span>
               </div>
               <h1 className="text-lg font-black leading-tight">{company.name}</h1>
             </div>
@@ -380,6 +491,10 @@ export default function ProsDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto pb-3">
           {TABS.map((t) => {
             const Icon = t.icon;
+            const hide =
+              (t.id === 'whereabouts' && !isManager) ||
+              (t.id === 'knowledge' && !isManager);
+            if (hide) return null;
             return (
               <button
                 key={t.id}
@@ -407,12 +522,47 @@ export default function ProsDashboard() {
 
         {activeTab === 'overview' && overview ? (
           <div className="space-y-8">
+            <div className="rounded-2xl border border-[#1E3A8A]/30 bg-[#1E3A8A]/10 p-5 flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex items-start gap-3">
+                <BookOpen className="w-6 h-6 text-sky-300 shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-bold text-lg">Living knowledge base</h2>
+                  <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+                    {analytics?.totals.tips ?? 0} field tips · {analytics?.totals.feedback ?? 0} diagnose feedback ·{' '}
+                    {analytics?.totals.fieldNotes ?? 0} job notes — compounded from techs in the field.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTab('notifications')}
+                className="rounded-xl bg-amber-500 text-black font-bold px-4 py-2 text-sm"
+              >
+                Notify techs
+              </button>
+            </div>
+
+            {analytics?.featuredTip ? (
+              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+                  Fix of the week
+                </div>
+                <p className="text-slate-200 leading-relaxed">{analytics.featuredTip.text}</p>
+                {analytics.featuredTip.fixSummary ? (
+                  <p className="text-sm text-slate-400 mt-2">Fix: {analytics.featuredTip.fixSummary}</p>
+                ) : null}
+                <div className="text-[11px] text-slate-500 mt-2">
+                  {analytics.featuredTip.packId} pack · {analytics.featuredTip.helpfulCount} helpful votes
+                </div>
+              </div>
+            ) : null}
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Open jobs', value: overview.openJobs, icon: ClipboardList },
-                { label: 'Team', value: overview.members, icon: Users },
+                { label: 'Field tips', value: analytics?.totals.tips ?? 0, icon: BookOpen },
                 { label: 'Techs', value: overview.techs, icon: Wrench },
-                { label: 'Jobs total', value: overview.jobsTotal, icon: Briefcase },
+                { label: 'Jobs done', value: analytics?.totals.jobsDone ?? 0, icon: Briefcase },
               ].map((card) => (
                 <div key={card.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                   <card.icon className="w-5 h-5 text-amber-400 mb-3" />
@@ -424,54 +574,50 @@ export default function ProsDashboard() {
 
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                <h3 className="font-bold mb-4">Pipeline</h3>
-                <div className="space-y-2">
-                  {Object.entries(overview.jobsByStatus).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between text-sm">
-                      <span className={cn('px-2 py-0.5 rounded-full text-xs font-bold', STATUS_COLORS[status])}>
-                        {status.replace('_', ' ')}
-                      </span>
-                      <span className="font-mono text-slate-300">{count}</span>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="font-bold mb-2">Knowledge growth</h3>
+                {knowledgeChart.length ? (
+                  <ProsKnowledgeGrowthChart data={knowledgeChart} variant="dark" />
+                ) : (
+                  <p className="text-sm text-slate-500 py-8 text-center">Charts populate as techs contribute tips and feedback.</p>
+                )}
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                <h3 className="font-bold mb-4">Recent activity</h3>
-                <ul className="space-y-3">
-                  {overview.recentActivity.length === 0 ? (
-                    <li className="text-sm text-slate-500">No activity yet — create a job to get rolling.</li>
-                  ) : (
-                    overview.recentActivity.map((a) => (
-                      <li key={a.id} className="text-sm text-slate-300 border-b border-white/5 pb-2">
-                        {a.message || a.type}
-                      </li>
-                    ))
-                  )}
-                </ul>
+                <h3 className="font-bold mb-2">Job pipeline</h3>
+                <ProsJobsPipelineChart data={pipelineChart} variant="dark" />
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="font-bold text-amber-200">AI not configured yet?</h3>
-                <p className="text-sm text-slate-400 mt-1">
-                  Add Grok, Claude, Kimi, and Gemini keys so Diagnose can talk to your models.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setTab('ai-keys')}
-                className="rounded-xl bg-amber-500 text-black font-bold px-4 py-2 text-sm"
-              >
-                Open AI Keys
-              </button>
             </div>
           </div>
         ) : null}
 
         {activeTab === 'dispatch' ? (
           <div className="space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'queued', 'in_progress', 'needs_parts', 'done'] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setJobFilter(f)}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-xs font-bold uppercase',
+                      jobFilter === f ? 'bg-amber-500 text-black' : 'bg-white/5 text-slate-400'
+                    )}
+                  >
+                    {f === 'all' ? 'All' : f.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+              {isManager ? (
+                <button
+                  type="button"
+                  onClick={() => void exportCsv()}
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-amber-500/40"
+                >
+                  Export CSV
+                </button>
+              ) : null}
+            </div>
+
             {isManager ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
                 <h2 className="font-bold text-lg flex items-center gap-2">
@@ -481,14 +627,39 @@ export default function ProsDashboard() {
                   <input
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
-                    placeholder="Job title — e.g. Salt cell inspect"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    placeholder="Job title"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2"
                   />
                   <input
                     value={jobAddress}
                     onChange={(e) => setJobAddress(e.target.value)}
                     placeholder="Address"
                     className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobScheduled}
+                    onChange={(e) => setJobScheduled(e.target.value)}
+                    placeholder="Scheduled (e.g. 2026-07-15 9am)"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobCustomer}
+                    onChange={(e) => setJobCustomer(e.target.value)}
+                    placeholder="Customer name"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobPhone}
+                    onChange={(e) => setJobPhone(e.target.value)}
+                    placeholder="Customer phone"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <textarea
+                    value={jobNotes}
+                    onChange={(e) => setJobNotes(e.target.value)}
+                    placeholder="Dispatch notes for the tech…"
+                    rows={2}
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2 resize-y"
                   />
                   <select
                     value={jobAssignee}
@@ -505,12 +676,12 @@ export default function ProsDashboard() {
                   <div className="flex gap-2">
                     <select
                       value={jobPack}
-                      onChange={(e) => setJobPack(e.target.value as 'pool' | 'electrical' | 'property')}
+                      onChange={(e) => setJobPack(e.target.value as typeof jobPack)}
                       className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
                     >
-                      <option value="pool">Pool pack</option>
-                      <option value="electrical">Electrical pack</option>
-                      <option value="property">Property pack</option>
+                      <option value="pool">Pool</option>
+                      <option value="electrical">Electrical</option>
+                      <option value="property">Property</option>
                     </select>
                     <select
                       value={jobPriority}
@@ -528,52 +699,104 @@ export default function ProsDashboard() {
                   onClick={() => void createJob()}
                   className="rounded-xl bg-amber-500 text-black font-bold px-5 py-2.5 text-sm"
                 >
-                  Dispatch job
+                  Dispatch + notify assignee
                 </button>
               </div>
             ) : null}
 
             <div className="space-y-3">
-              {jobs.length === 0 ? (
-                <p className="text-slate-500 text-sm">No jobs yet.</p>
+              {filteredJobs.length === 0 ? (
+                <p className="text-slate-500 text-sm">No jobs in this filter.</p>
               ) : (
-                jobs.map((job) => (
-                  <div
-                    key={job.id}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-wrap gap-4 justify-between"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                filteredJobs.map((job) => (
+                  <div key={job.id} className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedJobId((id) => (id === job.id ? null : job.id))}
+                      className="w-full p-4 flex flex-wrap gap-4 justify-between text-left hover:bg-white/[0.02]"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span
+                            className={cn(
+                              'text-[10px] font-bold uppercase px-2 py-1 rounded-full',
+                              STATUS_COLORS[job.status]
+                            )}
+                          >
+                            {job.status.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] uppercase text-slate-500 font-bold">{job.packId}</span>
+                        </div>
+                        <h3 className="font-bold">{job.title}</h3>
+                        <p className="text-sm text-slate-400 flex items-center gap-1 mt-1">
+                          <MapPin className="w-3.5 h-3.5" /> {job.address || 'Address TBD'}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {job.assigneeName || 'Unassigned'} · {job.fieldNotes?.length || 0} notes ·{' '}
+                          {job.photos?.length || 0} photos
+                        </p>
+                      </div>
+                    </button>
+                    {expandedJobId === job.id ? (
+                      <div className="border-t border-white/10 px-4 py-4 space-y-4 bg-black/20">
                         <button
                           type="button"
                           onClick={() => void cycleJobStatus(job)}
-                          className={cn(
-                            'text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full',
-                            STATUS_COLORS[job.status]
-                          )}
+                          className="text-xs font-bold uppercase text-amber-400"
                         >
-                          {job.status.replace('_', ' ')}
+                          Cycle status →
                         </button>
-                        <span className="text-[10px] uppercase text-slate-500 font-bold">{job.packId}</span>
-                        {job.priority !== 'normal' ? (
-                          <span className="text-[10px] uppercase text-red-300 font-bold">{job.priority}</span>
+                        {job.fieldNotes?.length ? (
+                          <div>
+                            <h4 className="text-xs font-bold uppercase text-slate-500 mb-2">Field notes</h4>
+                            <ul className="space-y-2">
+                              {job.fieldNotes.map((n) => (
+                                <li key={n.id} className="text-sm text-slate-300 border-l-2 border-amber-500/40 pl-3">
+                                  {n.text}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {job.photos?.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {job.photos.map((p) => (
+                              <a key={p.id} href={p.url} target="_blank" rel="noreferrer">
+                                <img src={p.url} alt="" className="h-20 w-20 rounded-lg object-cover border border-white/10" />
+                              </a>
+                            ))}
+                          </div>
                         ) : null}
                       </div>
-                      <h3 className="font-bold text-white">{job.title}</h3>
-                      <p className="text-sm text-slate-400 flex items-center gap-1 mt-1">
-                        <MapPin className="w-3.5 h-3.5" /> {job.address || 'Address TBD'}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">
-                        {job.assigneeName || 'Unassigned'}
-                        {job.fieldNotes?.length ? ` · ${job.fieldNotes.length} field notes` : ''}
-                        {job.photos?.length ? ` · ${job.photos.length} photos` : ''}
-                      </p>
-                    </div>
+                    ) : null}
                   </div>
                 ))
               )}
             </div>
           </div>
+        ) : null}
+
+        {activeTab === 'whereabouts' && isManager ? (
+          <ProsWhereIsEverybody
+            locations={locations}
+            trackingEnabled={trackingEnabled}
+            pingIntervalMinutes={pingInterval}
+          />
+        ) : null}
+
+        {activeTab === 'knowledge' && isManager && user ? (
+          <ProsManualIngestPanel user={user} />
+        ) : null}
+
+        {activeTab === 'notifications' && user ? (
+          <ProsNotificationsPanel
+            user={user}
+            notifications={notifications}
+            members={members}
+            jobs={jobs}
+            isManager={isManager}
+            onRefresh={() => refreshAll(user)}
+          />
         ) : null}
 
         {activeTab === 'team' ? (
@@ -612,7 +835,6 @@ export default function ProsDashboard() {
                   <div className="mt-3 flex gap-2 text-[10px] font-bold uppercase">
                     <span className="px-2 py-1 rounded-full bg-white/5 text-slate-300">{m.role}</span>
                     <span className="px-2 py-1 rounded-full bg-white/5 text-slate-300">{m.tradePack || '—'}</span>
-                    <span className="px-2 py-1 rounded-full bg-white/5 text-slate-300">{m.status}</span>
                   </div>
                 </div>
               ))}
@@ -641,25 +863,21 @@ export default function ProsDashboard() {
           </ul>
         ) : null}
 
-        {activeTab === 'settings' ? (
-          <div className="space-y-6 max-w-xl">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-3">
-              <h2 className="font-bold">Company</h2>
-              <p className="text-sm text-slate-400">
-                Trade focus: <span className="text-white">{company.tradeType}</span>
-              </p>
-              <p className="text-sm text-slate-400">
-                Timezone: <span className="text-white">{company.timezone || '—'}</span>
-              </p>
-              <p className="text-sm text-slate-500">
-                Mobile field app is <strong className="text-slate-300">AiBhive Diagnose</strong>. Techs sign in,
-                see assigned jobs, add notes/photos, and sync back here.
-              </p>
-              <Link to="/" className="text-sm text-amber-400 hover:underline inline-block mt-2">
-                ← Back to AiBhive
-              </Link>
-            </div>
-          </div>
+        {activeTab === 'settings' && user && isManager ? (
+          <ProsSettingsPanel
+            user={user}
+            settings={settings}
+            companyName={company.name}
+            tradeType={company.tradeType}
+            timezone={company.timezone}
+            onUpdated={(next) => {
+              setSettings(next);
+              setTrackingEnabled(next.locationTrackingEnabled);
+              setPingInterval(next.locationPingIntervalMinutes);
+            }}
+          />
+        ) : activeTab === 'settings' ? (
+          <p className="text-slate-400 text-sm">Only managers can change company settings.</p>
         ) : null}
       </main>
     </div>

@@ -16,6 +16,17 @@ import {
   searchKnowledgeTips,
   submitKnowledgeFeedback,
 } from './prosKnowledge.js';
+import {
+  buildProsAnalytics,
+  createProsNotification,
+  ingestManualChunks,
+  listTeamLocations,
+  normalizePingInterval,
+  recordLocationPing,
+  respondToNotification,
+  serializeNotification,
+} from './prosFieldOps.js';
+import { pushProsNotification } from './prosPush.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -210,6 +221,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           preferredAiProvider: 'grok',
           // trial | active | past_due | none — Stripe will flip this later
           billingStatus: 'trial',
+          locationTrackingEnabled: false,
+          locationPingIntervalMinutes: 15,
         },
       });
 
@@ -486,6 +499,23 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         message: `Job created: ${payload.title}`,
       });
 
+      if (assigneeUid) {
+        try {
+          await createProsNotification(db, mem.companyId, user, {
+            title: `New job: ${payload.title}`,
+            body: payload.notes || payload.address || 'Open Diagnose for details.',
+            type: 'dispatch',
+            priority: payload.priority === 'emergency' ? 'urgent' : payload.priority === 'high' ? 'high' : 'normal',
+            jobId: ref.id,
+            jobTitle: payload.title,
+            assigneeUid,
+            assigneeName: assigneeName || null,
+          }).then((n) => pushProsNotification(db, mem.companyId, n));
+        } catch (notifyErr) {
+          console.warn('[pros/jobs create] notification', notifyErr?.message);
+        }
+      }
+
       return res.json({ job: serializeJob(ref.id, { ...payload, createdAt: Date.now(), updatedAt: Date.now() }) });
     } catch (err) {
       console.error('[pros/jobs create]', err);
@@ -714,7 +744,13 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (['pool', 'electrical', 'property', 'multi'].includes(req.body?.tradeType)) updates.tradeType = req.body.tradeType;
       if (typeof req.body?.timezone === 'string') updates.timezone = req.body.timezone;
       if (req.body?.settings && typeof req.body.settings === 'object') {
-        updates.settings = req.body.settings;
+        const companySnap = await db.collection('pros_companies').doc(mem.companyId).get();
+        const current = companySnap.data()?.settings || {};
+        const merged = { ...current, ...req.body.settings };
+        if (merged.locationPingIntervalMinutes != null) {
+          merged.locationPingIntervalMinutes = normalizePingInterval(merged.locationPingIntervalMinutes);
+        }
+        updates.settings = merged;
       }
 
       await db.collection('pros_companies').doc(mem.companyId).set(updates, { merge: true });
@@ -1125,6 +1161,367 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/transcribe]', err);
       return res.status(500).json({ error: err?.message || 'Transcription failed' });
+    }
+  });
+
+  // Knowledge analytics (living knowledge base growth)
+  app.get('/api/pros/analytics', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+      const analytics = await buildProsAnalytics(db, mem.companyId);
+      return res.json(analytics);
+    } catch (err) {
+      console.error('[pros/analytics]', err);
+      return res.status(500).json({ error: 'Failed to load analytics' });
+    }
+  });
+
+  // Company settings (manager) — shallow merge into settings object
+  app.get('/api/pros/settings', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+      const snap = await db.collection('pros_companies').doc(mem.companyId).get();
+      const settings = snap.data()?.settings || {};
+      return res.json({
+        settings: {
+          locationTrackingEnabled: Boolean(settings.locationTrackingEnabled),
+          locationPingIntervalMinutes: normalizePingInterval(settings.locationPingIntervalMinutes),
+          requireJobPhotos: Boolean(settings.requireJobPhotos),
+          preferredAiProvider: settings.preferredAiProvider || 'grok',
+          defaultPack: settings.defaultPack || 'pool',
+          billingStatus: settings.billingStatus || 'trial',
+        },
+      });
+    } catch (err) {
+      console.error('[pros/settings get]', err);
+      return res.status(500).json({ error: 'Failed to load settings' });
+    }
+  });
+
+  app.patch('/api/pros/settings', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const incoming = req.body?.settings;
+      if (!incoming || typeof incoming !== 'object') {
+        return res.status(400).json({ error: 'settings object required' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(mem.companyId).get();
+      const current = companySnap.data()?.settings || {};
+      const merged = { ...current, ...incoming };
+      if (merged.locationPingIntervalMinutes != null) {
+        merged.locationPingIntervalMinutes = normalizePingInterval(merged.locationPingIntervalMinutes);
+      }
+
+      await db.collection('pros_companies').doc(mem.companyId).set(
+        { settings: merged, updatedAt: FieldValue().serverTimestamp() },
+        { merge: true }
+      );
+
+      await logActivity(db, mem.companyId, {
+        type: 'settings_updated',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: 'Company settings updated',
+      });
+
+      return res.json({ success: true, settings: merged });
+    } catch (err) {
+      console.error('[pros/settings patch]', err);
+      return res.status(500).json({ error: 'Failed to update settings' });
+    }
+  });
+
+  // Periodic GPS ping from field app (not real-time stream)
+  app.post('/api/pros/location/ping', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const memberSnap = await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('members')
+        .doc(user.uid)
+        .get();
+      const member = memberSnap.exists ? memberSnap.data() : null;
+
+      const result = await recordLocationPing(db, mem.companyId, user.uid, req.body || {}, member);
+      if (!result.ok) {
+        return res.status(result.reason === 'tracking_disabled' ? 403 : 400).json({
+          error:
+            result.reason === 'tracking_disabled'
+              ? 'Location tracking is disabled by your admin'
+              : 'Invalid coordinates',
+          code: result.reason,
+        });
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/location/ping]', err);
+      return res.status(500).json({ error: 'Failed to record location' });
+    }
+  });
+
+  // Where is everybody — manager map data
+  app.get('/api/pros/location/team', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+      if (mem.role !== 'owner' && mem.role !== 'manager') {
+        return res.status(403).json({ error: 'Managers only' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(mem.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const membersSnap = await db.collection('pros_companies').doc(mem.companyId).collection('members').get();
+      const members = membersSnap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+      const locations = await listTeamLocations(db, mem.companyId, members);
+
+      return res.json({
+        trackingEnabled: Boolean(settings.locationTrackingEnabled),
+        pingIntervalMinutes: normalizePingInterval(settings.locationPingIntervalMinutes),
+        locations,
+      });
+    } catch (err) {
+      console.error('[pros/location/team]', err);
+      return res.status(500).json({ error: 'Failed to load team locations' });
+    }
+  });
+
+  // Field notifications — dispatch updates to techs
+  app.get('/api/pros/notifications', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const snap = await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('notifications')
+        .orderBy('createdAt', 'desc')
+        .limit(80)
+        .get();
+
+      let items = snap.docs.map((d) => serializeNotification(d.id, d.data()));
+      if (mem.role === 'tech') {
+        items = items.filter((n) => !n.assigneeUid || n.assigneeUid === user.uid);
+      }
+      return res.json({ notifications: items });
+    } catch (err) {
+      console.error('[pros/notifications get]', err);
+      return res.status(500).json({ error: 'Failed to load notifications' });
+    }
+  });
+
+  app.post('/api/pros/notifications', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const created = await createProsNotification(db, mem.companyId, user, req.body || {});
+      await logActivity(db, mem.companyId, {
+        type: 'notification_sent',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Notification: ${created.title}`,
+      });
+      void pushProsNotification(db, mem.companyId, { id: created.id, ...created }).catch((err) =>
+        console.warn('[pros/notifications push]', err?.message)
+      );
+      return res.json({ notification: serializeNotification(created.id, created) });
+    } catch (err) {
+      console.error('[pros/notifications post]', err);
+      return res.status(400).json({ error: err?.message || 'Failed to send notification' });
+    }
+  });
+
+  app.patch('/api/pros/notifications/:id/respond', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const result = await respondToNotification(db, mem.companyId, req.params.id, user.uid, req.body || {});
+      if (!result.ok) {
+        return res.status(result.reason === 'not_found' ? 404 : 403).json({ error: result.reason });
+      }
+
+      const tipText = result.response?.tipText;
+      if (tipText && result.response?.completed) {
+        try {
+          await submitKnowledgeFeedback(db, FieldValue(), {
+            companyId: mem.companyId,
+            user: { uid: user.uid, email: user.email },
+            packId: req.body?.packId || 'pool',
+            userQuery: `Job update: ${req.body?.jobTitle || ''}`,
+            assistantReply: tipText,
+            fixSummary: result.response.fixSummary || tipText,
+            tipText,
+            shareWithTeam: true,
+            shareAnonymously: true,
+            outcome: 'worked',
+            source: 'notification_response',
+          });
+        } catch (feedbackErr) {
+          console.warn('[pros/notifications respond] feedback', feedbackErr?.message);
+        }
+      }
+
+      if (result.jobId && result.response?.completed) {
+        const jobRef = db.collection('pros_companies').doc(mem.companyId).collection('jobs').doc(result.jobId);
+        const noteText = result.response.fixSummary || result.response.tipText;
+        if (noteText) {
+          await jobRef.set(
+            {
+              fieldNotes: FieldValue().arrayUnion({
+                id: `n-${Date.now()}`,
+                text: noteText,
+                authorUid: user.uid,
+                createdAt: Date.now(),
+              }),
+              status: 'done',
+              updatedAt: FieldValue().serverTimestamp(),
+              completedAt: FieldValue().serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+      }
+
+      await logActivity(db, mem.companyId, {
+        type: 'notification_responded',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: result.response?.completed ? 'Marked job update complete' : 'Declined job update',
+      });
+
+      return res.json({ success: true, response: result.response });
+    } catch (err) {
+      console.error('[pros/notifications respond]', err);
+      return res.status(500).json({ error: 'Failed to save response' });
+    }
+  });
+
+  // Manual chunk ingest (manager+) — bulk PDF pipeline uses same endpoint
+  app.post('/api/pros/knowledge/manuals/ingest', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Manager role required to ingest manuals' });
+
+      const scope = req.body?.scope === 'global' ? 'global' : 'company';
+      if (scope === 'global' && !platformAdmin(user.email)) {
+        return res.status(403).json({ error: 'Platform admin required for global ingest' });
+      }
+
+      const result = await ingestManualChunks(db, mem.companyId, req.body || {}, { global: scope === 'global' });
+      await logActivity(db, mem.companyId, {
+        type: 'manual_ingest',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Ingested ${result.chunksWritten} manual chunk(s)`,
+      });
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error('[pros/knowledge manuals ingest]', err);
+      return res.status(400).json({ error: err?.message || 'Ingest failed' });
+    }
+  });
+
+  // Register Expo push token (field app)
+  app.post('/api/pros/push/register', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const token = String(req.body?.expoPushToken || '').trim();
+      if (!token.startsWith('ExponentPushToken')) {
+        return res.status(400).json({ error: 'Invalid Expo push token' });
+      }
+
+      await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('members')
+        .doc(user.uid)
+        .set(
+          {
+            expoPushToken: token,
+            expoPushPlatform: req.body?.platform || null,
+            pushUpdatedAt: FieldValue().serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/push/register]', err);
+      return res.status(500).json({ error: 'Failed to register push token' });
+    }
+  });
+
+  // CSV export for managers
+  app.get('/api/pros/jobs/export', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const snap = await db.collection('pros_companies').doc(mem.companyId).collection('jobs').get();
+      const rows = [['id', 'title', 'status', 'priority', 'packId', 'assignee', 'address', 'customer', 'notes', 'fieldNotes', 'photos', 'updatedAt']];
+      for (const doc of snap.docs) {
+        const j = serializeJob(doc.id, doc.data());
+        rows.push([
+          j.id,
+          j.title,
+          j.status,
+          j.priority,
+          j.packId,
+          j.assigneeName || '',
+          j.address,
+          j.customerName || '',
+          (j.notes || '').replace(/\n/g, ' '),
+          String(j.fieldNotes?.length || 0),
+          String(j.photos?.length || 0),
+          j.updatedAt ? new Date(j.updatedAt).toISOString() : '',
+        ]);
+      }
+
+      const csv = rows
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="pros-jobs-export.csv"');
+      return res.send(csv);
+    } catch (err) {
+      console.error('[pros/jobs/export]', err);
+      return res.status(500).json({ error: 'Export failed' });
     }
   });
 }

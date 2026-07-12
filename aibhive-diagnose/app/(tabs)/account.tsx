@@ -63,7 +63,7 @@ function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
   if (status.billingStatus && !['trial', 'active'].includes(status.billingStatus)) {
     return `Billing ${status.billingStatus} — pack library still works offline.`;
   }
-  if (!status.configured) return 'No Grok key yet — manager adds keys at aibhive.com/pros.';
+  if (!status.configured) return 'No Grok key yet — manager adds keys at aibhive.com/pros/app.';
   return 'Pros AI not ready.';
 }
 
@@ -301,7 +301,7 @@ export default function AccountScreen() {
         </View>
 
         <Text className="mt-8 text-sm leading-5 text-hive-steel">
-          Managers create companies and invite codes at aibhive.com/pros — including Grok, Claude, Kimi,
+          Managers create companies and invite codes at aibhive.com/pros/app — including Grok, Claude, Kimi,
           and Gemini API keys for the company.
         </Text>
       </ScrollView>
@@ -313,7 +313,7 @@ export default function AccountScreen() {
         onJoin={handleJoin}
         onSkip={() => void skipJoin()}
         onOpenSignup={() => {
-          void Linking.openURL('https://aibhive.com/pros');
+          void Linking.openURL('https://aibhive.com/pros/app');
         }}
       />
     </KeyboardAvoidingView>

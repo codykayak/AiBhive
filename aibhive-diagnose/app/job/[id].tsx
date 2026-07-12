@@ -18,6 +18,7 @@ import { BigButton } from '@/components/BigButton';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadProsImage } from '@/lib/diagnose/upload';
+import { setProsLocationJobContext } from '@/lib/location/prosLocationTracker';
 import { pushJobNoteToPros, pushJobPhotoToPros, pushJobStatusToPros } from '@/lib/jobs/prosSync';
 import { loadJobs, upsertJob, type FieldJob, type JobStatus } from '@/lib/jobs/storage';
 
@@ -43,7 +44,9 @@ export default function JobDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       void reload();
-    }, [reload])
+      setProsLocationJobContext(id);
+      return () => setProsLocationJobContext(null);
+    }, [reload, id])
   );
 
   if (!job) {
@@ -60,6 +63,7 @@ export default function JobDetailScreen() {
   const cycleStatus = async () => {
     const order: JobStatus[] = ['queued', 'in_progress', 'needs_parts', 'done'];
     const status = order[(order.indexOf(job.status) + 1) % order.length];
+    const markingDone = status === 'done' && job.status !== 'done';
     const next = { ...job, status, updatedAt: Date.now() };
     await upsertJob(next);
     setJob(next);
@@ -68,6 +72,19 @@ export default function JobDetailScreen() {
     if (token && next.cloudSynced) {
       const cloud = await pushJobStatusToPros(token, next.id, status);
       if (cloud) setJob(cloud);
+    }
+    if (markingDone) {
+      Alert.alert(
+        'Share this fix?',
+        'Add a one-line tip for your shop knowledge base (optional).',
+        [
+          { text: 'Skip', style: 'cancel' },
+          {
+            text: 'Add tip',
+            onPress: () => setNote('Fix: '),
+          },
+        ]
+      );
     }
   };
 
