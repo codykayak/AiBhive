@@ -30,10 +30,12 @@ import {
   ProsJobsPipelineChart,
   ProsKnowledgeGrowthChart,
 } from '../components/pros/ProsKnowledgeCharts';
+import ProsManualIngestPanel from '../components/pros/ProsManualIngestPanel';
 import ProsNotificationsPanel from '../components/pros/ProsNotificationsPanel';
 import ProsSettingsPanel from '../components/pros/ProsSettingsPanel';
 import ProsWhereIsEverybody from '../components/pros/ProsWhereIsEverybody';
 import {
+  prosExportJobsCsv,
   prosAnalytics,
   prosJson,
   prosMe,
@@ -53,6 +55,7 @@ type Tab =
   | 'dispatch'
   | 'whereabouts'
   | 'notifications'
+  | 'knowledge'
   | 'team'
   | 'ai-keys'
   | 'activity'
@@ -63,6 +66,7 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'dispatch', label: 'Jobs', icon: ClipboardList },
   { id: 'whereabouts', label: 'Where is everybody?', icon: Navigation },
   { id: 'notifications', label: 'Notify', icon: Bell },
+  { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
   { id: 'team', label: 'Team', icon: Users },
   { id: 'ai-keys', label: 'AI Keys', icon: KeyRound },
   { id: 'activity', label: 'Activity', icon: Activity },
@@ -123,7 +127,11 @@ export default function ProsDashboard() {
   const [jobAddress, setJobAddress] = useState('');
   const [jobAssignee, setJobAssignee] = useState('');
   const [jobPack, setJobPack] = useState<'pool' | 'electrical' | 'property'>('pool');
-  const [jobPriority, setJobPriority] = useState<'normal' | 'high' | 'emergency'>('normal');
+  const [jobNotes, setJobNotes] = useState('');
+  const [jobCustomer, setJobCustomer] = useState('');
+  const [jobPhone, setJobPhone] = useState('');
+  const [jobScheduled, setJobScheduled] = useState('');
+  const [jobFilter, setJobFilter] = useState<'all' | ProsJob['status']>('all');
 
   const isManager = membership?.role === 'owner' || membership?.role === 'manager';
 
@@ -230,9 +238,13 @@ export default function ProsDashboard() {
     const assignee = members.find((m) => m.uid === jobAssignee);
     await prosJson('/api/pros/jobs', user, {
       method: 'POST',
-      body: JSON.stringify({
+        body: JSON.stringify({
         title: jobTitle.trim(),
         address: jobAddress.trim(),
+        customerName: jobCustomer.trim(),
+        customerPhone: jobPhone.trim(),
+        notes: jobNotes.trim(),
+        scheduledFor: jobScheduled.trim() || null,
         packId: jobPack,
         priority: jobPriority,
         assigneeUid: jobAssignee || null,
@@ -241,6 +253,10 @@ export default function ProsDashboard() {
     });
     setJobTitle('');
     setJobAddress('');
+    setJobCustomer('');
+    setJobPhone('');
+    setJobNotes('');
+    setJobScheduled('');
     setJobAssignee('');
     await refreshAll(user);
     setTab('dispatch');
@@ -261,6 +277,26 @@ export default function ProsDashboard() {
     if (!user) return;
     const res = await prosJson<{ inviteCode: string }>('/api/pros/invite/rotate', user, { method: 'POST' });
     setCompany((c) => (c ? { ...c, inviteCode: res.inviteCode } : c));
+  };
+
+  const filteredJobs = useMemo(() => {
+    if (jobFilter === 'all') return jobs;
+    return jobs.filter((j) => j.status === jobFilter);
+  }, [jobs, jobFilter]);
+
+  const exportCsv = async () => {
+    if (!user) return;
+    try {
+      const blob = await prosExportJobsCsv(user);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pros-jobs-export.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setBootError(err instanceof Error ? err.message : 'Export failed');
+    }
   };
 
   const techOptions = useMemo(
@@ -455,7 +491,9 @@ export default function ProsDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto pb-3">
           {TABS.map((t) => {
             const Icon = t.icon;
-            const hide = t.id === 'whereabouts' && !isManager;
+            const hide =
+              (t.id === 'whereabouts' && !isManager) ||
+              (t.id === 'knowledge' && !isManager);
             if (hide) return null;
             return (
               <button
@@ -504,6 +542,21 @@ export default function ProsDashboard() {
               </button>
             </div>
 
+            {analytics?.featuredTip ? (
+              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-5">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+                  Fix of the week
+                </div>
+                <p className="text-slate-200 leading-relaxed">{analytics.featuredTip.text}</p>
+                {analytics.featuredTip.fixSummary ? (
+                  <p className="text-sm text-slate-400 mt-2">Fix: {analytics.featuredTip.fixSummary}</p>
+                ) : null}
+                <div className="text-[11px] text-slate-500 mt-2">
+                  {analytics.featuredTip.packId} pack · {analytics.featuredTip.helpfulCount} helpful votes
+                </div>
+              </div>
+            ) : null}
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Open jobs', value: overview.openJobs, icon: ClipboardList },
@@ -538,6 +591,33 @@ export default function ProsDashboard() {
 
         {activeTab === 'dispatch' ? (
           <div className="space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {(['all', 'queued', 'in_progress', 'needs_parts', 'done'] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setJobFilter(f)}
+                    className={cn(
+                      'rounded-lg px-3 py-1.5 text-xs font-bold uppercase',
+                      jobFilter === f ? 'bg-amber-500 text-black' : 'bg-white/5 text-slate-400'
+                    )}
+                  >
+                    {f === 'all' ? 'All' : f.replace('_', ' ')}
+                  </button>
+                ))}
+              </div>
+              {isManager ? (
+                <button
+                  type="button"
+                  onClick={() => void exportCsv()}
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-amber-500/40"
+                >
+                  Export CSV
+                </button>
+              ) : null}
+            </div>
+
             {isManager ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
                 <h2 className="font-bold text-lg flex items-center gap-2">
@@ -548,13 +628,38 @@ export default function ProsDashboard() {
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
                     placeholder="Job title"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2"
                   />
                   <input
                     value={jobAddress}
                     onChange={(e) => setJobAddress(e.target.value)}
                     placeholder="Address"
                     className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobScheduled}
+                    onChange={(e) => setJobScheduled(e.target.value)}
+                    placeholder="Scheduled (e.g. 2026-07-15 9am)"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobCustomer}
+                    onChange={(e) => setJobCustomer(e.target.value)}
+                    placeholder="Customer name"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <input
+                    value={jobPhone}
+                    onChange={(e) => setJobPhone(e.target.value)}
+                    placeholder="Customer phone"
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                  />
+                  <textarea
+                    value={jobNotes}
+                    onChange={(e) => setJobNotes(e.target.value)}
+                    placeholder="Dispatch notes for the tech…"
+                    rows={2}
+                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2 resize-y"
                   />
                   <select
                     value={jobAssignee}
@@ -600,10 +705,10 @@ export default function ProsDashboard() {
             ) : null}
 
             <div className="space-y-3">
-              {jobs.length === 0 ? (
-                <p className="text-slate-500 text-sm">No jobs yet.</p>
+              {filteredJobs.length === 0 ? (
+                <p className="text-slate-500 text-sm">No jobs in this filter.</p>
               ) : (
-                jobs.map((job) => (
+                filteredJobs.map((job) => (
                   <div key={job.id} className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
                     <button
                       type="button"
@@ -677,6 +782,10 @@ export default function ProsDashboard() {
             trackingEnabled={trackingEnabled}
             pingIntervalMinutes={pingInterval}
           />
+        ) : null}
+
+        {activeTab === 'knowledge' && isManager && user ? (
+          <ProsManualIngestPanel user={user} />
         ) : null}
 
         {activeTab === 'notifications' && user ? (

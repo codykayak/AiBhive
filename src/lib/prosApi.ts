@@ -103,6 +103,13 @@ export type ProsAnalytics = {
     jobsDone: number;
     activity: number;
   }>;
+  featuredTip: {
+    id: string;
+    text: string;
+    fixSummary: string | null;
+    packId: string;
+    helpfulCount: number;
+  } | null;
 };
 
 export const prosJson = adminJson;
@@ -179,4 +186,13 @@ export async function prosRespondNotification(
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
+}
+
+export async function prosExportJobsCsv(user: User): Promise<Blob> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/pros/jobs/export', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Export failed');
+  return res.blob();
 }

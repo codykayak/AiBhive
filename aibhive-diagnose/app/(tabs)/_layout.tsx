@@ -1,4 +1,4 @@
-import { Briefcase, Home, Layers, Stethoscope, UserRound } from 'lucide-react-native';
+import { Briefcase, Home, Layers, Stethoscope, UserRound, Bell } from 'lucide-react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -37,6 +37,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Stethoscope color={color} size={size} strokeWidth={2.4} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="alerts"
+        options={{
+          title: 'Alerts',
+          tabBarIcon: ({ color, size }) => <Bell color={color} size={size} strokeWidth={2.4} />,
         }}
       />
       <Tabs.Screen

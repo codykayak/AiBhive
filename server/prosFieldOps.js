@@ -170,6 +170,41 @@ export async function respondToNotification(db, companyId, notificationId, uid, 
   return { ok: true, response, jobId: data.jobId || null };
 }
 
+export async function ingestManualChunks(db, companyId, payload, { global = false } = {}) {
+  const col = global
+    ? db.collection('pros_global_manual_chunks')
+    : db.collection('pros_companies').doc(companyId).collection('manual_chunks');
+
+  const manualId = payload.manualId || `manual-${Date.now()}`;
+  const chunks = Array.isArray(payload.chunks) ? payload.chunks : [];
+  if (!chunks.length) throw new Error('At least one text chunk required');
+
+  let written = 0;
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    const text = String(c.text || '').trim();
+    if (!text) continue;
+    const ref = col.doc();
+    await ref.set({
+      id: ref.id,
+      manualId,
+      brand: String(payload.brand || '').trim(),
+      title: String(payload.title || '').trim(),
+      packId: payload.packId || 'pool',
+      modelPrefixes: Array.isArray(payload.modelPrefixes) ? payload.modelPrefixes.slice(0, 12) : [],
+      sourceUrl: payload.sourceUrl || null,
+      page: c.page || i + 1,
+      text: text.slice(0, 12000),
+      status: 'active',
+      companyId: global ? null : companyId,
+      createdAt: FieldValue().serverTimestamp(),
+    });
+    written += 1;
+  }
+  if (!written) throw new Error('No valid chunk text');
+  return { manualId, chunksWritten: written };
+}
+
 export async function buildProsAnalytics(db, companyId) {
   const companyRef = db.collection('pros_companies').doc(companyId);
   const [tipsSnap, feedbackSnap, chunksSnap, jobsSnap, activitySnap] = await Promise.all([
@@ -239,5 +274,30 @@ export async function buildProsAnalytics(db, companyId) {
       openJobs: jobs.filter((j) => j.status !== 'done').length,
     },
     knowledgeGrowth,
+    featuredTip: await pickFeaturedTip(db, companyId),
+  };
+}
+
+async function pickFeaturedTip(db, companyId) {
+  const tipsSnap = await db
+    .collection('pros_companies')
+    .doc(companyId)
+    .collection('knowledge_tips')
+    .where('status', '==', 'active')
+    .limit(40)
+    .get();
+
+  const tips = tipsSnap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.createdAt?.toMillis?.() || 0) - Number(a.createdAt?.toMillis?.() || 0)));
+
+  const top = tips[0];
+  if (!top?.text) return null;
+  return {
+    id: top.id,
+    text: String(top.text).slice(0, 280),
+    fixSummary: top.fixSummary ? String(top.fixSummary).slice(0, 200) : null,
+    packId: top.packId || 'pool',
+    helpfulCount: Number(top.score) || 0,
   };
 }

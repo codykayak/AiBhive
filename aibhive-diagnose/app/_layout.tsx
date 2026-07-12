@@ -13,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { IntroSplash } from '@/components/IntroSplash';
 import { ErrorBoundary } from '@/components/RootErrorBoundary';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
+import { ProsFieldServices } from '@/components/ProsFieldServices';
 import { theme } from '@/constants/theme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NetworkProvider } from '@/contexts/NetworkContext';
@@ -112,6 +113,7 @@ export default function RootLayout() {
               <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
                 <StatusBar style="light" />
                 {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
+                <ProsFieldServices />
                 <OfflineIndicator />
                 <Stack
                   screenOptions={{

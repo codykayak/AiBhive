@@ -19,12 +19,14 @@ import {
 import {
   buildProsAnalytics,
   createProsNotification,
+  ingestManualChunks,
   listTeamLocations,
   normalizePingInterval,
   recordLocationPing,
   respondToNotification,
   serializeNotification,
 } from './prosFieldOps.js';
+import { pushProsNotification } from './prosPush.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -508,7 +510,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
             jobTitle: payload.title,
             assigneeUid,
             assigneeName: assigneeName || null,
-          });
+          }).then((n) => pushProsNotification(db, mem.companyId, n));
         } catch (notifyErr) {
           console.warn('[pros/jobs create] notification', notifyErr?.message);
         }
@@ -1343,6 +1345,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         actorEmail: user.email,
         message: `Notification: ${created.title}`,
       });
+      void pushProsNotification(db, mem.companyId, { id: created.id, ...created }).catch((err) =>
+        console.warn('[pros/notifications push]', err?.message)
+      );
       return res.json({ notification: serializeNotification(created.id, created) });
     } catch (err) {
       console.error('[pros/notifications post]', err);
@@ -1415,6 +1420,108 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/notifications respond]', err);
       return res.status(500).json({ error: 'Failed to save response' });
+    }
+  });
+
+  // Manual chunk ingest (manager+) — bulk PDF pipeline uses same endpoint
+  app.post('/api/pros/knowledge/manuals/ingest', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Manager role required to ingest manuals' });
+
+      const scope = req.body?.scope === 'global' ? 'global' : 'company';
+      if (scope === 'global' && !platformAdmin(user.email)) {
+        return res.status(403).json({ error: 'Platform admin required for global ingest' });
+      }
+
+      const result = await ingestManualChunks(db, mem.companyId, req.body || {}, { global: scope === 'global' });
+      await logActivity(db, mem.companyId, {
+        type: 'manual_ingest',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Ingested ${result.chunksWritten} manual chunk(s)`,
+      });
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error('[pros/knowledge manuals ingest]', err);
+      return res.status(400).json({ error: err?.message || 'Ingest failed' });
+    }
+  });
+
+  // Register Expo push token (field app)
+  app.post('/api/pros/push/register', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await getMembership(db, user.uid);
+      if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
+
+      const token = String(req.body?.expoPushToken || '').trim();
+      if (!token.startsWith('ExponentPushToken')) {
+        return res.status(400).json({ error: 'Invalid Expo push token' });
+      }
+
+      await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('members')
+        .doc(user.uid)
+        .set(
+          {
+            expoPushToken: token,
+            expoPushPlatform: req.body?.platform || null,
+            pushUpdatedAt: FieldValue().serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/push/register]', err);
+      return res.status(500).json({ error: 'Failed to register push token' });
+    }
+  });
+
+  // CSV export for managers
+  app.get('/api/pros/jobs/export', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const snap = await db.collection('pros_companies').doc(mem.companyId).collection('jobs').get();
+      const rows = [['id', 'title', 'status', 'priority', 'packId', 'assignee', 'address', 'customer', 'notes', 'fieldNotes', 'photos', 'updatedAt']];
+      for (const doc of snap.docs) {
+        const j = serializeJob(doc.id, doc.data());
+        rows.push([
+          j.id,
+          j.title,
+          j.status,
+          j.priority,
+          j.packId,
+          j.assigneeName || '',
+          j.address,
+          j.customerName || '',
+          (j.notes || '').replace(/\n/g, ' '),
+          String(j.fieldNotes?.length || 0),
+          String(j.photos?.length || 0),
+          j.updatedAt ? new Date(j.updatedAt).toISOString() : '',
+        ]);
+      }
+
+      const csv = rows
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="pros-jobs-export.csv"');
+      return res.send(csv);
+    } catch (err) {
+      console.error('[pros/jobs/export]', err);
+      return res.status(500).json({ error: 'Export failed' });
     }
   });
 }

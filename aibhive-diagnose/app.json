@@ -13,7 +13,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "AiBhive Diagnose needs the camera to photograph equipment for AI diagnosis.",
         "NSMicrophoneUsageDescription": "AiBhive Diagnose needs the microphone for voice commands in the field.",
-        "NSPhotoLibraryUsageDescription": "AiBhive Diagnose needs photo access to diagnose equipment from your gallery."
+        "NSPhotoLibraryUsageDescription": "AiBhive Diagnose needs photo access to diagnose equipment from your gallery.",
+        "NSLocationWhenInUseUsageDescription": "AiBhive Diagnose shares periodic location check-ins with your manager when Pros tracking is enabled."
       }
     },
     "android": {
@@ -30,7 +31,9 @@
         "RECORD_AUDIO",
         "READ_MEDIA_IMAGES",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -60,6 +63,19 @@
         {
           "microphonePermission": "AiBhive Diagnose needs the microphone for voice commands in the field.",
           "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow location check-ins for your Pros dispatcher when tracking is enabled by your manager."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/brand/aibhive-logo-mark.png",
+          "color": "#F5A623"
         }
       ],
       "expo-asset"
