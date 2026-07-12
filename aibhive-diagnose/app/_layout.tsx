@@ -5,18 +5,18 @@ import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { useCallback, useEffect, useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Text, View } from 'react-native';
 import 'react-native-reanimated';
 
-import { IntroSplash } from '@/components/IntroSplash';
+import { ErrorBoundary } from '@/components/RootErrorBoundary';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
 import { theme } from '@/constants/theme';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NetworkProvider } from '@/contexts/NetworkContext';
 import { PackProvider } from '@/contexts/PackContext';
 
-export { ErrorBoundary } from 'expo-router';
+export { ErrorBoundary };
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -37,47 +37,19 @@ const DiagnoseTheme = {
   },
 };
 
-/**
- * Web static export SSR used to paint the full-screen black intro overlay
- * before JS hydrated. Cursor's port-forward preview often never finishes JS,
- * so users saw a permanent black screen. Default: no intro on web.
- * Replay with ?intro=1
- */
-function shouldPlayIntro(): boolean {
-  if (Platform.OS !== 'web') return true;
-  if (typeof window === 'undefined') return false;
-  try {
-    return new URLSearchParams(window.location.search).get('intro') === '1';
-  } catch {
-    return false;
-  }
-}
-
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [showIntro, setShowIntro] = useState(() => Platform.OS !== 'web');
   const [fontTimedOut, setFontTimedOut] = useState(false);
 
   useEffect(() => {
-    // Web: intro only when explicitly requested (?intro=1). Avoids black SSR overlay.
-    if (Platform.OS === 'web') {
-      setShowIntro(shouldPlayIntro());
-    }
-  }, []);
-
-  useEffect(() => {
-    // Don't block the app forever if the font asset stalls on web.
     const timer = setTimeout(() => setFontTimedOut(true), 2500);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (error) {
-      // Font failure should not hard-crash the whole app into a blank spinner.
-      setFontTimedOut(true);
-    }
+    if (error) setFontTimedOut(true);
   }, [error]);
 
   useEffect(() => {
@@ -86,15 +58,16 @@ export default function RootLayout() {
     }
   }, [loaded, fontTimedOut]);
 
-  const finishIntro = useCallback(() => {
-    setShowIntro(false);
-  }, []);
-
   if (!loaded && !fontTimedOut) {
     return (
       <View
-        className="flex-1 items-center justify-center bg-hive-bg px-6"
-        style={{ backgroundColor: theme.colors.bg }}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.colors.bg,
+          paddingHorizontal: 24,
+        }}
       >
         <StatusBar style="light" />
         <Text style={{ color: theme.colors.amber, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
@@ -107,12 +80,13 @@ export default function RootLayout() {
     );
   }
 
+  // Intro splash intentionally disabled — expo-video was crashing Expo Go on launch.
   return (
     <AuthProvider>
       <NetworkProvider>
         <PackProvider>
           <ThemeProvider value={DiagnoseTheme}>
-            <View className="flex-1 bg-hive-bg">
+            <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
               <StatusBar style="light" />
               <OfflineIndicator />
               <Stack>
@@ -230,7 +204,6 @@ export default function RootLayout() {
                   }}
                 />
               </Stack>
-              {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
             </View>
           </ThemeProvider>
         </PackProvider>
