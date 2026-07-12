@@ -1,4 +1,3 @@
-import { Audio } from 'expo-av';
 import { Platform } from 'react-native';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
@@ -38,6 +37,8 @@ export type VoiceSession = {
  * Start voice capture.
  * - Web: live SpeechRecognition when available
  * - Native / fallback: expo-av recording → Pros `/api/pros/transcribe`
+ *
+ * expo-av is required lazily so a broken AV native module cannot crash app boot.
  */
 export async function startVoiceCapture(opts: {
   getIdToken?: () => Promise<string | null>;
@@ -59,14 +60,12 @@ function startWebSpeech(
   recognition.interimResults = true;
   recognition.lang = 'en-US';
   let finalText = '';
-  let settled = false;
 
   recognition.onresult = (event) => {
     let interim = '';
     let finals = '';
     for (let i = 0; i < event.results.length; i++) {
       const piece = event.results[i]?.[0]?.transcript || '';
-      // Web Speech marks final results; treat last chunk as interim if unknown.
       finals += piece + ' ';
       interim = piece;
     }
@@ -74,13 +73,8 @@ function startWebSpeech(
     if (finalText) onPartial?.(finalText);
   };
 
-  recognition.onerror = () => {
-    settled = true;
-  };
-  recognition.onend = () => {
-    settled = true;
-  };
-
+  recognition.onerror = () => undefined;
+  recognition.onend = () => undefined;
   recognition.start();
 
   return {
@@ -90,9 +84,7 @@ function startWebSpeech(
       } catch {
         // already stopped
       }
-      // Brief wait for final result callback
       await new Promise((r) => setTimeout(r, 280));
-      settled = true;
       return finalText.trim();
     },
     cancel: async () => {
@@ -101,7 +93,6 @@ function startWebSpeech(
       } catch {
         // ignore
       }
-      settled = true;
     },
   };
 }
@@ -109,18 +100,20 @@ function startWebSpeech(
 async function startRecordingSession(
   getIdToken?: () => Promise<string | null>
 ): Promise<VoiceSession> {
-  const permission = await Audio.requestPermissionsAsync();
+  // Dynamic import keeps expo-av off the critical boot path.
+  const { Audio: ExpoAudio } = await import('expo-av');
+  const permission = await ExpoAudio.requestPermissionsAsync();
   if (!permission.granted) {
     throw new Error('Microphone permission is required for voice input.');
   }
 
-  await Audio.setAudioModeAsync({
+  await ExpoAudio.setAudioModeAsync({
     allowsRecordingIOS: true,
     playsInSilentModeIOS: true,
   });
 
-  const recording = new Audio.Recording();
-  await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+  const recording = new ExpoAudio.Recording();
+  await recording.prepareToRecordAsync(ExpoAudio.RecordingOptionsPresets.HIGH_QUALITY);
   await recording.startAsync();
 
   const finish = async (transcribe: boolean): Promise<string> => {
@@ -129,7 +122,7 @@ async function startRecordingSession(
     } catch {
       // already stopped
     }
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    await ExpoAudio.setAudioModeAsync({ allowsRecordingIOS: false });
     if (!transcribe) return '';
 
     const uri = recording.getURI();

@@ -152,6 +152,3 @@ export function PulseLoader({ text = 'Diagnosing…' }: { text?: string }) {
     </View>
   );
 }
-
-/** @deprecated Use IntroSplash */
-export { IntroSplash as AnimatedSplash } from './IntroSplash';
