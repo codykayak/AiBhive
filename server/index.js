@@ -56,7 +56,7 @@ import {
 import { recordAnalyticsEvents, getAnalyticsSummary, hashIp } from './siteAnalytics.js';
 import { ensureUsagePeriod, setUserPlan, recordTokenUsage, checkTokenBudget } from './hiveUsage.js';
 import { verifyHiveAuth } from './hiveAuth.js';
-import { isHiveFreeBuildEmail } from './hiveAdmin.js';
+import { isHiveFreeBuildEmail, getAdminEmails, isAdminEmail } from './hiveAdmin.js';
 import { priceEstimate, getPricingConfig, getAutoApproveDefaultUsd } from './hivePricing.js';
 import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
@@ -243,25 +243,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_123', {
 app.use(cors());
 
 // --- Admin auth (needed before large-body homework OCR route) ---
-const DEFAULT_ADMIN_EMAILS = [
-  'codykayak@gmail.com',
-  'test@test.com',
-  'admin@aibhive.com',
-];
-
-function getAdminEmails() {
-  const fromEnv = process.env.ADMIN_EMAILS;
-  const parsed = fromEnv
-    ? fromEnv.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
-    : [];
-  return [...new Set([...DEFAULT_ADMIN_EMAILS.map((e) => e.toLowerCase()), ...parsed])];
-}
-
 const ADMIN_EMAILS = getAdminEmails();
-
-function isAdminEmail(email) {
-  return Boolean(email && ADMIN_EMAILS.includes(email.toLowerCase()));
-}
 
 function homeworkBillingExempt(homeworkUser) {
   return isAdminEmail(homeworkUser?.email);
