@@ -6,5 +6,5 @@ export default function DiagnoseScreen() {
   const params = useLocalSearchParams<{ voice?: string; prompt?: string }>();
   const prompt = typeof params.prompt === 'string' ? params.prompt : undefined;
 
-  return <DiagnoseChat initialPrompt={prompt} />;
+  return <DiagnoseChat initialPrompt={prompt} embedInTabs />;
 }

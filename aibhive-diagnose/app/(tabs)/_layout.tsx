@@ -1,10 +1,13 @@
 import { Briefcase, Home, Layers, Stethoscope, UserRound } from 'lucide-react-native';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottom = Math.max(insets.bottom, 8);
+
   return (
     <Tabs
       screenOptions={{
@@ -16,9 +19,9 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: theme.colors.elevated,
           borderTopColor: theme.colors.border,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          height: 56 + bottom,
+          paddingTop: 6,
+          paddingBottom: bottom,
         },
         tabBarLabelStyle: {
           fontSize: 12,

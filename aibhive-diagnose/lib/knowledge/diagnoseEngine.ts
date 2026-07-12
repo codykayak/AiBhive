@@ -1,6 +1,12 @@
 import type { TradePack } from '@/lib/packs';
 import { buildLocalDiagnosisReply } from '@/lib/localReply';
-import { formatFaultAsReply, formatRagAppendix, searchCodes, searchFaults } from './search';
+import {
+  detectEquipment,
+  formatFaultAsReply,
+  formatRagAppendix,
+  searchCodes,
+  searchFaults,
+} from './search';
 
 export type LocalDiagnosis = {
   reply: string;
@@ -10,11 +16,12 @@ export type LocalDiagnosis = {
 
 export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boolean): LocalDiagnosis {
   const text = userText.trim();
+  const equipment = detectEquipment(text);
   const faults = searchFaults(text, pack.id).slice(0, 3);
   const codes = searchCodes(text, pack.id).slice(0, 2);
 
   if (faults.length === 0 && codes.length === 0) {
-    const rag = pack.id === 'property' ? formatRagAppendix(text) : '';
+    const rag = pack.id === 'property' || equipment.length ? formatRagAppendix(text) : '';
     return {
       reply: `${buildLocalDiagnosisReply(pack, text, hasPhoto)}${rag}`,
       matchedFaultIds: [],
@@ -26,6 +33,13 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
 
   if (hasPhoto) {
     sections.push(`Photo noted — cross-checking the **${pack.name}** field library.`);
+    sections.push('');
+  }
+
+  if (equipment.length && faults[0] && faults[0].packId !== pack.id) {
+    sections.push(
+      `_Matched a **${faults[0].packId}** playbook for “${equipment.join(', ')}” even though **${pack.shortName}** is active._`
+    );
     sections.push('');
   }
 
@@ -42,15 +56,22 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
     sections.push(formatFaultAsReply(faults[0]));
   }
 
-  if (faults.length > 1) {
+  // Only list closely related alternates (same category / shared equipment token).
+  const related = faults.slice(1).filter((f) => {
+    if (!faults[0]) return false;
+    if (f.category === faults[0].category) return true;
+    const blob = `${f.id} ${f.title}`.toLowerCase();
+    return equipment.some((e) => blob.includes(e.replace('-', '')));
+  });
+  if (related.length) {
     sections.push('');
     sections.push(`**Also consider**`);
-    for (const f of faults.slice(1)) {
-      sections.push(`- ${f.title} (${f.severity}) · ${f.packId}`);
+    for (const f of related.slice(0, 2)) {
+      sections.push(`- ${f.title} (${f.severity})`);
     }
   }
 
-  if (pack.id === 'property') {
+  if (pack.id === 'property' || equipment.length) {
     const rag = formatRagAppendix(text);
     if (rag) sections.push(rag);
   }

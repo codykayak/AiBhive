@@ -122,3 +122,14 @@ export async function pushJobStatusToPros(
     return null;
   }
 }
+
+export async function joinProsCompany(
+  token: string,
+  inviteCode: string,
+  displayName?: string
+): Promise<{ companyId: string; role: string }> {
+  return prosFetch('/api/pros/join', token, {
+    method: 'POST',
+    body: JSON.stringify({ inviteCode, displayName }),
+  });
+}

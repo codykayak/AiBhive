@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Camera, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -12,8 +13,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChatBubble } from '@/components/ChatBubble';
+import { NarrationToggle } from '@/components/JoinTeamModal';
 import { PulseLoader } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
@@ -23,6 +26,8 @@ import { askGrok } from '@/lib/grok';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
 
+const SPEECH_KEY = 'aibhive.diagnose.speechEnabled';
+
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -30,11 +35,21 @@ function uid() {
 type DiagnoseChatProps = {
   initialPrompt?: string;
   autoCamera?: boolean;
+  /** Extra offset when embedded under a stack header (diagnose-session). */
+  keyboardOffset?: number;
+  /** When true (tab screen), bottom safe-area is handled by the tab bar. */
+  embedInTabs?: boolean;
 };
 
-export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
+export function DiagnoseChat({
+  initialPrompt,
+  autoCamera,
+  keyboardOffset,
+  embedInTabs = false,
+}: DiagnoseChatProps) {
   const { activePack } = usePack();
   const { isOnline, isInternetReachable } = useNetwork();
+  const insets = useSafeAreaInsets();
   const offline = !isOnline || isInternetReachable === false;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -43,9 +58,23 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
   const [busy, setBusy] = useState(false);
   const [listening, setListening] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState('Diagnosing…');
+  const [speechEnabled, setSpeechEnabled] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const seededRef = useRef(false);
   const cameraOpenedRef = useRef(false);
+
+  useEffect(() => {
+    void AsyncStorage.getItem(SPEECH_KEY).then((v) => {
+      if (v === '1') setSpeechEnabled(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
 
   useEffect(() => {
     setMessages([
@@ -57,6 +86,8 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       },
     ]);
     seededRef.current = false;
+    Speech.stop();
+    setSpeaking(false);
   }, [activePack.id]);
 
   useEffect(() => {
@@ -65,6 +96,24 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       setInput(initialPrompt);
     }
   }, [initialPrompt]);
+
+  const toggleSpeech = useCallback(() => {
+    setSpeechEnabled((prev) => {
+      const next = !prev;
+      void AsyncStorage.setItem(SPEECH_KEY, next ? '1' : '0');
+      if (!next) {
+        Speech.stop();
+        setSpeaking(false);
+      }
+      return next;
+    });
+    void Haptics.selectionAsync();
+  }, []);
+
+  const stopSpeech = useCallback(() => {
+    Speech.stop();
+    setSpeaking(false);
+  }, []);
 
   const pickImage = useCallback(async (fromCamera: boolean) => {
     const permission = fromCamera
@@ -131,6 +180,8 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       setPendingAttachment(null);
       setBusy(true);
       setLoadingPhase('Scanning pack library…');
+      Speech.stop();
+      setSpeaking(false);
 
       const phaseTimer = setTimeout(() => setLoadingPhase('Building repair steps…'), 450);
 
@@ -157,12 +208,19 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
           preview: reply.replace(/\*\*/g, '').slice(0, 120),
         });
 
-        if (!offline) {
-          Speech.stop();
-          Speech.speak(reply.replace(/\*\*/g, '').slice(0, 420), { rate: 0.95, pitch: 0.95 });
+        if (!offline && speechEnabled) {
+          const spoken = reply.replace(/\*\*/g, '').slice(0, 420);
+          setSpeaking(true);
+          Speech.speak(spoken, {
+            rate: 0.95,
+            pitch: 0.95,
+            onDone: () => setSpeaking(false),
+            onStopped: () => setSpeaking(false),
+            onError: () => setSpeaking(false),
+          });
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Diagnosis failed.';
+        const message = error instanceof Error && error.message ? error.message : 'Diagnosis failed.';
         setMessages((prev) => [
           ...prev,
           {
@@ -177,7 +235,7 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
         setBusy(false);
       }
     },
-    [activePack, busy, input, messages, offline, pendingAttachment]
+    [activePack, busy, input, messages, offline, pendingAttachment, speechEnabled]
   );
 
   const toggleVoicePlaceholder = () => {
@@ -192,22 +250,39 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
       const sample =
         activePack.id === 'pool'
           ? 'Pump is humming but not moving water after backwash'
-          : 'Breaker trips as soon as the load kicks on';
+          : activePack.id === 'property'
+            ? 'Dishwasher won’t drain — standing water after cycle'
+            : 'Breaker trips as soon as the load kicks on';
       setInput(sample);
     }, 1100);
   };
 
+  const tabBarPad = 56 + Math.max(insets.bottom, 8);
+  const offset =
+    keyboardOffset ??
+    (embedInTabs ? (Platform.OS === 'ios' ? tabBarPad : 24) : Math.max(insets.top, 12) + 56);
+  const footerPad = embedInTabs ? 10 : Math.max(insets.bottom, 10);
+
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-hive-bg"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={88}
+      style={{ flex: 1, backgroundColor: theme.colors.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={offset}
     >
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
         <PackBadge pack={activePack} />
-        <Text className="text-xs font-semibold uppercase tracking-wider text-hive-steel">
-          {offline ? 'Local mode' : 'Grok + library'}
-        </Text>
+        <View className="items-end gap-1">
+          <NarrationToggle
+            enabled={speechEnabled}
+            speaking={speaking}
+            onToggle={toggleSpeech}
+            onStop={stopSpeech}
+          />
+          <Text className="text-[10px] font-semibold uppercase tracking-wider text-hive-steel">
+            {offline ? 'Local mode' : 'Grok + library'}
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -215,16 +290,19 @@ export function DiagnoseChat({ initialPrompt, autoCamera }: DiagnoseChatProps) {
         className="flex-1 px-4 pt-3"
         data={messages}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
         renderItem={({ item }) => <ChatBubble message={item} />}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         ListFooterComponent={
-          <View className="pb-2">
-            {busy ? <PulseLoader text={loadingPhase} /> : null}
-          </View>
+          <View className="pb-2">{busy ? <PulseLoader text={loadingPhase} /> : null}</View>
         }
       />
 
-      <View className="border-t border-hive-border bg-hive-elevated px-3 pb-3 pt-2">
+      <View
+        className="border-t border-hive-border bg-hive-elevated px-3 pt-2"
+        style={{ paddingBottom: footerPad }}
+      >
         <View className="mb-2 flex-row flex-wrap gap-2">
           {activePack.quickPrompts.slice(0, 3).map((prompt) => (
             <Pressable
