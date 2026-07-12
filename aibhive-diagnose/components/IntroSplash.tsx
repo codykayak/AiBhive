@@ -1,5 +1,5 @@
 import { Asset } from 'expo-asset';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
   Platform,
@@ -62,7 +62,31 @@ function WebVideo({ uri }: { uri: string }) {
   );
 }
 
-function NativeVideo() {
+function NativeVideoFallback() {
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.bg }]} />;
+}
+
+class NativeVideoBoundary extends React.Component<
+  { children: React.ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    // Video decode / Expo Go quirks should never block the app.
+  }
+
+  render() {
+    if (this.state.failed) return <NativeVideoFallback />;
+    return this.props.children;
+  }
+}
+
+function NativeVideoPlayer() {
   const player = useVideoPlayer(INTRO_VIDEO, (instance) => {
     instance.loop = false;
     instance.muted = true;
@@ -70,9 +94,19 @@ function NativeVideo() {
 
   useEffect(() => {
     const sub = player.addListener('statusChange', ({ status }) => {
-      if (status === 'readyToPlay') player.play();
+      if (status === 'readyToPlay') {
+        try {
+          player.play();
+        } catch {
+          // ignore
+        }
+      }
     });
-    player.play();
+    try {
+      player.play();
+    } catch {
+      // ignore
+    }
     return () => sub.remove();
   }, [player]);
 
@@ -83,8 +117,15 @@ function NativeVideo() {
       contentFit="cover"
       nativeControls={false}
       allowsPictureInPicture={false}
-      surfaceType={Platform.OS === 'android' ? 'textureView' : 'surfaceView'}
     />
+  );
+}
+
+function NativeVideo() {
+  return (
+    <NativeVideoBoundary>
+      <NativeVideoPlayer />
+    </NativeVideoBoundary>
   );
 }
 
