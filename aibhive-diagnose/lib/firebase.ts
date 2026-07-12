@@ -14,7 +14,15 @@ const firebaseConfig = {
     process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:241519356033:web:a65cb593ca7ddc2d680580',
 };
 
-const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+function createAuth() {
+  try {
+    const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+    return getAuth(app);
+  } catch (err) {
+    console.warn('[firebase] auth init failed', err);
+    throw err;
+  }
+}
 
-export const auth = getAuth(app);
+export const auth = createAuth();
 export const googleProvider = new GoogleAuthProvider();

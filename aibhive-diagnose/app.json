@@ -7,7 +7,6 @@
     "icon": "./assets/brand/aibhive-logo-mark.png",
     "scheme": "aibhivediagnose",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aibhive.diagnose",
@@ -56,7 +55,6 @@
           "cameraPermission": "Allow AiBhive Diagnose to photograph equipment for AI diagnosis."
         }
       ],
-      "expo-video",
       "expo-asset"
     ],
     "experiments": {

@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigButton } from '@/components/BigButton';
-import { AiBhiveLogo, DiagnoseOrb } from '@/components/motion';
+import { AiBhiveLogo, DiagnoseOrb } from '@/components/BrandMark';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
