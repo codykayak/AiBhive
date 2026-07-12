@@ -164,8 +164,8 @@ async function main() {
   console.log('Metro ready — waiting for tunnel URL…');
 
   const { expUrl } = await waitForTunnelUrl();
-  const host = tunnelHostFromExpUrl(expUrl);
-  if (host.includes('_')) {
+  const tunnelHost = tunnelHostFromExpUrl(expUrl);
+  if (tunnelHost.includes('_')) {
     console.warn(
       '⚠ Tunnel hostname contains "_" — Android Expo Go may fail to open. Restart dev:mobile to get a new hostname.'
     );
