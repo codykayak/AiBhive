@@ -55,7 +55,6 @@
           "cameraPermission": "Allow AiBhive Diagnose to photograph equipment for AI diagnosis."
         }
       ],
-      "expo-video",
       "expo-asset"
     ],
     "experiments": {

@@ -12,12 +12,20 @@ type Props = {
  * Expo Router ErrorBoundary — shows the real message so Expo Go crashes are actionable.
  */
 export function ErrorBoundary({ error, retry }: Props) {
+  const message = error?.message || String(error);
+  const hint =
+    /undefined|element type is invalid/i.test(message)
+      ? '\n\nHint: a component imported as undefined (wrong export path).'
+      : '';
+
   return (
     <View style={styles.root}>
       <Text style={styles.title}>Something went wrong</Text>
+      <Text style={styles.sub}>Scroll for the real error — tap Try again after a reload.</Text>
       <ScrollView style={styles.box} contentContainerStyle={{ padding: 14 }}>
         <Text style={styles.message} selectable>
-          {error?.message || String(error)}
+          {message}
+          {hint}
         </Text>
         {error?.stack ? (
           <Text style={styles.stack} selectable>
@@ -43,7 +51,13 @@ const styles = StyleSheet.create({
     color: theme.colors.amber,
     fontSize: 22,
     fontWeight: '800',
+    marginBottom: 8,
+  },
+  sub: {
+    color: theme.colors.steel,
+    fontSize: 13,
     marginBottom: 12,
+    lineHeight: 18,
   },
   box: {
     maxHeight: 280,
