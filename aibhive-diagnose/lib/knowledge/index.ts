@@ -14,6 +14,8 @@ export { guidedFlows, getGuidedFlows, getGuidedFlow } from './guided';
 export { poolFaults } from './pool/faults';
 export { electricalFaults } from './electrical/faults';
 export { propertyFaults } from './property/faults';
+export { plumbingFaults } from './plumbing/faults';
+export { hvacFaults } from './hvac/faults';
 export { APPLIANCE_CORPUS, searchApplianceCorpus } from './property/applianceCorpus';
 export { HOW_TO_GUIDES, getHowToGuides, getHowToById } from './property/howtos';
 export {
@@ -29,4 +31,23 @@ export {
   CODE_QUICK_REFS,
   suggestWireForAmps,
 } from './electrical/reference';
-export { poolErrorCodes, electricalErrorCodes } from './codes';
+export {
+  COPPER_PIPE_SIZES,
+  DRAIN_SIZING,
+  PLUMBING_CODE_REFS,
+  PRESSURE_TARGETS,
+} from './plumbing/reference';
+export {
+  SUPERHEAT_TARGETS,
+  SUBCOOL_TARGETS,
+  DELTA_T_TARGETS,
+  FILTER_GUIDE,
+  HVAC_CODE_REFS,
+  suggestFilterMerv,
+} from './hvac/reference';
+export {
+  poolErrorCodes,
+  electricalErrorCodes,
+  plumbingErrorCodes,
+  hvacErrorCodes,
+} from './codes';

@@ -1,11 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import type { TradePackId } from '@/lib/packs/types';
+
 const KEY = 'aibhive.diagnose.recents.v1';
 
 export type RecentDiagnosis = {
   id: string;
   title: string;
-  packId: 'pool' | 'electrical' | 'property';
+  packId: TradePackId;
   preview: string;
   createdAt: number;
   faultId?: string;

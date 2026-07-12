@@ -1,13 +1,26 @@
-import { electricalErrorCodes, poolErrorCodes } from './codes';
+import { electricalErrorCodes, hvacErrorCodes, plumbingErrorCodes, poolErrorCodes } from './codes';
 import { electricalFaults } from './electrical/faults';
+import { hvacFaults } from './hvac/faults';
+import { plumbingFaults } from './plumbing/faults';
 import { poolFaults } from './pool/faults';
 import { propertyFaults } from './property/faults';
 import { formatCorpusHit, searchApplianceCorpus } from './property/applianceCorpus';
 import type { TradePackId } from '../packs/types';
 import type { ErrorCode, FaultEntry } from './types';
 
-export const ALL_FAULTS: FaultEntry[] = [...poolFaults, ...electricalFaults, ...propertyFaults];
-export const ALL_CODES: ErrorCode[] = [...poolErrorCodes, ...electricalErrorCodes];
+export const ALL_FAULTS: FaultEntry[] = [
+  ...poolFaults,
+  ...electricalFaults,
+  ...propertyFaults,
+  ...plumbingFaults,
+  ...hvacFaults,
+];
+export const ALL_CODES: ErrorCode[] = [
+  ...poolErrorCodes,
+  ...electricalErrorCodes,
+  ...plumbingErrorCodes,
+  ...hvacErrorCodes,
+];
 
 const STOP = new Set([
   'a',
@@ -98,8 +111,48 @@ const EQUIPMENT: Array<{ id: string; packHint: TradePackId; terms: string[] }> =
   },
   {
     id: 'hvac',
-    packHint: 'property',
-    terms: ['hvac', 'thermostat', 'air handler', 'furnace', 'ac ', ' a/c', 'condensate'],
+    packHint: 'hvac',
+    terms: [
+      'hvac',
+      'air conditioner',
+      'condenser',
+      'evaporator',
+      'furnace',
+      'heat pump',
+      'refrigerant',
+      'superheat',
+      'subcool',
+      'txv',
+      'compressor',
+      'blower motor',
+      'air handler',
+    ],
+  },
+  {
+    id: 'plumbing',
+    packHint: 'plumbing',
+    terms: [
+      'plumber',
+      'plumbing',
+      'sewer',
+      'drain clog',
+      'main line',
+      'water heater',
+      'tankless',
+      'toilet',
+      'wax ring',
+      'prv',
+      'backflow',
+      'sump pump',
+      'pex',
+      'angle stop',
+      'cleanout',
+    ],
+  },
+  {
+    id: 'thermostat',
+    packHint: 'hvac',
+    terms: ['thermostat', 'nest', 'ecobee', 'honeywell stat'],
   },
   {
     id: 'pool',
@@ -218,6 +271,8 @@ function scoreFault(fault: FaultEntry, query: string): number {
     if (id === 'disposal' && isDisposalFault) score += 20;
     if (id === 'pool' && fault.packId === 'pool') score += 12;
     if (id === 'electrical' && fault.packId === 'electrical') score += 12;
+    if (id === 'plumbing' && fault.packId === 'plumbing') score += 12;
+    if (id === 'hvac' && fault.packId === 'hvac') score += 12;
   }
 
   // Phrase: "won't drain" / "not draining"
@@ -250,15 +305,18 @@ function packFilter(
   if (packId === 'property') {
     const hints = detectedPackHints(query);
     if (!hints.length) {
-      // No clear equipment — keep search inside property to avoid noise.
       return false;
     }
-    if (hints.includes('property') && !hints.includes('pool') && !hints.includes('electrical')) {
-      return false; // appliance-only query → property faults only
+    const crossTrade = ['pool', 'electrical', 'plumbing', 'hvac'] as const;
+    const onlyProperty =
+      hints.includes('property') && !crossTrade.some((p) => hints.includes(p));
+    if (onlyProperty) {
+      return false;
     }
     if (hints.includes(faultPackId)) return true;
     return false;
   }
+  // Dedicated trade packs only search their own faults unless property cross-pack rules apply.
   return false;
 }
 
@@ -326,7 +384,15 @@ export function searchWithApplianceRag(query: string, packId?: TradePackId) {
 
 export function formatFaultAsReply(fault: FaultEntry): string {
   const packLabel =
-    fault.packId === 'pool' ? 'Pool' : fault.packId === 'electrical' ? 'Electrical' : 'Property Maintenance';
+    fault.packId === 'pool'
+      ? 'Pool'
+      : fault.packId === 'electrical'
+        ? 'Electrical'
+        : fault.packId === 'plumbing'
+          ? 'Plumbing'
+          : fault.packId === 'hvac'
+            ? 'HVAC'
+            : 'Property Maintenance';
   return [
     `**${fault.title}**`,
     '',

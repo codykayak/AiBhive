@@ -45,6 +45,12 @@ function formatAuthError(err: unknown): string {
   if (code === 'auth/missing-client-id') {
     return message || 'Google OAuth client ID is not configured for this build.';
   }
+  if (code === 'auth/native-pending') {
+    return (
+      message ||
+      'Google sign-in on phone works in the installed APK (not Expo Go preview). Use the web app or install the field APK when ready.'
+    );
+  }
   if (message) return message;
   if (code) return `Sign-in failed (${code}).`;
   return 'Sign-in failed. Try again.';

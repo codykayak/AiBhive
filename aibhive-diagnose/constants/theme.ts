@@ -12,6 +12,8 @@ export const theme = {
     success: '#3DCF8E',
     pool: '#2BB8C8',
     electrical: '#F0B429',
+    plumbing: '#4A9FD4',
+    hvac: '#7B9FD4',
   },
   touch: {
     minHeight: 56,

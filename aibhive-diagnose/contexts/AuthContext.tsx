@@ -10,13 +10,14 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Platform } from 'react-native';
 
 import { getDiagnoseAuth, googleProvider } from '@/lib/firebase';
+import type { TradePackId } from '@/lib/packs/types';
 
 const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
 
 export type DiagnoseProfile = {
   displayName: string;
   photoUrl: string | null;
-  tradePack?: 'pool' | 'electrical' | 'property';
+  tradePack?: TradePackId;
   /**
    * Opt-in to share field tips anonymously with other Diagnose users.
    * Default true — no names, customers, or addresses leave the device/shop.

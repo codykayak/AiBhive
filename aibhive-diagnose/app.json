@@ -55,6 +55,13 @@
           "cameraPermission": "Allow AiBhive Diagnose to photograph equipment for AI diagnosis."
         }
       ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "AiBhive Diagnose needs the microphone for voice commands in the field.",
+          "recordAudioAndroid": true
+        }
+      ],
       "expo-asset"
     ],
     "experiments": {
