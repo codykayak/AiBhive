@@ -1,57 +1,64 @@
 # AiBhive Diagnose
 
-Voice-first AI co-pilot for tradespeople. MVP Trade Packs: **Pool Services** and **Electrical**.
+Voice-first AI co-pilot for tradespeople. Trade Packs: **Pool**, **Electrical**, and **Property Maintenance**.
 
-Built with Expo SDK 57, Expo Router, NativeWind, Reanimated motion, and Grok + offline pack intelligence.
+Built with Expo SDK 57, Expo Router, NativeWind, and Grok + offline pack intelligence.
 
-## Quick start
+## Mobile (Expo Go) — recommended for phone testing
+
+This project is **SDK 57**. You need the **SDK 57** Expo Go build from [expo.dev/go](https://expo.dev/go) (store builds may still be on an older SDK and will spin forever).
 
 ```bash
 cd aibhive-diagnose
 npm install
+npm run dev:mobile
+```
+
+That starts Metro with an ngrok tunnel. In Expo Go, open:
+
+```text
+exp://<the-host-shown>.exp.direct
+```
+
+Or scan the QR printed in the terminal.
+
+> Do **not** use `npm start` / `npm run dev` for Expo Go — those serve a static **web** preview on port 8082 for Cursor browser testing.
+
+### If `npm install` hits ENOTEMPTY
+
+```bash
+rm -rf node_modules
+npm ci
+npm install --save-dev @expo/ngrok@^4.1.3
+```
+
+## Web preview (Cursor browser)
+
+```bash
+cd aibhive-diagnose
 npm run dev:start
 ```
 
-That starts Expo on web at **http://localhost:8081**.
+Forward port **8082** and open it in the browser.
 
-Other useful scripts:
-
-```bash
-npm start          # Expo chooser (press w / i / a)
-npm run web        # Web only
-npm run typecheck  # TypeScript
-```
-
-Optional live AI:
+## Optional live AI
 
 ```bash
 export EXPO_PUBLIC_GROK_API_KEY=xai-...
 ```
 
+## Scripts
+
+| Script | Purpose |
+| --- | --- |
+| `npm run dev:mobile` | Metro + tunnel for Expo Go on your phone |
+| `npm run dev:start` | Static web build on `:8082` (Cursor preview) |
+| `npm run typecheck` | TypeScript |
+
 ## What’s inside
 
-- Animated splash + pulsing diagnose loaders
 - Home dashboard with guided flows, tips, recent diagnoses
-- Diagnose chat (camera / voice / text) backed by a searchable fault library
-- Jobs tracker with status cycling
-- Trade Pack switcher (Pool + Electrical)
-- Field tools: fault library, error codes, pool chemistry dosing, wire/torque charts, safety checklists
-- Offline-capable local diagnosis engine (works without Grok)
-
-## Structure
-
-| Path | Purpose |
-| --- | --- |
-| `app/(tabs)` | Home, Diagnose, Jobs, Packs |
-| `app/tools` | Field reference tools |
-| `app/fault/[id]` | Full fault playbooks |
-| `app/guided/[id]` | Yes/No guided triage |
-| `lib/knowledge` | Faults, codes, chemistry, electrical refs |
-| `lib/grok.ts` | Grok client + library grounding |
-
-## Next
-
-- Real speech-to-text
-- Deeper brand-specific code matrices
-- Parts ordering / invoicing
-- Offline pack sync
+- Diagnose chat (camera / voice / text) + searchable fault library
+- Jobs tracker (local + Pros sync when signed in)
+- Trade Packs: Pool, Electrical, Property Maintenance (cross-pack + appliance RAG)
+- Field tools: library, how-tos, codes, chemistry, wire charts, safety
