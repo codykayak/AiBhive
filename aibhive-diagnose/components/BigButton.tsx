@@ -1,5 +1,7 @@
 import * as Haptics from 'expo-haptics';
-import { Pressable, Text, View, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
+
+import { theme } from '@/constants/theme';
 
 type BigButtonProps = PressableProps & {
   label: string;
@@ -8,20 +10,6 @@ type BigButtonProps = PressableProps & {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   accentColor?: string;
 };
-
-const variantClasses = {
-  primary: 'bg-hive-amber',
-  secondary: 'bg-hive-card border border-hive-border',
-  ghost: 'bg-transparent border border-hive-border',
-  danger: 'bg-hive-danger',
-} as const;
-
-const labelClasses = {
-  primary: 'text-hive-bg',
-  secondary: 'text-hive-mist',
-  ghost: 'text-hive-mist',
-  danger: 'text-hive-mist',
-} as const;
 
 export function BigButton({
   label,
@@ -33,6 +21,18 @@ export function BigButton({
   onPress,
   ...rest
 }: BigButtonProps) {
+  const variantStyle =
+    variant === 'primary'
+      ? styles.primary
+      : variant === 'secondary'
+        ? styles.secondary
+        : variant === 'danger'
+          ? styles.danger
+          : styles.ghost;
+
+  const labelStyle =
+    variant === 'primary' ? styles.labelPrimary : variant === 'danger' ? styles.labelLight : styles.labelLight;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -41,15 +41,69 @@ export function BigButton({
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         onPress?.(e);
       }}
-      className={`min-h-[56px] flex-row items-center justify-center gap-3 rounded-2xl px-5 py-4 active:opacity-80 ${variantClasses[variant]} ${disabled ? 'opacity-40' : ''}`}
-      style={accentColor && variant === 'primary' ? { backgroundColor: accentColor } : undefined}
+      style={[
+        styles.base,
+        variantStyle,
+        disabled ? styles.disabled : null,
+        accentColor && variant === 'primary' ? { backgroundColor: accentColor } : null,
+      ]}
       {...rest}
     >
       {icon ? <View>{icon}</View> : null}
-      <View className="flex-1">
-        <Text className={`text-lg font-bold ${labelClasses[variant]}`}>{label}</Text>
-        {subtitle ? <Text className="mt-0.5 text-sm text-hive-steel">{subtitle}</Text> : null}
+      <View style={styles.copy}>
+        <Text style={[styles.label, labelStyle]}>{label}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  base: {
+    minHeight: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  primary: {
+    backgroundColor: theme.colors.amber,
+  },
+  secondary: {
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  ghost: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  danger: {
+    backgroundColor: theme.colors.danger,
+  },
+  disabled: {
+    opacity: 0.4,
+  },
+  copy: {
+    flex: 1,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  labelPrimary: {
+    color: theme.colors.bg,
+  },
+  labelLight: {
+    color: theme.colors.mist,
+  },
+  subtitle: {
+    marginTop: 2,
+    fontSize: 14,
+    color: theme.colors.steel,
+  },
+});
