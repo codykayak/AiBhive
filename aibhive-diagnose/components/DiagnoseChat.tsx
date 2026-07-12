@@ -2,16 +2,19 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from 'expo-router';
 import { Camera, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   Text,
   TextInput,
   View,
+  type KeyboardEvent,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,9 +23,11 @@ import { NarrationToggle } from '@/components/JoinTeamModal';
 import { PulseLoader } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
+import { buildTabBarStyle } from '@/constants/tabBar';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
-import { askGrok } from '@/lib/grok';
+import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
 
@@ -35,9 +40,7 @@ function uid() {
 type DiagnoseChatProps = {
   initialPrompt?: string;
   autoCamera?: boolean;
-  /** Extra offset when embedded under a stack header (diagnose-session). */
   keyboardOffset?: number;
-  /** When true (tab screen), bottom safe-area is handled by the tab bar. */
   embedInTabs?: boolean;
 };
 
@@ -48,8 +51,10 @@ export function DiagnoseChat({
   embedInTabs = false,
 }: DiagnoseChatProps) {
   const { activePack } = usePack();
+  const { getIdToken } = useAuth();
   const { isOnline, isInternetReachable } = useNetwork();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const offline = !isOnline || isInternetReachable === false;
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -60,9 +65,12 @@ export function DiagnoseChat({
   const [loadingPhase, setLoadingPhase] = useState('Diagnosing…');
   const [speechEnabled, setSpeechEnabled] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [aiSource, setAiSource] = useState<DiagnoseSource | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const seededRef = useRef(false);
   const cameraOpenedRef = useRef(false);
+  const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     void AsyncStorage.getItem(SPEECH_KEY).then((v) => {
@@ -77,6 +85,42 @@ export function DiagnoseChat({
   }, []);
 
   useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const restoreTabs = () => {
+      if (embedInTabs) {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: buildTabBarStyle(insets.bottom),
+        });
+      }
+    };
+
+    const onShow = (e: KeyboardEvent) => {
+      setKeyboardHeight(e.endCoordinates?.height || 0);
+      if (embedInTabs) {
+        navigation.getParent()?.setOptions({
+          tabBarStyle: { display: 'none' },
+        });
+      }
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    };
+
+    const onHide = () => {
+      setKeyboardHeight(0);
+      restoreTabs();
+    };
+
+    const subShow = Keyboard.addListener(showEvent, onShow);
+    const subHide = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      subShow.remove();
+      subHide.remove();
+      restoreTabs();
+    };
+  }, [embedInTabs, insets.bottom, navigation]);
+
+  useEffect(() => {
     setMessages([
       {
         id: uid(),
@@ -88,6 +132,7 @@ export function DiagnoseChat({
     seededRef.current = false;
     Speech.stop();
     setSpeaking(false);
+    setAiSource(null);
   }, [activePack.id]);
 
   useEffect(() => {
@@ -186,12 +231,14 @@ export function DiagnoseChat({
       const phaseTimer = setTimeout(() => setLoadingPhase('Building repair steps…'), 450);
 
       try {
-        const reply = await askGrok({
+        const { reply, source } = await askGrokDetailed({
           pack: activePack,
           messages,
           userText: userMessage.content,
           attachment: userMessage.attachment,
+          getIdToken,
         });
+        setAiSource(source);
 
         const assistantMessage: ChatMessage = {
           id: uid(),
@@ -220,7 +267,10 @@ export function DiagnoseChat({
           });
         }
       } catch (error) {
-        const message = error instanceof Error && error.message ? error.message : 'Diagnosis failed.';
+        const message =
+          error instanceof Error && error.message?.trim()
+            ? error.message.trim()
+            : 'Diagnosis failed. Try again.';
         setMessages((prev) => [
           ...prev,
           {
@@ -235,7 +285,7 @@ export function DiagnoseChat({
         setBusy(false);
       }
     },
-    [activePack, busy, input, messages, offline, pendingAttachment, speechEnabled]
+    [activePack, busy, getIdToken, input, messages, offline, pendingAttachment, speechEnabled]
   );
 
   const toggleVoicePlaceholder = () => {
@@ -254,20 +304,36 @@ export function DiagnoseChat({
             ? 'Dishwasher won’t drain — standing water after cycle'
             : 'Breaker trips as soon as the load kicks on';
       setInput(sample);
+      inputRef.current?.focus();
     }, 1100);
   };
 
-  const tabBarPad = 56 + Math.max(insets.bottom, 8);
   const offset =
     keyboardOffset ??
-    (embedInTabs ? (Platform.OS === 'ios' ? tabBarPad : 24) : Math.max(insets.top, 12) + 56);
-  const footerPad = embedInTabs ? 10 : Math.max(insets.bottom, 10);
+    (embedInTabs ? (Platform.OS === 'ios' ? 12 : 0) : Math.max(insets.top, 12) + 56);
+
+  const footerPad =
+    keyboardHeight > 0
+      ? Platform.OS === 'android'
+        ? Math.max(insets.bottom, 10)
+        : keyboardHeight + 8
+      : embedInTabs
+        ? 10
+        : Math.max(insets.bottom, 10);
+
+  const modeLabel = offline
+    ? 'Local mode'
+    : aiSource === 'pros'
+      ? 'Pros AI'
+      : aiSource === 'direct'
+        ? 'Grok + library'
+        : 'Library (+ AI when signed in)';
 
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-hive-bg"
       style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      behavior={Platform.OS === 'ios' && keyboardHeight === 0 ? 'padding' : undefined}
       keyboardVerticalOffset={offset}
     >
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
@@ -280,7 +346,7 @@ export function DiagnoseChat({
             onStop={stopSpeech}
           />
           <Text className="text-[10px] font-semibold uppercase tracking-wider text-hive-steel">
-            {offline ? 'Local mode' : 'Grok + library'}
+            {modeLabel}
           </Text>
         </View>
       </View>
@@ -347,12 +413,16 @@ export function DiagnoseChat({
 
           <View className="min-h-14 flex-1 justify-center rounded-2xl border border-hive-border bg-hive-card px-3">
             <TextInput
+              ref={inputRef}
               value={input}
               onChangeText={setInput}
               placeholder="Describe the fault…"
               placeholderTextColor={theme.colors.steel}
               multiline
               className="max-h-28 py-3 text-base text-hive-mist"
+              onFocus={() =>
+                requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))
+              }
             />
           </View>
 
