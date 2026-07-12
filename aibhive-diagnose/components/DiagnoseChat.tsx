@@ -532,16 +532,11 @@ export function DiagnoseChat({
 
   const offset =
     keyboardOffset ??
-    (embedInTabs ? (Platform.OS === 'ios' ? 12 : 0) : Math.max(insets.top, 12) + 56);
+    (embedInTabs ? insets.top + 56 : Math.max(insets.top, 12) + 56);
 
+  const restingFooterPad = embedInTabs ? 10 : Math.max(insets.bottom, 10);
   const footerPad =
-    keyboardHeight > 0
-      ? Platform.OS === 'android'
-        ? Math.max(insets.bottom, 10)
-        : keyboardHeight + 8
-      : embedInTabs
-        ? 10
-        : Math.max(insets.bottom, 10);
+    keyboardHeight > 0 ? keyboardHeight + Math.max(insets.bottom, 8) : restingFooterPad;
 
   const modeLabel = offline
     ? 'Local · offline'
@@ -555,8 +550,8 @@ export function DiagnoseChat({
     <KeyboardAvoidingView
       className="flex-1 bg-hive-bg"
       style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      behavior={Platform.OS === 'ios' && keyboardHeight === 0 ? 'padding' : undefined}
-      keyboardVerticalOffset={offset}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? offset : 0}
     >
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
         <PackBadge pack={activePack} />
@@ -578,6 +573,7 @@ export function DiagnoseChat({
         className="flex-1 px-4 pt-3"
         data={messages}
         keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? 12 : 4 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         renderItem={({ item }) => (

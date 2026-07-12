@@ -36,9 +36,9 @@ export type VoiceSession = {
 /**
  * Start voice capture.
  * - Web: live SpeechRecognition when available
- * - Native / fallback: expo-av recording → Pros `/api/pros/transcribe`
+ * - Native / fallback: expo-audio recording → Pros `/api/pros/transcribe`
  *
- * expo-av is required lazily so a broken AV native module cannot crash app boot.
+ * expo-audio is required lazily so a missing native module cannot crash app boot.
  */
 export async function startVoiceCapture(opts: {
   getIdToken?: () => Promise<string | null>;
@@ -100,32 +100,60 @@ function startWebSpeech(
 async function startRecordingSession(
   getIdToken?: () => Promise<string | null>
 ): Promise<VoiceSession> {
-  // Dynamic import keeps expo-av off the critical boot path.
-  const { Audio: ExpoAudio } = await import('expo-av');
-  const permission = await ExpoAudio.requestPermissionsAsync();
-  if (!permission.granted) {
-    throw new Error('Microphone permission is required for voice input.');
+  // Dynamic import keeps expo-audio off the critical boot path (SDK 57+ — expo-av removed).
+  let recording: import('expo-audio').AudioRecorder | null = null;
+  try {
+    const {
+      AudioModule,
+      RecordingPresets,
+      requestRecordingPermissionsAsync,
+      setAudioModeAsync,
+    } = await import('expo-audio');
+
+    if (!AudioModule?.AudioRecorder) {
+      throw new Error(
+        'Voice input is not available in this preview. Type your fault in the chat box instead.'
+      );
+    }
+
+    const permission = await requestRecordingPermissionsAsync();
+    if (!permission.granted) {
+      throw new Error('Microphone permission is required for voice input.');
+    }
+
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
+    });
+
+    recording = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+    await recording.prepareToRecordAsync();
+    recording.record();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('Cannot find native module') || message.includes('ExponentAV')) {
+      throw new Error(
+        'Voice input needs the updated app build. Type your fault in the chat box for now.'
+      );
+    }
+    throw err;
   }
-
-  await ExpoAudio.setAudioModeAsync({
-    allowsRecordingIOS: true,
-    playsInSilentModeIOS: true,
-  });
-
-  const recording = new ExpoAudio.Recording();
-  await recording.prepareToRecordAsync(ExpoAudio.RecordingOptionsPresets.HIGH_QUALITY);
-  await recording.startAsync();
 
   const finish = async (transcribe: boolean): Promise<string> => {
     try {
-      await recording.stopAndUnloadAsync();
+      await recording?.stop();
     } catch {
       // already stopped
     }
-    await ExpoAudio.setAudioModeAsync({ allowsRecordingIOS: false });
+    try {
+      const { setAudioModeAsync } = await import('expo-audio');
+      await setAudioModeAsync({ allowsRecording: false });
+    } catch {
+      // ignore
+    }
     if (!transcribe) return '';
 
-    const uri = recording.getURI();
+    const uri = recording?.uri;
     if (!uri) throw new Error('Recording failed — try again.');
 
     const token = getIdToken ? await getIdToken() : null;
