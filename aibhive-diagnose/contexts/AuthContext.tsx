@@ -17,6 +17,11 @@ export type DiagnoseProfile = {
   displayName: string;
   photoUrl: string | null;
   tradePack?: 'pool' | 'electrical' | 'property';
+  /**
+   * Opt-in to share field tips anonymously with other Diagnose users.
+   * Default true — no names, customers, or addresses leave the device/shop.
+   */
+  shareAnonymously?: boolean;
 };
 
 type AuthContextValue = {
@@ -58,9 +63,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName: local?.displayName || next.displayName || next.email?.split('@')[0] || 'Tech',
           photoUrl: local?.photoUrl || next.photoURL || null,
           tradePack: local?.tradePack || 'pool',
+          shareAnonymously: local?.shareAnonymously !== false,
         });
       } else {
-        setProfile(local);
+        setProfile(
+          local
+            ? { ...local, shareAnonymously: local.shareAnonymously !== false }
+            : { displayName: 'Tech', photoUrl: null, tradePack: 'pool', shareAnonymously: true }
+        );
       }
       setLoading(false);
     });
@@ -97,6 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         displayName: next.displayName ?? profile?.displayName ?? 'Tech',
         photoUrl: next.photoUrl !== undefined ? next.photoUrl : profile?.photoUrl ?? null,
         tradePack: next.tradePack ?? profile?.tradePack ?? 'pool',
+        shareAnonymously:
+          next.shareAnonymously !== undefined
+            ? next.shareAnonymously
+            : profile?.shareAnonymously !== false,
       };
       setProfile(merged);
       await writeLocalProfile(merged);

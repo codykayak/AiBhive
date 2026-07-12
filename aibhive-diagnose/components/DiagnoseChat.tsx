@@ -19,6 +19,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChatBubble } from '@/components/ChatBubble';
+import {
+  DiagnosisFeedbackCard,
+  type FeedbackFormValues,
+} from '@/components/DiagnosisFeedbackCard';
 import { NarrationToggle } from '@/components/JoinTeamModal';
 import { PulseLoader } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
@@ -28,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
 import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
+import { submitFieldFeedback } from '@/lib/knowledge/fieldKnowledge';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
 
@@ -51,7 +56,7 @@ export function DiagnoseChat({
   embedInTabs = false,
 }: DiagnoseChatProps) {
   const { activePack } = usePack();
-  const { getIdToken } = useAuth();
+  const { getIdToken, profile, saveProfile } = useAuth();
   const { isOnline, isInternetReachable } = useNetwork();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -67,6 +72,8 @@ export function DiagnoseChat({
   const [speaking, setSpeaking] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [aiSource, setAiSource] = useState<DiagnoseSource | null>(null);
+  const [feedbackBusyId, setFeedbackBusyId] = useState<string | null>(null);
+  const [feedbackError, setFeedbackError] = useState<{ id: string; message: string } | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const seededRef = useRef(false);
   const cameraOpenedRef = useRef(false);
@@ -231,7 +238,7 @@ export function DiagnoseChat({
       const phaseTimer = setTimeout(() => setLoadingPhase('Building repair steps…'), 450);
 
       try {
-        const { reply, source } = await askGrokDetailed({
+        const { reply, source, tipIdsUsed } = await askGrokDetailed({
           pack: activePack,
           messages,
           userText: userMessage.content,
@@ -246,6 +253,14 @@ export function DiagnoseChat({
           content: reply,
           createdAt: Date.now(),
           isDiagnosis: Boolean(userMessage.attachment),
+          askFeedback: true,
+          feedbackStatus: 'pending',
+          diagnoseMeta: {
+            userQuery: userMessage.content,
+            source,
+            packId: activePack.id,
+            tipIdsUsed: tipIdsUsed || [],
+          },
         };
         setMessages((prev) => [...prev, assistantMessage]);
 
@@ -286,6 +301,75 @@ export function DiagnoseChat({
       }
     },
     [activePack, busy, getIdToken, input, messages, offline, pendingAttachment, speechEnabled]
+  );
+
+  const skipFeedback = useCallback((messageId: string) => {
+    setFeedbackError(null);
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, askFeedback: false, feedbackStatus: 'skipped' } : m
+      )
+    );
+  }, []);
+
+  const submitFeedback = useCallback(
+    async (message: ChatMessage, values: FeedbackFormValues) => {
+      setFeedbackBusyId(message.id);
+      setFeedbackError(null);
+      try {
+        if (values.shareAnonymously !== (profile?.shareAnonymously !== false)) {
+          void saveProfile({ shareAnonymously: values.shareAnonymously });
+        }
+
+        const token = await getIdToken();
+        if (!token) {
+          setFeedbackError({
+            id: message.id,
+            message: 'Sign in and join a Pros team to share field tips.',
+          });
+          return;
+        }
+
+        const meta = message.diagnoseMeta;
+        await submitFieldFeedback(token, {
+          outcome: values.outcome,
+          userQuery: meta?.userQuery || '',
+          assistantReply: message.content,
+          packId: meta?.packId || activePack.id,
+          source: meta?.source || 'local',
+          tipIdsUsed: meta?.tipIdsUsed || [],
+          messageId: message.id,
+          equipment: values.equipmentLabel ? [values.equipmentLabel] : [],
+          equipmentSymptom: values.equipmentSymptom,
+          fixSummary: values.fixSummary,
+          tipText: values.tipText,
+          shareWithTeam: values.shareWithTeam,
+          shareAnonymously: values.shareAnonymously,
+        });
+
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === message.id
+              ? {
+                  ...m,
+                  askFeedback: false,
+                  feedbackStatus: values.outcome === 'worked' ? 'worked' : 'shared',
+                }
+              : m
+          )
+        );
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (err) {
+        const msg =
+          err instanceof Error && err.message?.trim()
+            ? err.message.trim()
+            : 'Could not save feedback.';
+        setFeedbackError({ id: message.id, message: msg });
+      } finally {
+        setFeedbackBusyId(null);
+      }
+    },
+    [activePack.id, getIdToken, profile?.shareAnonymously, saveProfile]
   );
 
   const toggleVoicePlaceholder = () => {
@@ -358,7 +442,29 @@ export function DiagnoseChat({
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
-        renderItem={({ item }) => <ChatBubble message={item} />}
+        renderItem={({ item }) => (
+          <View>
+            <ChatBubble message={item} />
+            {item.role === 'assistant' &&
+            item.askFeedback &&
+            item.feedbackStatus === 'pending' ? (
+              <DiagnosisFeedbackCard
+                defaultAnonymous={profile?.shareAnonymously !== false}
+                busy={feedbackBusyId === item.id}
+                error={feedbackError?.id === item.id ? feedbackError.message : null}
+                onSubmit={(values) => void submitFeedback(item, values)}
+                onSkip={() => skipFeedback(item.id)}
+              />
+            ) : null}
+            {item.role === 'assistant' &&
+            (item.feedbackStatus === 'worked' || item.feedbackStatus === 'shared') ? (
+              <Text className="mb-2 mt-1 px-1 text-xs text-hive-steel">
+                Thanks — saved for your shop
+                {profile?.shareAnonymously !== false ? ' (+ anonymous network)' : ''}.
+              </Text>
+            ) : null}
+          </View>
+        )}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         ListFooterComponent={
           <View className="pb-2">{busy ? <PulseLoader text={loadingPhase} /> : null}</View>
