@@ -22,7 +22,15 @@ export default function OwrInlineWebResearch() {
       const ctx = [scrapeText, ocrText].filter(Boolean).join('\n\n').slice(0, 10000);
       let findsBrief = '';
       try {
-        const fr = await fetch('/api/research-lab/tartarian-finds?brief=1&maxChars=3500');
+        const gnosticLike =
+          /nag.?hammadi|gnostic|gospel.?of.?thomas|apocryphon|pistis.?sophia|valentinian|sethian/i.test(
+            q,
+          );
+        const fr = await fetch(
+          gnosticLike
+            ? '/api/research-lab/nag-hammadi-finds?brief=1&maxChars=3500'
+            : '/api/research-lab/tartarian-finds?brief=1&maxChars=3500',
+        );
         const fd = await fr.json();
         if (fr.ok && fd.markdown) findsBrief = String(fd.markdown).slice(0, 3500);
       } catch {
@@ -34,6 +42,7 @@ export default function OwrInlineWebResearch() {
         targetContext: [
           'Research Lab — archives, historical documents, communal library. Grok analyzes findings.',
           'When the question is Tartarian / Old World / mud-flood / star-fort / orphan-train related, prefer the documented finds directory leads (start URLs) over inventing sources.',
+          'When the question is Nag Hammadi / Gnostic related, prefer nag-hammadi dig packs and publish to topic nag-hammadi for word indexing.',
           findsBrief,
         ]
           .filter(Boolean)

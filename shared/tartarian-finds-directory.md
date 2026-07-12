@@ -182,7 +182,7 @@ Budget: 2–4 findings + text mode ≈ low Hive credits.
 
 ## Communal Library topic tags
 
-`tartarian` · `mud-flood` · `world-fairs` · `star-forts` · `ancient-maps` · `orphan-trains` · `cathedral` · `free-energy` (public-domain sources only)
+`tartarian` · `mud-flood` · `world-fairs` · `star-forts` · `ancient-maps` · `orphan-trains` · `cathedral` · `free-energy` · `nag-hammadi` (public-domain sources only)
 
 ---
 

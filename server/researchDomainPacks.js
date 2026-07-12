@@ -188,6 +188,46 @@ export const DOMAIN_PACKS = [
     suggestedUrl:
       'https://chroniclingamerica.loc.gov/search/pages/results/?proxtext=%22orphan+train%22&date1=1850&date2=1929&rows=20&searchType=basic',
   },
+  {
+    id: 'nag-hammadi-gnostic-dig',
+    category: 'historical-ancient',
+    name: 'Nag Hammadi Gnostic dig',
+    blurb:
+      'Harvest Robinson/Meyer English editions + gnosis.org tractates → text-corpus / Coptic plate OCR → publish word-indexed entries under Communal Library · Nag Hammadi & Gnostic.',
+    topicId: 'nag-hammadi',
+    steps: [
+      {
+        step: 0,
+        action: 'harvest',
+        hint:
+          'Paste an Archive.org Nag Hammadi texts search OR gnosis.org tractate page — Crawl on, max pages 10–15, findings 3–6. Prefer text-corpus for English editions; image-OCR for Coptic leaves.',
+      },
+      {
+        step: 1,
+        action: 'ocr',
+        hint: 'OCR Coptic plates or scanned English pages; keep NHC citations (e.g. II,2 Gospel of Thomas) in titles.',
+      },
+      {
+        step: 4,
+        action: 'translate',
+        hint: 'Translate Coptic/Greek glosses to English; correct glossary terms for pleroma, archons, Barbelo, etc.',
+      },
+      {
+        step: 3,
+        action: 'research',
+        hint: 'Ask Grok which tractates remain unindexed; use GET /api/research-lab/nag-hammadi-finds for dig packs.',
+      },
+      {
+        step: 2,
+        action: 'publish',
+        hint: 'Publish to Communal Library · nag-hammadi so titles + ocrText become searchable word indexes.',
+      },
+    ],
+    rosterHint: { director: 'grok', vision: 'gemini', translator: 'gemini' },
+    estimateHint: 'Edition / tractate harvest ≈ 0.10–0.40 Hive credits for 3–6 findings',
+    suggestedUrl:
+      'https://archive.org/search?query=Nag+Hammadi+Library+in+English+Robinson&and[]=mediatype%3A%22texts%22',
+  },
 ];
 
 export function listDomainPacks(category) {

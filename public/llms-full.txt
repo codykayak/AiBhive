@@ -36,7 +36,7 @@ Landing for AiBhive’s multi-agent research suite (Research tools). Users scrap
 
 ### Research Lab · Historical & Ancient — https://aibhive.com/research-lab/historical-ancient
 
-Expert hub for archive harvest, ancient/modern script translation, OCR of fragile plates, and community corpus publishing. Emphasizes multi-agent start-to-finish historical investigation.
+Expert hub for archive harvest, ancient/modern script translation, OCR of fragile plates, and community corpus publishing. Emphasizes multi-agent start-to-finish historical investigation. Includes the Communal Library topic **Nag Hammadi & Gnostic** (`/research-lab/communal-library/nag-hammadi`) with a complete NHL tractate catalog and dig packs at `/api/research-lab/nag-hammadi-finds` for word-indexing published Gnostic texts.
 
 ### Research Lab · Medical & Holistic — https://aibhive.com/research-lab/medical-holistic
 

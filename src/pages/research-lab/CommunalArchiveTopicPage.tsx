@@ -14,6 +14,11 @@ import ArchiveImageLightbox from '../../components/ArchiveImageLightbox';
 import StartResearchingButton from './components/StartResearchingButton';
 import { COMMUNAL_TOPICS, getCommunalTopic } from './communalLibraryTopics';
 import { getSeedFindingsForTopic, type SeedFinding } from './communalArchiveSeedFindings';
+import {
+  NAG_HAMMADI_PUBLISHED_EDITIONS,
+  NAG_HAMMADI_TRACTATES,
+  type NagHammadiTractate,
+} from './nagHammadiCatalog';
 import { auth } from '../../firebase';
 import type { LibraryEntry } from '../fable-scrape/shared';
 import styles from './researchLab.module.css';
@@ -70,6 +75,36 @@ function seedToCard(s: SeedFinding): ArchiveCard {
   };
 }
 
+function tractateToCard(t: NagHammadiTractate): ArchiveCard {
+  return {
+    id: t.id,
+    title: `${t.title} (${t.nhc})`,
+    creator: t.creator,
+    date: t.date,
+    catalogId: t.nhc,
+    imageUrl: '/communal-archive/nag-hammadi/1.jpg',
+    sourceUrl: t.sourceUrl,
+    excerpt: t.excerpt,
+    relatedCount: (t.harvestUrls?.length || 0) + 1,
+    live: false,
+  };
+}
+
+function editionToCard(e: (typeof NAG_HAMMADI_PUBLISHED_EDITIONS)[number]): ArchiveCard {
+  return {
+    id: e.id,
+    title: e.title,
+    creator: e.creator,
+    date: e.date,
+    catalogId: e.id.slice(0, 12),
+    imageUrl: '/communal-archive/nag-hammadi/2.jpg',
+    sourceUrl: e.sourceUrl,
+    excerpt: e.excerpt,
+    relatedCount: 0,
+    live: false,
+  };
+}
+
 export default function CommunalArchiveTopicPage() {
   const { topicId = '' } = useParams();
   const [params, setParams] = useSearchParams();
@@ -114,10 +149,24 @@ export default function CommunalArchiveTopicPage() {
   const cards = useMemo(() => {
     const fromLive = live.map(liveToCard).filter(Boolean) as ArchiveCard[];
     const seeds = getSeedFindingsForTopic(topicId).map(seedToCard);
-    const merged = [...fromLive, ...seeds];
-    if (!q.trim()) return merged;
+    const catalog =
+      topicId === 'nag-hammadi'
+        ? [
+            ...NAG_HAMMADI_TRACTATES.map(tractateToCard),
+            ...NAG_HAMMADI_PUBLISHED_EDITIONS.map(editionToCard),
+          ]
+        : [];
+    const merged = [...fromLive, ...seeds, ...catalog];
+    // De-dupe by id (live/seeds win over catalog duplicates)
+    const seen = new Set<string>();
+    const unique = merged.filter((c) => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+    if (!q.trim()) return unique;
     const needle = q.trim().toLowerCase();
-    return merged.filter(
+    return unique.filter(
       (c) =>
         c.title.toLowerCase().includes(needle) ||
         c.creator.toLowerCase().includes(needle) ||

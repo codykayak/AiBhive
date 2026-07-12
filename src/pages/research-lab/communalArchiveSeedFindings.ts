@@ -34,7 +34,7 @@ export type SeedFinding = {
 
 const img = (topicId: string, n: 1 | 2) => `/communal-archive/${topicId}/${n}.jpg`;
 
-/** Two curated findings per lattice topic (22 topics). */
+/** Two curated findings per lattice topic (plus Nag Hammadi catalog seeds). */
 export const ARCHIVE_SEED_FINDINGS: SeedFinding[] = [
   {
     id: 'hieroglyphics-1',
@@ -565,6 +565,32 @@ export const ARCHIVE_SEED_FINDINGS: SeedFinding[] = [
     sourceUrl: 'https://commons.wikimedia.org/wiki/Category:Avebury',
     excerpt: 'Site-alignment corpus seed for surveyor notebook trails.',
     relatedCount: 5,
+  },
+  {
+    id: 'nag-hammadi-1',
+    topicId: 'nag-hammadi',
+    title: 'Nag Hammadi Codex II — bound Coptic papyrus',
+    creator: 'Nag Hammadi Library · Commons photograph',
+    date: '4th century',
+    catalogId: 'NHC-II',
+    imageUrl: img('nag-hammadi', 1),
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Nag_Hammadi_Codex_II.jpg',
+    excerpt:
+      'Codex II holds the Gospel of Thomas, Gospel of Philip, Apocryphon of John, and related Sethian tractates — primary plate for OCR harvest.',
+    relatedCount: 52,
+  },
+  {
+    id: 'nag-hammadi-2',
+    topicId: 'nag-hammadi',
+    title: 'Gospel of Thomas — Nag Hammadi II,2 leaf',
+    creator: 'Nag Hammadi Codex II · Commons photograph',
+    date: '4th century',
+    catalogId: 'NHC-II-2',
+    imageUrl: img('nag-hammadi', 2),
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Gospel_of_Thomas_-_Nag_Hammadi_II-35.jpg',
+    excerpt:
+      'Coptic leaf of the Gospel of Thomas (114 sayings) — start here for word-indexed Gnostic scripture packs.',
+    relatedCount: 48,
   },
 ];
 
