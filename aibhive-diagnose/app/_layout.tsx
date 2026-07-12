@@ -1,4 +1,4 @@
-import '../global.css';
+import { Platform } from 'react-native';
 
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -15,6 +15,10 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { NetworkProvider } from '@/contexts/NetworkContext';
 import { PackProvider } from '@/contexts/PackContext';
 
+if (Platform.OS === 'web') {
+  require('../global.css');
+}
+
 export { ErrorBoundary };
 
 export const unstable_settings = {
@@ -27,10 +31,11 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [fontTimedOut, setFontTimedOut] = useState(false);
+  // Never block Expo Go on a font download — use system fonts if SpaceMono stalls.
+  const [fontTimedOut, setFontTimedOut] = useState(Platform.OS !== 'web');
 
   useEffect(() => {
-    const timer = setTimeout(() => setFontTimedOut(true), 2500);
+    const timer = setTimeout(() => setFontTimedOut(true), Platform.OS === 'web' ? 2500 : 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -66,7 +71,6 @@ export default function RootLayout() {
     );
   }
 
-  // Intro splash intentionally disabled — expo-video was crashing Expo Go on launch.
   return (
     <SafeAreaProvider>
       <AuthProvider>

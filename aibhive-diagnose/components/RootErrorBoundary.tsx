@@ -21,10 +21,10 @@ export function ErrorBoundary({ error, retry }: Props) {
   return (
     <View style={styles.root}>
       <Text style={styles.title}>Something went wrong</Text>
-      <Text style={styles.sub}>Scroll for the real error — tap Try again after a reload.</Text>
+      <Text style={styles.sub}>Expo Go crash — scroll for the real error, then tap Try again.</Text>
       <ScrollView style={styles.box} contentContainerStyle={{ padding: 14 }}>
         <Text style={styles.message} selectable>
-          {message}
+          {message || 'Unknown error'}
           {hint}
         </Text>
         {error?.stack ? (
