@@ -16,7 +16,13 @@ type PackContextValue = {
 const PackContext = createContext<PackContextValue | null>(null);
 
 function isPackId(value: unknown): value is TradePackId {
-  return value === 'pool' || value === 'electrical' || value === 'property';
+  return (
+    value === 'pool' ||
+    value === 'electrical' ||
+    value === 'property' ||
+    value === 'plumbing' ||
+    value === 'hvac'
+  );
 }
 
 export function PackProvider({ children }: { children: React.ReactNode }) {

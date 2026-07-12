@@ -6,7 +6,7 @@ export const propertyPack: TradePack = {
   shortName: 'Property',
   tagline: 'Appliances · HVAC · Plumbing · Unit turns',
   description:
-    'Apartment and property maintenance — appliances, water heaters, HVAC basics, unit turns. Pulls Pool and Electrical playbooks when the job crosses trades.',
+    'Apartment and property maintenance — appliances, water heaters, unit turns. Dedicated Plumbing and HVAC packs available for deep trade playbooks; Property still pulls Pool and Electrical when the job crosses trades.',
   accentColor: '#7C9A6E',
   icon: 'wrench',
   heroImage: require('../../assets/categories/property.jpg'),

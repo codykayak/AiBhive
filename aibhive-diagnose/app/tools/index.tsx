@@ -1,17 +1,22 @@
-import { BookOpen, Calculator, Cable, ScanSearch, Shield, Users } from 'lucide-react-native';
+import { BookOpen, Calculator, Cable, Droplets, ScanSearch, Shield, Users, Wind } from 'lucide-react-native';
 import { router, type Href } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 import { usePack } from '@/contexts/PackContext';
+import type { TradePackId } from '@/lib/packs/types';
 
-const TOOLS: Array<{
+type ToolEntry = {
   href: Href;
   title: string;
   subtitle: string;
   icon: typeof BookOpen;
   color: string;
-}> = [
+  packs?: TradePackId[];
+};
+
+const ALL_TOOLS: ToolEntry[] = [
   {
     href: '/tools/library',
     title: 'Fault library',
@@ -32,11 +37,12 @@ const TOOLS: Array<{
     subtitle: 'Filters, disposal, fridge, water heaters',
     icon: BookOpen,
     color: '#7C9A6E',
+    packs: ['property'],
   },
   {
     href: '/tools/codes',
     title: 'Error code lookup',
-    subtitle: 'Pentair, Hayward, Jandy, AFCI/VFD…',
+    subtitle: 'Brand codes across all trade packs',
     icon: ScanSearch,
     color: theme.colors.pool,
   },
@@ -46,6 +52,7 @@ const TOOLS: Array<{
     subtitle: 'Targets + dosing estimators',
     icon: Calculator,
     color: theme.colors.pool,
+    packs: ['pool'],
   },
   {
     href: '/tools/wire-chart',
@@ -53,6 +60,23 @@ const TOOLS: Array<{
     subtitle: 'Ampacity + lug reminders',
     icon: Cable,
     color: theme.colors.electrical,
+    packs: ['electrical'],
+  },
+  {
+    href: '/tools/pipe-chart' as Href,
+    title: 'Pipe & venting charts',
+    subtitle: 'Sizing, slope, pressure, code refs',
+    icon: Droplets,
+    color: theme.colors.plumbing,
+    packs: ['plumbing'],
+  },
+  {
+    href: '/tools/hvac-chart' as Href,
+    title: 'HVAC charge targets',
+    subtitle: 'Superheat, subcool, delta-T, filters',
+    icon: Wind,
+    color: theme.colors.hvac,
+    packs: ['hvac'],
   },
   {
     href: '/tools/safety',
@@ -66,6 +90,10 @@ const TOOLS: Array<{
 export default function ToolsHubScreen() {
   const { activePack } = usePack();
 
+  const tools = useMemo(() => {
+    return ALL_TOOLS.filter((tool) => !tool.packs || tool.packs.includes(activePack.id));
+  }, [activePack.id]);
+
   return (
     <ScrollView className="flex-1 bg-hive-bg" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text className="text-2xl font-bold text-hive-mist">Field tools</Text>
@@ -74,7 +102,7 @@ export default function ToolsHubScreen() {
       </Text>
 
       <View className="mt-6 gap-3">
-        {TOOLS.map((tool) => {
+        {tools.map((tool) => {
           const Icon = tool.icon;
           return (
             <Pressable

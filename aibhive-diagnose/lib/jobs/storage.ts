@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import type { TradePackId } from '@/lib/packs/types';
+
 export type JobStatus = 'queued' | 'in_progress' | 'done' | 'needs_parts';
 
 export type FieldNote = {
@@ -21,7 +23,7 @@ export type FieldJob = {
   title: string;
   address: string;
   notes: string;
-  packId: 'pool' | 'electrical' | 'property';
+  packId: TradePackId;
   status: JobStatus;
   createdAt: number;
   updatedAt: number;

@@ -24,7 +24,7 @@ import {
   type FeedbackFormValues,
 } from '@/components/DiagnosisFeedbackCard';
 import { NarrationToggle } from '@/components/JoinTeamModal';
-import { PulseLoader } from '@/components/PulseLoader';
+import { PulseLoader } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { buildTabBarStyle } from '@/constants/tabBar';
