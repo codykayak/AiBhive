@@ -41,6 +41,15 @@ export type ChatMessage = {
   createdAt: number;
   attachment?: ChatAttachment;
   isDiagnosis?: boolean;
+  /** Show "Did this work?" for this assistant turn */
+  askFeedback?: boolean;
+  feedbackStatus?: 'pending' | 'worked' | 'didnt' | 'shared' | 'skipped';
+  diagnoseMeta?: {
+    userQuery: string;
+    source: 'local' | 'pros' | 'direct';
+    packId: TradePackId;
+    tipIdsUsed?: string[];
+  };
 };
 
 export type DiagnosisResult = {

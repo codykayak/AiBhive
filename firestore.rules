@@ -115,9 +115,22 @@ service cloud.firestore {
         allow read: if prosMemberOf(companyId) || isAdmin();
         allow write: if false;
       }
+      match /knowledge_tips/{tipId} {
+        allow read: if prosMemberOf(companyId) || isAdmin();
+        allow write: if false;
+      }
+      match /knowledge_feedback/{feedbackId} {
+        allow read: if prosMemberOf(companyId) || isAdmin();
+        allow write: if false;
+      }
       match /secrets/{docId} {
         allow read, write: if false;
       }
+    }
+
+    // Anonymized network corpus — Admin SDK only
+    match /pros_global_tips/{tipId} {
+      allow read, write: if false;
     }
   }
 }

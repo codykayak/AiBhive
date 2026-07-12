@@ -11,6 +11,11 @@
 
 import admin from 'firebase-admin';
 import { verifyHiveAuth } from './hiveAuth.js';
+import {
+  formatTipsForPrompt,
+  searchKnowledgeTips,
+  submitKnowledgeFeedback,
+} from './prosKnowledge.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -816,8 +821,18 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         userText = '',
         messages = [],
         attachment = null,
+        packId = 'property',
         model = process.env.GROK_DIAGNOSE_MODEL || process.env.EXPO_PUBLIC_GROK_MODEL || 'grok-2-vision-1212',
       } = req.body || {};
+
+      const tips = await searchKnowledgeTips(db, {
+        companyId: membership.companyId,
+        query: userText,
+        packId,
+        limit: 5,
+      });
+      const tipsContext = formatTipsForPrompt(tips);
+      const tipIdsUsed = tips.map((t) => t.id);
 
       const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
 
@@ -829,7 +844,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
       const system = [
         String(systemPrompt || '').slice(0, 4000),
         localContext ? `\nLocal library context:\n${String(localContext).slice(0, 2500)}` : '',
-        '\nCRITICAL: Stay on the equipment the user named. Prefer local library context when it matches.',
+        tipsContext,
+        '\nCRITICAL: Stay on the equipment the user named. Prefer local library + field knowledge when they match.',
       ].join('');
 
       const userContent = [];
@@ -857,13 +873,15 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         type: 'diagnose_ai',
         actorUid: user.uid,
         actorEmail: user.email,
-        message: `Diagnose AI (${resolved.source})`,
+        message: `Diagnose AI (${resolved.source}) tips=${tipIdsUsed.length}`,
       });
 
       return res.json({
         reply,
         source: resolved.source,
         provider: 'grok',
+        tipIdsUsed,
+        tipsUsed: tips.map((t) => ({ id: t.id, scope: t.scope, text: t.text })),
       });
     } catch (err) {
       console.error('[pros/diagnose]', err);
@@ -871,6 +889,91 @@ export function registerProsRoutes(app, db, { isPlatformAdmin } = {}) {
         error: err?.message || 'Diagnose AI failed',
         code: 'diagnose_failed',
       });
+    }
+  });
+
+  // Field knowledge tips for RAG / browsing
+  app.get('/api/pros/knowledge/tips', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const tips = await searchKnowledgeTips(db, {
+        companyId: membership.companyId,
+        query: String(req.query?.q || ''),
+        packId: req.query?.packId || undefined,
+        limit: Number(req.query?.limit) || 8,
+      });
+      return res.json({ tips });
+    } catch (err) {
+      console.error('[pros/knowledge tips]', err);
+      return res.status(500).json({ error: 'Failed to search tips' });
+    }
+  });
+
+  // Did-it-work feedback → shop playbook + optional anonymous network
+  app.post('/api/pros/knowledge/feedback', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company to share field knowledge' });
+      }
+
+      const {
+        outcome,
+        userQuery = '',
+        assistantReply = '',
+        packId = 'property',
+        source = 'local',
+        matchedFaultIds = [],
+        tipIdsUsed = [],
+        messageId = null,
+        equipment = [],
+        equipmentSymptom = '',
+        fixSummary = '',
+        shareWithTeam = true,
+        shareAnonymously = true,
+        tipText = '',
+      } = req.body || {};
+
+      if (!['worked', 'didnt'].includes(outcome)) {
+        return res.status(400).json({ error: 'outcome must be worked or didnt' });
+      }
+
+      const result = await submitKnowledgeFeedback(db, FieldValue(), {
+        companyId: membership.companyId,
+        user,
+        outcome,
+        userQuery,
+        assistantReply,
+        packId,
+        source,
+        matchedFaultIds,
+        tipIdsUsed,
+        messageId,
+        equipment,
+        equipmentSymptom,
+        fixSummary,
+        shareWithTeam,
+        shareAnonymously,
+        tipText,
+      });
+
+      await logActivity(db, membership.companyId, {
+        type: 'knowledge_feedback',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Field feedback: ${outcome}${result.companyTipId ? ' (saved tip)' : ''}`,
+      });
+
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error('[pros/knowledge feedback]', err);
+      return res.status(500).json({ error: 'Failed to save feedback' });
     }
   });
 }

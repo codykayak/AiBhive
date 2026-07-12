@@ -45,8 +45,9 @@ export function JoinTeamModal({
             <View className="flex-1 pr-3">
               <Text className="text-xl font-bold text-hive-mist">Join a Pros team?</Text>
               <Text className="mt-2 text-sm leading-5 text-hive-steel">
-                Do you have an invite code from your shop? Enter it to sync jobs. Or skip and use the
-                app solo.
+                Do you have an invite code from your shop? Enter it to sync jobs and share field tips
+                with your team. Tips can also strengthen Diagnose anonymously for every shop on the
+                network — no customer or personal details leave your control.
               </Text>
             </View>
             <Pressable onPress={onSkip} hitSlop={12} accessibilityLabel="Close">

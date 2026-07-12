@@ -21,6 +21,7 @@ export type DiagnoseSource = 'local' | 'pros' | 'direct';
 export type DiagnoseReply = {
   reply: string;
   source: DiagnoseSource;
+  tipIdsUsed?: string[];
 };
 
 export { buildLocalDiagnosisReply } from './localReply';
@@ -51,7 +52,7 @@ async function askProsDiagnose(opts: {
   attachment?: ChatAttachment;
   localContext: string;
   isDiagnosis: boolean;
-}): Promise<string | null> {
+}): Promise<{ reply: string; tipIdsUsed: string[] } | null> {
   if (!API_BASE) return null;
   const res = await fetch(`${API_BASE}/api/pros/diagnose`, {
     method: 'POST',
@@ -63,6 +64,7 @@ async function askProsDiagnose(opts: {
       systemPrompt: buildSystemPrompt(opts.pack, opts.isDiagnosis),
       localContext: opts.localContext,
       userText: opts.userText,
+      packId: opts.pack.id,
       messages: opts.messages
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .slice(-8)
@@ -75,14 +77,15 @@ async function askProsDiagnose(opts: {
   });
 
   if (res.status === 402 || res.status === 403 || res.status === 503) {
-    // Billing / no company / no key — fall through to local.
     return null;
   }
   if (!res.ok) {
     return null;
   }
-  const data = (await res.json()) as { reply?: string };
-  return data.reply?.trim() || null;
+  const data = (await res.json()) as { reply?: string; tipIdsUsed?: string[] };
+  const reply = data.reply?.trim();
+  if (!reply) return null;
+  return { reply, tipIdsUsed: Array.isArray(data.tipIdsUsed) ? data.tipIdsUsed : [] };
 }
 
 /** Prefer Pros proxy (paid/trial company keys). Fall back to local pack library. */
@@ -117,7 +120,7 @@ export async function askGrokDetailed({
           isDiagnosis,
         });
         if (proxied) {
-          return { reply: proxied, source: 'pros' };
+          return { reply: proxied.reply, source: 'pros', tipIdsUsed: proxied.tipIdsUsed };
         }
       }
     } catch {
@@ -128,7 +131,7 @@ export async function askGrokDetailed({
   // 2) Optional direct key for local/dev builds only
   const key = apiKey || process.env.EXPO_PUBLIC_GROK_API_KEY || '';
   if (!key) {
-    return { reply: local.reply, source: 'local' };
+    return { reply: local.reply, source: 'local', tipIdsUsed: [] };
   }
 
   const history = messages
@@ -180,6 +183,7 @@ export async function askGrokDetailed({
       return {
         reply: `${local.reply}\n\n_(Grok unreachable — showing pack library result.)_`,
         source: 'local',
+        tipIdsUsed: [],
       };
     }
 
@@ -190,11 +194,13 @@ export async function askGrokDetailed({
     return {
       reply: data.choices?.[0]?.message?.content?.trim() || local.reply,
       source: 'direct',
+      tipIdsUsed: [],
     };
   } catch {
     return {
       reply: `${local.reply}\n\n_(Network error — pack library result.)_`,
       source: 'local',
+      tipIdsUsed: [],
     };
   }
 }

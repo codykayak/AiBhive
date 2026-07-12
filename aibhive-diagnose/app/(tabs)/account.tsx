@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Switch,
   Text,
   TextInput,
   View,
@@ -186,6 +187,29 @@ export default function AccountScreen() {
           />
           <View className="mt-3">
             <BigButton label="Save profile" onPress={() => void saveName()} />
+          </View>
+        </View>
+
+        <View className="mt-6 rounded-2xl border border-hive-amber/30 bg-hive-elevated p-4">
+          <Text className="text-base font-bold text-hive-mist">Field knowledge network</Text>
+          <Text className="mt-2 text-sm leading-5 text-hive-steel">
+            Like other apps, we share tips anonymously — no names, customers, or addresses — so every
+            shop using Diagnose gets stronger, faster field knowledge. Your team still keeps a private
+            shop playbook; the network only sees scrubbed tips.
+          </Text>
+          <View className="mt-4 flex-row items-center justify-between gap-3">
+            <View className="flex-1 pr-2">
+              <Text className="text-sm font-semibold text-hive-mist">Share anonymously</Text>
+              <Text className="mt-1 text-xs text-hive-steel">
+                Opt in so real-world fixes help other techs (and you get theirs back).
+              </Text>
+            </View>
+            <Switch
+              value={profile?.shareAnonymously !== false}
+              onValueChange={(v) => void saveProfile({ shareAnonymously: v })}
+              trackColor={{ false: theme.colors.border, true: `${theme.colors.amber}88` }}
+              thumbColor={profile?.shareAnonymously !== false ? theme.colors.amber : theme.colors.steel}
+            />
           </View>
         </View>
 
