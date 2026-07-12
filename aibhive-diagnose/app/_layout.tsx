@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/RootErrorBoundary';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
@@ -24,9 +25,9 @@ SplashScreen.preventAutoHideAsync();
 
 
 const DiagnoseTheme = {
-  ...DarkTheme,
+  ...(DarkTheme ?? {}),
   colors: {
-    ...DarkTheme.colors,
+    ...(DarkTheme?.colors ?? {}),
     primary: theme.colors.amber,
     background: theme.colors.bg,
     card: theme.colors.elevated,
@@ -81,11 +82,12 @@ export default function RootLayout() {
 
   // Intro splash intentionally disabled — expo-video was crashing Expo Go on launch.
   return (
-    <AuthProvider>
-      <NetworkProvider>
-        <PackProvider>
-          <ThemeProvider value={DiagnoseTheme}>
-            <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NetworkProvider>
+          <PackProvider>
+            <ThemeProvider value={DiagnoseTheme}>
+              <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
               <StatusBar style="light" />
               <OfflineIndicator />
               <Stack>
@@ -208,5 +210,6 @@ export default function RootLayout() {
         </PackProvider>
       </NetworkProvider>
     </AuthProvider>
+    </SafeAreaProvider>
   );
 }
