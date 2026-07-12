@@ -1,6 +1,7 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');
+const { expoGoManifestMiddleware } = require('./lib/expo-go-metro-middleware');
 
 const config = getDefaultConfig(__dirname);
 
@@ -19,4 +20,15 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-module.exports = withNativeWind(config, { input: './global.css' });
+const withWind = withNativeWind(config, { input: './global.css' });
+const priorEnhance = withWind.server?.enhanceMiddleware;
+
+withWind.server = {
+  ...withWind.server,
+  enhanceMiddleware: (middleware, metroServer) => {
+    const base = priorEnhance ? priorEnhance(middleware, metroServer) : middleware;
+    return expoGoManifestMiddleware(base);
+  },
+};
+
+module.exports = withWind;

@@ -175,6 +175,11 @@ async function main() {
   const bundleUrl = manifest?.launchAsset?.url || '';
 
   if (!bundleUrl) throw new Error('Manifest has no launchAsset.url');
+  if (bundleUrl.includes('transform.bytecode')) {
+    throw new Error(
+      'Manifest still advertises Hermes bytecode — Android Expo Go SDK 57 rejects self-hosted HBC'
+    );
+  }
   if (bundleUrl.includes(':8081')) {
     throw new Error(`Manifest advertises localhost port in bundle URL: ${bundleUrl}`);
   }
