@@ -4,6 +4,20 @@
  * Live published entries merge on top when available.
  */
 
+import { seedItemsForTopic } from '../../data/communalLibrarySeed.js';
+
+const EXPANDED_TOPICS = new Set([
+  'hieroglyphics',
+  'cuneiform',
+  'mud-flood',
+  'tartarian',
+  'orphan-trains',
+  'legal-research',
+  'homeopathic',
+  'mycology',
+  'quantum',
+]);
+
 export type SeedFinding = {
   id: string;
   topicId: string;
@@ -554,6 +568,9 @@ export const ARCHIVE_SEED_FINDINGS: SeedFinding[] = [
 ];
 
 export function getSeedFindingsForTopic(topicId: string): SeedFinding[] {
+  if (EXPANDED_TOPICS.has(topicId)) {
+    return seedItemsForTopic(topicId) as SeedFinding[];
+  }
   return ARCHIVE_SEED_FINDINGS.filter((f) => f.topicId === topicId);
 }
 
