@@ -7,6 +7,7 @@ export type KnowledgeFeedbackPayload = {
   packId: string;
   source?: string;
   tipIdsUsed?: string[];
+  matchedFaultIds?: string[];
   messageId?: string;
   equipment?: string[];
   equipmentSymptom?: string;

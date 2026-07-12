@@ -23,6 +23,7 @@ import {
 } from '@/components/JoinTeamModal';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
+import { fetchProsAiStatus, type ProsAiStatus } from '@/lib/diagnose/aiStatus';
 import { joinProsCompany } from '@/lib/jobs/prosSync';
 import { safeAlert } from '@/lib/safeAlert';
 
@@ -41,9 +42,23 @@ function formatAuthError(err: unknown): string {
   if (code === 'auth/unauthorized-domain') {
     return 'This domain isn’t authorized for Google sign-in yet.';
   }
+  if (code === 'auth/missing-client-id') {
+    return message || 'Google OAuth client ID is not configured for this build.';
+  }
   if (message) return message;
   if (code) return `Sign-in failed (${code}).`;
   return 'Sign-in failed. Try again.';
+}
+
+function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
+  if (!signedIn) return 'Sign in + join a team to unlock Pros AI.';
+  if (!status) return 'Could not load AI status (join a Pros team if you haven’t).';
+  if (status.aiEnabled) return `Pros AI on · ${status.provider || 'grok'} (${status.source})`;
+  if (status.billingStatus && !['trial', 'active'].includes(status.billingStatus)) {
+    return `Billing ${status.billingStatus} — pack library still works offline.`;
+  }
+  if (!status.configured) return 'No Grok key yet — manager adds keys at aibhive.com/pros.';
+  return 'Pros AI not ready.';
 }
 
 export default function AccountScreen() {
@@ -54,13 +69,26 @@ export default function AccountScreen() {
   const [joinVisible, setJoinVisible] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [aiStatus, setAiStatus] = useState<ProsAiStatus | null>(null);
   const promptedRef = useRef(false);
 
   useEffect(() => {
     if (profile?.displayName) setName(profile.displayName);
   }, [profile?.displayName]);
 
-  // After first successful sign-in, offer join-team code once (clean modal, no error).
+  useEffect(() => {
+    if (!user) {
+      setAiStatus(null);
+      return;
+    }
+    void (async () => {
+      const token = await getIdToken();
+      if (!token) return;
+      const status = await fetchProsAiStatus(token);
+      setAiStatus(status);
+    })();
+  }, [user, getIdToken]);
+
   useEffect(() => {
     if (!user || promptedRef.current) return;
     promptedRef.current = true;
@@ -118,6 +146,8 @@ export default function AccountScreen() {
       await markJoinPromptSkipped();
       setJoinVisible(false);
       safeAlert('Joined', 'You’re on the Pros roster. Jobs will sync when available.');
+      const status = await fetchProsAiStatus(token);
+      setAiStatus(status);
     } catch (err) {
       let msg = formatAuthError(err);
       try {
@@ -188,6 +218,13 @@ export default function AccountScreen() {
           <View className="mt-3">
             <BigButton label="Save profile" onPress={() => void saveName()} />
           </View>
+        </View>
+
+        <View className="mt-6 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+          <Text className="text-xs font-bold uppercase tracking-wider text-hive-amber">Pros AI</Text>
+          <Text className="mt-2 text-sm leading-5 text-hive-mist">
+            {aiStatusLabel(aiStatus, Boolean(user))}
+          </Text>
         </View>
 
         <View className="mt-6 rounded-2xl border border-hive-amber/30 bg-hive-elevated p-4">

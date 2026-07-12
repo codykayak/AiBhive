@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, router } from 'expo-router';
-import { Camera, MapPin, Send } from 'lucide-react-native';
+import { Camera, MapPin, Send, Stethoscope } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -17,6 +17,7 @@ import {
 import { BigButton } from '@/components/BigButton';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
+import { uploadProsImage } from '@/lib/diagnose/upload';
 import { pushJobNoteToPros, pushJobPhotoToPros, pushJobStatusToPros } from '@/lib/jobs/prosSync';
 import { loadJobs, upsertJob, type FieldJob, type JobStatus } from '@/lib/jobs/storage';
 
@@ -112,11 +113,10 @@ export default function JobDetailScreen() {
     if (result.canceled || !result.assets[0]) return;
 
     const asset = result.assets[0];
-    // Data URL works for local preview; Pros sync expects a URL — use data URI for now.
-    const url = asset.uri;
+    const localUrl = asset.uri;
     const photo = {
       id: `p-${Date.now()}`,
-      url,
+      url: localUrl,
       caption: '',
       createdAt: Date.now(),
     };
@@ -131,10 +131,34 @@ export default function JobDetailScreen() {
 
     const token = await getIdToken();
     if (token && job.cloudSynced && asset.base64) {
-      const dataUrl = `data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`;
-      const cloud = await pushJobPhotoToPros(token, job.id, dataUrl);
+      const uploaded = await uploadProsImage(
+        token,
+        asset.base64,
+        asset.mimeType || 'image/jpeg',
+        `jobs/${job.id}`
+      );
+      const photoUrl = uploaded?.url || localUrl;
+      const cloud = await pushJobPhotoToPros(token, job.id, photoUrl);
       if (cloud) setJob(cloud);
+      else if (uploaded?.url) {
+        const withUrl: FieldJob = {
+          ...next,
+          photos: (next.photos || []).map((p) =>
+            p.id === photo.id ? { ...p, url: uploaded.url } : p
+          ),
+        };
+        await upsertJob(withUrl);
+        setJob(withUrl);
+      }
     }
+  };
+
+  const openDiagnose = () => {
+    const prompt = [job.title, job.notes, job.adminNotes].filter(Boolean).join(' — ').slice(0, 280);
+    router.push({
+      pathname: '/diagnose-session',
+      params: { prompt, jobId: job.id },
+    });
   };
 
   return (
@@ -164,6 +188,15 @@ export default function JobDetailScreen() {
       {job.notes ? (
         <Text className="mt-4 text-sm leading-5 text-hive-steel">{job.notes}</Text>
       ) : null}
+
+      <View className="mt-6">
+        <BigButton
+          label="Diagnose this job"
+          subtitle="Open chat with job context — result saves as a note"
+          icon={<Stethoscope color={theme.colors.bg} size={22} />}
+          onPress={openDiagnose}
+        />
+      </View>
 
       <View className="mt-8">
         <Text className="mb-3 text-sm font-bold uppercase tracking-wider text-hive-steel">

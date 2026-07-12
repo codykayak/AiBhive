@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { TRADE_PACKS, getTradePack, type TradePack, type TradePackId } from '@/lib/packs';
 
 const STORAGE_KEY = 'aibhive.diagnose.activePack';
@@ -14,30 +15,58 @@ type PackContextValue = {
 
 const PackContext = createContext<PackContextValue | null>(null);
 
+function isPackId(value: unknown): value is TradePackId {
+  return value === 'pool' || value === 'electrical' || value === 'property';
+}
+
 export function PackProvider({ children }: { children: React.ReactNode }) {
+  const { profile, saveProfile } = useAuth();
   const [activePackId, setActivePackIdState] = useState<TradePackId>('pool');
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!cancelled && (stored === 'pool' || stored === 'electrical' || stored === 'property')) {
+        if (!cancelled && isPackId(stored)) {
           setActivePackIdState(stored);
+        } else if (!cancelled && isPackId(profile?.tradePack)) {
+          setActivePackIdState(profile.tradePack);
         }
       } catch {
         // Keep default pack if storage is unavailable.
+      } finally {
+        if (!cancelled) setHydrated(true);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [profile?.tradePack]);
 
-  const setActivePackId = useCallback((id: TradePackId) => {
-    setActivePackIdState(id);
-    void AsyncStorage.setItem(STORAGE_KEY, id);
-  }, []);
+  // When profile trade pack arrives after hydrate and storage was empty, adopt it once.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!isPackId(profile?.tradePack)) return;
+    void (async () => {
+      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      if (!stored && profile?.tradePack) {
+        setActivePackIdState(profile.tradePack);
+      }
+    })();
+  }, [hydrated, profile?.tradePack]);
+
+  const setActivePackId = useCallback(
+    (id: TradePackId) => {
+      setActivePackIdState(id);
+      void AsyncStorage.setItem(STORAGE_KEY, id);
+      if (profile?.tradePack !== id) {
+        void saveProfile({ tradePack: id });
+      }
+    },
+    [profile?.tradePack, saveProfile]
+  );
 
   const value = useMemo<PackContextValue>(
     () => ({

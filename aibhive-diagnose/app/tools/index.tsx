@@ -1,4 +1,4 @@
-import { BookOpen, Calculator, Cable, ListChecks, ScanSearch, Shield } from 'lucide-react-native';
+import { BookOpen, Calculator, Cable, ScanSearch, Shield, Users } from 'lucide-react-native';
 import { router, type Href } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -18,6 +18,13 @@ const TOOLS: Array<{
     subtitle: 'Search every common field failure',
     icon: BookOpen,
     color: theme.colors.amber,
+  },
+  {
+    href: '/tools/shop-tips' as Href,
+    title: 'Shop tips',
+    subtitle: 'Your Pros playbook + network tips',
+    icon: Users,
+    color: '#C4A574',
   },
   {
     href: '/tools/howtos' as Href,
@@ -85,7 +92,6 @@ export default function ToolsHubScreen() {
                 <Text className="text-lg font-bold text-hive-mist">{tool.title}</Text>
                 <Text className="mt-0.5 text-sm text-hive-steel">{tool.subtitle}</Text>
               </View>
-              <ListChecks color={theme.colors.steel} size={18} />
             </Pressable>
           );
         })}
