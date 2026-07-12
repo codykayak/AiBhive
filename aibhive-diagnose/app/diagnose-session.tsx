@@ -9,6 +9,7 @@ export default function DiagnoseSessionScreen() {
     <DiagnoseChat
       autoCamera={params.camera === '1'}
       initialPrompt={typeof params.prompt === 'string' ? params.prompt : undefined}
+      keyboardOffset={64}
     />
   );
 }

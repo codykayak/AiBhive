@@ -27,7 +27,9 @@ The user attached a photo of equipment. Respond with a structured field diagnosi
 Keep language concise for a tech on a job site.`
     : '';
 
-  return `${pack.systemPrompt}${diagnosisExtra}`;
+  return `${pack.systemPrompt}
+
+CRITICAL: Stay on the equipment the user named. If they say dishwasher, do not discuss pools, dryers, or unrelated gear unless they clearly ask. Prefer the local library context when it matches. If local context looks off-topic, ignore it and answer for the named equipment only.${diagnosisExtra}`;
 }
 
 export async function askGrok({

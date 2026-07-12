@@ -69,9 +69,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = useCallback(async () => {
     if (Platform.OS !== 'web') {
-      throw new Error('Google sign-in is available on web preview; native EAS build comes next.');
+      const err = new Error(
+        'Google sign-in on phone needs the EAS build. For now, open Account on web preview, or ask your manager to add you at aibhive.com/pros.'
+      );
+      (err as Error & { code?: string }).code = 'auth/native-pending';
+      throw err;
     }
-    await signInWithPopup(auth, googleProvider);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      // Re-throw with a guaranteed message so Alerts never show blank.
+      if (err instanceof Error && err.message?.trim()) throw err;
+      const wrapped = new Error('Sign-in failed. Please try again.');
+      const code = (err as { code?: string })?.code;
+      if (code) (wrapped as Error & { code?: string }).code = code;
+      throw wrapped;
+    }
   }, []);
 
   const signOut = useCallback(async () => {

@@ -222,8 +222,20 @@ export const APPLIANCE_CORPUS: ApplianceDoc[] = [
 ];
 
 export function searchApplianceCorpus(query: string): Array<ApplianceDoc & { score: number }> {
-  const q = query.trim().toLowerCase();
+  const q = query.trim().toLowerCase().replace(/[’']/g, '');
   if (!q) return APPLIANCE_CORPUS.map((d) => ({ ...d, score: 0 }));
+
+  const applianceHints: Array<{ key: string; terms: string[] }> = [
+    { key: 'dishwasher', terms: ['dishwasher', 'dish washer'] },
+    { key: 'washer', terms: ['washer', 'washing machine', 'cabrio', 'front load'] },
+    { key: 'dryer', terms: ['dryer'] },
+    { key: 'fridge', terms: ['fridge', 'refrigerator', 'freezer', 'ice maker'] },
+    { key: 'disposal', terms: ['disposal', 'insinkerator'] },
+    { key: 'water-heater', terms: ['water heater', 'tankless'] },
+    { key: 'hvac', terms: ['thermostat', 'hvac', 'filter', 'furnace'] },
+    { key: 'range', terms: ['oven', 'range', 'stove', 'microwave'] },
+  ];
+  const hinted = applianceHints.filter((h) => h.terms.some((t) => q.includes(t))).map((h) => h.key);
 
   return APPLIANCE_CORPUS.map((doc) => {
     const blob = [
@@ -232,13 +244,14 @@ export function searchApplianceCorpus(query: string): Array<ApplianceDoc & { sco
       ...doc.models,
       ...doc.codes.map((c) => `${c.code} ${c.meaning}`),
       ...doc.snippets,
+      ...doc.relatedFaultIds,
     ]
       .join(' ')
       .toLowerCase();
     let score = 0;
     if (blob.includes(q)) score += 8;
     for (const part of q.split(/\s+/)) {
-      if (part.length > 1 && blob.includes(part)) score += 1;
+      if (part.length > 2 && blob.includes(part)) score += 1;
     }
     for (const m of doc.models) {
       if (q.includes(m.toLowerCase())) score += 5;
@@ -246,6 +259,49 @@ export function searchApplianceCorpus(query: string): Array<ApplianceDoc & { sco
     for (const c of doc.codes) {
       if (q.includes(c.code.toLowerCase().replace(/\s+/g, ''))) score += 6;
     }
+
+  // Prefer corpus docs that match the named appliance; bury others.
+    if (hinted.length) {
+      const wantsDishwasher = hinted.includes('dishwasher');
+      const wantsWasher = hinted.includes('washer');
+      const isDishwasherDoc = doc.id.includes('dishwasher') || blob.includes('dishwasher');
+      const isWasherDoc =
+        (doc.id.includes('washer') || blob.includes('washer')) && !isDishwasherDoc;
+      const isDryerDoc = doc.id.includes('dryer') || blob.includes('dryer');
+
+      let familyHit = false;
+      if (wantsDishwasher && isDishwasherDoc) familyHit = true;
+      if (wantsWasher && isWasherDoc) familyHit = true;
+      if (hinted.includes('dryer') && isDryerDoc) familyHit = true;
+      if (hinted.includes('fridge') && (doc.id.includes('fridge') || blob.includes('fridge'))) {
+        familyHit = true;
+      }
+      if (hinted.includes('disposal') && (doc.id.includes('disposal') || blob.includes('disposal'))) {
+        familyHit = true;
+      }
+      if (
+        hinted.includes('water-heater') &&
+        (doc.id.includes('wh') || blob.includes('water heater'))
+      ) {
+        familyHit = true;
+      }
+      if (hinted.includes('hvac') && (doc.category.includes('hvac') || blob.includes('thermostat'))) {
+        familyHit = true;
+      }
+      if (
+        hinted.includes('range') &&
+        (doc.id.includes('range') || doc.id.includes('microwave') || blob.includes('oven'))
+      ) {
+        familyHit = true;
+      }
+
+      if (familyHit) score += 15;
+      else score -= 12;
+
+      // Extra: dishwasher query must not surface washer/dryer corpus.
+      if (wantsDishwasher && (isWasherDoc || isDryerDoc)) score -= 20;
+    }
+
     return { ...doc, score };
   })
     .filter((d) => d.score > 0)
