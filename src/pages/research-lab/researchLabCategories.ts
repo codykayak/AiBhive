@@ -81,7 +81,7 @@ export const RESEARCH_LAB_CATEGORIES: ResearchLabCategory[] = [
       description:
         'AiBhive Research Lab for historical and ancient studies: multi-agent Fable Scrape, OCR, cuneiform/hieroglyph-aware translation, RAG Q&A, and community library publishing for shared discoveries.',
       keywords:
-        'historical research AI, ancient archives OCR, cuneiform translation AI, Tartaria research tools, multi-agent archive scrape, AiBhive Research Lab',
+        'historical research AI, ancient archives OCR, cuneiform translation AI, Nag Hammadi Gnostic texts, Tartaria research tools, multi-agent archive scrape, AiBhive Research Lab',
     },
     pillars: [
       {
@@ -113,7 +113,13 @@ export const RESEARCH_LAB_CATEGORIES: ResearchLabCategory[] = [
     ],
     craft: {
       label: 'Interactive · Archive brief builder',
-      chips: ['World fair photographs', 'Sanborn fire maps', 'Cuneiform tablets', 'Cathedral floor plans'],
+      chips: [
+        'World fair photographs',
+        'Sanborn fire maps',
+        'Cuneiform tablets',
+        'Cathedral floor plans',
+        'Nag Hammadi Gnostic texts',
+      ],
       responses: {
         'World fair photographs':
           'Pipeline: Fable Scrape (crawl ≤20 pages) → Vision OCR on plates → Translator to English → publish captions to community library.\nAgents: Director selects fairgrounds imagery · Vision extracts engraved captions · Grok synthesizes timeline notes.\nHive credits: billed per scrape/OCR/translate step — publish strengthens the shared corpus.',
@@ -123,6 +129,8 @@ export const RESEARCH_LAB_CATEGORIES: ResearchLabCategory[] = [
           'Pipeline: High-res tablet photos → OCR Lab → Translator (ancient → modern) → ask smart questions in workspace.\nAgents: Vision for wedge patterns · Translator for gloss · Grok for comparative notes across tablets.\nPublish: share transliterations to grow the communal ancient-text pool.',
         'Cathedral floor plans':
           'Pipeline: Harvest plan plates → OCR dimensions/labels → translate Latin notes → community library entry.\nAgents: Director finds plan sheets · Vision extracts measurements · Grok drafts architectural summary.\nWhy AiBhive: one credit-metered stack instead of juggling five vendor tabs.',
+        'Nag Hammadi Gnostic texts':
+          'Pipeline: Archive.org / gnosis.org harvest of Robinson English editions + Coptic plates → text-corpus or Vision OCR → translate glosses → publish to Communal Library · Nag Hammadi & Gnostic.\nAgents: Director picks tractates (Thomas, Apocryphon of John, Thunder…) · Vision reads Coptic leaves · Grok tracks which NHC citations remain unindexed.\nDig packs: GET /api/research-lab/nag-hammadi-finds — goal is word-searchable full-text for every published tractate.',
       },
     },
     faqs: [

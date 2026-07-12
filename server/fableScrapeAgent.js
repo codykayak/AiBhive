@@ -15,6 +15,10 @@ import { scanPage, crawlSite, downloadAsset } from './fableScrape.js';
 import { runChat, runVision, extractJson, PROVIDERS } from './fableScrapeProviders.js';
 import { MAX_HARVEST_FINDINGS, MAX_TRANSLATE_CHARS } from './costProtection.js';
 import { getTartarianStarterBrief, shouldInjectTartarianFinds } from './tartarianFindsDirectory.js';
+import {
+  getNagHammadiStarterBrief,
+  shouldInjectNagHammadiFinds,
+} from './nagHammadiFindsDirectory.js';
 import { resolveStartUrlFromQuery, resolveArchiveStartUrl, scorePrimarySourceImage, buildEmptyHarvestAdvice } from './drocScout.js';
 
 const DEFAULT_ROLES = {
@@ -153,6 +157,9 @@ async function harvestFromTextCorpus({
     `{"strategy":"one sentence","mode":"text-corpus","selections":[{"title":"...","reason":"why promising","quote":"verbatim excerpt","sourceUrl":"https://...","confidence":0-1}]}\n\n` +
     (shouldInjectTartarianFinds(prompt)
       ? `${getTartarianStarterBrief({ maxChars: 1800 })}\n\nUse directory angles only as prioritization hints — still cite only corpus evidence.\n\n`
+      : '') +
+    (shouldInjectNagHammadiFinds(prompt)
+      ? `${getNagHammadiStarterBrief({ maxChars: 1800 })}\n\nPrefer NHC citations and published edition URLs from the directory — still cite only corpus evidence.\n\n`
       : '') +
     formatCorpusForPrompt(chunks);
 

@@ -31,6 +31,7 @@ const KNOWN_TOPICS = new Set([
   'sound-healing',
   'alchemy',
   'ley-lines',
+  'nag-hammadi',
   'general',
 ]);
 
@@ -114,6 +115,10 @@ export function inferTopicId({ prompt, title, text } = {}) {
     [/frequenc|sound.?heal|acoust/, 'sound-healing'],
     [/alchem|emblem.?book/, 'alchemy'],
     [/ley.?line|geomanc/, 'ley-lines'],
+    [
+      /nag.?hammadi|gnostic|gospel.?of.?thomas|apocryphon.?of.?john|gospel.?of.?philip|valentinian|sethian|pistis.?sophia|thunder.?perfect|trimorphic|pleroma/,
+      'nag-hammadi',
+    ],
   ];
   for (const [re, id] of rules) {
     if (re.test(hay)) return id;

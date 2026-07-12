@@ -59,6 +59,11 @@ import {
   getTartarianFindsDirectory,
   getTartarianStarterBrief,
 } from './tartarianFindsDirectory.js';
+import {
+  getNagHammadiDigPacks,
+  getNagHammadiFindsDirectory,
+  getNagHammadiStarterBrief,
+} from './nagHammadiFindsDirectory.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -594,6 +599,27 @@ export function registerResearchLabRoutes(app, db) {
       topicId: 'tartarian',
       hint:
         'Scout mode: for vague questions present 3 digs with paste-ready URLs + probability, then ask A/B/C. Never invent quotes. Chron Am = search-results URLs only.',
+    });
+  });
+
+  /** Nag Hammadi / Gnostic tractate dig packs for assistants & harvest. */
+  app.get('/api/research-lab/nag-hammadi-finds', (req, res) => {
+    const maxChars = Math.min(28000, Math.max(2000, Number(req.query.maxChars) || 14000));
+    const brief = req.query.brief === '1' || req.query.brief === 'true';
+    const digPacks = getNagHammadiDigPacks();
+    const markdown = brief
+      ? getNagHammadiStarterBrief({ maxChars: Math.min(maxChars, 5500) })
+      : getNagHammadiFindsDirectory({ maxChars });
+    return res.json({
+      ok: true,
+      brief,
+      chars: markdown.length,
+      markdown,
+      digPacks,
+      topicId: 'nag-hammadi',
+      tractateCount: 45,
+      hint:
+        'Scout mode: offer Robinson English / Gospel of Thomas / Pistis Sophia Mead digs with paste-ready URLs, then ask A/B/C. Publish to topic nag-hammadi for word indexing. Never invent Coptic readings.',
     });
   });
 

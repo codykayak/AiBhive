@@ -15,7 +15,8 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Research Lab](https://aibhive.com/research-lab): Multi-agent research tools — scrape, OCR, translate, Grok synthesis, community library
 - [Research tools workspace](https://aibhive.com/research-lab/workspace): Signed-in Research Lab workbench
 - [Communal Library](https://aibhive.com/research-lab/communal-library): Shared 3D knowledge map and community-sourced corpora
-- [Research Lab · Historical & Ancient](https://aibhive.com/research-lab/historical-ancient): Archive harvest, ancient scripts, community corpus
+- [Nag Hammadi & Gnostic](https://aibhive.com/research-lab/communal-library/nag-hammadi): Complete NHL tractate catalog for harvest and word indexing
+- [Research Lab · Historical & Ancient](https://aibhive.com/research-lab/historical-ancient): Archive harvest, ancient scripts, Nag Hammadi / Gnostic texts, community corpus
 - [Research Lab · Medical & Holistic](https://aibhive.com/research-lab/medical-holistic): Literature, protocols, OCR, shared clinical knowledge packs
 - [Research Lab · Legal Findings](https://aibhive.com/research-lab/legal-findings): Docket/exhibit OCR, synthesis, public finding packs
 - [Research Lab · Academia & Scholarly](https://aibhive.com/research-lab/academia-scholarly): Corpora, literature synthesis, open scholarly datasets

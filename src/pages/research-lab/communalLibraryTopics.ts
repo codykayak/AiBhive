@@ -152,7 +152,7 @@ export const COMMUNAL_TOPICS: CommunalTopic[] = [
     docs: 1490,
     blurb: 'Modern ↔ historical script pipelines with community-corrected glossaries.',
     position: [1.0, 0.2, 0.0],
-    links: ['hieroglyphics', 'cuneiform', 'academia'],
+    links: ['hieroglyphics', 'cuneiform', 'academia', 'nag-hammadi'],
     hue: 35,
   },
   {
@@ -197,7 +197,7 @@ export const COMMUNAL_TOPICS: CommunalTopic[] = [
     docs: 529,
     blurb: 'Emblem books, laboratory notes, and symbolic lexicon translations.',
     position: [-2.6, 0.4, -1.4],
-    links: ['botanicals', 'translation', 'academia'],
+    links: ['botanicals', 'translation', 'academia', 'nag-hammadi'],
     hue: 50,
   },
   {
@@ -208,6 +208,16 @@ export const COMMUNAL_TOPICS: CommunalTopic[] = [
     position: [2.4, 0.8, 1.6],
     links: ['star-forts', 'ancient-maps', 'cathedral'],
     hue: 70,
+  },
+  {
+    id: 'nag-hammadi',
+    label: 'Nag Hammadi & Gnostic',
+    docs: 52,
+    blurb:
+      'Complete Nag Hammadi tractate catalog — Coptic plates, English editions, and word-indexed Gnostic scriptures.',
+    position: [-0.6, -0.2, 1.4],
+    links: ['translation', 'alchemy', 'academia', 'hieroglyphics'],
+    hue: 45,
   },
 ];
 
