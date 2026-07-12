@@ -154,6 +154,7 @@ async function main() {
         CI: '1',
         EXPO_NO_TELEMETRY: '1',
         EXPO_NO_METRO_LAZY: '1',
+        EXPO_TUNNEL_SUBDOMAIN: process.env.EXPO_TUNNEL_SUBDOMAIN || 'aibhive-diagnose8081',
       },
       stdio: ['ignore', 'inherit', 'inherit'],
     }
@@ -163,6 +164,13 @@ async function main() {
   console.log('Metro ready — waiting for tunnel URL…');
 
   const { expUrl } = await waitForTunnelUrl();
+  const host = tunnelHostFromExpUrl(expUrl);
+  if (host.includes('_')) {
+    console.warn(
+      '⚠ Tunnel hostname contains "_" — Android Expo Go may fail to open. Restart dev:mobile to get a new hostname.'
+    );
+  }
+
   const manifest = await fetchAndroidManifest();
   const bundleUrl = manifest?.launchAsset?.url || '';
 
