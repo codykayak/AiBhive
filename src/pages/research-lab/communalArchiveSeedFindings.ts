@@ -2,6 +2,7 @@
  * Seed archive findings for Communal Library topic pages.
  * Images are cached under /public/communal-archive (public-domain Commons plates).
  * Live published entries merge on top when available.
+ * Nine lattice topics use 10-plate packs from communalLibrarySeed.js; others keep 2 curated seeds.
  */
 
 import { seedItemsForTopic } from '../../data/communalLibrarySeed.js';
