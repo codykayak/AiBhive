@@ -1,5 +1,5 @@
 import { WifiOff } from 'lucide-react-native';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { useNetwork } from '@/contexts/NetworkContext';
 import { theme } from '@/constants/theme';
@@ -11,9 +11,26 @@ export function OfflineIndicator() {
   if (!offline) return null;
 
   return (
-    <View className="flex-row items-center justify-center gap-2 bg-hive-danger/90 px-4 py-2">
+    <View style={styles.banner}>
       <WifiOff color={theme.colors.mist} size={16} strokeWidth={2.5} />
-      <Text className="text-sm font-semibold text-hive-mist">Offline — local pack guidance only</Text>
+      <Text style={styles.text}>Offline — local pack guidance only</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(220, 70, 70, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  text: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: theme.colors.mist,
+  },
+});

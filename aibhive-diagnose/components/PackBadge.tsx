@@ -1,5 +1,5 @@
 import { Waves, Wrench, Zap } from 'lucide-react-native';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { TradePack } from '@/lib/packs';
 import { theme } from '@/constants/theme';
@@ -10,13 +10,14 @@ export function PackBadge({ pack, compact = false }: { pack: TradePack; compact?
 
   return (
     <View
-      className={`flex-row items-center gap-2 rounded-full border px-3 ${compact ? 'py-1' : 'py-1.5'}`}
-      style={{ borderColor: pack.accentColor, backgroundColor: `${pack.accentColor}22` }}
+      style={[
+        styles.badge,
+        compact ? styles.compact : styles.roomy,
+        { borderColor: pack.accentColor, backgroundColor: `${pack.accentColor}22` },
+      ]}
     >
       <Icon color={pack.accentColor} size={compact ? 14 : 16} strokeWidth={2.5} />
-      <Text className="font-semibold text-hive-mist" style={{ fontSize: compact ? 12 : 13 }}>
-        {pack.shortName} Pack
-      </Text>
+      <Text style={[styles.label, { fontSize: compact ? 12 : 13 }]}>{pack.shortName} Pack</Text>
     </View>
   );
 }
@@ -26,5 +27,21 @@ export function PackIcon({ pack, size = 28 }: { pack: TradePack; size?: number }
   return <Icon color={pack.accentColor || theme.colors.amber} size={size} strokeWidth={2.4} />;
 }
 
-/** Keep lucide named exports available for older imports. */
 export { Waves, Zap, Wrench };
+
+const styles = StyleSheet.create({
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  compact: { paddingVertical: 4 },
+  roomy: { paddingVertical: 6 },
+  label: {
+    fontWeight: '600',
+    color: theme.colors.mist,
+  },
+});

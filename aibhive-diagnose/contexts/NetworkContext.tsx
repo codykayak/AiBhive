@@ -16,11 +16,24 @@ export function NetworkProvider({ children }: { children: React.ReactNode }) {
   const [isInternetReachable, setIsInternetReachable] = useState<boolean | null>(true);
 
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setIsOnline(Boolean(state.isConnected));
-      setIsInternetReachable(state.isInternetReachable);
-    });
-    return unsubscribe;
+    let unsubscribe: (() => void) | undefined;
+    try {
+      unsubscribe = NetInfo.addEventListener((state) => {
+        setIsOnline(Boolean(state.isConnected));
+        setIsInternetReachable(state.isInternetReachable);
+      });
+    } catch {
+      // Wrong Expo Go SDK / missing native module — stay online so the app still boots.
+      setIsOnline(true);
+      setIsInternetReachable(true);
+    }
+    return () => {
+      try {
+        unsubscribe?.();
+      } catch {
+        // ignore
+      }
+    };
   }, []);
 
   const value = useMemo(

@@ -7,7 +7,6 @@
     "icon": "./assets/brand/aibhive-logo-mark.png",
     "scheme": "aibhivediagnose",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aibhive.diagnose",

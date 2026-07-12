@@ -7,7 +7,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import 'react-native-reanimated';
 
 import { ErrorBoundary } from '@/components/RootErrorBoundary';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
@@ -23,6 +22,7 @@ export const unstable_settings = {
 };
 
 SplashScreen.preventAutoHideAsync();
+
 
 const DiagnoseTheme = {
   ...DarkTheme,
