@@ -14,21 +14,15 @@ npm install
 npm run dev:mobile
 ```
 
-That starts Metro + a **Cloudflare** tunnel (more reliable than Expo’s built-in ngrok from cloud agents). In Expo Go, open the printed URL:
+That starts Metro + Expo’s official **exp.direct** tunnel (required for Android — Cloudflare HTTPS often fails with `Failed to download remote update`). Open the printed URL:
 
 ```text
-exp://<something>.trycloudflare.com:443
+exp://<something>-8081.exp.direct
 ```
 
 Or scan the QR printed / shared by the agent.
 
-> First open can take **30–90 seconds** while Metro builds the Hermes bundle (~13MB). If it spins longer than ~2 minutes, you likely have the wrong Expo Go SDK — install SDK 57 from expo.dev/go.
-
-Fallback (often flaky from cloud IPs):
-
-```bash
-npm run dev:mobile:expo-tunnel
-```
+> First open can take **30–60 seconds** while Metro builds the Hermes bundle. If Android shows `java.io.IOException: Failed to download remote update`, force-quit Expo Go, clear its cache, and scan a **fresh** QR (tunnel URLs change each restart). Install SDK 57 from [expo.dev/go](https://expo.dev/go).
 
 > Do **not** use `npm start` / `npm run dev` for Expo Go — those serve a static **web** preview on port 8082 for Cursor browser testing.
 

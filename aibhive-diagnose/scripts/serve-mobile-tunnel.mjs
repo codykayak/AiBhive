@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /**
- * Reliable Expo Go preview from cloud / remote agents.
+ * Expo Go preview from cloud / remote agents.
  *
- * Expo's built-in `--tunnel` (ngrok/exp.direct) often spins forever from cloud
- * IPs. This script:
- *   1. Kills stale cloudflared / Metro on :8081
- *   2. Opens a Cloudflare quick tunnel to localhost:8081
- *   3. Starts Metro once with EXPO_PACKAGER_PROXY_URL (must be set at boot)
- *   4. Verifies manifest locally AND through the live tunnel hostname
- *   5. Prints exp://…:443 + writes URL + QR PNG
+ * Uses Expo's official `--tunnel` (exp.direct / @expo/ws-tunnel). Android Expo Go
+ * expects HTTP bundle URLs on exp.direct — Cloudflare trycloudflare HTTPS :443
+ * often fails with "java.io.IOException: Failed to download remote update".
+ *
+ * Flow:
+ *   1. Kill stale Metro / tunnel processes on :8081
+ *   2. Start `expo start --tunnel` once
+ *   3. Read exp:// URL from /_expo/open (same as Expo CLI QR)
+ *   4. Verify manifest + bundle download through the live tunnel (required)
+ *   5. Print exp URL + QR PNG
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { createWriteStream, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = Number(process.env.PORT || 8081);
@@ -19,26 +22,13 @@ const ROOT = new URL('..', import.meta.url).pathname;
 const URL_FILE = '/tmp/aibhive-diagnose-expo-url.txt';
 const QR_FILE = '/opt/cursor/artifacts/aibhive-diagnose-expo-qr.png';
 
-function run(cmd, args, opts = {}) {
-  return spawn(cmd, args, {
-    cwd: ROOT,
-    env: {
-      ...process.env,
-      CI: '1',
-      EXPO_NO_TELEMETRY: '1',
-      EXPO_NO_METRO_LAZY: '1',
-      ...opts.env,
-    },
-    stdio: opts.stdio || ['ignore', 'pipe', 'pipe'],
-  });
-}
-
 function killStaleProcesses() {
-  spawnSync('pkill', ['-f', `cloudflared tunnel --url http://localhost:${PORT}`]);
+  spawnSync('pkill', ['-f', `expo start --tunnel --port ${PORT}`]);
   spawnSync('pkill', ['-f', `expo start --localhost --port ${PORT}`]);
+  spawnSync('pkill', ['-f', `cloudflared tunnel --url http://localhost:${PORT}`]);
 }
 
-async function waitForMetro(timeoutMs = 90000) {
+async function waitForMetro(timeoutMs = 120000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
@@ -55,100 +45,86 @@ async function waitForMetro(timeoutMs = 90000) {
   throw new Error('Metro did not become ready');
 }
 
-async function startCloudflared() {
-  killStaleProcesses();
-  await sleep(800);
-
-  const logPath = '/tmp/cloudflared-expo.log';
-  try {
-    unlinkSync(logPath);
-  } catch {
-    // ignore
-  }
-
-  const log = createWriteStream(logPath, { flags: 'wx' });
-  const child = spawn(
-    'cloudflared',
-    ['tunnel', '--url', `http://localhost:${PORT}`, '--no-autoupdate'],
-    { stdio: ['ignore', 'pipe', 'pipe'] }
-  );
-  child.stdout.pipe(log);
-  child.stderr.pipe(log);
-  child.stdout.on('data', (d) => process.stdout.write(d));
-  child.stderr.on('data', (d) => process.stderr.write(d));
-
+async function waitForTunnelUrl(timeoutMs = 120000) {
   const start = Date.now();
-  while (Date.now() - start < 60000) {
+  while (Date.now() - start < timeoutMs) {
     try {
-      const text = readFileSync(logPath, 'utf8');
-      if (!text.includes('Your quick Tunnel has been created')) {
-        await sleep(500);
+      const res = await fetch(`http://localhost:${PORT}/_expo/open?platform=android`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) {
+        await sleep(1000);
         continue;
       }
-      const matches = [...text.matchAll(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/g)];
-      const url = matches.at(-1)?.[0];
-      if (url) {
-        return { url, child };
+      const data = await res.json();
+      const expUrl = data?.url;
+      if (typeof expUrl === 'string' && expUrl.startsWith('exp://')) {
+        return { expUrl, runtime: data.runtime };
       }
     } catch {
-      // ignore read races while log is being written
-    }
-    await sleep(500);
-  }
-  child.kill('SIGTERM');
-  throw new Error('cloudflared did not publish a live trycloudflare.com URL');
-}
-
-async function verifyManifest(proxyUrl) {
-  const host = proxyUrl.replace(/^https:\/\//, '');
-
-  const localRes = await fetch('http://localhost:8081/', {
-    headers: { 'expo-platform': 'ios' },
-  });
-  if (!localRes.ok) throw new Error(`Local manifest request failed: ${localRes.status}`);
-  const manifest = await localRes.json();
-  const bundleUrl = manifest?.launchAsset?.url || '';
-
-  if (bundleUrl.includes(':8081')) {
-    throw new Error(
-      `Manifest still advertises :8081 (Expo Go will fail instantly). Got: ${bundleUrl}`
-    );
-  }
-  if (!bundleUrl.includes(host)) {
-    throw new Error(`Manifest bundle URL missing tunnel host. Got: ${bundleUrl}`);
-  }
-
-  const remoteRes = await fetchRemoteManifest(host);
-  if (remoteRes) {
-    const remoteBundle = remoteRes?.launchAsset?.url || '';
-    if (!remoteBundle.includes(host) || remoteBundle.includes(':8081')) {
-      console.warn(`Remote manifest check failed: ${remoteBundle || '(empty)'}`);
-    }
-  } else {
-    console.warn(
-      'Could not reach tunnel from this VM yet (DNS may still propagate). Local manifest looks correct — try the QR from your phone.'
-    );
-  }
-
-  return bundleUrl;
-}
-
-async function fetchRemoteManifest(host, attempts = 8) {
-  for (let i = 0; i < attempts; i += 1) {
-    try {
-      const remoteRes = await fetch(`https://${host}/`, {
-        headers: { 'expo-platform': 'ios' },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (remoteRes.ok) {
-        return remoteRes.json();
-      }
-    } catch {
-      // DNS / tunnel may need a few seconds after cloudflared starts.
+      // tunnel may still be connecting
     }
     await sleep(1500);
   }
-  return null;
+  throw new Error('Expo tunnel URL was not ready (/_expo/open never returned exp://…)');
+}
+
+async function fetchAndroidManifest() {
+  const res = await fetch(`http://localhost:${PORT}/`, {
+    headers: { 'expo-platform': 'android' },
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) throw new Error(`Local Android manifest failed: ${res.status}`);
+  return res.json();
+}
+
+function tunnelHostFromExpUrl(expUrl) {
+  const parsed = new URL(expUrl);
+  return parsed.hostname;
+}
+
+async function verifyRemoteTunnel(expUrl, bundleUrl) {
+  const host = tunnelHostFromExpUrl(expUrl);
+  const attempts = 20;
+
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const manifestRes = await fetch(`http://${host}/`, {
+        headers: { 'expo-platform': 'android' },
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!manifestRes.ok) throw new Error(`manifest HTTP ${manifestRes.status}`);
+
+      const remoteManifest = await manifestRes.json();
+      const remoteBundle = remoteManifest?.launchAsset?.url || '';
+      if (!remoteBundle.includes(host)) {
+        throw new Error(`remote manifest missing tunnel host (${remoteBundle || 'empty'})`);
+      }
+      if (remoteBundle.includes(':8081')) {
+        throw new Error(`remote manifest still has :8081 (${remoteBundle})`);
+      }
+
+      const bundleRes = await fetch(bundleUrl.replace(/^https:/, 'http:'), {
+        signal: AbortSignal.timeout(180000),
+      });
+      if (!bundleRes.ok) throw new Error(`bundle HTTP ${bundleRes.status}`);
+      const buf = await bundleRes.arrayBuffer();
+      if (buf.byteLength < 500_000) {
+        throw new Error(`bundle too small (${buf.byteLength} bytes)`);
+      }
+
+      return { host, bytes: buf.byteLength };
+    } catch (err) {
+      if (i === attempts - 1) {
+        throw new Error(
+          `Tunnel not reachable externally after ${attempts} tries — Android will fail to download. Last: ${err.message}`
+        );
+      }
+      await sleep(2000);
+    }
+  }
+
+  throw new Error('verifyRemoteTunnel fell through');
 }
 
 async function writeQrPng(expUrl) {
@@ -162,44 +138,63 @@ async function writeQrPng(expUrl) {
 }
 
 async function main() {
-  console.log('Opening Cloudflare tunnel (Metro will start after URL is ready)…');
-  const { url: cfUrl, child: cf } = await startCloudflared();
-  console.log(`Tunnel: ${cfUrl}`);
+  killStaleProcesses();
+  await sleep(1000);
 
-  console.log('Starting Metro with EXPO_PACKAGER_PROXY_URL…');
-  const metro = run('npx', ['expo', 'start', '--localhost', '--port', String(PORT)], {
-    env: { EXPO_PACKAGER_PROXY_URL: cfUrl },
-    stdio: ['ignore', 'inherit', 'inherit'],
-  });
+  console.log('Starting Metro with Expo official tunnel (exp.direct)…');
+  console.log('(Android needs HTTP exp.direct — not Cloudflare HTTPS :443)\n');
+
+  const metro = spawn(
+    'npx',
+    ['expo', 'start', '--tunnel', '--port', String(PORT)],
+    {
+      cwd: ROOT,
+      env: {
+        ...process.env,
+        CI: '1',
+        EXPO_NO_TELEMETRY: '1',
+        EXPO_NO_METRO_LAZY: '1',
+      },
+      stdio: ['ignore', 'inherit', 'inherit'],
+    }
+  );
+
   await waitForMetro();
+  console.log('Metro ready — waiting for tunnel URL…');
 
-  const bundleUrl = await verifyManifest(cfUrl);
-  const host = cfUrl.replace(/^https:\/\//, '');
-  const expUrl = `exp://${host}:443`;
+  const { expUrl } = await waitForTunnelUrl();
+  const manifest = await fetchAndroidManifest();
+  const bundleUrl = manifest?.launchAsset?.url || '';
+
+  if (!bundleUrl) throw new Error('Manifest has no launchAsset.url');
+  if (bundleUrl.includes(':8081')) {
+    throw new Error(`Manifest advertises localhost port in bundle URL: ${bundleUrl}`);
+  }
+
+  console.log(`Tunnel URL: ${expUrl}`);
+  console.log('Verifying Android can download manifest + bundle through tunnel…');
+
+  const { host, bytes } = await verifyRemoteTunnel(expUrl, bundleUrl);
+
   writeFileSync(URL_FILE, `${expUrl}\n`);
-
   const qrPath = await writeQrPng(expUrl);
 
   console.log('');
   console.log('════════════════════════════════════════════════════');
   console.log('  AiBhive Diagnose — Expo Go (SDK 57)');
   console.log(`  Open:   ${expUrl}`);
-  console.log(`  Bundle: ${bundleUrl.slice(0, 72)}…`);
+  console.log(`  Host:   ${host} (HTTP exp.direct)`);
+  console.log(`  Bundle: ${Math.round(bytes / 1024 / 1024)}MB verified`);
   if (qrPath) console.log(`  QR:     ${qrPath}`);
   console.log('  Install SDK 57 Expo Go: https://expo.dev/go');
-  console.log('  First load can take 30–90s while the bundle builds.');
-  console.log('  Force-quit Expo Go if you had an old tunnel URL open.');
+  console.log('  Android: Enter URL manually in Expo Go if QR fails.');
+  console.log('  First load ~30–60s. Force-quit Expo Go before scanning.');
   console.log('════════════════════════════════════════════════════');
   console.log('');
 
   const shutdown = () => {
     try {
       metro.kill('SIGTERM');
-    } catch {
-      // ignore
-    }
-    try {
-      cf.kill('SIGTERM');
     } catch {
       // ignore
     }
