@@ -170,6 +170,7 @@ function AppShell() {
   const isAdminRoute = pathname.startsWith('/admin');
   const isProsAdminRoute = pathname.startsWith('/pros/app');
   const isProsLandingRoute = pathname === '/pros';
+  const isHomeworkRoute = pathname.startsWith('/homework');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
