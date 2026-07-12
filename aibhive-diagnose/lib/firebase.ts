@@ -1,5 +1,5 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAFAut5GHmLDDMM0HTFQ_Z_9qFUkZ6eBio',
@@ -14,15 +14,27 @@ const firebaseConfig = {
     process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '1:241519356033:web:a65cb593ca7ddc2d680580',
 };
 
-function createAuth() {
+function getOrCreateApp(): FirebaseApp {
+  return getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
+}
+
+/** Lazy auth — never throw during module load (kills Expo Go instantly). */
+function createAuth(): Auth | null {
   try {
-    const app = getApps().length ? getApps()[0]! : initializeApp(firebaseConfig);
-    return getAuth(app);
+    return getAuth(getOrCreateApp());
   } catch (err) {
-    console.warn('[firebase] auth init failed', err);
-    throw err;
+    console.warn('[firebase] auth init failed — continuing offline-only', err);
+    return null;
   }
 }
 
-export const auth = createAuth();
+let authInstance: Auth | null | undefined;
+
+export function getDiagnoseAuth(): Auth | null {
+  if (authInstance === undefined) {
+    authInstance = createAuth();
+  }
+  return authInstance;
+}
+
 export const googleProvider = new GoogleAuthProvider();

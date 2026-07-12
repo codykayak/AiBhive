@@ -9,7 +9,7 @@ import {
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
-import { auth, googleProvider } from '@/lib/firebase';
+import { getDiagnoseAuth, googleProvider } from '@/lib/firebase';
 
 const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
 
@@ -55,6 +55,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const auth = getDiagnoseAuth();
+    if (!auth) {
+      void readLocalProfile().then((local) => {
+        setProfile(
+          local
+            ? { ...local, shareAnonymously: local.shareAnonymously !== false }
+            : { displayName: 'Tech', photoUrl: null, tradePack: 'pool', shareAnonymously: true }
+        );
+        setLoading(false);
+      });
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, async (next) => {
       setUser(next);
       const local = await readLocalProfile();
@@ -86,6 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (err as Error & { code?: string }).code = 'auth/native-pending';
       throw err;
     }
+    const auth = getDiagnoseAuth();
+    if (!auth) {
+      throw new Error('Sign-in is unavailable offline. Open the web preview or try again later.');
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
@@ -98,7 +115,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await firebaseSignOut(auth);
+    const auth = getDiagnoseAuth();
+    if (auth) await firebaseSignOut(auth);
   }, []);
 
   const saveProfile = useCallback(
@@ -114,7 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setProfile(merged);
       await writeLocalProfile(merged);
-      if (auth.currentUser && merged.displayName) {
+      const auth = getDiagnoseAuth();
+      if (auth?.currentUser && merged.displayName) {
         try {
           await updateProfile(auth.currentUser, {
             displayName: merged.displayName,
@@ -129,7 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const getIdToken = useCallback(async () => {
-    if (!auth.currentUser) return null;
+    const auth = getDiagnoseAuth();
+    if (!auth?.currentUser) return null;
     return auth.currentUser.getIdToken();
   }, []);
 

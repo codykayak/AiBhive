@@ -4,16 +4,14 @@
  *
  * Expo's built-in `--tunnel` (ngrok/exp.direct) often spins forever from cloud
  * IPs. This script:
- *   1. Opens a Cloudflare quick tunnel to localhost:8081
- *   2. Starts Metro once with EXPO_PACKAGER_PROXY_URL (must be set at boot —
- *      restarting Metro without it leaves :8081 in manifest bundle URLs, which
- *      breaks Expo Go through HTTPS tunnels)
- *   3. Verifies the manifest, prints exp://…:443, writes URL + QR PNG
- *
- * Requires: cloudflared on PATH (https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/)
+ *   1. Kills stale cloudflared / Metro on :8081
+ *   2. Opens a Cloudflare quick tunnel to localhost:8081
+ *   3. Starts Metro once with EXPO_PACKAGER_PROXY_URL (must be set at boot)
+ *   4. Verifies manifest locally AND through the live tunnel hostname
+ *   5. Prints exp://…:443 + writes URL + QR PNG
  */
-import { spawn } from 'node:child_process';
-import { createWriteStream, readFileSync, writeFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { createWriteStream, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { setTimeout as sleep } from 'node:timers/promises';
 
 const PORT = Number(process.env.PORT || 8081);
@@ -27,6 +25,11 @@ function run(cmd, args, opts = {}) {
     env: { ...process.env, CI: '1', EXPO_NO_TELEMETRY: '1', ...opts.env },
     stdio: opts.stdio || ['ignore', 'pipe', 'pipe'],
   });
+}
+
+function killStaleProcesses() {
+  spawnSync('pkill', ['-f', `cloudflared tunnel --url http://localhost:${PORT}`]);
+  spawnSync('pkill', ['-f', `expo start --localhost --port ${PORT}`]);
 }
 
 async function waitForMetro(timeoutMs = 90000) {
@@ -47,8 +50,17 @@ async function waitForMetro(timeoutMs = 90000) {
 }
 
 async function startCloudflared() {
+  killStaleProcesses();
+  await sleep(800);
+
   const logPath = '/tmp/cloudflared-expo.log';
-  const log = createWriteStream(logPath, { flags: 'w' });
+  try {
+    unlinkSync(logPath);
+  } catch {
+    // ignore
+  }
+
+  const log = createWriteStream(logPath, { flags: 'wx' });
   const child = spawn(
     'cloudflared',
     ['tunnel', '--url', `http://localhost:${PORT}`, '--no-autoupdate'],
@@ -60,37 +72,77 @@ async function startCloudflared() {
   child.stderr.on('data', (d) => process.stderr.write(d));
 
   const start = Date.now();
-  while (Date.now() - start < 45000) {
+  while (Date.now() - start < 60000) {
     try {
       const text = readFileSync(logPath, 'utf8');
-      const match = text.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
-      if (match) return { url: match[0], child };
+      if (!text.includes('Your quick Tunnel has been created')) {
+        await sleep(500);
+        continue;
+      }
+      const matches = [...text.matchAll(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/g)];
+      const url = matches.at(-1)?.[0];
+      if (url) {
+        return { url, child };
+      }
     } catch {
-      // ignore
+      // ignore read races while log is being written
     }
     await sleep(500);
   }
   child.kill('SIGTERM');
-  throw new Error('cloudflared did not print a trycloudflare.com URL');
+  throw new Error('cloudflared did not publish a live trycloudflare.com URL');
 }
 
 async function verifyManifest(proxyUrl) {
-  const res = await fetch('http://localhost:8081/', {
+  const host = proxyUrl.replace(/^https:\/\//, '');
+
+  const localRes = await fetch('http://localhost:8081/', {
     headers: { 'expo-platform': 'ios' },
   });
-  if (!res.ok) throw new Error(`Manifest request failed: ${res.status}`);
-  const manifest = await res.json();
+  if (!localRes.ok) throw new Error(`Local manifest request failed: ${localRes.status}`);
+  const manifest = await localRes.json();
   const bundleUrl = manifest?.launchAsset?.url || '';
-  const host = proxyUrl.replace(/^https:\/\//, '');
+
   if (bundleUrl.includes(':8081')) {
     throw new Error(
-      `Manifest still advertises :8081 (Expo Go will spin forever). Got: ${bundleUrl}`
+      `Manifest still advertises :8081 (Expo Go will fail instantly). Got: ${bundleUrl}`
     );
   }
   if (!bundleUrl.includes(host)) {
     throw new Error(`Manifest bundle URL missing tunnel host. Got: ${bundleUrl}`);
   }
+
+  const remoteRes = await fetchRemoteManifest(host);
+  if (remoteRes) {
+    const remoteBundle = remoteRes?.launchAsset?.url || '';
+    if (!remoteBundle.includes(host) || remoteBundle.includes(':8081')) {
+      console.warn(`Remote manifest check failed: ${remoteBundle || '(empty)'}`);
+    }
+  } else {
+    console.warn(
+      'Could not reach tunnel from this VM yet (DNS may still propagate). Local manifest looks correct — try the QR from your phone.'
+    );
+  }
+
   return bundleUrl;
+}
+
+async function fetchRemoteManifest(host, attempts = 8) {
+  for (let i = 0; i < attempts; i += 1) {
+    try {
+      const remoteRes = await fetch(`https://${host}/`, {
+        headers: { 'expo-platform': 'ios' },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (remoteRes.ok) {
+        return remoteRes.json();
+      }
+    } catch {
+      // DNS / tunnel may need a few seconds after cloudflared starts.
+    }
+    await sleep(1500);
+  }
+  return null;
 }
 
 async function writeQrPng(expUrl) {
@@ -99,7 +151,6 @@ async function writeQrPng(expUrl) {
     await QRCode.toFile(QR_FILE, expUrl, { width: 480, margin: 2 });
     return QR_FILE;
   } catch {
-    // qrcode is optional; URL text is enough
     return null;
   }
 }
