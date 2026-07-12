@@ -22,6 +22,7 @@ const AboutContact = lazy(() => import('./pages/AboutContact'));
 const GetStarted = lazy(() => import('./pages/GetStarted'));
 const FAQ = lazy(() => import('./pages/FAQ'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ProsLanding = lazy(() => import('./pages/ProsLanding'));
 const ProsDashboard = lazy(() => import('./pages/ProsDashboard'));
 const Homework = lazy(() => import('./pages/Homework'));
 const TestGetStarted = lazy(() => import('./pages/TestGetStarted'));
@@ -91,7 +92,7 @@ function AnimatedRoutes() {
             <Route path="/tools/real-estate-ai" element={<RealEstateAiToolsPage />} />
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/pros" element={<ProsDashboard />} />
+            <Route path="/pros" element={<ProsLanding />} />
             <Route path="/test" element={<TestGetStarted />} />
             <Route path="/use-cases/podcasters" element={<Podcasters />} />
             <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -167,9 +168,9 @@ function AnimatedRoutes() {
 function AppShell() {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin');
-  const isProsRoute = pathname.startsWith('/pros');
-  const isHomeworkRoute = pathname.startsWith('/homework');
-  const isPrivateRoute = isAdminRoute || isProsRoute || isHomeworkRoute;
+  const isProsAdminRoute = pathname.startsWith('/pros/app');
+  const isProsLandingRoute = pathname === '/pros';
+  const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
@@ -182,7 +183,7 @@ function AppShell() {
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
         {!isPrivateRoute && !isEmbedRoute && <SEO />}
-        {!isEmbedRoute && (
+        {!isPrivateRoute && !isEmbedRoute && !isProsLandingRoute && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
@@ -190,12 +191,12 @@ function AppShell() {
         {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
-        <main className={`flex-grow ${isEmbedRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
+        <main className={`flex-grow ${isEmbedRoute || isProsLandingRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/pros" element={<ProsDashboard />} />
+                <Route path="/pros/app" element={<ProsDashboard />} />
                 <Route path="/homework" element={<Homework />} />
               </Routes>
             </Suspense>

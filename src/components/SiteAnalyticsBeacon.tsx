@@ -77,7 +77,7 @@ export default function SiteAnalyticsBeacon() {
   useEffect(() => {
     if (
       location.pathname.startsWith('/admin') ||
-      location.pathname.startsWith('/pros') ||
+      location.pathname.startsWith('/pros/app') ||
       location.pathname.startsWith('/homework')
     ) {
       return;
@@ -94,7 +94,7 @@ export default function SiteAnalyticsBeacon() {
         | HTMLElement
         | null;
       if (!el) return;
-      if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/pros')) return;
+      if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/pros/app')) return;
       const label =
         el.getAttribute('data-track') ||
         el.getAttribute('aria-label') ||
