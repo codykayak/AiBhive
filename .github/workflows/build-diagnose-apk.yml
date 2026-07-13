@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -73,7 +73,8 @@ jobs:
           if git diff --staged --quiet; then
             echo "Diagnose APK unchanged, skipping commit"
           else
-            git commit -m "chore(diagnose): deploy AiBhive Diagnose APK v1.0.0 [skip-diagnose-apk]"
+            git commit -m "chore(diagnose): deploy AiBhive Diagnose APK [skip-diagnose-apk]"
+            git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed
           fi
 
