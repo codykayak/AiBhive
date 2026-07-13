@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderRadius: 999,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
     paddingHorizontal: 12,
   },

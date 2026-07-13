@@ -622,7 +622,7 @@ export function DiagnoseChat({
         </View>
 
         {pendingAttachment ? (
-          <View className="mb-2 flex-row items-center justify-between rounded-xl border border-hive-amber/40 bg-hive-card px-3 py-2">
+          <View className="mb-2 flex-row items-center justify-between rounded-sm border border-hive-amber/40 bg-hive-card px-3 py-2">
             <Text className="text-sm text-hive-amber">Photo attached — ready to diagnose</Text>
             <Pressable onPress={() => setPendingAttachment(null)}>
               <Text className="text-sm font-semibold text-hive-steel">Remove</Text>
@@ -634,7 +634,7 @@ export function DiagnoseChat({
           <Pressable
             accessibilityLabel="Take photo"
             onPress={() => void pickImage(true)}
-            className="h-14 w-14 items-center justify-center rounded-2xl border border-hive-border bg-hive-card active:opacity-70"
+            className="h-14 w-14 items-center justify-center rounded-sm border border-hive-border bg-hive-card active:opacity-70"
           >
             <Camera color={theme.colors.amber} size={26} strokeWidth={2.4} />
           </Pressable>
@@ -642,7 +642,7 @@ export function DiagnoseChat({
           <Pressable
             accessibilityLabel={listening ? 'Stop voice' : 'Voice input'}
             onPress={() => void toggleVoice()}
-            className={`h-14 w-14 items-center justify-center rounded-2xl border active:opacity-70 ${listening ? 'border-hive-danger bg-hive-danger/20' : 'border-hive-border bg-hive-card'}`}
+            className={`h-14 w-14 items-center justify-center rounded-sm border active:opacity-70 ${listening ? 'border-hive-danger bg-hive-danger/20' : 'border-hive-border bg-hive-card'}`}
           >
             {listening ? (
               <Square color={theme.colors.danger} size={22} strokeWidth={2.4} />
@@ -651,7 +651,7 @@ export function DiagnoseChat({
             )}
           </Pressable>
 
-          <View className="min-h-14 flex-1 justify-center rounded-2xl border border-hive-border bg-hive-card px-3">
+          <View className="min-h-14 flex-1 justify-center rounded-sm border border-hive-border bg-hive-card px-3">
             <TextInput
               ref={inputRef}
               value={input}
@@ -670,9 +670,9 @@ export function DiagnoseChat({
             accessibilityLabel="Send"
             disabled={busy || (!input.trim() && !pendingAttachment)}
             onPress={() => void send()}
-            className={`h-14 w-14 items-center justify-center rounded-2xl active:opacity-70 ${busy || (!input.trim() && !pendingAttachment) ? 'bg-hive-border' : 'bg-hive-amber'}`}
+            className={`h-14 w-14 items-center justify-center rounded-sm active:opacity-70 ${busy || (!input.trim() && !pendingAttachment) ? 'bg-hive-border' : 'bg-hive-amber'}`}
           >
-            <Send color={theme.colors.bg} size={24} strokeWidth={2.5} />
+            <Send color={theme.colors.onPrimary} size={24} strokeWidth={2.5} />
           </Pressable>
         </View>
       </View>

@@ -108,10 +108,10 @@ export default function ToolsHubScreen() {
             <Pressable
               key={tool.title}
               onPress={() => router.push(tool.href)}
-              className="min-h-[76px] flex-row items-center gap-4 rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
+              className="min-h-[76px] flex-row items-center gap-4 rounded-sm border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
             >
               <View
-                className="h-14 w-14 items-center justify-center rounded-2xl"
+                className="h-14 w-14 items-center justify-center rounded-sm"
                 style={{ backgroundColor: `${tool.color}22` }}
               >
                 <Icon color={tool.color} size={26} strokeWidth={2.4} />

@@ -22,7 +22,7 @@ export default function FaultLibraryScreen() {
           onChangeText={setQuery}
           placeholder={`Search ${activePack.shortName} faults…`}
           placeholderTextColor={theme.colors.steel}
-          className="min-h-[52px] rounded-2xl border border-hive-border bg-hive-card px-4 text-base text-hive-mist"
+          className="min-h-[52px] rounded-sm border border-hive-border bg-hive-card px-4 text-base text-hive-mist"
         />
         <Text className="mt-2 text-xs text-hive-steel">
           {results.length} playbooks · active pack: {activePack.name}

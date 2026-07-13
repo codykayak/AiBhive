@@ -52,7 +52,7 @@ export default function HowToDetailScreen() {
           {guide.steps.map((step, i) => (
             <View
               key={`${guide.id}-${i}`}
-              className="flex-row gap-3 rounded-2xl border border-hive-border bg-hive-elevated p-4"
+              className="flex-row gap-3 rounded-sm border border-hive-border bg-hive-elevated p-4"
             >
               <View
                 className="h-8 w-8 items-center justify-center rounded-full"

@@ -40,7 +40,7 @@ export function JoinTeamModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onSkip}>
       <View className="flex-1 items-center justify-center bg-black/70 px-5">
-        <View className="w-full max-w-md rounded-3xl border border-hive-border bg-hive-elevated p-5">
+        <View className="w-full max-w-md rounded-md border border-hive-border bg-hive-elevated p-5">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
               <Text className="text-xl font-bold text-hive-mist">Join a Pros team?</Text>
@@ -61,7 +61,7 @@ export function JoinTeamModal({
             autoCapitalize="characters"
             placeholder="PROS-XXXXXX"
             placeholderTextColor={theme.colors.steel}
-            className="mt-4 min-h-[52px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+            className="mt-4 min-h-[52px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
           />
 
           {error ? (
@@ -71,10 +71,10 @@ export function JoinTeamModal({
           <Pressable
             disabled={busy || !code.trim()}
             onPress={() => void onJoin(code.trim())}
-            className={`mt-4 min-h-[52px] items-center justify-center rounded-2xl ${busy || !code.trim() ? 'bg-hive-border' : 'bg-hive-amber'}`}
+            className={`mt-4 min-h-[52px] items-center justify-center rounded-sm ${busy || !code.trim() ? 'bg-hive-border' : 'bg-hive-amber'}`}
           >
             {busy ? (
-              <ActivityIndicator color={theme.colors.bg} />
+              <ActivityIndicator color={theme.colors.onPrimary} />
             ) : (
               <Text className="text-base font-bold text-hive-bg">Join with code</Text>
             )}
@@ -82,7 +82,7 @@ export function JoinTeamModal({
 
           <Pressable
             onPress={onOpenSignup}
-            className="mt-3 min-h-[48px] items-center justify-center rounded-2xl border border-hive-border"
+            className="mt-3 min-h-[48px] items-center justify-center rounded-sm border border-hive-border"
           >
             <Text className="text-sm font-bold text-hive-mist">Create / manage team on Pros</Text>
             <Text className="text-xs text-hive-steel">aibhive.com/pros/app</Text>

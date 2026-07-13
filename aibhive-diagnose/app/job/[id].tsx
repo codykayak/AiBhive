@@ -196,7 +196,7 @@ export default function JobDetailScreen() {
       </View>
 
       {job.adminNotes ? (
-        <View className="mt-4 rounded-2xl border border-hive-border bg-hive-elevated px-4 py-3">
+        <View className="mt-4 rounded-sm border border-hive-border bg-hive-elevated px-4 py-3">
           <Text className="text-xs font-bold uppercase tracking-wider text-hive-amber">From dispatch</Text>
           <Text className="mt-1 text-sm text-hive-mist">{job.adminNotes}</Text>
         </View>
@@ -210,7 +210,7 @@ export default function JobDetailScreen() {
         <BigButton
           label="Diagnose this job"
           subtitle="Open chat with job context — result saves as a note"
-          icon={<Stethoscope color={theme.colors.bg} size={22} />}
+          icon={<Stethoscope color={theme.colors.onPrimary} size={22} />}
           onPress={openDiagnose}
         />
       </View>
@@ -220,7 +220,7 @@ export default function JobDetailScreen() {
           Site notes
         </Text>
         {(job.fieldNotes || []).map((n) => (
-          <View key={n.id} className="mb-2 rounded-2xl border border-hive-border bg-hive-card px-4 py-3">
+          <View key={n.id} className="mb-2 rounded-sm border border-hive-border bg-hive-card px-4 py-3">
             <Text className="text-sm text-hive-mist">{n.text}</Text>
             <Text className="mt-1 text-[11px] text-hive-steel">
               {new Date(n.createdAt).toLocaleString()}
@@ -233,12 +233,12 @@ export default function JobDetailScreen() {
           placeholder="What happened on site?"
           placeholderTextColor={theme.colors.steel}
           multiline
-          className="min-h-[88px] rounded-2xl border border-hive-border bg-hive-elevated px-4 py-3 text-base text-hive-mist"
+          className="min-h-[88px] rounded-sm border border-hive-border bg-hive-elevated px-4 py-3 text-base text-hive-mist"
         />
         <View className="mt-3">
           <BigButton
             label={busy ? 'Saving…' : 'Save note'}
-            icon={<Send color={theme.colors.bg} size={22} />}
+            icon={<Send color={theme.colors.onPrimary} size={22} />}
             onPress={() => void addNote()}
           />
         </View>

@@ -33,7 +33,7 @@ export default function ChemistryScreen() {
       <Text className="mb-2 mt-6 text-xs font-bold uppercase tracking-wider text-hive-steel">Targets</Text>
       <View className="gap-2">
         {POOL_CHEM_TARGETS.map((t) => (
-          <View key={t.name} className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-3">
+          <View key={t.name} className="rounded-sm border border-hive-border bg-hive-elevated px-4 py-3">
             <Text className="font-bold text-hive-mist">{t.name}</Text>
             <Text className="text-hive-amber">
               {t.min}–{t.max} {t.unit}
@@ -46,7 +46,7 @@ export default function ChemistryScreen() {
       <Text className="mb-2 mt-8 text-xs font-bold uppercase tracking-wider text-hive-steel">Dosing desk</Text>
       <Field label="Pool gallons" value={gallons} onChange={setGallons} />
 
-      <View className="mt-4 rounded-2xl border border-hive-border bg-hive-card p-4">
+      <View className="mt-4 rounded-sm border border-hive-border bg-hive-card p-4">
         <Text className="font-bold text-hive-mist">Lower pH (muriatic ~31%)</Text>
         <View className="mt-2 flex-row gap-2">
           <Field label="Now" value={ph} onChange={setPh} flex />
@@ -55,19 +55,19 @@ export default function ChemistryScreen() {
         <Text className="mt-3 text-lg font-bold text-hive-pool">≈ {acid} oz acid</Text>
       </View>
 
-      <View className="mt-4 rounded-2xl border border-hive-border bg-hive-card p-4">
+      <View className="mt-4 rounded-sm border border-hive-border bg-hive-card p-4">
         <Text className="font-bold text-hive-mist">Raise FC (12.5% liquid chlorine)</Text>
         <Field label="Δ ppm" value={fcDelta} onChange={setFcDelta} />
         <Text className="mt-3 text-lg font-bold text-hive-pool">≈ {chlorine} oz</Text>
       </View>
 
-      <View className="mt-4 rounded-2xl border border-hive-border bg-hive-card p-4">
+      <View className="mt-4 rounded-sm border border-hive-border bg-hive-card p-4">
         <Text className="font-bold text-hive-mist">Add salt</Text>
         <Field label="Δ ppm" value={saltDelta} onChange={setSaltDelta} />
         <Text className="mt-3 text-lg font-bold text-hive-pool">≈ {salt} lbs</Text>
       </View>
 
-      <View className="mt-4 rounded-2xl border border-hive-border bg-hive-card p-4">
+      <View className="mt-4 rounded-sm border border-hive-border bg-hive-card p-4">
         <Text className="font-bold text-hive-mist">SLAM FC target from CYA</Text>
         <Field label="CYA ppm" value={cya} onChange={setCya} />
         <Text className="mt-3 text-lg font-bold text-hive-amber">Aim ≈ {slam} ppm FC</Text>
@@ -95,7 +95,7 @@ function Field({
         onChangeText={onChange}
         keyboardType="decimal-pad"
         placeholderTextColor={theme.colors.steel}
-        className="min-h-[48px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+        className="min-h-[48px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
       />
     </View>
   );

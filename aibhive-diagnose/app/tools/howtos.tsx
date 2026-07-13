@@ -27,7 +27,7 @@ export default function HowTosScreen() {
           <Pressable
             key={guide.id}
             onPress={() => router.push(`/tools/howto/${guide.id}` as Href)}
-            className="overflow-hidden rounded-2xl border border-hive-border bg-hive-elevated active:opacity-85"
+            className="overflow-hidden rounded-sm border border-hive-border bg-hive-elevated active:opacity-85"
           >
             {guide.image ? (
               <Image source={guide.image} style={{ width: '100%', height: 140 }} resizeMode="cover" />

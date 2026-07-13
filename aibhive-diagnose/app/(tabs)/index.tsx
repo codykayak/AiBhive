@@ -1,11 +1,11 @@
 import { Camera, Mic, Route, Sparkles, Wrench } from 'lucide-react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, Image } from 'react-native';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigButton } from '@/components/BigButton';
-import { AiBhiveLogo, DiagnoseOrb } from '@/components/motion';
+import { AiBhiveLogo } from '@/components/motion';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,8 @@ import { usePack } from '@/contexts/PackContext';
 import { getGuidedFlows } from '@/lib/knowledge/guided';
 import { packIconComponent } from '@/lib/packs/icons';
 import { loadRecents, type RecentDiagnosis } from '@/lib/recents';
+
+const HERO_IMAGE = require('../../assets/images/hero-field-team.png');
 
 const TIPS = [
   'Write clean filter PSI on the tank with a paint pen.',
@@ -48,19 +50,20 @@ export default function HomeScreen() {
       style={styles.screen}
       contentContainerStyle={{ paddingBottom: 36 + insets.bottom }}
     >
-      <View style={styles.hero}>
-        <View style={[styles.heroBlob, { backgroundColor: activePack.accentColor, opacity: 0.25 }]} />
-        <View style={styles.heroRow}>
-          <View style={styles.heroCopy}>
+      <View style={styles.heroWrap}>
+        <ImageBackground source={HERO_IMAGE} style={styles.heroImage} resizeMode="cover">
+          <View style={styles.heroOverlayTop} />
+          <View style={styles.heroOverlayBottom} />
+          <View style={styles.heroContent}>
             <View style={styles.brandRow}>
               {profile?.photoUrl ? (
                 <Image
                   source={{ uri: profile.photoUrl }}
-                  style={{ width: 52, height: 52, borderRadius: 14 }}
+                  style={styles.avatar}
                   accessibilityLabel={profile.displayName || 'You'}
                 />
               ) : (
-                <AiBhiveLogo size={52} />
+                <AiBhiveLogo size={48} />
               )}
               <View>
                 <Text style={styles.brandEyebrow}>
@@ -76,11 +79,10 @@ export default function HomeScreen() {
               <PackBadge pack={activePack} />
             </View>
           </View>
-          <DiagnoseOrb size={96} />
-        </View>
+        </ImageBackground>
       </View>
 
-      <View style={styles.tipCard}>
+      <View style={styles.tipBlock}>
         <View style={styles.tipRow}>
           <Sparkles color={theme.colors.amber} size={16} />
           <Text style={styles.tipLabel}>Field tip</Text>
@@ -92,7 +94,7 @@ export default function HomeScreen() {
         <BigButton
           label="Voice Chat"
           subtitle="Talk the fault — hands stay free"
-          icon={<Mic color={theme.colors.bg} size={26} strokeWidth={2.5} />}
+          icon={<Mic color={theme.colors.onPrimary} size={26} strokeWidth={2.5} />}
           onPress={() =>
             router.push({ pathname: '/(tabs)/diagnose', params: { voice: '1' } })
           }
@@ -101,26 +103,26 @@ export default function HomeScreen() {
           label="Camera Diagnosis"
           subtitle="Photo the gear — get the playbook"
           variant="secondary"
-          icon={<Camera color={theme.colors.amber} size={26} strokeWidth={2.5} />}
+          icon={<Camera color={theme.colors.brand} size={26} strokeWidth={2.5} />}
           onPress={() => router.push({ pathname: '/diagnose-session', params: { camera: '1' } })}
         />
         <BigButton
           label="Field Tools"
           subtitle="Codes, chemistry, wire charts, safety"
           variant="ghost"
-          icon={<Wrench color={theme.colors.mist} size={26} strokeWidth={2.5} />}
+          icon={<Wrench color={theme.colors.teal} size={26} strokeWidth={2.5} />}
           onPress={() => router.push('/tools')}
         />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Guided diagnose</Text>
-        <View style={styles.gap}>
-          {flows.map((flow) => (
+        <View>
+          {flows.map((flow, index) => (
             <Pressable
               key={flow.id}
               onPress={() => router.push(`/guided/${flow.id}`)}
-              style={styles.listCard}
+              style={[styles.listRow, index > 0 ? styles.listRowBorder : null]}
             >
               <Route color={activePack.accentColor} size={22} />
               <View style={styles.flex1}>
@@ -134,8 +136,8 @@ export default function HomeScreen() {
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Trade Packs</Text>
-        <View style={styles.gap}>
-          {packs.map((pack) => {
+        <View>
+          {packs.map((pack, index) => {
             const active = pack.id === activePack.id;
             const Icon = packIconComponent(pack);
             return (
@@ -143,12 +145,16 @@ export default function HomeScreen() {
                 key={pack.id}
                 onPress={() => {
                   setActivePackId(pack.id);
-                  router.push('/(tabs)/packs');
+                  router.push(`/pack/${pack.id}` as Href);
                 }}
-                style={[styles.packCard, active ? styles.packCardActive : null]}
+                style={[
+                  styles.listRow,
+                  index > 0 ? styles.listRowBorder : null,
+                  active ? styles.listRowActive : null,
+                ]}
               >
-                <View style={[styles.packIcon, { backgroundColor: `${pack.accentColor}33` }]}>
-                  <Icon color={pack.accentColor} size={28} strokeWidth={2.4} />
+                <View style={[styles.packIcon, { backgroundColor: `${pack.accentColor}18` }]}>
+                  <Icon color={pack.accentColor} size={24} strokeWidth={2.4} />
                 </View>
                 <View style={styles.flex1}>
                   <Text style={styles.cardTitle}>{pack.name}</Text>
@@ -164,14 +170,14 @@ export default function HomeScreen() {
       {recents.length ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Recent diagnoses</Text>
-          <View style={styles.gap}>
-            {recents.slice(0, 4).map((r) => (
+          <View>
+            {recents.slice(0, 4).map((r, index) => (
               <Pressable
                 key={r.id}
                 onPress={() =>
                   router.push({ pathname: '/(tabs)/diagnose', params: { prompt: r.title } })
                 }
-                style={styles.recentCard}
+                style={[styles.listRow, index > 0 ? styles.listRowBorder : null]}
               >
                 <Text style={styles.cardTitle}>{r.title}</Text>
                 <Text style={styles.cardSub} numberOfLines={1}>
@@ -186,73 +192,77 @@ export default function HomeScreen() {
   );
 }
 
+const R = theme.radius;
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: theme.colors.bg,
   },
-  hero: {
-    position: 'relative',
-    overflow: 'hidden',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
+  heroWrap: {
     backgroundColor: theme.colors.elevated,
   },
-  heroBlob: {
+  heroImage: {
+    width: '100%',
+    minHeight: 280,
+    justifyContent: 'flex-end',
+  },
+  heroOverlayTop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(30, 58, 138, 0.12)',
+  },
+  heroOverlayBottom: {
     position: 'absolute',
-    right: -40,
-    top: -32,
-    width: 192,
-    height: 192,
-    borderRadius: 96,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 160,
+    backgroundColor: 'rgba(250, 251, 252, 0.94)',
   },
-  heroRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  heroCopy: {
-    flex: 1,
-    paddingRight: 12,
+  heroContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: R.sm,
+  },
   brandEyebrow: {
     color: theme.colors.amber,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 3,
+    letterSpacing: 2.5,
     textTransform: 'uppercase',
   },
   brandTitle: {
-    marginTop: 4,
+    marginTop: 2,
     color: theme.colors.mist,
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
   },
   tagline: {
-    marginTop: 12,
-    maxWidth: 280,
+    marginTop: 10,
+    maxWidth: 320,
     color: theme.colors.steel,
     fontSize: 16,
     lineHeight: 24,
   },
   packWrap: {
-    marginTop: 16,
+    marginTop: 14,
   },
-  tipCard: {
+  tipBlock: {
     marginHorizontal: 20,
-    marginTop: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    marginTop: 20,
+    paddingLeft: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.teal,
   },
   tipRow: {
     flexDirection: 'row',
@@ -260,8 +270,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tipLabel: {
-    color: theme.colors.amber,
-    fontSize: 12,
+    color: theme.colors.brand,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
@@ -269,71 +279,49 @@ const styles = StyleSheet.create({
   tipBody: {
     marginTop: 4,
     color: theme.colors.mist,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
   actions: {
-    marginTop: 20,
+    marginTop: 24,
     paddingHorizontal: 20,
-    gap: 12,
+    gap: 10,
   },
   section: {
     marginTop: 32,
     paddingHorizontal: 20,
   },
   sectionLabel: {
-    marginBottom: 12,
-    color: theme.colors.steel,
-    fontSize: 13,
+    marginBottom: 8,
+    color: theme.colors.brand,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  gap: {
-    gap: 12,
-  },
-  listCard: {
-    minHeight: 68,
+  listRow: {
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.elevated,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
-  packCard: {
-    minHeight: 72,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.elevated,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  listRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
-  packCardActive: {
-    borderColor: theme.colors.amber,
-    backgroundColor: theme.colors.card,
+  listRowActive: {
+    backgroundColor: `${theme.colors.amber}12`,
+    marginHorizontal: -12,
+    paddingHorizontal: 12,
+    borderRadius: R.sm,
   },
   packIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: R.sm,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  recentCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.elevated,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   flex1: {
     flex: 1,
@@ -347,6 +335,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: theme.colors.steel,
     fontSize: 13,
+    lineHeight: 18,
   },
   activeTag: {
     color: theme.colors.amber,

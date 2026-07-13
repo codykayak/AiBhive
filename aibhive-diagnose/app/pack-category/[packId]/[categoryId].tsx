@@ -98,7 +98,7 @@ export default function PackCategoryScreen() {
                 <Pressable
                   key={g.id}
                   onPress={() => router.push(`/tools/howto/${g.id}` as Href)}
-                  className="overflow-hidden rounded-2xl border border-hive-border bg-hive-elevated active:opacity-85"
+                  className="overflow-hidden rounded-sm border border-hive-border bg-hive-elevated active:opacity-85"
                 >
                   {g.image ? (
                     <Image source={g.image} style={{ width: '100%', height: 100 }} resizeMode="cover" />
@@ -120,7 +120,7 @@ export default function PackCategoryScreen() {
               <Pressable
                 key={fault.id}
                 onPress={() => router.push(`/fault/${fault.id}`)}
-                className="min-h-[56px] flex-row items-center gap-3 rounded-2xl border border-hive-border bg-hive-elevated px-4 active:opacity-80"
+                className="min-h-[56px] flex-row items-center gap-3 rounded-sm border border-hive-border bg-hive-elevated px-4 active:opacity-80"
               >
                 <BookOpen color={pack.accentColor} size={20} />
                 <View className="flex-1">
@@ -132,7 +132,7 @@ export default function PackCategoryScreen() {
             {!categoryFaults.length ? (
               <Pressable
                 onPress={() => router.push('/tools/library')}
-                className="rounded-2xl border border-hive-border bg-hive-elevated p-4"
+                className="rounded-sm border border-hive-border bg-hive-elevated p-4"
               >
                 <Text className="text-hive-steel">Browse the full fault library for this pack.</Text>
               </Pressable>
@@ -148,7 +148,7 @@ export default function PackCategoryScreen() {
                 <Pressable
                   key={flow.id}
                   onPress={() => router.push(`/guided/${flow.id}`)}
-                  className="min-h-[56px] flex-row items-center gap-3 rounded-2xl border border-hive-border bg-hive-elevated px-4 active:opacity-80"
+                  className="min-h-[56px] flex-row items-center gap-3 rounded-sm border border-hive-border bg-hive-elevated px-4 active:opacity-80"
                 >
                   <Route color={theme.colors.amber} size={20} />
                   <View className="flex-1">
