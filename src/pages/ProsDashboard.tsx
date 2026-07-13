@@ -10,6 +10,7 @@ import {
   Briefcase,
   Building2,
   ClipboardList,
+  HelpCircle,
   KeyRound,
   LayoutDashboard,
   Loader2,
@@ -34,6 +35,8 @@ import ProsManualIngestPanel from '../components/pros/ProsManualIngestPanel';
 import ProsNotificationsPanel from '../components/pros/ProsNotificationsPanel';
 import ProsSettingsPanel from '../components/pros/ProsSettingsPanel';
 import ProsWhereIsEverybody from '../components/pros/ProsWhereIsEverybody';
+import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
+import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
 import {
   prosExportJobsCsv,
   prosAnalytics,
@@ -59,7 +62,8 @@ type Tab =
   | 'team'
   | 'ai-keys'
   | 'activity'
-  | 'settings';
+  | 'settings'
+  | 'help';
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -71,6 +75,7 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'ai-keys', label: 'AI Keys', icon: KeyRound },
   { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'help', label: 'Help', icon: HelpCircle },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -879,7 +884,11 @@ export default function ProsDashboard() {
         ) : activeTab === 'settings' ? (
           <p className="text-slate-400 text-sm">Only managers can change company settings.</p>
         ) : null}
+
+        {activeTab === 'help' && user ? <ProsAdminManualPanel user={user} /> : null}
       </main>
+
+      {user && company ? <ProsAssistantPanel user={user} /> : null}
     </div>
   );
 }

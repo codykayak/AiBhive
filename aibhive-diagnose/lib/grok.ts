@@ -1,5 +1,7 @@
 import type { ChatAttachment, ChatMessage, TradePack } from './packs/types';
 import { diagnoseLocally } from './knowledge/diagnoseEngine';
+import type { ManualSearchLink } from './knowledge/manualSearch';
+import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
@@ -37,6 +39,7 @@ export type DiagnoseReply = {
   matchedFaultIds?: string[];
   notice?: string;
   noticeCode?: DiagnoseNoticeCode;
+  manualSearchLinks?: ManualSearchLink[];
 };
 
 export { buildLocalDiagnosisReply } from './localReply';
@@ -66,7 +69,11 @@ When giving repair guidance, prefer these markdown headers when it fits:
 CRITICAL: Stay on the equipment the user named. If they say dishwasher, do not discuss pools, dryers, or unrelated gear unless they clearly ask. Prefer the local library context when it matches. If local context looks off-topic, ignore it and answer for the named equipment only.${diagnosisExtra}`;
 }
 
-type ProsDiagnoseOk = { reply: string; tipIdsUsed: string[] };
+type ProsDiagnoseOk = {
+  reply: string;
+  tipIdsUsed: string[];
+  manualSearchLinks?: ManualSearchLink[];
+};
 type ProsDiagnoseErr = { error: true; notice: string; noticeCode: DiagnoseNoticeCode };
 
 async function askProsDiagnose(opts: {
@@ -103,10 +110,18 @@ async function askProsDiagnose(opts: {
     });
 
     if (res.ok) {
-      const data = (await res.json()) as { reply?: string; tipIdsUsed?: string[] };
+      const data = (await res.json()) as {
+        reply?: string;
+        tipIdsUsed?: string[];
+        manualSearchLinks?: ManualSearchLink[];
+      };
       const reply = data.reply?.trim();
       if (!reply) return null;
-      return { reply, tipIdsUsed: Array.isArray(data.tipIdsUsed) ? data.tipIdsUsed : [] };
+      return {
+        reply,
+        tipIdsUsed: Array.isArray(data.tipIdsUsed) ? data.tipIdsUsed : [],
+        manualSearchLinks: Array.isArray(data.manualSearchLinks) ? data.manualSearchLinks : [],
+      };
     }
 
     let notice = 'Pros AI unavailable — showing pack library.';
@@ -166,6 +181,10 @@ export async function askGrokDetailed({
     source: 'local',
     tipIdsUsed: [],
     matchedFaultIds: local.matchedFaultIds,
+    manualSearchLinks:
+      local.matchedFaultIds.length === 0 && extractModelCandidates(userText).length > 0
+        ? buildLocalManualDorkLinks(userText)
+        : [],
   };
 
   // Offline-first: never hang on bad cell service.
@@ -197,6 +216,9 @@ export async function askGrokDetailed({
             source: 'pros',
             tipIdsUsed: proxied.tipIdsUsed,
             matchedFaultIds: local.matchedFaultIds,
+            manualSearchLinks: proxied.manualSearchLinks?.length
+              ? proxied.manualSearchLinks
+              : undefined,
           };
         }
         if (proxied && 'error' in proxied) {

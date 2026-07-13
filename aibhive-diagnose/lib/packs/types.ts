@@ -34,6 +34,12 @@ export type ChatAttachment = {
   base64?: string;
 };
 
+export type ManualSearchLink = {
+  label: string;
+  query: string;
+  googleUrl: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: ChatRole;
@@ -52,6 +58,7 @@ export type ChatMessage = {
     matchedFaultIds?: string[];
     jobId?: string;
     notice?: string;
+    manualSearchLinks?: ManualSearchLink[];
   };
   /** Parsed structured diagnosis for checkbox UI */
   structured?: DiagnosisResult;

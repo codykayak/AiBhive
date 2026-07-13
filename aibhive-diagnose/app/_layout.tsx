@@ -112,16 +112,17 @@ export default function RootLayout() {
             <ThemeProvider value={DiagnoseTheme}>
               <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
                 <StatusBar style="dark" />
-                {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
-                <ProsFieldServices />
-                <OfflineIndicator />
-                <Stack
-                  screenOptions={{
-                    headerStyle: { backgroundColor: theme.colors.elevated },
-                    headerTintColor: theme.colors.mist,
-                    contentStyle: { backgroundColor: theme.colors.bg },
-                  }}
-                >
+                {!showIntro ? (
+                  <>
+                    <ProsFieldServices />
+                    <OfflineIndicator />
+                    <Stack
+                      screenOptions={{
+                        headerStyle: { backgroundColor: theme.colors.elevated },
+                        headerTintColor: theme.colors.mist,
+                        contentStyle: { backgroundColor: theme.colors.bg },
+                      }}
+                    >
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen
                     name="job/[id]"
@@ -260,6 +261,9 @@ export default function RootLayout() {
                     }}
                   />
                 </Stack>
+                  </>
+                ) : null}
+                {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
               </View>
             </ThemeProvider>
           </PackProvider>

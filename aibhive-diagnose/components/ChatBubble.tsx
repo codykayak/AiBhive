@@ -1,6 +1,7 @@
 import { Image, Text, View } from 'react-native';
 
 import { DiagnosisCard } from '@/components/DiagnosisCard';
+import { ManualSearchLinks } from '@/components/ManualSearchLinks';
 import type { ChatMessage } from '@/lib/packs';
 import { theme } from '@/constants/theme';
 
@@ -44,6 +45,9 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             Diagnosis
           </Text>
         ) : null}
+        {message.diagnoseMeta?.manualSearchLinks?.length ? (
+          <ManualSearchLinks links={message.diagnoseMeta.manualSearchLinks} />
+        ) : null}
       </View>
     );
   }
@@ -69,6 +73,9 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
         <Text className="mt-1 px-1 text-xs font-semibold uppercase tracking-wide text-hive-steel">
           Diagnosis
         </Text>
+      ) : null}
+      {!isUser && message.diagnoseMeta?.manualSearchLinks?.length ? (
+        <ManualSearchLinks links={message.diagnoseMeta.manualSearchLinks} compact />
       ) : null}
     </View>
   );
