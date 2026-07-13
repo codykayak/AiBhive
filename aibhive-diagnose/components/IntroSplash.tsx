@@ -1,13 +1,12 @@
 import { Asset } from 'expo-asset';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { ProsBrandLogo } from '@/components/ProsBrandLogo';
 import { theme } from '@/constants/theme';
 
 const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
-const AIBHIVE_LOGO = require('../icon.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
 /** Hard ceiling so throttled tabs / stalled video never trap the user. */
@@ -246,13 +245,7 @@ export function IntroSplash({ onDone }: Props) {
 
       {showLogo ? (
         <View style={styles.logoBlock} pointerEvents="none">
-          <Image
-            source={AIBHIVE_LOGO}
-            style={styles.logo}
-            resizeMode="contain"
-            accessibilityLabel="AiBhive Pros"
-          />
-          <ProsBrandLogo variant="hero" dark style={{ marginTop: 16 }} />
+          <ProsBrandLogo variant="intro" dark />
         </View>
       ) : null}
 
@@ -299,11 +292,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    borderRadius: 28,
   },
   skipHint: {
     position: 'absolute',
