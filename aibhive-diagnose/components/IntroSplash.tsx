@@ -1,14 +1,6 @@
 import { Asset } from 'expo-asset';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Image,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
 import { theme } from '@/constants/theme';
@@ -135,7 +127,6 @@ function NativeVideo() {
  * Tap anywhere to skip. Hard-caps at INTRO_MAX_MS.
  */
 export function IntroSplash({ onDone }: Props) {
-  const { width, height } = useWindowDimensions();
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -220,19 +211,13 @@ export function IntroSplash({ onDone }: Props) {
   const showLogo = phase === 'logo' || phase === 'exit';
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Skip intro"
-      onPress={finish}
-      style={[
-        styles.root,
-        {
-          width: Math.max(width, 320),
-          height: Math.max(height, 568),
-          opacity,
-        },
-      ]}
-    >
+    <Modal visible animationType="fade" transparent={false} statusBarTranslucent onRequestClose={finish}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Skip intro"
+        onPress={finish}
+        style={[styles.root, { opacity }]}
+      >
       {Platform.OS === 'web' ? (
         videoUri ? <WebVideo uri={videoUri} /> : <View style={[StyleSheet.absoluteFill, styles.fallbackBg]} />
       ) : (
@@ -273,22 +258,20 @@ export function IntroSplash({ onDone }: Props) {
       <Text style={styles.skipHint} pointerEvents="none">
         Tap to skip
       </Text>
-    </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: theme.colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    zIndex: 9999,
   },
   fallbackBg: {
     backgroundColor: theme.colors.bg,

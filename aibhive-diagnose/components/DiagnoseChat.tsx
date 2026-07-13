@@ -312,7 +312,8 @@ export function DiagnoseChat({
       );
 
       try {
-        const { reply, source, tipIdsUsed, matchedFaultIds, notice } = await askGrokDetailed({
+        const { reply, source, tipIdsUsed, matchedFaultIds, notice, manualSearchLinks } =
+          await askGrokDetailed({
           pack: activePack,
           messages: history,
           userText: userMessage.content,
@@ -340,6 +341,7 @@ export function DiagnoseChat({
             matchedFaultIds: matchedFaultIds || [],
             jobId,
             notice,
+            manualSearchLinks: manualSearchLinks?.length ? manualSearchLinks : undefined,
           },
         };
         setMessages((prev) => [...prev, assistantMessage]);

@@ -196,3 +196,18 @@ export async function prosExportJobsCsv(user: User): Promise<Blob> {
   if (!res.ok) throw new Error('Export failed');
   return res.blob();
 }
+
+export async function prosAssistantKnowledge(user: User) {
+  return prosJson<{ markdown: string }>('/api/pros/assistant/knowledge', user);
+}
+
+export async function prosAssistantChat(
+  user: User,
+  userMessage: string,
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>
+) {
+  return prosJson<{ reply: string }>('/api/pros/assistant/chat', user, {
+    method: 'POST',
+    body: JSON.stringify({ userMessage, messages }),
+  });
+}

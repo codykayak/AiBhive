@@ -17,6 +17,12 @@ import {
   submitKnowledgeFeedback,
 } from './prosKnowledge.js';
 import {
+  buildManualDorkLinks,
+  extractModelCandidates,
+  formatManualsForPrompt,
+  searchManualChunks,
+} from './prosManualSearch.js';
+import {
   buildProsAnalytics,
   createProsNotification,
   ingestManualChunks,
@@ -870,6 +876,20 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const tipsContext = formatTipsForPrompt(tips);
       const tipIdsUsed = tips.map((t) => t.id);
 
+      const manuals = await searchManualChunks(db, {
+        companyId: membership.companyId,
+        query: userText,
+        packId,
+        limit: 4,
+      });
+      const manualContext = formatManualsForPrompt(manuals);
+      const modelCandidates = extractModelCandidates(userText);
+      const brand = String(req.body?.brand || '').trim();
+      const manualSearchLinks =
+        manuals.length === 0 && modelCandidates.length > 0
+          ? buildManualDorkLinks({ query: userText, brand, model: modelCandidates[0] })
+          : [];
+
       const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
 
       const history = (Array.isArray(messages) ? messages : [])
@@ -881,7 +901,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         String(systemPrompt || '').slice(0, 4000),
         localContext ? `\nLocal library context:\n${String(localContext).slice(0, 2500)}` : '',
         tipsContext,
-        '\nCRITICAL: Stay on the equipment the user named. Prefer local library + field knowledge when they match.',
+        manualContext,
+        '\nCRITICAL: Stay on the equipment the user named. Prefer local library + field knowledge + ingested OEM manual excerpts when they match.',
       ].join('');
 
       const userContent = [];
@@ -918,6 +939,14 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         provider: 'grok',
         tipIdsUsed,
         tipsUsed: tips.map((t) => ({ id: t.id, scope: t.scope, text: t.text })),
+        manualsUsed: manuals.map((m) => ({
+          id: m.id,
+          brand: m.brand,
+          title: m.title,
+          page: m.page,
+        })),
+        manualSearchLinks,
+        modelCandidates,
       });
     } catch (err) {
       console.error('[pros/diagnose]', err);
@@ -1447,6 +1476,119 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/knowledge manuals ingest]', err);
       return res.status(400).json({ error: err?.message || 'Ingest failed' });
+    }
+  });
+
+  // Manual RAG search + dork fallback links (field app / managers)
+  app.get('/api/pros/knowledge/manuals/search', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const query = String(req.query.q || req.query.query || '').trim();
+      const packId = String(req.query.packId || 'property').trim();
+      const brand = String(req.query.brand || '').trim();
+      if (!query) return res.status(400).json({ error: 'Query required' });
+
+      const manuals = await searchManualChunks(db, {
+        companyId: membership.companyId,
+        query,
+        packId,
+        limit: 6,
+      });
+      const modelCandidates = extractModelCandidates(query);
+      const manualSearchLinks =
+        manuals.length === 0 && modelCandidates.length > 0
+          ? buildManualDorkLinks({ query, brand, model: modelCandidates[0] })
+          : [];
+
+      return res.json({ manuals, manualSearchLinks, modelCandidates });
+    } catch (err) {
+      console.error('[pros/knowledge manuals search]', err);
+      return res.status(500).json({ error: 'Manual search failed' });
+    }
+  });
+
+  // Pros HQ assistant — answers from admin user manual
+  app.get('/api/pros/assistant/knowledge', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const { getProsAdminManualMarkdown } = await import('./prosAdminManual.js');
+      return res.json({ markdown: getProsAdminManualMarkdown() });
+    } catch (err) {
+      console.error('[pros/assistant/knowledge]', err);
+      return res.status(500).json({ error: 'Failed to load manual' });
+    }
+  });
+
+  app.post('/api/pros/assistant/chat', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join or create a Pros company first' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const company = companySnap.data() || {};
+      const settings = company.settings || {};
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (!resolved?.key) {
+        return res.status(503).json({
+          error: 'No Grok key configured. Add one in AI Keys tab.',
+          code: 'no_key',
+        });
+      }
+
+      const { getProsAdminManualMarkdown } = await import('./prosAdminManual.js');
+      const manual = getProsAdminManualMarkdown();
+      const userMessage = String(req.body?.userMessage || req.body?.message || '').trim();
+      const history = Array.isArray(req.body?.messages) ? req.body.messages : [];
+
+      if (!userMessage) return res.status(400).json({ error: 'Message required' });
+
+      const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
+
+      const system = [
+        'You are the AiBhive Pros HQ assistant — a friendly expert on the Pros admin web app and Diagnose field app.',
+        'Answer ONLY from the user manual below. If the manual does not cover something, say so and suggest contacting support.',
+        'Give numbered steps with exact tab names (Jobs, Where is everybody?, Knowledge, etc.).',
+        `Logged-in user role: ${membership.role}. Company: ${company.name || 'Unknown'}.`,
+        `Location tracking: ${settings.locationTrackingEnabled ? 'enabled' : 'disabled'}.`,
+        '--- PROS ADMIN USER MANUAL ---',
+        manual.slice(0, 28000),
+      ].join('\n\n');
+
+      const chatHistory = history
+        .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && m.content)
+        .slice(-10)
+        .map((m) => ({
+          role: m.role === 'assistant' ? 'assistant' : 'user',
+          content: String(m.content).slice(0, 3000),
+        }));
+
+      const reply = await grokChatMessages(resolved.key, process.env.GROK_DIAGNOSE_MODEL || 'grok-2-1212', [
+        { role: 'system', content: system },
+        ...chatHistory,
+        { role: 'user', content: userMessage.slice(0, 4000) },
+      ]);
+
+      await logActivity(db, membership.companyId, {
+        type: 'pros_assistant',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `HQ assistant: ${userMessage.slice(0, 80)}`,
+      });
+
+      return res.json({ reply: String(reply || '').trim() });
+    } catch (err) {
+      console.error('[pros/assistant/chat]', err);
+      return res.status(500).json({ error: err?.message || 'Assistant failed' });
     }
   });
 
