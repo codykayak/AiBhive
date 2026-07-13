@@ -10,6 +10,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Platform } from 'react-native';
 
 import { getDiagnoseAuth, googleProvider } from '@/lib/firebase';
+import { signInWithTeamCode as fieldSignInWithTeamCode, clearStoredFieldUid } from '@/lib/prosFieldAuth';
 import type { TradePackId } from '@/lib/packs/types';
 
 const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
@@ -30,6 +31,7 @@ type AuthContextValue = {
   profile: DiagnoseProfile | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithTeamCode: (inviteCode: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
   saveProfile: (next: Partial<DiagnoseProfile>) => Promise<void>;
   getIdToken: () => Promise<string | null>;
@@ -115,9 +117,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const signInWithTeamCode = useCallback(async (inviteCode: string, displayName: string) => {
+    const auth = getDiagnoseAuth();
+    if (!auth) {
+      throw new Error('Sign-in is unavailable offline. Connect and try again.');
+    }
+    await fieldSignInWithTeamCode(inviteCode, displayName);
+    const local = await readLocalProfile();
+    await writeLocalProfile({
+      displayName: displayName.trim() || local?.displayName || 'Tech',
+      photoUrl: local?.photoUrl ?? null,
+      tradePack: local?.tradePack || 'pool',
+      shareAnonymously: local?.shareAnonymously !== false,
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     const auth = getDiagnoseAuth();
     if (auth) await firebaseSignOut(auth);
+    await clearStoredFieldUid();
   }, []);
 
   const saveProfile = useCallback(
@@ -155,8 +173,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, profile, loading, signInWithGoogle, signOut, saveProfile, getIdToken }),
-    [user, profile, loading, signInWithGoogle, signOut, saveProfile, getIdToken]
+    () => ({
+      user,
+      profile,
+      loading,
+      signInWithGoogle,
+      signInWithTeamCode,
+      signOut,
+      saveProfile,
+      getIdToken,
+    }),
+    [user, profile, loading, signInWithGoogle, signInWithTeamCode, signOut, saveProfile, getIdToken]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

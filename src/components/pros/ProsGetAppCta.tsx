@@ -8,8 +8,8 @@ type ProsGetAppCtaProps = {
 
 export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: ProsGetAppCtaProps) {
   const headline = tradeName
-    ? `Get AiBhive Diagnose for ${tradeName}`
-    : 'Get AiBhive Diagnose on every truck';
+    ? `Get AiBhive Pros for ${tradeName}`
+    : 'Get AiBhive Pros on every truck';
 
   return (
     <section className="py-16 sm:py-20 bg-slate-900 text-white border-t border-white/10">
@@ -23,8 +23,8 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
         </div>
         <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{headline}</h2>
         <p className="mt-4 text-slate-400 leading-relaxed max-w-2xl mx-auto">
-          Install <strong className="text-white">AiBhive Diagnose</strong> on Android — voice, photo, and chat diagnosis
-          with offline trade packs. Managers wire up company HQ at{' '}
+          Install <strong className="text-white">AiBhive Pros</strong> on Android — voice, photo, and chat diagnosis
+          with offline trade packs. Sign in with your team code; managers wire up HQ at{' '}
           <Link to="/pros/app" className="text-amber-400 hover:underline">
             aibhive.com/pros/app
           </Link>
@@ -55,7 +55,7 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
           </Link>
         </div>
         <p className="mt-6 text-xs text-slate-500">
-          Android APK · Invite code from your manager · Works offline with trade packs
+          Android APK · Team code from your manager · Works offline with trade packs
         </p>
       </div>
     </section>

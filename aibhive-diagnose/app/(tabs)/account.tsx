@@ -69,8 +69,10 @@ function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
-  const { user, profile, loading, signInWithGoogle, signOut, saveProfile, getIdToken } = useAuth();
+  const { user, profile, loading, signInWithGoogle, signInWithTeamCode, signOut, saveProfile, getIdToken } =
+    useAuth();
   const [name, setName] = useState(profile?.displayName || '');
+  const [teamCode, setTeamCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [joinVisible, setJoinVisible] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);
@@ -122,6 +124,36 @@ export default function AccountScreen() {
     safeAlert('Saved', 'Profile updated.');
   };
 
+  const handleTeamSignIn = async () => {
+    setAuthError(null);
+    const code = teamCode.trim();
+    const displayName = name.trim() || profile?.displayName || '';
+    if (!code) {
+      setAuthError('Enter your shop team code (PROS-XXXXXX).');
+      return;
+    }
+    if (!displayName) {
+      setAuthError('Enter your name first.');
+      return;
+    }
+    try {
+      await signInWithTeamCode(code, displayName);
+      await saveProfile({ displayName });
+      await markJoinPromptSkipped();
+      setJoinVisible(false);
+      safeAlert('Signed in', 'You’re on the roster. Pros AI and job sync are enabled.');
+      const token = await getIdToken();
+      if (token) {
+        const status = await fetchProsAiStatus(token);
+        setAiStatus(status);
+      }
+    } catch (err) {
+      const msg = formatAuthError(err);
+      setAuthError(msg);
+      safeAlert('Sign-in', msg);
+    }
+  };
+
   const handleSignIn = async () => {
     setAuthError(null);
     try {
@@ -145,15 +177,24 @@ export default function AccountScreen() {
     try {
       const token = await getIdToken();
       if (!token) {
-        setJoinError('Sign in first, then enter your invite code.');
-        return;
+        const displayName = name.trim() || profile?.displayName || 'Tech';
+        if (!displayName) {
+          setJoinError('Enter your name on the Account screen first.');
+          return;
+        }
+        await signInWithTeamCode(code, displayName);
+        await saveProfile({ displayName });
+      } else {
+        await joinProsCompany(token, code, name || profile?.displayName);
       }
-      await joinProsCompany(token, code, name || profile?.displayName);
       await markJoinPromptSkipped();
       setJoinVisible(false);
       safeAlert('Joined', 'You’re on the Pros roster. Jobs will sync when available.');
-      const status = await fetchProsAiStatus(token);
-      setAiStatus(status);
+      const freshToken = await getIdToken();
+      if (freshToken) {
+        const status = await fetchProsAiStatus(freshToken);
+        setAiStatus(status);
+      }
     } catch (err) {
       let msg = formatAuthError(err);
       try {
@@ -181,7 +222,7 @@ export default function AccountScreen() {
       >
         <Text className="text-2xl font-bold text-hive-mist">Account</Text>
         <Text className="mt-1 text-base text-hive-steel">
-          Sign in to sync Pros jobs. Your photo shows on Home instead of the logo.
+          Sign in with your shop team code to unlock Pros AI and job sync.
         </Text>
 
         <View className="mt-6 items-center">
@@ -237,7 +278,7 @@ export default function AccountScreen() {
           <Text className="text-base font-bold text-hive-mist">Field knowledge network</Text>
           <Text className="mt-2 text-sm leading-5 text-hive-steel">
             Like other apps, we share tips anonymously — no names, customers, or addresses — so every
-            shop using Diagnose gets stronger, faster field knowledge. Your team still keeps a private
+            shop using AiBhive Pros gets stronger, faster field knowledge. Your team still keeps a private
             shop playbook; the network only sees scrubbed tips.
           </Text>
           <View className="mt-4 flex-row items-center justify-between gap-3">
@@ -259,9 +300,11 @@ export default function AccountScreen() {
         <View className="mt-6 gap-3">
           {user ? (
             <>
-              <Text className="text-sm text-hive-steel">Signed in as {user.email}</Text>
+              <Text className="text-sm text-hive-steel">
+                Signed in{user.email ? ` as ${user.email}` : ' with team code'}
+              </Text>
               <BigButton
-                label="Join a Pros team"
+                label="Switch team"
                 variant="secondary"
                 icon={<Users color={theme.colors.amber} size={22} />}
                 onPress={() => {
@@ -278,30 +321,40 @@ export default function AccountScreen() {
             </>
           ) : (
             <>
-              <BigButton
-                label={loading ? 'Loading…' : 'Sign in with Google'}
-                icon={<LogIn color={theme.colors.onPrimary} size={22} />}
-                onPress={() => void handleSignIn()}
-              />
-              <BigButton
-                label="Have a team code?"
-                variant="secondary"
-                icon={<Users color={theme.colors.amber} size={22} />}
-                onPress={() => {
-                  setJoinError(null);
-                  setJoinVisible(true);
-                }}
-              />
-              <Text className="text-sm text-hive-steel">
-                Sign in first, then enter your shop invite code to unlock Pros AI + job sync.
-              </Text>
+              <View className="rounded-sm border border-hive-border bg-hive-elevated p-4 gap-3">
+                <Text className="text-xs font-bold uppercase tracking-wider text-hive-steel">Team code</Text>
+                <TextInput
+                  value={teamCode}
+                  onChangeText={setTeamCode}
+                  autoCapitalize="characters"
+                  placeholder="PROS-XXXXXX"
+                  placeholderTextColor={theme.colors.steel}
+                  className="min-h-[52px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+                />
+                <Text className="text-xs text-hive-steel">
+                  Your manager shares this from AiBhive Pros HQ (aibhive.com/pros/app → Team tab).
+                </Text>
+                <BigButton
+                  label={loading ? 'Loading…' : 'Sign in with team code'}
+                  icon={<Users color={theme.colors.onPrimary} size={22} />}
+                  onPress={() => void handleTeamSignIn()}
+                />
+              </View>
+              {Platform.OS === 'web' ? (
+                <BigButton
+                  label="Sign in with Google"
+                  variant="secondary"
+                  icon={<LogIn color={theme.colors.amber} size={22} />}
+                  onPress={() => void handleSignIn()}
+                />
+              ) : null}
             </>
           )}
           {authError ? <Text className="text-sm text-hive-danger">{authError}</Text> : null}
         </View>
 
         <Text className="mt-8 text-sm leading-5 text-hive-steel">
-          Managers create companies and invite codes at aibhive.com/pros/app — including Grok, Claude, Kimi,
+          Managers create companies and team codes at aibhive.com/pros/app — including Grok, Claude, Kimi,
           and Gemini API keys for the company.
         </Text>
       </ScrollView>
