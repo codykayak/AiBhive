@@ -8,10 +8,10 @@ export EXPO_PUBLIC_API_URL="${EXPO_PUBLIC_API_URL:-https://aibhive.com}"
 export EXPO_PUBLIC_GROK_MODEL="${EXPO_PUBLIC_GROK_MODEL:-grok-2-vision-1212}"
 echo "EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL"
 
-echo "==> Checking launcher assets"
-for f in assets/images/icon.png; do
+echo "==> App icon (must be aibhive-diagnose/icon.png)"
+for f in icon.png; do
   if [[ ! -f "$f" ]]; then
-    echo "MISSING: $f"
+    echo "MISSING: $f — place your launcher icon at aibhive-diagnose/icon.png"
     exit 1
   fi
   echo "OK: $f"

@@ -13,7 +13,7 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 
 ## Pull requests
 
-**Auto-publish (default):** After local tests pass, open the PR as ready for review (`draft: false`), base `main-fixed`, then **squash-merge immediately** — do not wait for the user to ask. Cloud Run auto-deploy runs on merge.
+**Auto-publish (default):** After local tests pass, open the PR as ready for review (`draft: false`), base `main-fixed`, then **wait for user approval before squash-merge** — do not merge automatically unless the user explicitly asks.
 
 1. **Commit and push** to `cursor/<descriptive-name>-c7f3`.
 2. **Open PR** — triggers run on merge via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.

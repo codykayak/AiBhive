@@ -7,7 +7,7 @@ import { ProsBrandLogo } from '@/components/ProsBrandLogo';
 import { theme } from '@/constants/theme';
 
 const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
-const AIBHIVE_LOGO = require('../assets/images/icon.png');
+const AIBHIVE_LOGO = require('../icon.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
 /** Hard ceiling so throttled tabs / stalled video never trap the user. */
