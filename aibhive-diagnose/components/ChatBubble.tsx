@@ -52,6 +52,8 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             assistantReply={message.content}
             structured={message.structured}
             jobId={message.diagnoseMeta.jobId}
+            orderPartPrefill={message.diagnoseMeta.orderPartPrefill}
+            autoOpenOrder={message.diagnoseMeta.autoOpenOrder}
           />
         ) : null}
       </View>
@@ -87,6 +89,8 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           assistantReply={message.content}
           structured={message.structured}
           jobId={message.diagnoseMeta.jobId}
+          orderPartPrefill={message.diagnoseMeta.orderPartPrefill}
+          autoOpenOrder={message.diagnoseMeta.autoOpenOrder}
           compact
         />
       ) : null}

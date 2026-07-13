@@ -59,6 +59,15 @@ export type ChatMessage = {
     jobId?: string;
     notice?: string;
     manualSearchLinks?: ManualSearchLink[];
+    orderPartPrefill?: {
+      partName?: string;
+      partNumber?: string;
+      brand?: string;
+      equipmentModel?: string;
+      notes?: string;
+    };
+    autoOpenOrder?: boolean;
+    intentType?: 'order_part' | 'find_manual' | 'diagnose';
   };
   /** Parsed structured diagnosis for checkbox UI */
   structured?: DiagnosisResult;

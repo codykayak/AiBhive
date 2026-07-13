@@ -18,6 +18,7 @@ import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
 import { scanPartLabel, suggestPart, submitPartRequest } from '@/lib/jobs/partRequests';
+import type { OrderPartPrefill } from '@/lib/diagnose/chatIntents';
 import type { DiagnosisResult, TradePackId } from '@/lib/packs/types';
 import { extractModelCandidates } from '@/lib/knowledge/manualSearch';
 
@@ -29,6 +30,7 @@ type Props = {
   structured?: DiagnosisResult;
   jobId?: string;
   jobTitle?: string;
+  initialPrefill?: OrderPartPrefill;
   onSubmitted?: () => void;
 };
 
@@ -40,6 +42,7 @@ export function OrderPartModal({
   structured,
   jobId,
   jobTitle,
+  initialPrefill,
   onSubmitted,
 }: Props) {
   const { getIdToken, profile, user } = useAuth();
@@ -64,17 +67,25 @@ export function OrderPartModal({
     setError(null);
     const hints = structured?.partsToCheck || [];
     const models = extractModelCandidates(userQuery);
-    setPartName(hints[0] || userQuery.slice(0, 120));
-    setPartNumber('');
+    setPartName(hints[0] || initialPrefill?.partName || userQuery.slice(0, 120));
+    setPartNumber(initialPrefill?.partNumber || '');
     setQuantity('1');
-    setBrand('');
-    setEquipmentModel(models[0] || '');
+    setBrand(initialPrefill?.brand || '');
+    setEquipmentModel(initialPrefill?.equipmentModel || models[0] || '');
     setPartUrl('');
-    setNotes('');
+    setNotes(initialPrefill?.notes || '');
+
+    const hasIntentPrefill = Boolean(
+      initialPrefill?.partNumber || initialPrefill?.partName || initialPrefill?.brand
+    );
 
     void (async () => {
       const token = await getIdToken();
       if (!token) return;
+      if (hasIntentPrefill && initialPrefill?.partNumber) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
         const suggestion = await suggestPart(token, {
@@ -94,7 +105,7 @@ export function OrderPartModal({
         setLoading(false);
       }
     })();
-  }, [visible, userQuery, assistantReply, structured, activePack.id, getIdToken]);
+  }, [visible, userQuery, assistantReply, structured, activePack.id, getIdToken, initialPrefill]);
 
   const scanLabelPhoto = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FileSearch, Package } from 'lucide-react-native';
 
 import { ManualSearchLinks } from '@/components/ManualSearchLinks';
 import { OrderPartModal } from '@/components/OrderPartModal';
 import { theme } from '@/constants/theme';
+import type { OrderPartPrefill } from '@/lib/diagnose/chatIntents';
 import type { DiagnosisResult } from '@/lib/packs/types';
 import type { ManualSearchLink } from '@/lib/knowledge/manualSearch';
 
@@ -16,6 +17,8 @@ type Props = {
   jobId?: string;
   jobTitle?: string;
   compact?: boolean;
+  orderPartPrefill?: OrderPartPrefill;
+  autoOpenOrder?: boolean;
 };
 
 /** Manual search + order part actions below a diagnosis. */
@@ -27,9 +30,15 @@ export function DiagnoseFieldActions({
   jobId,
   jobTitle,
   compact = false,
+  orderPartPrefill,
+  autoOpenOrder = false,
 }: Props) {
   const [orderOpen, setOrderOpen] = useState(false);
   const showManual = Boolean(manualSearchLinks?.length);
+
+  useEffect(() => {
+    if (autoOpenOrder) setOrderOpen(true);
+  }, [autoOpenOrder]);
 
   return (
     <View className={compact ? 'mt-2' : 'mt-0'}>
@@ -74,6 +83,7 @@ export function DiagnoseFieldActions({
         structured={structured}
         jobId={jobId}
         jobTitle={jobTitle}
+        initialPrefill={orderPartPrefill}
       />
     </View>
   );
