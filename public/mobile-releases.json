@@ -5,8 +5,8 @@
   "releaseNotes": "v1.8.1 — Fixed black WebView screens (Social Hunter, Flip Calc, Research, Homework). Homework opens web sign-in. Job Tracker moved to bottom. Web app tiles added. Duplicate flip calculators hidden.",
   "downloadUrl": "https://aibhive.com/api/download/apk",
   "fullApkUrl": "https://aibhive.com/api/download/apk",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1783923871431%2Ftaylored-mobile.apk.gz?alt=media&token=ae935170-e7bb-4e8a-8b6e-9542be6304e7",
-  "publishedAt": "2026-07-13T06:24:38.999Z",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fmobile-apk-1783926339941%2Ftaylored-mobile.apk.gz?alt=media&token=a560948a-66f4-4e16-b13d-8caa58e2d8b8",
+  "publishedAt": "2026-07-13T07:05:45.262Z",
   "otaChannel": "production",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=868bd175-aa33-40e3-8be5-1aa069d06fe4"
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Ftaylored-mobile.apk?alt=media&token=e11fa664-9f2b-459e-aeae-e9ad124ff112"
 }
