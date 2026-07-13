@@ -48,7 +48,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 24.x
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -110,6 +110,7 @@ jobs:
             echo "APK unchanged, skipping commit"
           else
             git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip-apk]"
+            git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed
           fi
 
