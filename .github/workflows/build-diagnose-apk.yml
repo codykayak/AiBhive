@@ -67,6 +67,7 @@ jobs:
 
       - name: Commit deployed Diagnose APK + manifest
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/aibhive-diagnose.apk public/diagnose-mobile-releases.json
@@ -74,6 +75,9 @@ jobs:
             echo "Diagnose APK unchanged, skipping commit"
           else
             git commit -m "chore(diagnose): deploy AiBhive Diagnose APK [skip-diagnose-apk]"
+            # Expo prebuild / Gradle leave tracked edits under aibhive-diagnose/android/;
+            # stash them so pull --rebase is not blocked by a dirty working tree.
+            git stash push -u -m "ci-diagnose-build-artifacts" || true
             git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed
           fi
