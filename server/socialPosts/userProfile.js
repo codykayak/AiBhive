@@ -17,6 +17,7 @@ const DEFAULT_PROFILE = {
     },
   },
   dayPrompts: {},
+  autoPublishOnApprove: false,
   socialApiKeys: {
     facebook: { accessToken: '', pageId: '' },
     instagram: { accessToken: '', accountId: '' },
@@ -63,6 +64,7 @@ function mergeProfile(data = {}) {
       gemini: { ...DEFAULT_PROFILE.providers.gemini, ...(data.providers?.gemini || {}) },
     },
     dayPrompts: { ...(data.dayPrompts || {}) },
+    autoPublishOnApprove: !!data.autoPublishOnApprove,
     socialApiKeys: {
       facebook: {
         ...DEFAULT_PROFILE.socialApiKeys.facebook,
@@ -95,6 +97,7 @@ export function sanitizeUserProfile(profile) {
       },
     },
     dayPrompts: merged.dayPrompts,
+    autoPublishOnApprove: !!merged.autoPublishOnApprove,
     socialApiKeys: {
       facebook: {
         pageId: merged.socialApiKeys.facebook.pageId || '',
@@ -107,6 +110,10 @@ export function sanitizeUserProfile(profile) {
     },
     serverGeminiAvailable: !!process.env.GEMINI_API_KEY,
   };
+}
+
+export function getSocialApiCredentials(profile) {
+  return mergeProfile(profile).socialApiKeys;
 }
 
 export function getDayPrompt(profile, dateKey) {
@@ -157,6 +164,10 @@ export async function saveUserProfile(uid, email, updates = {}) {
 
   if (updates.dayPrompts) {
     next.dayPrompts = mergeDayPrompts(next.dayPrompts, updates.dayPrompts);
+  }
+
+  if (updates.autoPublishOnApprove !== undefined) {
+    next.autoPublishOnApprove = !!updates.autoPublishOnApprove;
   }
 
   if (updates.socialApiKeys?.facebook) {
