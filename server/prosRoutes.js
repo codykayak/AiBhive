@@ -337,6 +337,95 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     }
   });
 
+  /**
+   * Field app sign-in: team invite code + display name → Firebase custom token.
+   * Lets techs use AiBhive Pros on sideload APK without Google OAuth.
+   */
+  app.post('/api/pros/field-auth', async (req, res) => {
+    try {
+      const code = String(req.body?.inviteCode || '').trim().toUpperCase();
+      const displayName = String(req.body?.displayName || '').trim().slice(0, 80);
+      const existingUid = String(req.body?.existingUid || '').trim();
+
+      if (!code) return res.status(400).json({ error: 'Team code required' });
+      if (!displayName && !existingUid) {
+        return res.status(400).json({ error: 'Your name is required' });
+      }
+
+      const snap = await db.collection('pros_companies').where('inviteCode', '==', code).limit(1).get();
+      if (snap.empty) return res.status(404).json({ error: 'Invalid team code' });
+
+      const companyDoc = snap.docs[0];
+      const companyId = companyDoc.id;
+      const now = FieldValue().serverTimestamp();
+
+      if (existingUid) {
+        const mem = await getMembership(db, existingUid);
+        if (mem?.companyId === companyId) {
+          const memberSnap = await db
+            .collection('pros_companies')
+            .doc(companyId)
+            .collection('members')
+            .doc(existingUid)
+            .get();
+          if (memberSnap.exists && memberSnap.data()?.status !== 'inactive') {
+            if (displayName) {
+              await memberSnap.ref.set({ displayName }, { merge: true });
+              try {
+                await admin.auth().updateUser(existingUid, { displayName });
+              } catch {
+                /* non-fatal */
+              }
+            }
+            const customToken = await admin.auth().createCustomToken(existingUid);
+            return res.json({
+              customToken,
+              companyId,
+              role: mem.role || 'tech',
+              uid: existingUid,
+            });
+          }
+        }
+      }
+
+      const userRecord = await admin.auth().createUser({
+        displayName: displayName || 'Tech',
+      });
+      const uid = userRecord.uid;
+
+      await companyDoc.ref.collection('members').doc(uid).set({
+        uid,
+        email: null,
+        displayName: displayName || 'Tech',
+        photoUrl: null,
+        role: 'tech',
+        status: 'active',
+        tradePack: companyDoc.data().settings?.defaultPack || 'pool',
+        joinedAt: now,
+        authMethod: 'field_code',
+      });
+
+      await db.collection('pros_memberships').doc(uid).set({
+        companyId,
+        role: 'tech',
+        joinedAt: now,
+      });
+
+      await logActivity(db, companyId, {
+        type: 'member_joined',
+        actorUid: uid,
+        message: `${displayName || 'Tech'} joined via team code (AiBhive Pros app)`,
+      });
+
+      const customToken = await admin.auth().createCustomToken(uid);
+      return res.json({ customToken, companyId, role: 'tech', uid });
+    } catch (err) {
+      console.error('[pros/field-auth]', err);
+      const msg = err?.code === 'auth/uid-already-exists' ? 'Account conflict — try again' : 'Field sign-in failed';
+      return res.status(500).json({ error: msg });
+    }
+  });
+
   // Overview stats
   app.get('/api/pros/overview', async (req, res) => {
     try {

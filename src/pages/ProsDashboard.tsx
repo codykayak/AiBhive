@@ -864,8 +864,12 @@ export default function ProsDashboard() {
             {isManager && company.inviteCode ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs uppercase text-slate-500 font-bold">Invite code</div>
+                  <div className="text-xs uppercase text-slate-500 font-bold">Field team code</div>
                   <div className="font-mono text-lg text-amber-300">{company.inviteCode}</div>
+                  <p className="mt-2 text-sm text-slate-400 max-w-xl">
+                    Techs open the <strong className="text-slate-200">AiBhive Pros</strong> Android app,
+                    enter this code plus their name on the Account tab — no Google sign-in required.
+                  </p>
                 </div>
                 <button
                   type="button"

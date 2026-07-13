@@ -42,7 +42,7 @@ manifest.sourceVersion = version;
 manifest.downloadUrl = 'https://aibhive.com/api/download/diagnose-apk';
 manifest.fullApkUrl = 'https://aibhive.com/api/download/diagnose-apk';
 manifest.publishedAt = new Date().toISOString();
-manifest.appName = 'AiBhive Diagnose';
+manifest.appName = 'AiBhive Pros';
 
 if (firebaseApkUrl) {
   manifest.firebaseApkUrl = firebaseApkUrl;
@@ -58,8 +58,10 @@ manifest.releaseNotes =
   `v${version} — Pros field app: voice/chat part orders, manual PDF search, parts HQ workflow, keyboard fix, light theme, trade packs, location pings.`;
 
 const notesByVersion = {
+  '1.0.1':
+    'v1.0.1 — AiBhive Pros rebrand, team-code sign-in (no Google on APK), orange intro, new app icon.',
   '1.0.0':
-    'v1.0.0 — AiBhive Diagnose ship: Pros voice diagnose, order parts by voice, manual lookup, scan part labels, company HQ sync, offline trade packs, location tracking.',
+    'v1.0.0 — Field app ship: voice diagnose, order parts, manual lookup, company HQ sync, offline trade packs.',
 };
 if (notesByVersion[version]) {
   manifest.releaseNotes = notesByVersion[version];

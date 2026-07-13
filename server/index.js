@@ -3141,7 +3141,7 @@ function loadDiagnoseVersionFromAppJson() {
       shippedNativeVersion: expo.version,
       versionCode: expo.android?.versionCode,
       sourceVersion: expo.version,
-      appName: 'AiBhive Diagnose',
+      appName: 'AiBhive Pros',
     };
   } catch {
     return null;

@@ -5,7 +5,7 @@ import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View }
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BigButton } from '@/components/BigButton';
-import { AiBhiveLogo } from '@/components/motion';
+import { ProsBrandLogo } from '@/components/ProsBrandLogo';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,15 +62,8 @@ export default function HomeScreen() {
                   style={styles.avatar}
                   accessibilityLabel={profile.displayName || 'You'}
                 />
-              ) : (
-                <AiBhiveLogo size={48} />
-              )}
-              <View>
-                <Text style={styles.brandEyebrow}>
-                  {profile?.displayName ? profile.displayName : 'AiBhive'}
-                </Text>
-                <Text style={styles.brandTitle}>Diagnose</Text>
-              </View>
+              ) : null}
+              <ProsBrandLogo variant="hero" />
             </View>
             <Text style={styles.tagline}>
               Snap it. Say it. Fix it. Field intelligence that fits in a glove.
@@ -228,24 +221,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexWrap: 'wrap',
   },
   avatar: {
     width: 48,
     height: 48,
     borderRadius: R.sm,
-  },
-  brandEyebrow: {
-    color: theme.colors.amber,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-  },
-  brandTitle: {
-    marginTop: 2,
-    color: theme.colors.mist,
-    fontSize: 30,
-    fontWeight: '800',
   },
   tagline: {
     marginTop: 10,

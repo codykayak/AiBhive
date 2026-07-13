@@ -43,11 +43,10 @@ export function JoinTeamModal({
         <View className="w-full max-w-md rounded-md border border-hive-border bg-hive-elevated p-5">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
-              <Text className="text-xl font-bold text-hive-mist">Join a Pros team?</Text>
+              <Text className="text-xl font-bold text-hive-mist">Join your Pros team?</Text>
               <Text className="mt-2 text-sm leading-5 text-hive-steel">
-                Do you have an invite code from your shop? Enter it to sync jobs and share field tips
-                with your team. Tips can also strengthen Diagnose anonymously for every shop on the
-                network — no customer or personal details leave your control.
+                Enter the team code from your manager at aibhive.com/pros/app. This signs you in and
+                unlocks Pros AI, job sync, and field tips — no Google account required on the app.
               </Text>
             </View>
             <Pressable onPress={onSkip} hitSlop={12} accessibilityLabel="Close">

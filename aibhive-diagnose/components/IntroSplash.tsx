@@ -3,10 +3,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 
+import { ProsBrandLogo } from '@/components/ProsBrandLogo';
 import { theme } from '@/constants/theme';
 
 const INTRO_VIDEO = require('../assets/video/diagnose-intro.mp4');
-const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
+const AIBHIVE_LOGO = require('../assets/images/icon.png');
 
 const WORDS = ['diagnose', 'anything,', 'anywhere,', 'anytime'] as const;
 /** Hard ceiling so throttled tabs / stalled video never trap the user. */
@@ -249,9 +250,9 @@ export function IntroSplash({ onDone }: Props) {
             source={AIBHIVE_LOGO}
             style={styles.logo}
             resizeMode="contain"
-            accessibilityLabel="AiBhive"
+            accessibilityLabel="AiBhive Pros"
           />
-          <Text style={styles.product}>Diagnose</Text>
+          <ProsBrandLogo variant="hero" dark style={{ marginTop: 16 }} />
         </View>
       ) : null}
 
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   word: {
-    color: theme.colors.mist,
+    color: theme.colors.amber,
     fontSize: 38,
     fontWeight: '800',
     letterSpacing: 0.6,
@@ -300,17 +301,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 176,
-    height: 176,
-    borderRadius: 38,
-  },
-  product: {
-    marginTop: 16,
-    color: theme.colors.amber,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 4,
-    textTransform: 'uppercase',
+    width: 120,
+    height: 120,
+    borderRadius: 28,
   },
   skipHint: {
     position: 'absolute',

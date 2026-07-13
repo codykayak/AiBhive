@@ -95,7 +95,7 @@ export default function RootLayout() {
       >
         <StatusBar style="dark" />
         <Text style={{ color: theme.colors.amber, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
-          AiBhive Diagnose
+          AiBhive Pros
         </Text>
         <Text style={{ color: theme.colors.mist, marginTop: 10, textAlign: 'center', opacity: 0.75 }}>
           Loading the field app…
