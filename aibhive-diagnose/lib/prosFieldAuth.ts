@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { signInWithCustomToken } from 'firebase/auth';
+import { signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
 import { getDiagnoseAuth } from '@/lib/firebase';
+import { joinProsCompany } from '@/lib/jobs/prosSync';
 
 const FIELD_UID_KEY = 'aibhive.pros.fieldUid.v1';
 
@@ -29,6 +30,36 @@ export async function clearStoredFieldUid() {
   await AsyncStorage.removeItem(FIELD_UID_KEY);
 }
 
+/** Fallback: Firebase anonymous session + existing /api/pros/join (no Admin createUser). */
+async function signInWithTeamCodeViaAnonymous(
+  inviteCode: string,
+  displayName: string
+): Promise<FieldAuthResult> {
+  const auth = getDiagnoseAuth();
+  if (!auth) {
+    throw new Error('Sign-in is unavailable. Check your connection and try again.');
+  }
+  if (!auth.currentUser) {
+    await signInAnonymously(auth);
+  }
+  const user = auth.currentUser;
+  if (!user) throw new Error('Anonymous sign-in failed — enable Anonymous auth in Firebase Console.');
+
+  const token = await user.getIdToken();
+  try {
+    const joined = await joinProsCompany(token, inviteCode, displayName);
+    await storeFieldUid(user.uid);
+    return { companyId: joined.companyId, role: joined.role, uid: user.uid };
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    if (raw.includes('Already on a company roster')) {
+      await storeFieldUid(user.uid);
+      return { companyId: '', role: 'tech', uid: user.uid };
+    }
+    throw new Error(raw.includes('Invalid invite') ? 'Invalid team code' : raw);
+  }
+}
+
 /** Sign in with shop team code — no Google OAuth required. */
 export async function signInWithTeamCode(
   inviteCode: string,
@@ -40,15 +71,20 @@ export async function signInWithTeamCode(
   }
 
   const existingUid = await readStoredFieldUid();
-  const res = await fetch(`${API_BASE}/api/pros/field-auth`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      inviteCode: inviteCode.trim().toUpperCase(),
-      displayName: displayName.trim(),
-      existingUid: existingUid || undefined,
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/pros/field-auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inviteCode: inviteCode.trim().toUpperCase(),
+        displayName: displayName.trim(),
+        existingUid: existingUid || undefined,
+      }),
+    });
+  } catch {
+    return signInWithTeamCodeViaAnonymous(inviteCode, displayName);
+  }
 
   let payload: { error?: string; customToken?: string; companyId?: string; role?: string; uid?: string } =
     {};
@@ -59,10 +95,18 @@ export async function signInWithTeamCode(
   }
 
   if (!res.ok || !payload.customToken || !payload.uid) {
-    throw new Error(payload.error || 'Could not sign in with that team code.');
+    const serverMsg = payload.error || '';
+    if (res.status >= 500 || serverMsg.toLowerCase().includes('field sign-in failed')) {
+      return signInWithTeamCodeViaAnonymous(inviteCode, displayName);
+    }
+    throw new Error(serverMsg || `Could not sign in (${res.status}). Check the team code.`);
   }
 
-  await signInWithCustomToken(auth, payload.customToken);
+  try {
+    await signInWithCustomToken(auth, payload.customToken);
+  } catch (err) {
+    return signInWithTeamCodeViaAnonymous(inviteCode, displayName);
+  }
   await storeFieldUid(payload.uid);
 
   return {

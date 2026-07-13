@@ -10,6 +10,7 @@
  */
 
 import admin from 'firebase-admin';
+import crypto from 'node:crypto';
 import { verifyHiveAuth } from './hiveAuth.js';
 import {
   formatTipsForPrompt,
@@ -388,10 +389,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         }
       }
 
-      const userRecord = await admin.auth().createUser({
-        displayName: displayName || 'Tech',
-      });
-      const uid = userRecord.uid;
+      const uid = `field_${crypto.randomBytes(16).toString('hex')}`;
 
       await companyDoc.ref.collection('members').doc(uid).set({
         uid,
@@ -417,11 +415,23 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         message: `${displayName || 'Tech'} joined via team code (AiBhive Pros app)`,
       });
 
-      const customToken = await admin.auth().createCustomToken(uid);
+      // Custom token only — Firebase creates the Auth user on first sign-in.
+      // Avoids admin.auth().createUser(), which Cloud Run often lacks permission for.
+      const customToken = await admin.auth().createCustomToken(uid, {
+        displayName: displayName || 'Tech',
+      });
       return res.json({ customToken, companyId, role: 'tech', uid });
     } catch (err) {
-      console.error('[pros/field-auth]', err);
-      const msg = err?.code === 'auth/uid-already-exists' ? 'Account conflict — try again' : 'Field sign-in failed';
+      console.error('[pros/field-auth]', err?.code || err?.message || err);
+      const code = err?.code ? String(err.code) : '';
+      let msg = 'Field sign-in failed';
+      if (code === 'auth/insufficient-permission' || code.includes('permission')) {
+        msg = 'Server cannot issue sign-in tokens yet — Firebase Admin needs the Service Account Token Creator role.';
+      } else if (code === 'auth/uid-already-exists') {
+        msg = 'Account conflict — sign out and try again';
+      } else if (err?.message && typeof err.message === 'string') {
+        msg = `Field sign-in failed (${code || err.message.slice(0, 80)})`;
+      }
       return res.status(500).json({ error: msg });
     }
   });

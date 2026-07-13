@@ -4,7 +4,7 @@
     "slug": "aibhive-diagnose",
     "version": "1.0.1",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./icon.png",
     "scheme": "aibhivepros",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0B0F14",
-        "foregroundImage": "./assets/images/icon.png",
+        "foregroundImage": "./icon.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -40,14 +40,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#0B0F14"
         }
@@ -75,7 +75,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./icon.png",
           "color": "#F5A623"
         }
       ],
