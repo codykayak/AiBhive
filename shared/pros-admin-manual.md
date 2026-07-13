@@ -326,7 +326,7 @@ Push notifications from HQ appear under **Alerts**. Techs respond to job assignm
 | Pros HQ | https://aibhive.com/pros/app |
 | Pros marketing | https://aibhive.com/pros |
 | Download Diagnose | https://aibhive.com/download.html |
-| APK direct | https://aibhive.com/api/download/apk |
+| APK direct (Diagnose) | https://aibhive.com/api/download/diagnose-apk |
 
 ---
 
