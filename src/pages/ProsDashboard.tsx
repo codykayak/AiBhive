@@ -39,6 +39,7 @@ import ProsWhereIsEverybody from '../components/pros/ProsWhereIsEverybody';
 import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
 import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
 import ProsPartsPanel from '../components/pros/ProsPartsPanel';
+import ProsDemoPreviewBanner, { DemoSampleBadge } from '../components/pros/ProsDemoPreviewBanner';
 import {
   prosExportJobsCsv,
   prosAnalytics,
@@ -47,6 +48,7 @@ import {
   prosNotifications,
   prosSettings,
   prosTeamLocations,
+  prosPatchSettings,
   type ProsAnalytics,
   type ProsCompanySettings,
   type ProsJob,
@@ -96,6 +98,7 @@ const DEFAULT_SETTINGS: ProsCompanySettings = {
   preferredAiProvider: 'grok',
   defaultPack: 'pool',
   billingStatus: 'trial',
+  demoPreviewEnabled: true,
 };
 
 export default function ProsDashboard() {
@@ -126,6 +129,9 @@ export default function ProsDashboard() {
   const [settings, setSettings] = useState<ProsCompanySettings>(DEFAULT_SETTINGS);
   const [loadingData, setLoadingData] = useState(false);
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
+  const [demoPreview, setDemoPreview] = useState(false);
+  const [demoDisclaimer, setDemoDisclaimer] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const [companyName, setCompanyName] = useState('');
   const [tradeType, setTradeType] = useState<'pool' | 'electrical' | 'property' | 'multi'>('pool');
@@ -185,6 +191,17 @@ export default function ProsDashboard() {
       setNotifications(notifRes.notifications);
       setSettings(settingsRes.settings);
       setAnalytics(analyticsRes);
+
+      const preview =
+        Boolean((ov as { demoPreview?: boolean }).demoPreview) ||
+        Boolean((analyticsRes as { demoPreview?: boolean }).demoPreview) ||
+        Boolean((jobsRes as { demoPreview?: boolean }).demoPreview);
+      setDemoPreview(preview);
+      setDemoDisclaimer(
+        (ov as { demoDisclaimer?: string }).demoDisclaimer ||
+          (analyticsRes as { demoDisclaimer?: string }).demoDisclaimer ||
+          null
+      );
 
       if (me.membership?.role === 'owner' || me.membership?.role === 'manager') {
         const locRes = await prosTeamLocations(current);
@@ -274,6 +291,7 @@ export default function ProsDashboard() {
 
   const cycleJobStatus = async (job: ProsJob) => {
     if (!user) return;
+    if (job.id.startsWith('demo-')) return;
     const order: ProsJob['status'][] = ['queued', 'in_progress', 'needs_parts', 'done'];
     const status = order[(order.indexOf(job.status) + 1) % order.length];
     await prosJson(`/api/pros/jobs/${job.id}`, user, {
@@ -293,6 +311,19 @@ export default function ProsDashboard() {
     if (jobFilter === 'all') return jobs;
     return jobs.filter((j) => j.status === jobFilter);
   }, [jobs, jobFilter]);
+
+  const hideDemoPreview = async () => {
+    if (!user) return;
+    setBannerDismissed(true);
+    try {
+      const res = await prosPatchSettings(user, { demoPreviewEnabled: false });
+      setSettings(res.settings);
+      setDemoPreview(false);
+      await refreshAll(user);
+    } catch {
+      // banner stays dismissed locally for this session
+    }
+  };
 
   const exportCsv = async () => {
     if (!user) return;
@@ -531,6 +562,13 @@ export default function ProsDashboard() {
           <div className="mb-6 rounded-xl bg-red-500/15 text-red-300 px-4 py-3 text-sm">{bootError}</div>
         ) : null}
 
+        {demoPreview && demoDisclaimer && !bannerDismissed ? (
+          <ProsDemoPreviewBanner
+            disclaimer={demoDisclaimer}
+            onDismiss={() => void hideDemoPreview()}
+          />
+        ) : null}
+
         {activeTab === 'overview' && overview ? (
           <div className="space-y-8">
             <div className="rounded-2xl border border-[#1E3A8A]/30 bg-[#1E3A8A]/10 p-5 flex flex-wrap gap-4 items-center justify-between">
@@ -736,6 +774,7 @@ export default function ProsDashboard() {
                           >
                             {job.status.replace('_', ' ')}
                           </span>
+                          {job.id.startsWith('demo-') ? <DemoSampleBadge /> : null}
                           <span className="text-[10px] uppercase text-slate-500 font-bold">{job.packId}</span>
                         </div>
                         <h3 className="font-bold">{job.title}</h3>
@@ -750,13 +789,19 @@ export default function ProsDashboard() {
                     </button>
                     {expandedJobId === job.id ? (
                       <div className="border-t border-white/10 px-4 py-4 space-y-4 bg-black/20">
-                        <button
-                          type="button"
-                          onClick={() => void cycleJobStatus(job)}
-                          className="text-xs font-bold uppercase text-amber-400"
-                        >
-                          Cycle status →
-                        </button>
+                        {job.id.startsWith('demo-') ? (
+                          <p className="text-xs text-sky-300/90">
+                            Sample job — dispatch a real job to replace preview data.
+                          </p>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => void cycleJobStatus(job)}
+                            className="text-xs font-bold uppercase text-amber-400"
+                          >
+                            Cycle status →
+                          </button>
+                        )}
                         {job.fieldNotes?.length ? (
                           <div>
                             <h4 className="text-xs font-bold uppercase text-slate-500 mb-2">Field notes</h4>
@@ -843,7 +888,10 @@ export default function ProsDashboard() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold truncate">{m.displayName || 'Tech'}</div>
+                      <div className="font-bold truncate flex items-center gap-2">
+                        {m.displayName || 'Tech'}
+                        {m.uid.startsWith('demo-') ? <DemoSampleBadge /> : null}
+                      </div>
                       <div className="text-xs text-slate-500 truncate">{m.email}</div>
                     </div>
                   </div>

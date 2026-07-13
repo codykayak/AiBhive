@@ -39,6 +39,16 @@ import {
   listPartRequests,
   updatePartRequestStatus,
 } from './prosPartOrders.js';
+import { getCompanyDemoContext, getSparseCounts, isDemoId } from './prosDemoData.js';
+import {
+  mergeAnalytics,
+  mergeJobs,
+  mergeLocations,
+  mergeNotifications,
+  mergeOverview,
+  mergePartRequests,
+  mergeTeam,
+} from './prosDemoMerge.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -336,7 +346,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
 
       const companyId = mem.companyId;
-      const [membersSnap, jobsSnap, activitySnap] = await Promise.all([
+      const [membersSnap, jobsSnap, activitySnap, demoCtx, sparseCounts] = await Promise.all([
         db.collection('pros_companies').doc(companyId).collection('members').get(),
         db.collection('pros_companies').doc(companyId).collection('jobs').get(),
         db
@@ -346,6 +356,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           .orderBy('createdAt', 'desc')
           .limit(12)
           .get(),
+        getCompanyDemoContext(db, companyId),
+        getSparseCounts(db, companyId),
       ]);
 
       const jobs = jobsSnap.docs.map((d) => serializeJob(d.id, d.data()));
@@ -354,21 +366,28 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         byStatus[j.status] = (byStatus[j.status] || 0) + 1;
       }
 
-      return res.json({
-        members: membersSnap.size,
-        techs: membersSnap.docs.filter((d) => d.data().role === 'tech').length,
-        jobsTotal: jobs.length,
-        jobsByStatus: byStatus,
-        openJobs: jobs.filter((j) => j.status !== 'done').length,
-        recentActivity: activitySnap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            ...data,
-            createdAt: data.createdAt?.toMillis?.() ?? null,
-          };
-        }),
-      });
+      const realTechs = membersSnap.docs.filter((d) => d.data().role === 'tech').length;
+      const overview = mergeOverview(
+        {
+          members: membersSnap.size,
+          techs: realTechs,
+          jobsTotal: jobs.length,
+          jobsByStatus: byStatus,
+          openJobs: jobs.filter((j) => j.status !== 'done').length,
+          recentActivity: activitySnap.docs.map((d) => {
+            const data = d.data();
+            return {
+              id: d.id,
+              ...data,
+              createdAt: data.createdAt?.toMillis?.() ?? null,
+            };
+          }),
+        },
+        demoCtx.settings,
+        sparseCounts
+      );
+
+      return res.json(overview);
     } catch (err) {
       console.error('[pros/overview]', err);
       return res.status(500).json({ error: 'Failed to load overview' });
@@ -392,7 +411,11 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           joinedAt: data.joinedAt?.toMillis?.() ?? null,
         };
       });
-      return res.json({ members });
+      const [demoCtx, sparseCounts] = await Promise.all([
+        getCompanyDemoContext(db, mem.companyId),
+        getSparseCounts(db, mem.companyId),
+      ]);
+      return res.json(mergeTeam(members, demoCtx.settings, sparseCounts));
     } catch (err) {
       console.error('[pros/team]', err);
       return res.status(500).json({ error: 'Failed to load team' });
@@ -449,7 +472,13 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         jobs = jobs.filter((j) => j.assigneeUid === user.uid);
       }
       jobs.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      return res.json({ jobs });
+      const [demoCtx, sparseCounts] = await Promise.all([
+        getCompanyDemoContext(db, mem.companyId),
+        getSparseCounts(db, mem.companyId),
+      ]);
+      return res.json(
+        mergeJobs(jobs, demoCtx.settings, sparseCounts, { role: mem.role, userUid: user.uid })
+      );
     } catch (err) {
       console.error('[pros/jobs]', err);
       return res.status(500).json({ error: 'Failed to load jobs' });
@@ -539,6 +568,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     try {
       const user = await requireProsUser(req, res);
       if (!user) return;
+      if (isDemoId(req.params.jobId)) {
+        return res.status(400).json({ error: 'Sample job — create a real job to edit status' });
+      }
       const membership = await getMembership(db, user.uid);
       if (!membership?.companyId) return res.status(404).json({ error: 'No company' });
 
@@ -1206,8 +1238,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (!user) return;
       const mem = await getMembership(db, user.uid);
       if (!mem?.companyId) return res.status(404).json({ error: 'No company' });
-      const analytics = await buildProsAnalytics(db, mem.companyId);
-      return res.json(analytics);
+      const [analytics, demoCtx, sparseCounts] = await Promise.all([
+        buildProsAnalytics(db, mem.companyId),
+        getCompanyDemoContext(db, mem.companyId),
+        getSparseCounts(db, mem.companyId),
+      ]);
+      return res.json(mergeAnalytics(analytics, demoCtx.settings, sparseCounts));
     } catch (err) {
       console.error('[pros/analytics]', err);
       return res.status(500).json({ error: 'Failed to load analytics' });
@@ -1231,6 +1267,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           preferredAiProvider: settings.preferredAiProvider || 'grok',
           defaultPack: settings.defaultPack || 'pool',
           billingStatus: settings.billingStatus || 'trial',
+          demoPreviewEnabled: settings.demoPreviewEnabled !== false,
         },
       });
     } catch (err) {
@@ -1327,11 +1364,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const membersSnap = await db.collection('pros_companies').doc(mem.companyId).collection('members').get();
       const members = membersSnap.docs.map((d) => ({ uid: d.id, ...d.data() }));
       const locations = await listTeamLocations(db, mem.companyId, members);
+      const sparseCounts = await getSparseCounts(db, mem.companyId);
 
       return res.json({
         trackingEnabled: Boolean(settings.locationTrackingEnabled),
         pingIntervalMinutes: normalizePingInterval(settings.locationPingIntervalMinutes),
-        locations,
+        ...mergeLocations(locations, settings, sparseCounts),
       });
     } catch (err) {
       console.error('[pros/location/team]', err);
@@ -1359,7 +1397,11 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (mem.role === 'tech') {
         items = items.filter((n) => !n.assigneeUid || n.assigneeUid === user.uid);
       }
-      return res.json({ notifications: items });
+      const [demoCtx, sparseCounts] = await Promise.all([
+        getCompanyDemoContext(db, mem.companyId),
+        getSparseCounts(db, mem.companyId),
+      ]);
+      return res.json(mergeNotifications(items, demoCtx.settings, sparseCounts));
     } catch (err) {
       console.error('[pros/notifications get]', err);
       return res.status(500).json({ error: 'Failed to load notifications' });
@@ -1608,10 +1650,11 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
 
       const status = String(req.query.status || 'all');
       let requests = await listPartRequests(db, membership.companyId, { status: 'all' });
-      if (status !== 'all') {
-        requests = requests.filter((r) => r.status === status);
-      }
-      return res.json({ requests });
+      const [demoCtx, sparseCounts] = await Promise.all([
+        getCompanyDemoContext(db, membership.companyId),
+        getSparseCounts(db, membership.companyId),
+      ]);
+      return res.json(mergePartRequests(requests, demoCtx.settings, sparseCounts, status));
     } catch (err) {
       console.error('[pros/parts/requests GET]', err);
       return res.status(500).json({ error: 'Failed to load part requests' });
@@ -1643,6 +1686,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     try {
       const user = await requireProsUser(req, res);
       if (!user) return;
+      if (isDemoId(req.params.id)) {
+        return res.status(400).json({ error: 'Sample part request — disappears when you add real requests' });
+      }
       const mem = await requireManager(db, user.uid);
       if (!mem) return res.status(403).json({ error: 'Managers only' });
 

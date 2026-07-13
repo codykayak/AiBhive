@@ -23,6 +23,7 @@ export default function ProsSettingsPanel({
   const [tracking, setTracking] = useState(settings.locationTrackingEnabled);
   const [pingMinutes, setPingMinutes] = useState(settings.locationPingIntervalMinutes);
   const [requirePhotos, setRequirePhotos] = useState(settings.requireJobPhotos);
+  const [demoPreview, setDemoPreview] = useState(settings.demoPreviewEnabled !== false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -34,6 +35,7 @@ export default function ProsSettingsPanel({
         locationTrackingEnabled: tracking,
         locationPingIntervalMinutes: pingMinutes,
         requireJobPhotos: requirePhotos,
+        demoPreviewEnabled: demoPreview,
       });
       onUpdated(res.settings);
       setMessage('Settings saved.');
@@ -111,6 +113,20 @@ export default function ProsSettingsPanel({
             type="checkbox"
             checked={requirePhotos}
             onChange={(e) => setRequirePhotos(e.target.checked)}
+            className="w-5 h-5 accent-amber-500"
+          />
+        </label>
+        <label className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-black/30 px-4 py-3 cursor-pointer">
+          <div>
+            <div className="font-semibold text-sm">Show sample shop preview</div>
+            <div className="text-xs text-slate-500">
+              Fills empty tabs with example jobs, parts, and knowledge stats until you have real activity
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            checked={demoPreview}
+            onChange={(e) => setDemoPreview(e.target.checked)}
             className="w-5 h-5 accent-amber-500"
           />
         </label>

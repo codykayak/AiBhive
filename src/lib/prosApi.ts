@@ -50,6 +50,7 @@ export type ProsCompanySettings = {
   preferredAiProvider: string;
   defaultPack: string;
   billingStatus: string;
+  demoPreviewEnabled?: boolean;
 };
 
 export type ProsTeamLocation = {
