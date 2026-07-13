@@ -14,6 +14,7 @@ import {
   type ProsPartRequest,
   type ProsPartRequestStatus,
 } from '../../lib/prosPartsApi';
+import { DemoSampleBadge } from './ProsDemoPreviewBanner';
 import { cn } from '../../lib/utils';
 
 type Filter = ProsPartRequestStatus | 'all';
@@ -82,14 +83,19 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
     }
   };
 
-  const approve = (r: ProsPartRequest) => void updateStatus(r, 'approved');
+  const approve = (r: ProsPartRequest) => {
+    if (r.id.startsWith('demo-')) return;
+    void updateStatus(r, 'approved');
+  };
 
   const markOrdered = (r: ProsPartRequest) => {
+    if (r.id.startsWith('demo-')) return;
     const note = window.prompt('Supplier / PO note (optional)', r.supplierNote || '') ?? '';
     void updateStatus(r, 'ordered', { supplierNote: note.trim() || undefined });
   };
 
   const decline = (r: ProsPartRequest) => {
+    if (r.id.startsWith('demo-')) return;
     const reason = window.prompt('Reason for declining (shown to tech)', 'Not approved') ?? '';
     if (!reason.trim()) return;
     void updateStatus(r, 'declined', { declineReason: reason.trim() });
@@ -163,6 +169,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                       {r.status.replace('_', ' ')}
                     </span>
                     <span className="text-[10px] uppercase text-slate-500 font-bold">{r.packId}</span>
+                    {r.id.startsWith('demo-') ? <DemoSampleBadge /> : null}
                     {r.quantity > 1 ? (
                       <span className="text-[10px] text-slate-500">×{r.quantity}</span>
                     ) : null}
@@ -239,8 +246,11 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
               {r.declineReason ? (
                 <p className="text-xs text-red-300">Declined: {r.declineReason}</p>
               ) : null}
+              {r.id.startsWith('demo-') ? (
+                <p className="text-xs text-sky-300/80">Sample request — techs submit real orders from Diagnose.</p>
+              ) : null}
 
-              {isManager && r.status === 'pending_approval' ? (
+              {isManager && r.status === 'pending_approval' && !r.id.startsWith('demo-') ? (
                 <div className="flex flex-wrap gap-2 pt-1">
                   <button
                     type="button"
@@ -266,7 +276,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                 </div>
               ) : null}
 
-              {isManager && r.status === 'approved' ? (
+              {isManager && r.status === 'approved' && !r.id.startsWith('demo-') ? (
                 <button
                   type="button"
                   disabled={busyId === r.id}
