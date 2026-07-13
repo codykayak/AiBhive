@@ -2001,7 +2001,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (!mem) return res.status(403).json({ error: 'Managers only' });
 
       const snap = await db.collection('pros_companies').doc(mem.companyId).collection('jobs').get();
-      const rows = [['id', 'title', 'status', 'priority', 'packId', 'assignee', 'address', 'customer', 'notes', 'fieldNotes', 'photos', 'updatedAt']];
+      const rows = [['id', 'title', 'status', 'priority', 'packId', 'assignee', 'address', 'customer', 'scheduledFor', 'notes', 'fieldNotes', 'photos', 'updatedAt']];
       for (const doc of snap.docs) {
         const j = serializeJob(doc.id, doc.data());
         rows.push([
@@ -2013,6 +2013,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           j.assigneeName || '',
           j.address,
           j.customerName || '',
+          j.scheduledFor || '',
           (j.notes || '').replace(/\n/g, ' '),
           String(j.fieldNotes?.length || 0),
           String(j.photos?.length || 0),

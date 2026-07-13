@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Bot, Loader2, MessageCircle, Send, X } from 'lucide-react';
 import { prosAssistantChat } from '../../lib/prosApi';
+import { prosAdmin as t } from './prosAdminTheme';
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string };
 
@@ -68,16 +69,16 @@ export default function ProsAssistantPanel({ user }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-amber-500 text-black font-bold px-5 py-3 shadow-lg shadow-amber-500/25 hover:bg-amber-400"
+        className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full bg-[#F5A623] text-slate-900 font-bold px-5 py-3 shadow-lg shadow-amber-500/25 hover:bg-[#e09510]"
       >
         {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
         {open ? 'Close' : 'Pros Assistant'}
       </button>
 
       {open ? (
-        <div className="fixed bottom-24 right-6 z-50 w-[min(420px,calc(100vw-2rem))] h-[min(560px,calc(100vh-8rem))] rounded-2xl border border-white/10 bg-[#0f141c] shadow-2xl flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-            <Bot className="w-5 h-5 text-amber-400" />
+        <div className={t.assistantPanel}>
+          <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3">
+            <Bot className="w-5 h-5 text-amber-600" />
             <div>
               <div className="font-bold text-sm">Pros HQ Assistant</div>
               <div className="text-[11px] text-slate-500">Trained on the admin user manual</div>
@@ -90,8 +91,8 @@ export default function ProsAssistantPanel({ user }: Props) {
                 key={m.id}
                 className={`text-sm leading-relaxed rounded-xl px-3 py-2 ${
                   m.role === 'user'
-                    ? 'ml-8 bg-amber-500/20 text-amber-100'
-                    : 'mr-4 bg-white/5 text-slate-200 border border-white/10'
+                    ? 'ml-8 bg-amber-100 text-slate-900'
+                    : 'mr-4 bg-slate-50 text-slate-800 border border-slate-200'
                 }`}
               >
                 {m.content}
@@ -105,32 +106,32 @@ export default function ProsAssistantPanel({ user }: Props) {
             <div ref={endRef} />
           </div>
 
-          <div className="border-t border-white/10 px-3 py-2 flex flex-wrap gap-1.5">
+          <div className="border-t border-slate-200 px-3 py-2 flex flex-wrap gap-1.5">
             {QUICK.map((q) => (
               <button
                 key={q}
                 type="button"
                 onClick={() => setInput(q)}
-                className="text-[10px] rounded-full border border-white/10 px-2 py-1 text-slate-400 hover:text-white hover:border-amber-500/40"
+                className="text-[10px] rounded-full border border-slate-200 px-2 py-1 text-slate-600 hover:text-slate-900 hover:border-amber-500/40"
               >
                 {q.length > 42 ? `${q.slice(0, 42)}…` : q}
               </button>
             ))}
           </div>
 
-          <div className="border-t border-white/10 p-3 flex gap-2">
+          <div className="border-t border-slate-200 p-3 flex gap-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && void send()}
               placeholder="Ask about Pros HQ…"
-              className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+              className={`flex-1 ${t.input}`}
             />
             <button
               type="button"
               disabled={busy || !input.trim()}
               onClick={() => void send()}
-              className="rounded-xl bg-amber-500 text-black p-2.5 disabled:opacity-40"
+              className={`rounded-xl p-2.5 disabled:opacity-40 ${t.btnPrimary}`}
             >
               <Send className="w-5 h-5" />
             </button>
