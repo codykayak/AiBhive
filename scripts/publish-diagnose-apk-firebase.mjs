@@ -62,3 +62,12 @@ const writeRelease = spawnSync(
 if (writeRelease.status !== 0) {
   process.exit(writeRelease.status ?? 1);
 }
+
+const publishManifest = spawnSync(
+  process.execPath,
+  [path.join(root, 'scripts/publish-diagnose-manifest-storage.mjs')],
+  { cwd: root, stdio: 'inherit' }
+);
+if (publishManifest.status !== 0) {
+  process.exit(publishManifest.status ?? 1);
+}
