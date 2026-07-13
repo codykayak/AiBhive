@@ -9,6 +9,7 @@ on:
       - 'aibhive-diagnose/**'
       - 'public/diagnose-mobile-releases.json'
       - 'scripts/write-diagnose-release.mjs'
+      - 'scripts/publish-diagnose-apk-firebase.mjs'
       - '.github/workflows/build-diagnose-apk.yml'
 
 permissions:
@@ -65,6 +66,20 @@ jobs:
       - name: Update release manifest
         run: node scripts/write-diagnose-release.mjs
 
+      - name: Install root deps (Firebase publish script)
+        run: npm ci
+
+      - name: Publish Firebase download mirror
+        id: firebase
+        run: |
+          set -euo pipefail
+          OUTPUT_FILE="$(mktemp)"
+          node scripts/publish-diagnose-apk-firebase.mjs | tee "$OUTPUT_FILE"
+          APK_URL=$(grep '^FIREBASE_APK_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          GZ_URL=$(grep '^FIREBASE_GZ_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+          echo "gz_url=$GZ_URL" >> "$GITHUB_OUTPUT"
+
       - name: Commit deployed Diagnose APK + manifest
         run: |
           set -euo pipefail
@@ -88,5 +103,6 @@ jobs:
           echo ""
           echo "============================================================"
           echo "  Diagnose APK: https://aibhive.com/api/download/diagnose-apk"
+          echo "  Firebase:     ${{ steps.firebase.outputs.apk_url }}"
           echo "  Pros page:    https://aibhive.com/pros"
           echo "============================================================"
