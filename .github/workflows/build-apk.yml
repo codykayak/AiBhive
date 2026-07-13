@@ -103,6 +103,7 @@ jobs:
 
       - name: Commit deployed APK + manifest
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add public/taylored-mobile.apk public/mobile-releases.json
@@ -110,6 +111,9 @@ jobs:
             echo "APK unchanged, skipping commit"
           else
             git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip-apk]"
+            # Android build leaves tracked edits under taylored-mobile/android/;
+            # stash them so pull --rebase is not blocked by a dirty working tree.
+            git stash push -u -m "ci-mobile-build-artifacts" || true
             git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed
           fi
