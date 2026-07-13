@@ -1,21 +1,49 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { registerProsPushToken } from '@/lib/jobs/prosNotifications';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
 
+let notificationsModule: NotificationsModule | null | undefined;
+let handlerConfigured = false;
 let registered = false;
 
+/** Remote push was removed from Expo Go in SDK 53 — only load in dev/production builds. */
+function canUsePushNotifications(): boolean {
+  if (Platform.OS === 'web') return false;
+  if (Constants.appOwnership === 'expo') return false;
+  if (Constants.executionEnvironment === 'storeClient') return false;
+  return true;
+}
+
+async function loadNotifications(): Promise<NotificationsModule | null> {
+  if (!canUsePushNotifications()) return null;
+  if (notificationsModule !== undefined) return notificationsModule;
+  try {
+    const mod = await import('expo-notifications');
+    if (!handlerConfigured) {
+      mod.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+      handlerConfigured = true;
+    }
+    notificationsModule = mod;
+    return mod;
+  } catch {
+    notificationsModule = null;
+    return null;
+  }
+}
+
 export async function ensureNotificationPermission(): Promise<boolean> {
+  const Notifications = await loadNotifications();
+  if (!Notifications) return false;
   const { status: existing } = await Notifications.getPermissionsAsync();
   if (existing === 'granted') return true;
   const { status } = await Notifications.requestPermissionsAsync();
@@ -23,8 +51,11 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 export async function registerDiagnosePush(getIdToken: () => Promise<string | null>): Promise<void> {
-  if (registered || Platform.OS === 'web') return;
+  if (registered || !canUsePushNotifications()) return;
   try {
+    const Notifications = await loadNotifications();
+    if (!Notifications) return;
+
     const ok = await ensureNotificationPermission();
     if (!ok) return;
 
@@ -44,19 +75,31 @@ export async function registerDiagnosePush(getIdToken: () => Promise<string | nu
     const saved = await registerProsPushToken(authToken, expoPushToken, Platform.OS);
     if (saved) registered = true;
   } catch {
-    // Expo Go may lack push credentials — non-fatal
+    // Missing push credentials or unsupported runtime — non-fatal
   }
 }
 
 export function addNotificationResponseListener(
   handler: (data: { notificationId?: string; jobId?: string }) => void
 ) {
-  const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-    const data = response.notification.request.content.data as {
-      notificationId?: string;
-      jobId?: string;
-    };
-    handler(data || {});
+  if (!canUsePushNotifications()) return () => {};
+
+  let subscription: { remove: () => void } | null = null;
+  let cancelled = false;
+
+  void loadNotifications().then((Notifications) => {
+    if (cancelled || !Notifications) return;
+    subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as {
+        notificationId?: string;
+        jobId?: string;
+      };
+      handler(data || {});
+    });
   });
-  return () => sub.remove();
+
+  return () => {
+    cancelled = true;
+    subscription?.remove();
+  };
 }
