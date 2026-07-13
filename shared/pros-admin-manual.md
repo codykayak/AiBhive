@@ -103,7 +103,7 @@ Managers: use **Export CSV** on the Jobs tab to download all jobs for spreadshee
 
 #### How it works
 
-1. Enable **location tracking** in **Settings** (see §3.8).
+1. Enable **location tracking** in **Settings** (see §3.9).
 2. Techs must allow **foreground location** permission in Diagnose when prompted.
 3. The app pings HQ every **N minutes** (default 15, minimum 5) while tracking is on and the tech is signed in.
 4. The **Where is everybody?** tab shows a **map** with last-known positions and roster list.
@@ -196,7 +196,40 @@ Knowledge tab / Overview charts show growth: tips, feedback, manual chunks, jobs
 
 ---
 
-### 3.7 AI Keys
+### 3.7 Parts ordering
+
+**Managers only.** Field techs request parts from Diagnose; your office approves and places orders.
+
+#### How techs submit a request
+
+1. Tech runs **Diagnose** on equipment (voice, photo, or typed question).
+2. Below the AI answer, tap **Order part** in **Field resources** (alongside Manual Search when available).
+3. AI pre-fills **part description**, **OEM number**, **brand**, and **model** from the diagnosis.
+4. Tech confirms quantity and notes, then **Submit for approval**.
+5. If linked to a job, job status changes to **Needs parts**.
+
+#### Manager workflow (Parts tab)
+
+1. Open **Parts** tab in Pros HQ.
+2. Review **Pending** requests — part name, number, job, and tech notes.
+3. **Approve** when you're ready to purchase (or **Decline** with a reason).
+4. After your accountant or supplier confirms, **Mark ordered** and add an optional PO/supplier note.
+5. Use **Search suppliers** to open a Google search for verification.
+
+#### Statuses
+
+| Status | Meaning |
+|--------|---------|
+| **Pending approval** | Waiting for manager review |
+| **Approved** | Cleared to purchase — place the order |
+| **Ordered** | Part ordered; supplier note saved |
+| **Declined** | Not approved — tech sees reason |
+
+Approved and ordered requests appear in **Activity** for audit.
+
+---
+
+### 3.8 AI Keys
 
 Connect **Grok (xAI)** for live Diagnose AI in the field.
 
@@ -210,7 +243,7 @@ Without a key, techs still get the **offline pack library** (fault playbooks, co
 
 ---
 
-### 3.8 Settings
+### 3.9 Settings
 
 | Setting | Description |
 |---------|-------------|
@@ -225,13 +258,13 @@ Changes apply on next tech app sync.
 
 ---
 
-### 3.9 Activity
+### 3.10 Activity
 
 Read-only **audit log**: job creates, diagnose AI calls, manual ingests, notification sends, invite rotations. Useful for troubleshooting "why didn't my tech get the alert?"
 
 ---
 
-### 3.10 Help & User Manual
+### 3.11 Help & User Manual
 
 This document. Use the **Pros Assistant** chat (bottom right on HQ) to ask natural-language questions like:
 
@@ -255,7 +288,8 @@ Each company can use packs: **Pool, HVAC, Electrical, Plumbing, Property Mainten
 2. App searches **local fault library** first (works offline).
 3. When online + signed into Pros: **shop tips** + **ingested manuals** + **Grok AI**.
 4. If no manual hit: **Manual Search** PDF dork links appear.
-5. After fix: **"Did this work?"** feedback feeds the knowledge base.
+5. Need a part? Tap **Order part** — AI suggests OEM number; request goes to HQ **Parts** tab for approval.
+6. After fix: **"Did this work?"** feedback feeds the knowledge base.
 
 ### 4.3 Jobs on mobile
 
@@ -276,6 +310,7 @@ Push notifications from HQ appear under **Alerts**. Techs respond to job assignm
 | Live AI unavailable | Check AI Keys, billing status, tech joined Pros company |
 | Manual not in diagnose | Verify model prefixes match nameplate; ingest more chunks |
 | Invite code rejected | Rotate code; ensure tech uses latest APK |
+| Part request missing in HQ | Tech must be signed into Pros company; manager checks **Parts** tab |
 | CSV export empty | Create jobs first; refresh |
 
 ---
@@ -296,8 +331,9 @@ Push notifications from HQ appear under **Alerts**. Techs respond to job assignm
 When answering Pros HQ questions:
 
 1. Identify if the user is a **manager** or **tech** (managers see GPS, Knowledge, Team, export).
-2. Give **step-by-step** paths using exact tab names: Overview, Jobs, Where is everybody?, Notify, Knowledge, Team, AI Keys, Activity, Settings, Help.
+2. Give **step-by-step** paths using exact tab names: Overview, Jobs, Parts, Where is everybody?, Notify, Knowledge, Team, AI Keys, Activity, Settings, Help.
 3. For GPS: always mention Settings → Location tracking ON + tech permission in mobile app.
 4. For manuals: explain ingest in Knowledge tab AND automatic Manual Search fallback in Diagnose.
-5. Never invent features not listed in this manual.
-6. Prefer concise, friendly prose — dispatchers are busy.
+5. For parts: techs use **Order part** in Diagnose; managers use **Parts** tab to approve and mark ordered.
+6. Never invent features not listed in this manual.
+7. Prefer concise, friendly prose — dispatchers are busy.
