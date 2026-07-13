@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
 import { parseDiagnosis } from '@/lib/diagnose/parseDiagnosis';
+import { parseChatIntent, shouldAutoSendIntent } from '@/lib/diagnose/chatIntents';
 import { loadSession, saveSession, welcomeMessage } from '@/lib/diagnose/sessionStore';
 import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
 import { pushJobNoteToPros } from '@/lib/jobs/prosSync';
@@ -303,10 +304,73 @@ export function DiagnoseChat({
       setMessages((prev) => [...prev, userMessage]);
       setInput('');
       setPendingAttachment(null);
-      setBusy(true);
-      setLoadingPhase(offline ? 'Searching pack library…' : 'Scanning pack library…');
       Speech.stop();
       setSpeaking(false);
+
+      const intent = !pendingAttachment ? parseChatIntent(text) : { type: 'diagnose' as const };
+
+      if (intent.type === 'order_part') {
+        const reply = `Got it — opening **part order** for **${intent.summary}**. Review the form, add a supplier link if you have one, and submit for office approval.`;
+        const assistantMessage: ChatMessage = {
+          id: uid(),
+          role: 'assistant',
+          content: reply,
+          createdAt: Date.now(),
+          askFeedback: false,
+          diagnoseMeta: {
+            userQuery: userMessage.content,
+            source: 'local',
+            packId: activePack.id,
+            jobId,
+            intentType: 'order_part',
+            orderPartPrefill: intent.prefill,
+            autoOpenOrder: true,
+          },
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        if (speechEnabled) {
+          Speech.speak(`Opening part order for ${intent.summary.replace(/\*\*/g, '')}`, {
+            rate: 0.95,
+            onDone: () => setSpeaking(false),
+            onStopped: () => setSpeaking(false),
+          });
+        }
+        return;
+      }
+
+      if (intent.type === 'find_manual') {
+        const reply =
+          intent.links.length > 0
+            ? `Searching manuals for **${intent.summary}**. Tap a link below to open PDF results in your browser — your shop can ingest the manual into Knowledge later.`
+            : `I need a model or part number to search manuals. Try: "owner's manual for Samsung dishwasher model ABC123".`;
+        const assistantMessage: ChatMessage = {
+          id: uid(),
+          role: 'assistant',
+          content: reply,
+          createdAt: Date.now(),
+          askFeedback: false,
+          diagnoseMeta: {
+            userQuery: userMessage.content,
+            source: 'local',
+            packId: activePack.id,
+            jobId,
+            intentType: 'find_manual',
+            manualSearchLinks: intent.links.length ? intent.links : undefined,
+          },
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        if (speechEnabled && intent.links.length) {
+          Speech.speak(`Found manual search links for ${intent.summary}`, {
+            rate: 0.95,
+            onDone: () => setSpeaking(false),
+            onStopped: () => setSpeaking(false),
+          });
+        }
+        return;
+      }
+
+      setBusy(true);
+      setLoadingPhase(offline ? 'Searching pack library…' : 'Scanning pack library…');
 
       const phaseTimer = setTimeout(
         () => setLoadingPhase(offline ? 'Building repair steps…' : 'Building repair steps…'),
@@ -478,8 +542,12 @@ export function DiagnoseChat({
         const text = await voiceRef.current.stop();
         voiceRef.current = null;
         if (text) {
-          setInput(text);
-          inputRef.current?.focus();
+          if (shouldAutoSendIntent(text)) {
+            void send(text);
+          } else {
+            setInput(text);
+            inputRef.current?.focus();
+          }
         }
       } catch (err) {
         voiceRef.current = null;

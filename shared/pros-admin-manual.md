@@ -207,8 +207,9 @@ Knowledge tab / Overview charts show growth: tips, feedback, manual chunks, jobs
 3. AI pre-fills **part description**, **OEM number**, **brand**, and **model** from the diagnosis.
 4. Optional: **scan** a nameplate or part label photo to auto-read the part number.
 5. Optional: paste a **direct supplier link** to the exact part.
-6. Tech confirms quantity and notes, then **Submit for approval**.
-7. If linked to a job, job status changes to **Needs parts**.
+6. **Voice or chat:** say *"Order part number 123 for Samsung dishwasher"* — Croc opens the order form prefilled.
+7. Tech confirms quantity and notes, then **Submit for approval**.
+8. If linked to a job, job status changes to **Needs parts**.
 
 #### Manager workflow (Parts tab)
 
@@ -290,8 +291,9 @@ Each company can use packs: **Pool, HVAC, Electrical, Plumbing, Property Mainten
 2. App searches **local fault library** first (works offline).
 3. When online + signed into Pros: **shop tips** + **ingested manuals** + **Grok AI**.
 4. If no manual hit: **Manual Search** PDF dork links appear.
-5. Need a part? Tap **Order part** — AI suggests OEM number; request goes to HQ **Parts** tab for approval.
-6. After fix: **"Did this work?"** feedback feeds the knowledge base.
+5. **Voice/chat manual lookup:** *"Owner's manual for Samsung dishwasher model ABC123"* — instant PDF search links.
+6. Need a part? Tap **Order part** or say *"Order part number …"* — request goes to HQ **Parts** tab.
+7. After fix: **"Did this work?"** feedback feeds the knowledge base.
 
 ### 4.3 Jobs on mobile
 
