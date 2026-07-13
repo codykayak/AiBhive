@@ -12,6 +12,7 @@ export type PartRequestPayload = {
   packId?: string;
   diagnoseQuery?: string;
   requestedByName?: string;
+  partUrl?: string;
 };
 
 export type PartSuggestResult = {
@@ -60,4 +61,22 @@ export async function submitPartRequest(token: string, payload: PartRequestPaylo
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export type PartScanResult = {
+  partName: string;
+  partNumber: string;
+  brand: string;
+  equipmentModel: string;
+  notes: string;
+};
+
+export async function scanPartLabel(
+  token: string,
+  payload: { base64: string; mimeType?: string }
+): Promise<PartScanResult> {
+  return prosFetch(token, '/api/pros/parts/scan-label', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<PartScanResult>;
 }

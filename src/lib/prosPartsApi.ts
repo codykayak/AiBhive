@@ -23,6 +23,7 @@ export type ProsPartRequest = {
   orderedByName: string | null;
   declineReason: string | null;
   supplierNote: string | null;
+  partUrl: string | null;
   createdAt: number | null;
   updatedAt: number | null;
   approvedAt: number | null;
@@ -57,6 +58,7 @@ export async function prosCreatePartRequest(
     packId?: string;
     diagnoseQuery?: string;
     requestedByName?: string;
+    partUrl?: string;
   }
 ) {
   return prosJson<{ request: ProsPartRequest }>('/api/pros/parts/requests', user, {
@@ -86,6 +88,24 @@ export async function prosSuggestPart(
   }
 ) {
   return prosJson<PartSuggestResult>('/api/pros/parts/suggest', user, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export type PartScanResult = {
+  partName: string;
+  partNumber: string;
+  brand: string;
+  equipmentModel: string;
+  notes: string;
+};
+
+export async function prosScanPartLabel(
+  user: User,
+  payload: { base64: string; mimeType?: string }
+) {
+  return prosJson<PartScanResult>('/api/pros/parts/scan-label', user, {
     method: 'POST',
     body: JSON.stringify(payload),
   });

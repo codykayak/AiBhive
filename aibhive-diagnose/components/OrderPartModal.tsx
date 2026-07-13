@@ -1,19 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Package, X } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Camera, Link2, Package, ScanLine, X } from 'lucide-react-native';
 
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
-import { suggestPart, submitPartRequest } from '@/lib/jobs/partRequests';
+import { scanPartLabel, suggestPart, submitPartRequest } from '@/lib/jobs/partRequests';
 import type { DiagnosisResult, TradePackId } from '@/lib/packs/types';
 import { extractModelCandidates } from '@/lib/knowledge/manualSearch';
 
@@ -41,6 +45,7 @@ export function OrderPartModal({
   const { getIdToken, profile, user } = useAuth();
   const { activePack } = usePack();
   const [loading, setLoading] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -50,6 +55,7 @@ export function OrderPartModal({
   const [quantity, setQuantity] = useState('1');
   const [brand, setBrand] = useState('');
   const [equipmentModel, setEquipmentModel] = useState('');
+  const [partUrl, setPartUrl] = useState('');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -63,6 +69,7 @@ export function OrderPartModal({
     setQuantity('1');
     setBrand('');
     setEquipmentModel(models[0] || '');
+    setPartUrl('');
     setNotes('');
 
     void (async () => {
@@ -89,6 +96,48 @@ export function OrderPartModal({
     })();
   }, [visible, userQuery, assistantReply, structured, activePack.id, getIdToken]);
 
+  const scanLabelPhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setError('Camera permission is required to scan a part label.');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.65,
+      base64: true,
+      allowsEditing: false,
+    });
+    if (result.canceled || !result.assets?.[0]?.base64) return;
+
+    const token = await getIdToken();
+    if (!token) {
+      setError('Sign in to scan part labels.');
+      return;
+    }
+
+    setScanning(true);
+    setError(null);
+    try {
+      const scan = await scanPartLabel(token, {
+        base64: result.assets[0].base64,
+        mimeType: result.assets[0].mimeType || 'image/jpeg',
+      });
+      if (scan.partNumber) setPartNumber(scan.partNumber);
+      if (scan.partName) setPartName(scan.partName);
+      if (scan.brand) setBrand(scan.brand);
+      if (scan.equipmentModel) setEquipmentModel(scan.equipmentModel);
+      if (scan.notes) {
+        setNotes((prev) => (prev ? `${prev}\n${scan.notes}` : scan.notes));
+      }
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read the label. Try again or type manually.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
   const submit = async () => {
     if (!partName.trim()) {
       setError('Describe the part you need.');
@@ -108,6 +157,7 @@ export function OrderPartModal({
         quantity: Math.max(1, parseInt(quantity, 10) || 1),
         brand: brand.trim() || undefined,
         equipmentModel: equipmentModel.trim() || undefined,
+        partUrl: partUrl.trim() || undefined,
         notes: notes.trim() || undefined,
         jobId,
         jobTitle,
@@ -128,8 +178,12 @@ export function OrderPartModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View className="flex-1 bg-hive-bg px-5 pt-4 pb-8">
-        <View className="flex-row items-center justify-between mb-4">
+      <KeyboardAvoidingView
+        className="flex-1 bg-hive-bg"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
           <View className="flex-row items-center gap-2">
             <Package color={theme.colors.amber} size={22} />
             <Text className="text-lg font-bold text-hive-mist">Order part</Text>
@@ -139,47 +193,99 @@ export function OrderPartModal({
           </Pressable>
         </View>
 
-        <Text className="text-sm text-hive-steel mb-4 leading-5">
-          Sends to your shop HQ for accountant approval. Job status updates to{' '}
-          <Text className="font-bold text-hive-mist">Needs parts</Text> when linked.
-        </Text>
+        <ScrollView
+          className="flex-1 px-5"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          <Text className="text-sm text-hive-steel mb-4 leading-5">
+            Sends to your shop HQ for approval. Job status updates to{' '}
+            <Text className="font-bold text-hive-mist">Needs parts</Text> when linked.
+          </Text>
 
-        {loading ? (
-          <View className="flex-row items-center gap-2 mb-4">
-            <ActivityIndicator color={theme.colors.amber} />
-            <Text className="text-sm text-hive-steel">AI suggesting part number…</Text>
-          </View>
-        ) : null}
+          {loading ? (
+            <View className="flex-row items-center gap-2 mb-4">
+              <ActivityIndicator color={theme.colors.amber} />
+              <Text className="text-sm text-hive-steel">AI suggesting part number…</Text>
+            </View>
+          ) : null}
 
-        {success ? (
-          <View className="rounded-sm border border-hive-success/40 bg-hive-success/10 p-4">
-            <Text className="font-bold text-hive-mist">Submitted for approval</Text>
-            <Text className="text-sm text-hive-steel mt-1">Your office will review and place the order.</Text>
-          </View>
-        ) : (
-          <View className="gap-3">
-            <Field label="Part description" value={partName} onChangeText={setPartName} />
-            <Field label="Part / OEM number" value={partNumber} onChangeText={setPartNumber} placeholder="If known" />
-            <Field label="Quantity" value={quantity} onChangeText={setQuantity} keyboardType="number-pad" />
-            <Field label="Brand" value={brand} onChangeText={setBrand} placeholder="Pentair, Carrier…" />
-            <Field label="Equipment model" value={equipmentModel} onChangeText={setEquipmentModel} />
-            <Field label="Notes for office" value={notes} onChangeText={setNotes} multiline />
-            {error ? <Text className="text-sm text-hive-danger">{error}</Text> : null}
-            <Pressable
-              onPress={() => void submit()}
-              disabled={submitting}
-              className="min-h-[56px] items-center justify-center rounded-sm bg-hive-amber mt-2 active:opacity-80"
-              style={{ borderRadius: theme.radius.sm }}
-            >
-              {submitting ? (
-                <ActivityIndicator color={theme.colors.onPrimary} />
-              ) : (
-                <Text className="font-bold text-hive-onPrimary text-base">Submit for approval</Text>
-              )}
-            </Pressable>
-          </View>
-        )}
-      </View>
+          {success ? (
+            <View className="rounded-sm border border-hive-success/40 bg-hive-success/10 p-4">
+              <Text className="font-bold text-hive-mist">Submitted for approval</Text>
+              <Text className="text-sm text-hive-steel mt-1">Your office will review and place the order.</Text>
+            </View>
+          ) : (
+            <View className="gap-3">
+              <Field label="Part description" value={partName} onChangeText={setPartName} />
+
+              <View>
+                <Text className="text-xs font-bold uppercase tracking-wider text-hive-brand mb-1">
+                  Part / OEM number
+                </Text>
+                <View className="flex-row gap-2">
+                  <TextInput
+                    value={partNumber}
+                    onChangeText={setPartNumber}
+                    placeholder="If known"
+                    placeholderTextColor={theme.colors.steel}
+                    className="min-h-[48px] flex-1 rounded-sm border border-hive-border bg-hive-elevated px-3 py-2.5 text-base text-hive-mist"
+                  />
+                  <Pressable
+                    onPress={() => void scanLabelPhoto()}
+                    disabled={scanning}
+                    className="min-h-[48px] min-w-[52px] items-center justify-center rounded-sm border border-hive-amber/50 bg-hive-amber/10 active:opacity-80"
+                    style={{ borderRadius: theme.radius.sm }}
+                    accessibilityLabel="Scan part label"
+                  >
+                    {scanning ? (
+                      <ActivityIndicator color={theme.colors.amber} />
+                    ) : (
+                      <ScanLine color={theme.colors.amber} size={22} />
+                    )}
+                  </Pressable>
+                </View>
+                <View className="flex-row items-center gap-1.5 mt-1.5">
+                  <Camera color={theme.colors.steel} size={12} />
+                  <Text className="text-[11px] text-hive-steel">
+                    Tap scan to photograph a nameplate or part label
+                  </Text>
+                </View>
+              </View>
+
+              <Field
+                label="Part link (optional)"
+                value={partUrl}
+                onChangeText={setPartUrl}
+                placeholder="https://supplier.com/part…"
+                keyboardType="url"
+                autoCapitalize="none"
+                icon={<Link2 color={theme.colors.steel} size={14} />}
+              />
+
+              <Field label="Quantity" value={quantity} onChangeText={setQuantity} keyboardType="number-pad" />
+              <Field label="Brand" value={brand} onChangeText={setBrand} placeholder="Pentair, Carrier…" />
+              <Field label="Equipment model" value={equipmentModel} onChangeText={setEquipmentModel} />
+              <Field label="Notes for office" value={notes} onChangeText={setNotes} multiline />
+
+              {error ? <Text className="text-sm text-hive-danger">{error}</Text> : null}
+
+              <Pressable
+                onPress={() => void submit()}
+                disabled={submitting || scanning}
+                className="min-h-[56px] items-center justify-center rounded-sm bg-hive-amber mt-2 active:opacity-80"
+                style={{ borderRadius: theme.radius.sm }}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={theme.colors.onPrimary} />
+                ) : (
+                  <Text className="font-bold text-hive-onPrimary text-base">Submit for approval</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -191,27 +297,36 @@ function Field({
   placeholder,
   multiline,
   keyboardType,
+  autoCapitalize,
+  icon,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
   multiline?: boolean;
-  keyboardType?: 'default' | 'number-pad';
+  keyboardType?: 'default' | 'number-pad' | 'url';
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  icon?: ReactNode;
 }) {
   return (
     <View>
       <Text className="text-xs font-bold uppercase tracking-wider text-hive-brand mb-1">{label}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.steel}
-        multiline={multiline}
-        keyboardType={keyboardType}
-        className="min-h-[48px] rounded-sm border border-hive-border bg-hive-elevated px-3 py-2.5 text-base text-hive-mist"
-        style={multiline ? { minHeight: 72, textAlignVertical: 'top' } : undefined}
-      />
+      <View className="relative">
+        {icon ? <View className="absolute left-3 top-3.5 z-10">{icon}</View> : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={theme.colors.steel}
+          multiline={multiline}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={keyboardType === 'url' ? false : undefined}
+          className={`min-h-[48px] rounded-sm border border-hive-border bg-hive-elevated py-2.5 text-base text-hive-mist ${icon ? 'pl-9 pr-3' : 'px-3'}`}
+          style={multiline ? { minHeight: 72, textAlignVertical: 'top' } : undefined}
+        />
+      </View>
     </View>
   );
 }

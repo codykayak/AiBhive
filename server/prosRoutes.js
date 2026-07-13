@@ -1796,6 +1796,58 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     }
   });
 
+  app.post('/api/pros/parts/scan-label', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const base64 = String(req.body?.base64 || '').trim();
+      const mimeType = String(req.body?.mimeType || 'image/jpeg').trim();
+      if (!base64) return res.status(400).json({ error: 'Photo required' });
+      if (base64.length > 8_000_000) return res.status(400).json({ error: 'Image too large' });
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (!resolved?.key) {
+        return res.status(503).json({ error: 'AI vision not configured for your shop' });
+      }
+
+      const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
+      const model = process.env.GROK_DIAGNOSE_MODEL || process.env.EXPO_PUBLIC_GROK_MODEL || 'grok-2-vision-1212';
+      const raw = await grokChatMessages(resolved.key, model, [
+        {
+          role: 'system',
+          content:
+            'Read equipment nameplates and part labels in trade photos. Reply ONLY with JSON: {"partName":"","partNumber":"","brand":"","equipmentModel":"","notes":""}. partNumber is the OEM/SKU/model number on the label. Use empty strings when not visible.',
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Extract part number and equipment details from this label or nameplate photo.' },
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mimeType};base64,${base64}` },
+            },
+          ],
+        },
+      ]);
+
+      const jsonMatch = String(raw || '').match(/\{[\s\S]*\}/);
+      const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+      return res.json({
+        partName: String(parsed.partName || '').trim(),
+        partNumber: String(parsed.partNumber || '').trim(),
+        brand: String(parsed.brand || '').trim(),
+        equipmentModel: String(parsed.equipmentModel || '').trim(),
+        notes: String(parsed.notes || '').trim(),
+      });
+    } catch (err) {
+      console.error('[pros/parts/scan-label]', err);
+      return res.status(500).json({ error: err?.message || 'Could not read label' });
+    }
+  });
+
   // Register Expo push token (field app)
   app.post('/api/pros/push/register', async (req, res) => {
     try {

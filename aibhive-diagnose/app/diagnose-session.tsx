@@ -16,7 +16,6 @@ export default function DiagnoseSessionScreen() {
       autoVoice={params.voice === '1' || params.voice === 'true'}
       initialPrompt={typeof params.prompt === 'string' ? params.prompt : undefined}
       jobId={typeof params.jobId === 'string' ? params.jobId : undefined}
-      keyboardOffset={64}
     />
   );
 }
