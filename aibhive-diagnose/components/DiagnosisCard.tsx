@@ -16,7 +16,7 @@ export function DiagnosisCard({ result }: Props) {
   }, []);
 
   return (
-    <View className="mb-3 max-w-[92%] self-start rounded-2xl rounded-bl-md border border-hive-border bg-hive-card px-4 py-3">
+    <View className="mb-3 max-w-[92%] self-start rounded-sm rounded-bl-md border border-hive-border bg-hive-card px-4 py-3">
       {result.summary ? (
         <Text className="text-base leading-6 text-hive-mist">{result.summary}</Text>
       ) : null}

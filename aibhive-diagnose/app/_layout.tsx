@@ -1,7 +1,7 @@
 import '../global.css';
 
 import { Stack } from 'expo-router';
-import { DarkTheme, ThemeProvider } from 'expo-router/react-navigation';
+import { DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -28,9 +28,9 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 const DiagnoseTheme = {
-  ...DarkTheme,
+  ...DefaultTheme,
   colors: {
-    ...DarkTheme.colors,
+    ...DefaultTheme.colors,
     primary: theme.colors.amber,
     background: theme.colors.bg,
     card: theme.colors.elevated,
@@ -93,7 +93,7 @@ export default function RootLayout() {
           paddingHorizontal: 24,
         }}
       >
-        <StatusBar style="light" />
+        <StatusBar style="dark" />
         <Text style={{ color: theme.colors.amber, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
           AiBhive Diagnose
         </Text>
@@ -111,7 +111,7 @@ export default function RootLayout() {
           <PackProvider>
             <ThemeProvider value={DiagnoseTheme}>
               <View style={{ flex: 1, backgroundColor: theme.colors.bg }}>
-                <StatusBar style="light" />
+                <StatusBar style="dark" />
                 {showIntro ? <IntroSplash onDone={finishIntro} /> : null}
                 <ProsFieldServices />
                 <OfflineIndicator />
@@ -242,6 +242,14 @@ export default function RootLayout() {
                       headerStyle: { backgroundColor: theme.colors.elevated },
                       headerTintColor: theme.colors.mist,
                     }}
+                  />
+                  <Stack.Screen
+                    name="pack/[packId]"
+                    options={({ route }) => ({
+                      title: 'Trade pack',
+                      headerStyle: { backgroundColor: theme.colors.elevated },
+                      headerTintColor: theme.colors.mist,
+                    })}
                   />
                   <Stack.Screen
                     name="pack-category/[packId]/[categoryId]"

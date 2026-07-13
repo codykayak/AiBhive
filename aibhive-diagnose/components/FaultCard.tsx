@@ -16,7 +16,7 @@ export function FaultCard({ fault, compact = false }: { fault: FaultEntry; compa
   return (
     <Pressable
       onPress={() => router.push(`/fault/${fault.id}`)}
-      className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
+      className="rounded-sm border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
     >
       <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">

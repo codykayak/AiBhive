@@ -212,28 +212,28 @@ export default function AccountScreen() {
           </Pressable>
         </View>
 
-        <View className="mt-6 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+        <View className="mt-6 rounded-sm border border-hive-border bg-hive-elevated p-4">
           <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-hive-steel">Your name</Text>
           <TextInput
             value={name}
             onChangeText={setName}
             placeholder="Name for the roster"
             placeholderTextColor={theme.colors.steel}
-            className="min-h-[52px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+            className="min-h-[52px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
           />
           <View className="mt-3">
             <BigButton label="Save profile" onPress={() => void saveName()} />
           </View>
         </View>
 
-        <View className="mt-6 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+        <View className="mt-6 rounded-sm border border-hive-border bg-hive-elevated p-4">
           <Text className="text-xs font-bold uppercase tracking-wider text-hive-amber">Pros AI</Text>
           <Text className="mt-2 text-sm leading-5 text-hive-mist">
             {aiStatusLabel(aiStatus, Boolean(user))}
           </Text>
         </View>
 
-        <View className="mt-6 rounded-2xl border border-hive-amber/30 bg-hive-elevated p-4">
+        <View className="mt-6 rounded-sm border border-hive-amber/30 bg-hive-elevated p-4">
           <Text className="text-base font-bold text-hive-mist">Field knowledge network</Text>
           <Text className="mt-2 text-sm leading-5 text-hive-steel">
             Like other apps, we share tips anonymously — no names, customers, or addresses — so every
@@ -280,7 +280,7 @@ export default function AccountScreen() {
             <>
               <BigButton
                 label={loading ? 'Loading…' : 'Sign in with Google'}
-                icon={<LogIn color={theme.colors.bg} size={22} />}
+                icon={<LogIn color={theme.colors.onPrimary} size={22} />}
                 onPress={() => void handleSignIn()}
               />
               <BigButton

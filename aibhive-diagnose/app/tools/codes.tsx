@@ -18,13 +18,13 @@ export default function CodesScreen() {
           onChangeText={setQuery}
           placeholder="Code, brand, or meaning…"
           placeholderTextColor={theme.colors.steel}
-          className="min-h-[52px] rounded-2xl border border-hive-border bg-hive-card px-4 text-base text-hive-mist"
+          className="min-h-[52px] rounded-sm border border-hive-border bg-hive-card px-4 text-base text-hive-mist"
           autoCapitalize="characters"
         />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
         {codes.map((code) => (
-          <View key={code.id} className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4">
+          <View key={code.id} className="rounded-sm border border-hive-border bg-hive-elevated px-4 py-4">
             <View className="flex-row items-center justify-between">
               <Text className="font-mono text-xl font-bold text-hive-amber">{code.code}</Text>
               <Text className="text-xs font-bold uppercase text-hive-steel">{code.severity}</Text>

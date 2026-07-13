@@ -140,7 +140,7 @@ export function PulseLoader({ text = 'Diagnosing…' }: { text?: string }) {
   }));
 
   return (
-    <View className="flex-row items-center gap-3 rounded-2xl border border-hive-border bg-hive-card px-4 py-3">
+    <View className="flex-row items-center gap-3 rounded-sm border border-hive-border bg-hive-card px-4 py-3">
       <View className="flex-row items-center gap-1.5">
         <Animated.View style={[{ width: 8, height: 8, borderRadius: 8, backgroundColor: theme.colors.amber }, sa]} />
         <Animated.View style={[{ width: 8, height: 8, borderRadius: 8, backgroundColor: theme.colors.pool }, sb]} />

@@ -102,33 +102,33 @@ export default function JobsScreen() {
         </View>
         <Pressable
           onPress={() => void refresh()}
-          className="h-11 w-11 items-center justify-center rounded-xl border border-hive-border bg-hive-elevated"
+          className="h-11 w-11 items-center justify-center rounded-sm border border-hive-border bg-hive-elevated"
         >
           <RefreshCw color={theme.colors.amber} size={18} />
         </Pressable>
       </View>
       {syncing ? <Text className="mt-2 text-xs text-hive-steel">Syncing with Pros…</Text> : null}
 
-      <View className="mt-5 rounded-2xl border border-hive-border bg-hive-elevated p-4">
+      <View className="mt-5 rounded-sm border border-hive-border bg-hive-elevated p-4">
         <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-hive-steel">New job</Text>
         <TextInput
           value={draftTitle}
           onChangeText={setDraftTitle}
           placeholder="What’s broken?"
           placeholderTextColor={theme.colors.steel}
-          className="min-h-[52px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+          className="min-h-[52px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
         />
         <TextInput
           value={draftAddress}
           onChangeText={setDraftAddress}
           placeholder="Address"
           placeholderTextColor={theme.colors.steel}
-          className="mt-2 min-h-[48px] rounded-xl border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+          className="mt-2 min-h-[48px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
         />
         <View className="mt-3">
           <BigButton
             label="Add job"
-            icon={<Plus color={theme.colors.bg} size={22} strokeWidth={2.5} />}
+            icon={<Plus color={theme.colors.onPrimary} size={22} strokeWidth={2.5} />}
             onPress={() => void addJob()}
             disabled={!draftTitle.trim()}
           />
@@ -140,7 +140,7 @@ export default function JobsScreen() {
           <Pressable
             key={job.id}
             onPress={() => router.push(`/job/${job.id}` as never)}
-            className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
+            className="rounded-sm border border-hive-border bg-hive-elevated px-4 py-4 active:opacity-80"
           >
             <View className="mb-2 flex-row items-center justify-between">
               <Pressable

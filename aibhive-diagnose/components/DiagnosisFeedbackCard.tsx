@@ -56,7 +56,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
 
   if (step === 'ask') {
     return (
-      <View className="mt-2 rounded-2xl border border-hive-amber/40 bg-hive-elevated p-3">
+      <View className="mt-2 rounded-sm border border-hive-amber/40 bg-hive-elevated p-3">
         <Text className="text-sm font-bold text-hive-mist">Did what I suggest work?</Text>
         <Text className="mt-1 text-xs text-hive-steel">
           Your answer helps your shop — and anonymously strengthens Diagnose for everyone.
@@ -64,13 +64,13 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
         <View className="mt-3 flex-row gap-2">
           <Pressable
             onPress={() => choose('worked')}
-            className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-hive-success/20 border border-hive-success/40"
+            className="min-h-[44px] flex-1 items-center justify-center rounded-sm bg-hive-success/20 border border-hive-success/40"
           >
             <Text className="font-bold text-hive-mist">Yes</Text>
           </Pressable>
           <Pressable
             onPress={() => choose('didnt')}
-            className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-hive-danger/15 border border-hive-danger/40"
+            className="min-h-[44px] flex-1 items-center justify-center rounded-sm bg-hive-danger/15 border border-hive-danger/40"
           >
             <Text className="font-bold text-hive-mist">No</Text>
           </Pressable>
@@ -83,7 +83,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
   }
 
   return (
-    <View className="mt-2 rounded-2xl border border-hive-border bg-hive-elevated p-3">
+    <View className="mt-2 rounded-sm border border-hive-border bg-hive-elevated p-3">
       <Text className="text-base font-bold text-hive-amber">Share with your team</Text>
       <Text className="mt-1 text-xs leading-4 text-hive-steel">
         {outcome === 'worked'
@@ -99,7 +99,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
         onChangeText={setEquipmentLabel}
         placeholder="e.g. Napoleon gas fireplace GDS50"
         placeholderTextColor={theme.colors.steel}
-        className="mt-1 min-h-[44px] rounded-xl border border-hive-border bg-hive-bg px-3 text-sm text-hive-mist"
+        className="mt-1 min-h-[44px] rounded-sm border border-hive-border bg-hive-bg px-3 text-sm text-hive-mist"
       />
 
       {outcome === 'didnt' ? (
@@ -113,7 +113,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
             placeholder="Pilot tip thermocouple / orifice clog…"
             placeholderTextColor={theme.colors.steel}
             multiline
-            className="mt-1 min-h-[56px] rounded-xl border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
+            className="mt-1 min-h-[56px] rounded-sm border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
           />
           <Text className="mt-3 text-[11px] font-bold uppercase tracking-wider text-hive-steel">
             What fixed it?
@@ -124,7 +124,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
             placeholder="Replaced thermocouple, cleaned pilot orifice…"
             placeholderTextColor={theme.colors.steel}
             multiline
-            className="mt-1 min-h-[56px] rounded-xl border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
+            className="mt-1 min-h-[56px] rounded-sm border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
           />
         </>
       ) : (
@@ -138,7 +138,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
             placeholder="Confirmed: clean the coin trap before condemning the pump."
             placeholderTextColor={theme.colors.steel}
             multiline
-            className="mt-1 min-h-[56px] rounded-xl border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
+            className="mt-1 min-h-[56px] rounded-sm border border-hive-border bg-hive-bg px-3 py-2 text-sm text-hive-mist"
           />
         </>
       )}
@@ -173,10 +173,10 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
         <Pressable
           disabled={busy}
           onPress={submit}
-          className={`min-h-[48px] flex-1 items-center justify-center rounded-xl ${busy ? 'bg-hive-border' : 'bg-hive-amber'}`}
+          className={`min-h-[48px] flex-1 items-center justify-center rounded-sm ${busy ? 'bg-hive-border' : 'bg-hive-amber'}`}
         >
           {busy ? (
-            <ActivityIndicator color={theme.colors.bg} />
+            <ActivityIndicator color={theme.colors.onPrimary} />
           ) : (
             <Text className="font-bold text-hive-bg">Submit</Text>
           )}

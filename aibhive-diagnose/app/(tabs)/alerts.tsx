@@ -104,12 +104,12 @@ export default function AlertsScreen() {
 
       <View className="mt-6 gap-3">
         {items.length === 0 ? (
-          <View className="rounded-2xl border border-hive-border bg-hive-elevated p-6 items-center">
+          <View className="rounded-sm border border-hive-border bg-hive-elevated p-6 items-center">
             <Text className="text-hive-steel text-sm text-center">No alerts yet.</Text>
           </View>
         ) : (
           items.map((n) => (
-            <View key={n.id} className="rounded-2xl border border-hive-border bg-hive-elevated p-4">
+            <View key={n.id} className="rounded-sm border border-hive-border bg-hive-elevated p-4">
               <View className="flex-row items-center gap-2 mb-2">
                 <Text
                   className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
@@ -148,19 +148,19 @@ export default function AlertsScreen() {
                     onChangeText={(t) => setFixDraft((d) => ({ ...d, [n.id]: t }))}
                     placeholder="Fix summary (optional before Done)"
                     placeholderTextColor={theme.colors.steel}
-                    className="rounded-xl border border-hive-border bg-hive-bg px-3 py-2.5 text-sm text-hive-mist"
+                    className="rounded-sm border border-hive-border bg-hive-bg px-3 py-2.5 text-sm text-hive-mist"
                   />
                   <View className="flex-row gap-2">
                     <Pressable
                       onPress={() => void respond(n, true)}
-                      className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-emerald-500/20 py-3"
+                      className="flex-1 flex-row items-center justify-center gap-2 rounded-sm bg-emerald-500/20 py-3"
                     >
                       <CheckCircle2 color="#6ee7b7" size={18} />
                       <Text className="text-emerald-300 font-bold text-sm">Done</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => void respond(n, false)}
-                      className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-white/5 py-3"
+                      className="flex-1 flex-row items-center justify-center gap-2 rounded-sm bg-hive-card py-3"
                     >
                       <XCircle color={theme.colors.steel} size={18} />
                       <Text className="text-hive-steel font-bold text-sm">Not yet</Text>

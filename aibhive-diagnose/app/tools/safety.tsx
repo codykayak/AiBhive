@@ -70,7 +70,7 @@ export default function SafetyScreen() {
                 void Haptics.selectionAsync();
                 setDone((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
               }}
-              className={`min-h-[64px] flex-row items-center gap-3 rounded-2xl border px-4 py-3 active:opacity-80 ${on ? 'border-hive-success/50 bg-hive-success/10' : 'border-hive-border bg-hive-elevated'}`}
+              className={`min-h-[64px] flex-row items-center gap-3 rounded-sm border px-4 py-3 active:opacity-80 ${on ? 'border-hive-success/50 bg-hive-success/10' : 'border-hive-border bg-hive-elevated'}`}
             >
               <View
                 className="h-7 w-7 items-center justify-center rounded-full border"

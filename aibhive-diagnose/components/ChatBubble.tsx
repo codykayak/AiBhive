@@ -9,13 +9,13 @@ function renderInlineMarkdown(text: string, isUser: boolean) {
   return parts.map((part, index) => {
     if (part.startsWith('**') && part.endsWith('**')) {
       return (
-        <Text key={index} className="font-bold" style={{ color: isUser ? theme.colors.bg : theme.colors.mist }}>
+        <Text key={index} className="font-bold" style={{ color: isUser ? theme.colors.onPrimary : theme.colors.mist }}>
           {part.slice(2, -2)}
         </Text>
       );
     }
     return (
-      <Text key={index} style={{ color: isUser ? theme.colors.bg : theme.colors.mist }}>
+      <Text key={index} style={{ color: isUser ? theme.colors.onPrimary : theme.colors.mist }}>
         {part}
       </Text>
     );
@@ -31,7 +31,7 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
         {message.attachment?.uri ? (
           <Image
             source={{ uri: message.attachment.uri }}
-            className="mb-2 h-40 w-56 self-start rounded-xl"
+            className="mb-2 h-40 w-56 self-start rounded-sm"
             resizeMode="cover"
           />
         ) : null}
@@ -51,12 +51,12 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
   return (
     <View className={`mb-3 max-w-[92%] ${isUser ? 'self-end' : 'self-start'}`}>
       <View
-        className={`rounded-2xl px-4 py-3 ${isUser ? 'rounded-br-md bg-hive-amber' : 'rounded-bl-md border border-hive-border bg-hive-card'}`}
+        className={`rounded-sm px-4 py-3 ${isUser ? 'rounded-br-md bg-hive-amber' : 'rounded-bl-md border border-hive-border bg-hive-card'}`}
       >
         {message.attachment?.uri ? (
           <Image
             source={{ uri: message.attachment.uri }}
-            className="mb-2 h-40 w-56 rounded-xl"
+            className="mb-2 h-40 w-56 rounded-sm"
             resizeMode="cover"
           />
         ) : null}

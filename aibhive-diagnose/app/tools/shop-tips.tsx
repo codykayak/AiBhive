@@ -65,7 +65,7 @@ export default function ShopTipsScreen() {
         onChangeText={setQuery}
         placeholder="Filter tips…"
         placeholderTextColor={theme.colors.steel}
-        className="mt-4 min-h-[48px] rounded-xl border border-hive-border bg-hive-elevated px-3 text-base text-hive-mist"
+        className="mt-4 min-h-[48px] rounded-sm border border-hive-border bg-hive-elevated px-3 text-base text-hive-mist"
       />
 
       <Pressable
@@ -92,7 +92,7 @@ export default function ShopTipsScreen() {
         {filtered.map((tip) => (
           <View
             key={tip.id}
-            className="rounded-2xl border border-hive-border bg-hive-elevated px-4 py-3"
+            className="rounded-sm border border-hive-border bg-hive-elevated px-4 py-3"
           >
             <Text className="text-sm leading-5 text-hive-mist">{tip.text}</Text>
             <Text className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-hive-steel">

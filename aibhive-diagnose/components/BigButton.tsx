@@ -58,6 +58,8 @@ export function BigButton({
   );
 }
 
+const R = theme.radius;
+
 const styles = StyleSheet.create({
   base: {
     minHeight: 56,
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    borderRadius: 16,
+    borderRadius: R.sm,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.amber,
   },
   secondary: {
-    backgroundColor: theme.colors.card,
+    backgroundColor: theme.colors.elevated,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
@@ -96,7 +98,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   labelPrimary: {
-    color: theme.colors.bg,
+    color: theme.colors.onPrimary,
   },
   labelLight: {
     color: theme.colors.mist,
