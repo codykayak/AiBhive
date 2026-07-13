@@ -23,6 +23,7 @@ const GetStarted = lazy(() => import('./pages/GetStarted'));
 const FAQ = lazy(() => import('./pages/FAQ'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ProsLanding = lazy(() => import('./pages/ProsLanding'));
+const ProsTradePage = lazy(() => import('./pages/ProsTradePage'));
 const ProsDashboard = lazy(() => import('./pages/ProsDashboard'));
 const Homework = lazy(() => import('./pages/Homework'));
 const TestGetStarted = lazy(() => import('./pages/TestGetStarted'));
@@ -93,6 +94,7 @@ function AnimatedRoutes() {
             <Route path="/get-started" element={<GetStarted />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/pros" element={<ProsLanding />} />
+            <Route path="/pros/:tradeSlug" element={<ProsTradePage />} />
             <Route path="/test" element={<TestGetStarted />} />
             <Route path="/use-cases/podcasters" element={<Podcasters />} />
             <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -169,7 +171,7 @@ function AppShell() {
   const { pathname } = useLocation();
   const isAdminRoute = pathname.startsWith('/admin');
   const isProsAdminRoute = pathname.startsWith('/pros/app');
-  const isProsLandingRoute = pathname === '/pros';
+  const isProsPublicRoute = pathname.startsWith('/pros') && !pathname.startsWith('/pros/app');
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
@@ -178,13 +180,14 @@ function AppShell() {
     pathname.startsWith('/research-lab/workspace') ||
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
-    pathname.startsWith('/hive-apps/build');
+    pathname.startsWith('/hive-apps/build') ||
+    isProsPublicRoute;
 
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
         {!isPrivateRoute && !isEmbedRoute && <SEO />}
-        {!isPrivateRoute && !isEmbedRoute && !isProsLandingRoute && (
+        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
@@ -192,7 +195,7 @@ function AppShell() {
         {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
-        <main className={`flex-grow ${isEmbedRoute || isProsLandingRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
+        <main className={`flex-grow ${isEmbedRoute || isProsPublicRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>
