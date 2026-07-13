@@ -258,7 +258,7 @@ export async function askGrokDetailed({
         if (direct.source !== 'local') return direct;
         return {
           ...baseLocal,
-          notice: 'Sign in for Pros AI — showing pack library.',
+          notice: 'Sign in with your team code (Account tab) to unlock Pros AI.',
           noticeCode: 'auth_required',
         };
       }

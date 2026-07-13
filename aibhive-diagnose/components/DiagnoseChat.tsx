@@ -605,6 +605,7 @@ export function DiagnoseChat({
   const restingFooterPad = embedInTabs ? 8 : Math.max(insets.bottom, 8);
   const footerBottomPad = keyboardHeight > 0 ? 8 : restingFooterPad;
   const listBottomPad = keyboardHeight > 0 ? inputBarHeight + 16 : inputBarHeight + 8;
+  const showQuickPrompts = messages.every((m) => m.role !== 'user');
 
   const modeLabel = offline
     ? 'Local · offline'
@@ -644,9 +645,10 @@ export function DiagnoseChat({
         keyboardDismissMode="interactive"
         renderItem={({ item }) => (
           <View>
-            <ChatBubble message={item} />
+            <ChatBubble message={item} showFieldActions={Boolean(user)} />
             {item.role === 'assistant' &&
             item.askFeedback &&
+            user &&
             item.feedbackStatus === 'pending' ? (
               <DiagnosisFeedbackCard
                 defaultAnonymous={profile?.shareAnonymously !== false}
@@ -680,15 +682,17 @@ export function DiagnoseChat({
         }}
       >
         <View className="mb-2 flex-row flex-wrap gap-2">
-          {activePack.quickPrompts.slice(0, 3).map((prompt) => (
-            <Pressable
-              key={prompt}
-              onPress={() => void send(prompt)}
-              className="rounded-full border border-hive-border bg-hive-card px-3 py-2 active:opacity-70"
-            >
-              <Text className="text-xs text-hive-steel">{prompt}</Text>
-            </Pressable>
-          ))}
+          {showQuickPrompts
+            ? activePack.quickPrompts.slice(0, 3).map((prompt) => (
+                <Pressable
+                  key={prompt}
+                  onPress={() => void send(prompt)}
+                  className="rounded-full border border-hive-border bg-hive-card px-3 py-2 active:opacity-70"
+                >
+                  <Text className="text-xs text-hive-steel">{prompt}</Text>
+                </Pressable>
+              ))
+            : null}
         </View>
 
         {pendingAttachment ? (

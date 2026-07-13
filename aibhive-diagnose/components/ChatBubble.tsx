@@ -23,7 +23,13 @@ function renderInlineMarkdown(text: string, isUser: boolean) {
   });
 }
 
-export function ChatBubble({ message }: { message: ChatMessage }) {
+export function ChatBubble({
+  message,
+  showFieldActions = true,
+}: {
+  message: ChatMessage;
+  showFieldActions?: boolean;
+}) {
   const isUser = message.role === 'user';
 
   if (!isUser && message.structured) {
@@ -45,7 +51,7 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             Diagnosis
           </Text>
         ) : null}
-        {message.diagnoseMeta ? (
+        {message.diagnoseMeta && showFieldActions ? (
           <DiagnoseFieldActions
             manualSearchLinks={message.diagnoseMeta.manualSearchLinks}
             userQuery={message.diagnoseMeta.userQuery}
@@ -82,7 +88,7 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           Diagnosis
         </Text>
       ) : null}
-      {!isUser && message.diagnoseMeta && message.role === 'assistant' ? (
+      {!isUser && message.diagnoseMeta && message.role === 'assistant' && showFieldActions ? (
         <DiagnoseFieldActions
           manualSearchLinks={message.diagnoseMeta.manualSearchLinks}
           userQuery={message.diagnoseMeta.userQuery}
