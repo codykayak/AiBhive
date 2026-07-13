@@ -15,6 +15,7 @@ import {
   type ProsPartRequestStatus,
 } from '../../lib/prosPartsApi';
 import { DemoSampleBadge } from './ProsDemoPreviewBanner';
+import { prosAdmin as t } from './prosAdminTheme';
 import { cn } from '../../lib/utils';
 
 type Filter = ProsPartRequestStatus | 'all';
@@ -28,10 +29,10 @@ const FILTERS: { id: Filter; label: string }[] = [
 ];
 
 const STATUS_STYLES: Record<ProsPartRequestStatus, string> = {
-  pending_approval: 'bg-amber-500/20 text-amber-300',
-  approved: 'bg-sky-500/20 text-sky-300',
-  ordered: 'bg-emerald-500/20 text-emerald-300',
-  declined: 'bg-red-500/20 text-red-300',
+  pending_approval: t.partStatus.pending_approval,
+  approved: t.partStatus.approved,
+  ordered: t.partStatus.ordered,
+  declined: t.partStatus.declined,
 };
 
 type Props = {
@@ -105,19 +106,19 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-5 flex flex-wrap gap-4 items-start justify-between">
+      <div className={`${t.calloutAmber} p-5 flex flex-wrap gap-4 items-start justify-between`}>
         <div className="flex items-start gap-3">
-          <Package className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+          <Package className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <h2 className="font-bold text-lg">Parts ordering</h2>
-            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+            <p className="text-sm text-slate-600 mt-1 max-w-2xl">
               Techs submit part requests from Diagnose after a diagnosis. Review here, approve for purchase,
               then mark ordered once your accountant or supplier confirms.
             </p>
           </div>
         </div>
         {filter === 'pending_approval' && pendingCount > 0 ? (
-          <span className="text-xs font-bold uppercase px-3 py-1.5 rounded-full bg-amber-500 text-black">
+          <span className="text-xs font-bold uppercase px-3 py-1.5 rounded-full bg-[#F5A623] text-slate-900">
             {pendingCount} awaiting review
           </span>
         ) : null}
@@ -131,7 +132,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
             onClick={() => setFilter(f.id)}
             className={cn(
               'rounded-lg px-3 py-1.5 text-xs font-bold uppercase',
-              filter === f.id ? 'bg-amber-500 text-black' : 'bg-white/5 text-slate-400 hover:text-white'
+              filter === f.id ? t.filterActive : t.filterInactive
             )}
           >
             {f.label}
@@ -140,11 +141,11 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
       </div>
 
       {error ? (
-        <div className="rounded-xl bg-red-500/15 text-red-300 px-4 py-3 text-sm">{error}</div>
+        <div className={t.error}>{error}</div>
       ) : null}
 
       {loading ? (
-        <div className="flex items-center gap-2 text-slate-400 py-12 justify-center">
+        <div className="flex items-center gap-2 text-slate-500 py-12 justify-center">
           <Loader2 className="w-5 h-5 animate-spin" /> Loading part requests…
         </div>
       ) : requests.length === 0 ? (
@@ -156,7 +157,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
       ) : (
         <div className="space-y-3">
           {requests.map((r) => (
-            <div key={r.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+            <div key={r.id} className={`${t.card} p-4 space-y-3`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -176,7 +177,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                   </div>
                   <h3 className="font-bold text-lg">{r.partName}</h3>
                   {r.partNumber ? (
-                    <p className="text-sm font-mono text-amber-300 mt-0.5">#{r.partNumber}</p>
+                    <p className="text-sm font-mono text-amber-700 mt-0.5">#{r.partNumber}</p>
                   ) : (
                     <p className="text-xs text-slate-500 mt-0.5">Part number not confirmed — verify before ordering</p>
                   )}
@@ -188,24 +189,24 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                 ) : null}
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-2 text-sm text-slate-400">
-                {r.brand ? <div>Brand: <span className="text-slate-200">{r.brand}</span></div> : null}
+              <div className="grid sm:grid-cols-2 gap-2 text-sm text-slate-600">
+                {r.brand ? <div>Brand: <span className="text-slate-900">{r.brand}</span></div> : null}
                 {r.equipmentModel ? (
-                  <div>Model: <span className="text-slate-200">{r.equipmentModel}</span></div>
+                  <div>Model: <span className="text-slate-900">{r.equipmentModel}</span></div>
                 ) : null}
                 {r.jobTitle ? (
                   <div className="sm:col-span-2">
-                    Job: <span className="text-slate-200">{r.jobTitle}</span>
+                    Job: <span className="text-slate-900">{r.jobTitle}</span>
                   </div>
                 ) : null}
                 <div className="sm:col-span-2">
-                  Requested by: <span className="text-slate-200">{r.requestedByName}</span>
+                  Requested by: <span className="text-slate-900">{r.requestedByName}</span>
                   {r.requestedByEmail ? (
                     <span className="text-slate-500"> · {r.requestedByEmail}</span>
                   ) : null}
                 </div>
                 {r.notes ? (
-                  <div className="sm:col-span-2 border-l-2 border-amber-500/40 pl-3 text-slate-300">
+                  <div className="sm:col-span-2 border-l-2 border-amber-400 pl-3 text-slate-700">
                     {r.notes}
                   </div>
                 ) : null}
@@ -215,7 +216,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                       href={r.partUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 hover:text-sky-800"
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> Part link from tech
                     </a>
@@ -249,17 +250,17 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                 </p>
               ) : null}
               {r.orderedByName ? (
-                <p className="text-xs text-emerald-400/80">
+                <p className="text-xs text-emerald-700">
                   Ordered by {r.orderedByName}
                   {r.orderedAt ? ` · ${new Date(r.orderedAt).toLocaleString()}` : ''}
                   {r.supplierNote ? ` · ${r.supplierNote}` : ''}
                 </p>
               ) : null}
               {r.declineReason ? (
-                <p className="text-xs text-red-300">Declined: {r.declineReason}</p>
+                <p className="text-xs text-red-600">Declined: {r.declineReason}</p>
               ) : null}
               {r.id.startsWith('demo-') ? (
-                <p className="text-xs text-sky-300/80">Sample request — techs submit real orders from Diagnose.</p>
+                <p className="text-xs text-sky-700">Sample request — techs submit real orders from Diagnose.</p>
               ) : null}
 
               {isManager && r.status === 'pending_approval' && !r.id.startsWith('demo-') ? (
@@ -268,7 +269,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                     type="button"
                     disabled={busyId === r.id}
                     onClick={() => approve(r)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-4 py-2 text-xs font-bold"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-4 py-2 text-xs font-bold"
                   >
                     {busyId === r.id ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -281,7 +282,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                     type="button"
                     disabled={busyId === r.id}
                     onClick={() => decline(r)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-500/15 text-red-300 hover:bg-red-500/25 px-4 py-2 text-xs font-bold"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 px-4 py-2 text-xs font-bold"
                   >
                     <XCircle className="w-3.5 h-3.5" /> Decline
                   </button>
@@ -293,7 +294,7 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                   type="button"
                   disabled={busyId === r.id}
                   onClick={() => markOrdered(r)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 text-black px-4 py-2 text-xs font-bold"
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold ${t.btnPrimary}`}
                 >
                   {busyId === r.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -9,6 +9,7 @@ import {
   type ProsNotification,
 } from '../../lib/prosApi';
 import { cn } from '../../lib/utils';
+import { prosAdmin as t } from './prosAdminTheme';
 
 type Props = {
   user: User;
@@ -91,12 +92,12 @@ export default function ProsNotificationsPanel({
   return (
     <div className="space-y-6">
       {isManager ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+        <div className={`${t.card} p-5 space-y-4`}>
           <h2 className="font-bold text-lg flex items-center gap-2">
-            <Send className="w-5 h-5 text-amber-400" />
+            <Send className="w-5 h-5 text-amber-600" />
             Notify field techs
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-600">
             Push job updates to Diagnose. Techs can confirm completion and describe the fix — that flows back into
             your living knowledge base.
           </p>
@@ -105,19 +106,19 @@ export default function ProsNotificationsPanel({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Title — e.g. Emergency: heater not firing"
-              className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2"
+              className={`${t.input} md:col-span-2`}
             />
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Details for the tech…"
               rows={3}
-              className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2 resize-y"
+              className={`${t.textarea} md:col-span-2`}
             />
             <select
               value={assigneeUid}
               onChange={(e) => setAssigneeUid(e.target.value)}
-              className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+              className={t.input}
             >
               <option value="">All techs / broadcast</option>
               {techs.map((m) => (
@@ -129,7 +130,7 @@ export default function ProsNotificationsPanel({
             <select
               value={jobId}
               onChange={(e) => setJobId(e.target.value)}
-              className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+              className={t.input}
             >
               <option value="">Link to job (optional)</option>
               {jobs
@@ -143,19 +144,19 @@ export default function ProsNotificationsPanel({
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as ProsNotification['priority'])}
-              className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+              className={t.input}
             >
               <option value="normal">Normal</option>
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
             </select>
           </div>
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <p className={t.errorInline}>{error}</p> : null}
           <button
             type="button"
             disabled={busy || !title.trim()}
             onClick={() => void send()}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 text-black font-bold px-5 py-2.5 text-sm disabled:opacity-50"
+            className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-50 ${t.btnPrimary}`}
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
             Send to field app
@@ -164,32 +165,28 @@ export default function ProsNotificationsPanel({
       ) : null}
 
       <div className="space-y-3">
-        <h3 className="font-bold text-slate-300">Inbox</h3>
+        <h3 className="font-bold text-slate-800">Inbox</h3>
         {notifications.length === 0 ? (
           <p className="text-sm text-slate-500">No notifications yet.</p>
         ) : (
           notifications.map((n) => (
-            <div key={n.id} className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+            <div key={n.id} className={`${t.cardSubtle} p-4`}>
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span
                   className={cn(
                     'text-[10px] font-bold uppercase px-2 py-0.5 rounded-full',
-                    n.priority === 'urgent'
-                      ? 'bg-red-500/20 text-red-300'
-                      : n.priority === 'high'
-                        ? 'bg-amber-500/20 text-amber-300'
-                        : 'bg-white/5 text-slate-400'
+                    t.notifyPriority[n.priority] || t.notifyPriority.normal
                   )}
                 >
                   {n.priority}
                 </span>
                 <span className="text-[10px] uppercase text-slate-500">{n.status}</span>
-                {n.jobTitle ? <span className="text-xs text-sky-300">· {n.jobTitle}</span> : null}
+                {n.jobTitle ? <span className="text-xs text-sky-700">· {n.jobTitle}</span> : null}
               </div>
               <div className="font-bold">{n.title}</div>
-              {n.body ? <p className="text-sm text-slate-400 mt-1">{n.body}</p> : null}
+              {n.body ? <p className="text-sm text-slate-600 mt-1">{n.body}</p> : null}
               {n.response?.fixSummary ? (
-                <p className="text-sm text-emerald-300 mt-2 border-l-2 border-emerald-500/40 pl-3">
+                <p className="text-sm text-emerald-800 mt-2 border-l-2 border-emerald-400 pl-3">
                   Fix: {n.response.fixSummary}
                 </p>
               ) : null}
@@ -203,7 +200,7 @@ export default function ProsNotificationsPanel({
                     type="button"
                     disabled={busy}
                     onClick={() => void respond(n, true)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-500/20 text-emerald-300 px-3 py-1.5 text-xs font-bold"
+                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 text-emerald-800 px-3 py-1.5 text-xs font-bold"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" /> Done — log fix
                   </button>
@@ -211,7 +208,7 @@ export default function ProsNotificationsPanel({
                     type="button"
                     disabled={busy}
                     onClick={() => void respond(n, false)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white/5 text-slate-400 px-3 py-1.5 text-xs font-bold"
+                    className="inline-flex items-center gap-1 rounded-lg bg-slate-100 text-slate-600 px-3 py-1.5 text-xs font-bold"
                   >
                     <XCircle className="w-3.5 h-3.5" /> Not yet
                   </button>

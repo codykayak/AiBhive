@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Loader2,
   LogOut,
+  Calendar,
   MapPin,
   Navigation,
   Package,
@@ -40,6 +41,8 @@ import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
 import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
 import ProsPartsPanel from '../components/pros/ProsPartsPanel';
 import ProsDemoPreviewBanner, { DemoSampleBadge } from '../components/pros/ProsDemoPreviewBanner';
+import { prosAdmin as t } from '../components/pros/prosAdminTheme';
+import { formatScheduledFor } from '../lib/formatScheduledFor';
 import {
   prosExportJobsCsv,
   prosAnalytics,
@@ -83,13 +86,6 @@ const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'help', label: 'Help', icon: HelpCircle },
 ];
-
-const STATUS_COLORS: Record<string, string> = {
-  queued: 'bg-slate-500/20 text-slate-300',
-  in_progress: 'bg-sky-500/20 text-sky-300',
-  needs_parts: 'bg-amber-500/20 text-amber-300',
-  done: 'bg-emerald-500/20 text-emerald-300',
-};
 
 const DEFAULT_SETTINGS: ProsCompanySettings = {
   locationTrackingEnabled: false,
@@ -145,7 +141,8 @@ export default function ProsDashboard() {
   const [jobNotes, setJobNotes] = useState('');
   const [jobCustomer, setJobCustomer] = useState('');
   const [jobPhone, setJobPhone] = useState('');
-  const [jobScheduled, setJobScheduled] = useState('');
+  const [jobScheduledDate, setJobScheduledDate] = useState('');
+  const [jobScheduledTime, setJobScheduledTime] = useState('');
   const [jobPriority, setJobPriority] = useState<ProsJob['priority']>('normal');
   const [jobFilter, setJobFilter] = useState<'all' | ProsJob['status']>('all');
 
@@ -271,7 +268,7 @@ export default function ProsDashboard() {
         customerName: jobCustomer.trim(),
         customerPhone: jobPhone.trim(),
         notes: jobNotes.trim(),
-        scheduledFor: jobScheduled.trim() || null,
+        scheduledFor: formatScheduledFor(jobScheduledDate, jobScheduledTime),
         packId: jobPack,
         priority: jobPriority,
         assigneeUid: jobAssignee || null,
@@ -283,7 +280,8 @@ export default function ProsDashboard() {
     setJobCustomer('');
     setJobPhone('');
     setJobNotes('');
-    setJobScheduled('');
+    setJobScheduledDate('');
+    setJobScheduledTime('');
     setJobAssignee('');
     await refreshAll(user);
     setTab('dispatch');
@@ -365,7 +363,7 @@ export default function ProsDashboard() {
 
   if (loadingAuth) {
     return (
-      <div className="min-h-screen bg-[#0B0F14] flex items-center justify-center text-slate-400">
+      <div className={t.pageCenter}>
         <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading Pros…
       </div>
     );
@@ -373,28 +371,28 @@ export default function ProsDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0B0F14] text-white flex items-center justify-center px-4">
+      <div className={t.pageCenterAuth}>
         <SEO title="Pros Admin — Sign in" />
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-8"
+          className={t.signInCard}
         >
-          <Link to="/pros" className="text-xs text-amber-400 hover:underline">
+          <Link to="/pros" className={t.linkAmber}>
             ← Pros overview
           </Link>
           <div className="mt-6 text-center">
-            <div className="mx-auto w-14 h-14 rounded-xl bg-amber-500/20 flex items-center justify-center mb-5">
-              <Wrench className="w-7 h-7 text-amber-400" />
+            <div className="mx-auto w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center mb-5">
+              <Wrench className="w-7 h-7 text-amber-600" />
             </div>
             <h1 className="text-2xl font-black">Company HQ sign-in</h1>
-            <p className="mt-3 text-slate-400 text-sm leading-relaxed">
+            <p className="mt-3 text-slate-600 text-sm leading-relaxed">
               Dispatch jobs, track your team, and grow your living knowledge base.
             </p>
             <button
               type="button"
               onClick={() => void signIn()}
-              className="mt-8 w-full rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold py-3.5"
+              className={`mt-8 w-full py-3.5 ${t.btnPrimary}`}
             >
               Continue with Google
             </button>
@@ -406,46 +404,46 @@ export default function ProsDashboard() {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-[#0B0F14] text-white px-4 py-16">
+      <div className={t.pageOnboard}>
         <SEO title="Set up Pros" />
         <div className="max-w-3xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <Link to="/pros" className="text-xs text-amber-400 hover:underline">
+              <Link to="/pros" className={t.linkAmber}>
                 ← Pros overview
               </Link>
               <h1 className="text-2xl font-black mt-2">Welcome to Pros</h1>
-              <p className="text-slate-400 text-sm mt-1">Signed in as {user.email}</p>
+              <p className="text-slate-600 text-sm mt-1">Signed in as {user.email}</p>
             </div>
             <button
               type="button"
               onClick={() => void signOut(auth)}
-              className="text-sm text-slate-400 hover:text-white inline-flex items-center gap-2"
+              className="text-sm text-slate-500 hover:text-slate-900 inline-flex items-center gap-2"
             >
               <LogOut className="w-4 h-4" /> Sign out
             </button>
           </div>
 
           {bootError ? (
-            <div className="mb-6 rounded-xl bg-red-500/15 text-red-300 px-4 py-3 text-sm flex gap-2">
+            <div className={`mb-6 flex gap-2 ${t.error}`}>
               <AlertCircle className="w-4 h-4 mt-0.5" /> {bootError}
             </div>
           ) : null}
 
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
-              <Building2 className="w-6 h-6 text-amber-400" />
+            <div className={`${t.card} p-6 space-y-4`}>
+              <Building2 className="w-6 h-6 text-amber-600" />
               <h2 className="text-lg font-bold">Create your company</h2>
               <input
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Acme Pool Service"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                className={`w-full ${t.input}`}
               />
               <select
                 value={tradeType}
                 onChange={(e) => setTradeType(e.target.value as typeof tradeType)}
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                className={`w-full ${t.input}`}
               >
                 <option value="pool">Pool services</option>
                 <option value="electrical">Electrical</option>
@@ -456,26 +454,26 @@ export default function ProsDashboard() {
                 type="button"
                 disabled={onboardingBusy}
                 onClick={() => void createCompany()}
-                className="w-full rounded-xl bg-amber-500 text-black font-bold py-3 disabled:opacity-50"
+                className={`w-full py-3 disabled:opacity-50 ${t.btnPrimary}`}
               >
                 Create HQ
               </button>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
-              <Users className="w-6 h-6 text-sky-400" />
+            <div className={`${t.card} p-6 space-y-4`}>
+              <Users className="w-6 h-6 text-sky-600" />
               <h2 className="text-lg font-bold">Join with invite code</h2>
               <input
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 placeholder="PROS-XXXXXX"
-                className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm font-mono uppercase"
+                className={`w-full font-mono uppercase ${t.input}`}
               />
               <button
                 type="button"
                 disabled={onboardingBusy}
                 onClick={() => void joinCompany()}
-                className="w-full rounded-xl border border-white/15 hover:border-sky-400/50 font-bold py-3 disabled:opacity-50"
+                className={`w-full py-3 disabled:opacity-50 ${t.btnSecondary}`}
               >
                 Join roster
               </button>
@@ -487,21 +485,21 @@ export default function ProsDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F14] text-white">
+    <div className={t.page}>
       <SEO title={`${company.name} · Pros`} description="AiBhive Pros field operations" />
 
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-xl sticky top-0 z-40">
+      <header className={t.header}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-amber-400" />
+            <div className={`w-10 h-10 rounded-xl ${t.avatarSm}`}>
+              <Briefcase className="w-5 h-5 text-amber-600" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <Link to="/pros" className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400/80 hover:text-amber-300">
+                <Link to="/pros" className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700 hover:text-amber-600">
                   AiBhive Pros
                 </Link>
-                <span className="text-[10px] text-slate-600">·</span>
+                <span className="text-[10px] text-slate-400">·</span>
                 <span className="text-[10px] uppercase text-slate-500">Living KB</span>
               </div>
               <h1 className="text-lg font-black leading-tight">{company.name}</h1>
@@ -511,46 +509,44 @@ export default function ProsDashboard() {
             <button
               type="button"
               onClick={() => user && void refreshAll(user)}
-              className="p-2 rounded-lg hover:bg-white/5 text-slate-400"
+              className={t.iconBtn}
               title="Refresh"
             >
               <RefreshCw className={cn('w-4 h-4', loadingData && 'animate-spin')} />
             </button>
             <span className="hidden sm:inline text-slate-500">{user.email}</span>
-            <span className="text-[10px] uppercase font-bold px-2 py-1 rounded-full bg-white/5 text-slate-300">
+            <span className={t.roleBadge}>
               {membership?.role}
             </span>
             <button
               type="button"
               onClick={() => void signOut(auth)}
-              className="p-2 rounded-lg hover:bg-white/5 text-slate-400"
+              className={t.iconBtn}
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 overflow-x-auto pb-3">
-          {TABS.map((t) => {
-            const Icon = t.icon;
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
             const hide =
-              (t.id === 'whereabouts' && !isManager) ||
-              (t.id === 'knowledge' && !isManager) ||
-              (t.id === 'parts' && !isManager);
+              (tab.id === 'whereabouts' && !isManager) ||
+              (tab.id === 'knowledge' && !isManager) ||
+              (tab.id === 'parts' && !isManager);
             if (hide) return null;
             return (
               <button
-                key={t.id}
+                key={tab.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(tab.id)}
                 className={cn(
                   'inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold whitespace-nowrap',
-                  activeTab === t.id
-                    ? 'bg-amber-500 text-black'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  activeTab === tab.id ? t.tabActive : t.tabInactive
                 )}
               >
                 <Icon className="w-4 h-4" />
-                {t.label}
+                {tab.label}
               </button>
             );
           })}
@@ -559,7 +555,7 @@ export default function ProsDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {bootError ? (
-          <div className="mb-6 rounded-xl bg-red-500/15 text-red-300 px-4 py-3 text-sm">{bootError}</div>
+          <div className={`mb-6 ${t.error}`}>{bootError}</div>
         ) : null}
 
         {demoPreview && demoDisclaimer && !bannerDismissed ? (
@@ -571,12 +567,12 @@ export default function ProsDashboard() {
 
         {activeTab === 'overview' && overview ? (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-[#1E3A8A]/30 bg-[#1E3A8A]/10 p-5 flex flex-wrap gap-4 items-center justify-between">
+            <div className={`${t.highlightBanner} p-5 flex flex-wrap gap-4 items-center justify-between`}>
               <div className="flex items-start gap-3">
-                <BookOpen className="w-6 h-6 text-sky-300 shrink-0 mt-0.5" />
+                <BookOpen className="w-6 h-6 text-sky-700 shrink-0 mt-0.5" />
                 <div>
                   <h2 className="font-bold text-lg">Living knowledge base</h2>
-                  <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+                  <p className="text-sm text-slate-600 mt-1 max-w-2xl">
                     {analytics?.totals.tips ?? 0} field tips · {analytics?.totals.feedback ?? 0} diagnose feedback ·{' '}
                     {analytics?.totals.fieldNotes ?? 0} job notes — compounded from techs in the field.
                   </p>
@@ -585,20 +581,20 @@ export default function ProsDashboard() {
               <button
                 type="button"
                 onClick={() => setTab('notifications')}
-                className="rounded-xl bg-amber-500 text-black font-bold px-4 py-2 text-sm"
+                className={`px-4 py-2 text-sm ${t.btnPrimary}`}
               >
                 Notify techs
               </button>
             </div>
 
             {analytics?.featuredTip ? (
-              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-5">
-                <div className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-2">
+              <div className={`${t.featuredTip} p-5`}>
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">
                   Fix of the week
                 </div>
-                <p className="text-slate-200 leading-relaxed">{analytics.featuredTip.text}</p>
+                <p className="text-slate-800 leading-relaxed">{analytics.featuredTip.text}</p>
                 {analytics.featuredTip.fixSummary ? (
-                  <p className="text-sm text-slate-400 mt-2">Fix: {analytics.featuredTip.fixSummary}</p>
+                  <p className="text-sm text-slate-600 mt-2">Fix: {analytics.featuredTip.fixSummary}</p>
                 ) : null}
                 <div className="text-[11px] text-slate-500 mt-2">
                   {analytics.featuredTip.packId} pack · {analytics.featuredTip.helpfulCount} helpful votes
@@ -613,8 +609,8 @@ export default function ProsDashboard() {
                 { label: 'Techs', value: overview.techs, icon: Wrench },
                 { label: 'Jobs done', value: analytics?.totals.jobsDone ?? 0, icon: Briefcase },
               ].map((card) => (
-                <div key={card.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                  <card.icon className="w-5 h-5 text-amber-400 mb-3" />
+                <div key={card.label} className={`${t.card} p-5`}>
+                  <card.icon className="w-5 h-5 text-amber-600 mb-3" />
                   <div className="text-3xl font-black">{card.value}</div>
                   <div className="text-xs uppercase tracking-wider text-slate-500 mt-1">{card.label}</div>
                 </div>
@@ -622,17 +618,17 @@ export default function ProsDashboard() {
             </div>
 
             <div className="grid lg:grid-cols-2 gap-6">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className={`${t.card} p-5`}>
                 <h3 className="font-bold mb-2">Knowledge growth</h3>
                 {knowledgeChart.length ? (
-                  <ProsKnowledgeGrowthChart data={knowledgeChart} variant="dark" />
+                  <ProsKnowledgeGrowthChart data={knowledgeChart} variant="light" />
                 ) : (
                   <p className="text-sm text-slate-500 py-8 text-center">Charts populate as techs contribute tips and feedback.</p>
                 )}
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className={`${t.card} p-5`}>
                 <h3 className="font-bold mb-2">Job pipeline</h3>
-                <ProsJobsPipelineChart data={pipelineChart} variant="dark" />
+                <ProsJobsPipelineChart data={pipelineChart} variant="light" />
               </div>
             </div>
           </div>
@@ -649,7 +645,7 @@ export default function ProsDashboard() {
                     onClick={() => setJobFilter(f)}
                     className={cn(
                       'rounded-lg px-3 py-1.5 text-xs font-bold uppercase',
-                      jobFilter === f ? 'bg-amber-500 text-black' : 'bg-white/5 text-slate-400'
+                      jobFilter === f ? t.filterActive : t.filterInactive
                     )}
                   >
                     {f === 'all' ? 'All' : f.replace('_', ' ')}
@@ -660,7 +656,7 @@ export default function ProsDashboard() {
                 <button
                   type="button"
                   onClick={() => void exportCsv()}
-                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-bold text-slate-300 hover:border-amber-500/40"
+                  className={t.btnGhost}
                 >
                   Export CSV
                 </button>
@@ -668,52 +664,65 @@ export default function ProsDashboard() {
             </div>
 
             {isManager ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+              <div className={`${t.card} p-5 space-y-4`}>
                 <h2 className="font-bold text-lg flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-amber-400" /> Assign a job
+                  <Plus className="w-5 h-5 text-amber-600" /> Assign a job
                 </h2>
                 <div className="grid md:grid-cols-2 gap-3">
                   <input
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
                     placeholder="Job title"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2"
+                    className={`${t.input} md:col-span-2`}
                   />
                   <input
                     value={jobAddress}
                     onChange={(e) => setJobAddress(e.target.value)}
                     placeholder="Address"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    className={t.input}
                   />
-                  <input
-                    value={jobScheduled}
-                    onChange={(e) => setJobScheduled(e.target.value)}
-                    placeholder="Scheduled (e.g. 2026-07-15 9am)"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
-                  />
+                  <div className="space-y-1">
+                    <span className="text-xs font-semibold text-slate-500">Scheduled (optional)</span>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        type="date"
+                        value={jobScheduledDate}
+                        onChange={(e) => setJobScheduledDate(e.target.value)}
+                        className={`flex-1 min-w-[9rem] ${t.input}`}
+                        aria-label="Scheduled date"
+                      />
+                      <input
+                        type="time"
+                        value={jobScheduledTime}
+                        onChange={(e) => setJobScheduledTime(e.target.value)}
+                        className={`flex-1 min-w-[7rem] ${t.input}`}
+                        aria-label="Scheduled time"
+                      />
+                    </div>
+                  </div>
                   <input
                     value={jobCustomer}
                     onChange={(e) => setJobCustomer(e.target.value)}
                     placeholder="Customer name"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    className={t.input}
                   />
                   <input
                     value={jobPhone}
                     onChange={(e) => setJobPhone(e.target.value)}
                     placeholder="Customer phone"
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    className={t.input}
                   />
                   <textarea
                     value={jobNotes}
                     onChange={(e) => setJobNotes(e.target.value)}
                     placeholder="Dispatch notes for the tech…"
                     rows={2}
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2 resize-y"
+                    className={`${t.textarea} md:col-span-2`}
                   />
                   <select
                     value={jobAssignee}
                     onChange={(e) => setJobAssignee(e.target.value)}
-                    className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                    className={t.input}
                   >
                     <option value="">Unassigned</option>
                     {techOptions.map((m) => (
@@ -726,7 +735,7 @@ export default function ProsDashboard() {
                     <select
                       value={jobPack}
                       onChange={(e) => setJobPack(e.target.value as typeof jobPack)}
-                      className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                      className={`flex-1 ${t.input}`}
                     >
                       <option value="pool">Pool</option>
                       <option value="electrical">Electrical</option>
@@ -735,7 +744,7 @@ export default function ProsDashboard() {
                     <select
                       value={jobPriority}
                       onChange={(e) => setJobPriority(e.target.value as typeof jobPriority)}
-                      className="flex-1 rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+                      className={`flex-1 ${t.input}`}
                     >
                       <option value="normal">Normal</option>
                       <option value="high">High</option>
@@ -746,7 +755,7 @@ export default function ProsDashboard() {
                 <button
                   type="button"
                   onClick={() => void createJob()}
-                  className="rounded-xl bg-amber-500 text-black font-bold px-5 py-2.5 text-sm"
+                  className={`px-5 py-2.5 text-sm ${t.btnPrimary}`}
                 >
                   Dispatch + notify assignee
                 </button>
@@ -758,18 +767,18 @@ export default function ProsDashboard() {
                 <p className="text-slate-500 text-sm">No jobs in this filter.</p>
               ) : (
                 filteredJobs.map((job) => (
-                  <div key={job.id} className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                  <div key={job.id} className={`${t.card} overflow-hidden`}>
                     <button
                       type="button"
                       onClick={() => setExpandedJobId((id) => (id === job.id ? null : job.id))}
-                      className="w-full p-4 flex flex-wrap gap-4 justify-between text-left hover:bg-white/[0.02]"
+                      className={`w-full p-4 flex flex-wrap gap-4 justify-between text-left ${t.jobRowHover}`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <span
                             className={cn(
                               'text-[10px] font-bold uppercase px-2 py-1 rounded-full',
-                              STATUS_COLORS[job.status]
+                              t.status[job.status]
                             )}
                           >
                             {job.status.replace('_', ' ')}
@@ -778,9 +787,14 @@ export default function ProsDashboard() {
                           <span className="text-[10px] uppercase text-slate-500 font-bold">{job.packId}</span>
                         </div>
                         <h3 className="font-bold">{job.title}</h3>
-                        <p className="text-sm text-slate-400 flex items-center gap-1 mt-1">
+                        <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
                           <MapPin className="w-3.5 h-3.5" /> {job.address || 'Address TBD'}
                         </p>
+                        {job.scheduledFor ? (
+                          <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
+                            <Calendar className="w-3.5 h-3.5" /> {job.scheduledFor}
+                          </p>
+                        ) : null}
                         <p className="text-xs text-slate-500 mt-1">
                           {job.assigneeName || 'Unassigned'} · {job.fieldNotes?.length || 0} notes ·{' '}
                           {job.photos?.length || 0} photos
@@ -788,26 +802,32 @@ export default function ProsDashboard() {
                       </div>
                     </button>
                     {expandedJobId === job.id ? (
-                      <div className="border-t border-white/10 px-4 py-4 space-y-4 bg-black/20">
+                      <div className={t.jobExpand}>
                         {job.id.startsWith('demo-') ? (
-                          <p className="text-xs text-sky-300/90">
+                          <p className="text-xs text-sky-700">
                             Sample job — dispatch a real job to replace preview data.
                           </p>
                         ) : (
                           <button
                             type="button"
                             onClick={() => void cycleJobStatus(job)}
-                            className="text-xs font-bold uppercase text-amber-400"
+                            className="text-xs font-bold uppercase text-amber-700"
                           >
                             Cycle status →
                           </button>
                         )}
+                        {job.scheduledFor ? (
+                          <p className="text-sm text-slate-700 flex items-center gap-1.5">
+                            <Calendar className="w-4 h-4 text-slate-500" />
+                            <span className="font-semibold">Scheduled:</span> {job.scheduledFor}
+                          </p>
+                        ) : null}
                         {job.fieldNotes?.length ? (
                           <div>
                             <h4 className="text-xs font-bold uppercase text-slate-500 mb-2">Field notes</h4>
                             <ul className="space-y-2">
                               {job.fieldNotes.map((n) => (
-                                <li key={n.id} className="text-sm text-slate-300 border-l-2 border-amber-500/40 pl-3">
+                                <li key={n.id} className="text-sm text-slate-700 border-l-2 border-amber-400 pl-3">
                                   {n.text}
                                 </li>
                               ))}
@@ -818,7 +838,7 @@ export default function ProsDashboard() {
                           <div className="flex flex-wrap gap-2">
                             {job.photos.map((p) => (
                               <a key={p.id} href={p.url} target="_blank" rel="noreferrer">
-                                <img src={p.url} alt="" className="h-20 w-20 rounded-lg object-cover border border-white/10" />
+                                <img src={p.url} alt="" className="h-20 w-20 rounded-lg object-cover border border-slate-200" />
                               </a>
                             ))}
                           </div>
@@ -862,19 +882,19 @@ export default function ProsDashboard() {
         {activeTab === 'team' ? (
           <div className="space-y-4">
             {isManager && company.inviteCode ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-wrap items-center justify-between gap-3">
+              <div className={`${t.card} p-4 flex flex-wrap items-center justify-between gap-3`}>
                 <div>
                   <div className="text-xs uppercase text-slate-500 font-bold">Field team code</div>
-                  <div className="font-mono text-lg text-amber-300">{company.inviteCode}</div>
-                  <p className="mt-2 text-sm text-slate-400 max-w-xl">
-                    Techs open the <strong className="text-slate-200">AiBhive Pros</strong> Android app,
+                  <div className="font-mono text-lg text-amber-700">{company.inviteCode}</div>
+                  <p className="mt-2 text-sm text-slate-600 max-w-xl">
+                    Techs open the <strong className="text-slate-900">AiBhive Pros</strong> Android app,
                     enter this code plus their name on the Account tab — no Google sign-in required.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => void rotateInvite()}
-                  className="rounded-xl border border-white/10 px-4 py-2 text-sm hover:border-amber-500/40"
+                  className={t.btnGhost}
                 >
                   Rotate code
                 </button>
@@ -882,9 +902,9 @@ export default function ProsDashboard() {
             ) : null}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {members.map((m) => (
-                <div key={m.uid} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div key={m.uid} className={`${t.card} p-4`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-amber-500/20 overflow-hidden flex items-center justify-center text-amber-300 font-bold">
+                    <div className={t.avatar}>
                       {m.photoUrl ? (
                         <img src={m.photoUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -900,8 +920,8 @@ export default function ProsDashboard() {
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2 text-[10px] font-bold uppercase">
-                    <span className="px-2 py-1 rounded-full bg-white/5 text-slate-300">{m.role}</span>
-                    <span className="px-2 py-1 rounded-full bg-white/5 text-slate-300">{m.tradePack || '—'}</span>
+                    <span className={`px-2 py-1 rounded-full ${t.roleBadge}`}>{m.role}</span>
+                    <span className={`px-2 py-1 rounded-full ${t.roleBadge}`}>{m.tradePack || '—'}</span>
                   </div>
                 </div>
               ))}
@@ -913,15 +933,15 @@ export default function ProsDashboard() {
           isManager ? (
             <ProsAiKeysPanel user={user} />
           ) : (
-            <p className="text-slate-400 text-sm">Only owners and managers can manage AI API keys.</p>
+            <p className={`${t.muted} text-sm`}>Only owners and managers can manage AI API keys.</p>
           )
         ) : null}
 
         {activeTab === 'activity' && overview ? (
           <ul className="space-y-3">
             {overview.recentActivity.map((a) => (
-              <li key={a.id} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
-                <div className="text-slate-200">{a.message || a.type}</div>
+              <li key={a.id} className={`${t.cardSubtle} px-4 py-3 text-sm`}>
+                <div className="text-slate-800">{a.message || a.type}</div>
                 {a.createdAt ? (
                   <div className="text-[11px] text-slate-500 mt-1">{new Date(a.createdAt).toLocaleString()}</div>
                 ) : null}
@@ -944,7 +964,7 @@ export default function ProsDashboard() {
             }}
           />
         ) : activeTab === 'settings' ? (
-          <p className="text-slate-400 text-sm">Only managers can change company settings.</p>
+          <p className={`${t.muted} text-sm`}>Only managers can change company settings.</p>
         ) : null}
 
         {activeTab === 'help' && user ? <ProsAdminManualPanel user={user} /> : null}

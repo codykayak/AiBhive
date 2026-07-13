@@ -3,6 +3,7 @@ import type { User } from 'firebase/auth';
 import { KeyRound, Loader2, Save, Trash2, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { prosJson, type ProsAiProvider, type ProsProviderId } from '../../lib/prosApi';
+import { prosAdmin as t } from './prosAdminTheme';
 
 const PROVIDER_BLURBS: Record<ProsProviderId, string> = {
   grok: 'Best for field vision + snappy trade diagnosis (Diagnose default).',
@@ -98,7 +99,7 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-slate-400 py-16 justify-center">
+      <div className="flex items-center gap-2 text-slate-500 py-16 justify-center">
         <Loader2 className="w-5 h-5 animate-spin" /> Loading AI providers…
       </div>
     );
@@ -106,23 +107,23 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-transparent p-6">
+      <div className={`${t.calloutAmber} p-6`}>
         <div className="flex items-start gap-3">
-          <Sparkles className="w-6 h-6 text-amber-400 shrink-0 mt-0.5" />
+          <Sparkles className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h2 className="text-xl font-bold text-white">AI models for Diagnose</h2>
-            <p className="mt-1 text-sm text-slate-300 max-w-2xl">
-              Drop in company keys for <strong className="text-amber-300">Grok</strong>,{' '}
-              <strong className="text-amber-300">Claude</strong>,{' '}
-              <strong className="text-amber-300">Kimi / Kimmy</strong>, and{' '}
-              <strong className="text-amber-300">Gemini</strong>. Field techs inherit the company default;
+            <h2 className="text-xl font-bold text-slate-900">AI models for Diagnose</h2>
+            <p className="mt-1 text-sm text-slate-600 max-w-2xl">
+              Drop in company keys for <strong className="text-amber-700">Grok</strong>,{' '}
+              <strong className="text-amber-700">Claude</strong>,{' '}
+              <strong className="text-amber-700">Kimi / Kimmy</strong>, and{' '}
+              <strong className="text-amber-700">Gemini</strong>. Field techs inherit the company default;
               keys never display in full after save.
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Default provider</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Default provider</span>
           {(['grok', 'claude', 'kimi', 'gemini'] as ProsProviderId[]).map((id) => (
             <button
               key={id}
@@ -132,8 +133,8 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
               className={cn(
                 'px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors',
                 preferred === id
-                  ? 'bg-amber-500 text-black border-amber-400'
-                  : 'bg-white/5 text-slate-300 border-white/10 hover:border-amber-500/40'
+                  ? 'bg-[#F5A623] text-slate-900 border-amber-400'
+                  : 'bg-white text-slate-600 border-slate-200 hover:border-amber-500/40'
               )}
             >
               {id}
@@ -143,32 +144,27 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
       </div>
 
       {message ? (
-        <div
-          className={cn(
-            'rounded-xl px-4 py-3 text-sm',
-            message.type === 'ok' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/15 text-red-300'
-          )}
-        >
+        <div className={message.type === 'ok' ? t.success : t.error}>
           {message.text}
         </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {providers.map((p) => (
-          <div key={p.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4">
+          <div key={p.id} className={`${t.card} p-5 space-y-4`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-amber-400" />
-                  <h3 className="font-bold text-white">{p.label}</h3>
+                  <KeyRound className="w-4 h-4 text-amber-600" />
+                  <h3 className="font-bold text-slate-900">{p.label}</h3>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">{PROVIDER_BLURBS[p.id]}</p>
-                <p className="mt-2 text-[11px] text-slate-500 font-mono">{p.hint}</p>
+                <p className="mt-1 text-xs text-slate-500">{PROVIDER_BLURBS[p.id]}</p>
+                <p className="mt-2 text-[11px] text-slate-400 font-mono">{p.hint}</p>
               </div>
               <span
                 className={cn(
                   'text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full',
-                  p.configured ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-400'
+                  p.configured ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
                 )}
               >
                 {p.configured ? `On · ${p.source}` : 'Not set'}
@@ -176,8 +172,8 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
             </div>
 
             {p.last4 ? (
-              <p className="text-sm text-slate-300">
-                Current: <span className="font-mono text-amber-200/90">{p.last4}</span>
+              <p className="text-sm text-slate-700">
+                Current: <span className="font-mono text-amber-700">{p.last4}</span>
               </p>
             ) : null}
 
@@ -187,7 +183,7 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
               placeholder={`Paste ${p.id} API key`}
               value={drafts[p.id] || ''}
               onChange={(e) => setDrafts((d) => ({ ...d, [p.id]: e.target.value }))}
-              className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500/50"
+              className={`w-full ${t.input}`}
             />
 
             <div className="flex flex-wrap gap-2">
@@ -195,7 +191,7 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
                 type="button"
                 onClick={() => void saveKey(p.id)}
                 disabled={saving === p.id}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm px-4 py-2 disabled:opacity-50"
+                className={`inline-flex items-center gap-2 text-sm px-4 py-2 disabled:opacity-50 ${t.btnPrimary}`}
               >
                 {saving === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save key
@@ -205,7 +201,7 @@ export default function ProsAiKeysPanel({ user }: { user: User }) {
                   type="button"
                   onClick={() => void clearKey(p.id)}
                   disabled={saving === `clear-${p.id}`}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 text-slate-300 hover:text-red-300 hover:border-red-500/40 text-sm px-4 py-2"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-300 text-sm px-4 py-2"
                 >
                   <Trash2 className="w-4 h-4" /> Clear
                 </button>

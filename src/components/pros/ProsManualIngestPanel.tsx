@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { User } from 'firebase/auth';
 import { FileUp, Loader2 } from 'lucide-react';
 import { prosJson, type ProsJob } from '../../lib/prosApi';
+import { prosAdmin as t } from './prosAdminTheme';
 
 type Props = {
   user: User;
@@ -55,12 +56,12 @@ export default function ProsManualIngestPanel({ user }: Props) {
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 space-y-4 max-w-2xl">
+    <div className={`${t.card} p-5 space-y-4 max-w-2xl`}>
       <h2 className="font-bold text-lg flex items-center gap-2">
-        <FileUp className="w-5 h-5 text-sky-400" />
+        <FileUp className="w-5 h-5 text-sky-600" />
         Manual knowledge ingest
       </h2>
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-600">
         Paste extracted PDF text (one chunk at a time for now). Bulk pipeline can push thousands via the same API.
       </p>
       <div className="grid md:grid-cols-2 gap-3">
@@ -68,18 +69,18 @@ export default function ProsManualIngestPanel({ user }: Props) {
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
           placeholder="Brand — Pentair, Carrier…"
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+          className={t.input}
         />
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Manual title"
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+          className={t.input}
         />
         <select
           value={packId}
           onChange={(e) => setPackId(e.target.value as ProsJob['packId'])}
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+          className={t.input}
         >
           <option value="pool">Pool</option>
           <option value="electrical">Electrical</option>
@@ -91,18 +92,18 @@ export default function ProsManualIngestPanel({ user }: Props) {
           value={modelPrefixes}
           onChange={(e) => setModelPrefixes(e.target.value)}
           placeholder="Model prefixes — RU199, IC40"
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+          className={t.input}
         />
         <input
           value={sourceUrl}
           onChange={(e) => setSourceUrl(e.target.value)}
           placeholder="Source PDF URL (optional)"
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm md:col-span-2"
+          className={`${t.input} md:col-span-2`}
         />
         <select
           value={scope}
           onChange={(e) => setScope(e.target.value as 'company' | 'global')}
-          className="rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm"
+          className={t.input}
         >
           <option value="company">Company knowledge only</option>
           <option value="global">Global corpus (platform admin)</option>
@@ -113,14 +114,14 @@ export default function ProsManualIngestPanel({ user }: Props) {
         onChange={(e) => setChunkText(e.target.value)}
         placeholder="Paste manual excerpt text here…"
         rows={8}
-        className="w-full rounded-xl bg-black/40 border border-white/10 px-3 py-2.5 text-sm resize-y font-mono"
+        className={`w-full font-mono ${t.textarea}`}
       />
-      {message ? <p className="text-sm text-slate-400">{message}</p> : null}
+      {message ? <p className="text-sm text-slate-600">{message}</p> : null}
       <button
         type="button"
         disabled={busy}
         onClick={() => void ingest()}
-        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 text-black font-bold px-5 py-2.5 text-sm disabled:opacity-50"
+        className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm disabled:opacity-50 ${t.btnPrimary}`}
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
         Ingest chunk
