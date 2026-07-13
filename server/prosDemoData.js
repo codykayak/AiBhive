@@ -274,6 +274,7 @@ export function getDemoPartRequests() {
       brand: 'Hayward',
       equipmentModel: 'SP2607X10',
       notes: 'Customer pool down — need by Thursday.',
+      partUrl: 'https://www.hayward.com/products/pumps/super-pump',
       jobId: 'demo-job-1',
       jobTitle: 'IntelliFlo VSF — priming loop / low flow',
       packId: 'pool',

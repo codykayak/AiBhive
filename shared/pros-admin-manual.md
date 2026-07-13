@@ -205,8 +205,10 @@ Knowledge tab / Overview charts show growth: tips, feedback, manual chunks, jobs
 1. Tech runs **Diagnose** on equipment (voice, photo, or typed question).
 2. Below the AI answer, tap **Order part** in **Field resources** (alongside Manual Search when available).
 3. AI pre-fills **part description**, **OEM number**, **brand**, and **model** from the diagnosis.
-4. Tech confirms quantity and notes, then **Submit for approval**.
-5. If linked to a job, job status changes to **Needs parts**.
+4. Optional: **scan** a nameplate or part label photo to auto-read the part number.
+5. Optional: paste a **direct supplier link** to the exact part.
+6. Tech confirms quantity and notes, then **Submit for approval**.
+7. If linked to a job, job status changes to **Needs parts**.
 
 #### Manager workflow (Parts tab)
 

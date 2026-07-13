@@ -209,6 +209,18 @@ export default function ProsPartsPanel({ user, isManager, onRefresh }: Props) {
                     {r.notes}
                   </div>
                 ) : null}
+                {r.partUrl ? (
+                  <div className="sm:col-span-2">
+                    <a
+                      href={r.partUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-400 hover:text-sky-300"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Part link from tech
+                    </a>
+                  </div>
+                ) : null}
                 {r.diagnoseQuery ? (
                   <div className="sm:col-span-2 text-xs text-slate-500 italic">
                     Diagnosis context: {r.diagnoseQuery.slice(0, 200)}

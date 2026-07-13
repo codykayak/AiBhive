@@ -6,9 +6,9 @@ import { useNavigation } from 'expo-router';
 import { Camera, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Dimensions,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   Text,
@@ -53,7 +53,6 @@ type DiagnoseChatProps = {
   autoCamera?: boolean;
   autoVoice?: boolean;
   jobId?: string;
-  keyboardOffset?: number;
   embedInTabs?: boolean;
 };
 
@@ -62,7 +61,6 @@ export function DiagnoseChat({
   autoCamera,
   autoVoice,
   jobId,
-  keyboardOffset,
   embedInTabs = false,
 }: DiagnoseChatProps) {
   const { activePack, setActivePackId } = usePack();
@@ -82,6 +80,7 @@ export function DiagnoseChat({
   const [speechEnabled, setSpeechEnabled] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputBarHeight, setInputBarHeight] = useState(132);
   const [aiSource, setAiSource] = useState<DiagnoseSource | null>(null);
   const [feedbackBusyId, setFeedbackBusyId] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<{ id: string; message: string } | null>(null);
@@ -159,7 +158,10 @@ export function DiagnoseChat({
     };
 
     const onShow = (e: KeyboardEvent) => {
-      setKeyboardHeight(e.endCoordinates?.height || 0);
+      const { screenY } = e.endCoordinates;
+      const windowHeight = Dimensions.get('window').height;
+      const inset = Math.max(0, Math.round(windowHeight - screenY));
+      setKeyboardHeight(inset);
       if (embedInTabs) {
         navigation.getParent()?.setOptions({
           tabBarStyle: { display: 'none' },
@@ -532,13 +534,9 @@ export function DiagnoseChat({
     })();
   }, [jobId, activePack.id, setActivePackId]);
 
-  const offset =
-    keyboardOffset ??
-    (embedInTabs ? insets.top + 56 : Math.max(insets.top, 12) + 56);
-
-  const restingFooterPad = embedInTabs ? 10 : Math.max(insets.bottom, 10);
-  const footerPad =
-    keyboardHeight > 0 ? keyboardHeight + Math.max(insets.bottom, 8) : restingFooterPad;
+  const restingFooterPad = embedInTabs ? 8 : Math.max(insets.bottom, 8);
+  const footerBottomPad = keyboardHeight > 0 ? 8 : restingFooterPad;
+  const listBottomPad = keyboardHeight > 0 ? inputBarHeight + 16 : inputBarHeight + 8;
 
   const modeLabel = offline
     ? 'Local · offline'
@@ -549,11 +547,9 @@ export function DiagnoseChat({
         : 'Library (+ AI when signed in)';
 
   return (
-    <KeyboardAvoidingView
+    <View
       className="flex-1 bg-hive-bg"
-      style={{ flex: 1, backgroundColor: theme.colors.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? offset : 0}
+      style={{ flex: 1, backgroundColor: theme.colors.bg, paddingBottom: keyboardHeight }}
     >
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
         <PackBadge pack={activePack} />
@@ -575,7 +571,7 @@ export function DiagnoseChat({
         className="flex-1 px-4 pt-3"
         data={messages}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: keyboardHeight > 0 ? 12 : 4 }}
+        contentContainerStyle={{ paddingBottom: listBottomPad }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         renderItem={({ item }) => (
@@ -609,7 +605,11 @@ export function DiagnoseChat({
 
       <View
         className="border-t border-hive-border bg-hive-elevated px-3 pt-2"
-        style={{ paddingBottom: footerPad }}
+        style={{ paddingBottom: footerBottomPad }}
+        onLayout={(e) => {
+          const h = Math.ceil(e.nativeEvent.layout.height);
+          if (h > 0 && Math.abs(h - inputBarHeight) > 4) setInputBarHeight(h);
+        }}
       >
         <View className="mb-2 flex-row flex-wrap gap-2">
           {activePack.quickPrompts.slice(0, 3).map((prompt) => (
@@ -678,6 +678,6 @@ export function DiagnoseChat({
           </Pressable>
         </View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
