@@ -13,13 +13,11 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 
 ## Pull requests
 
-**When the user asks to auto-publish:** merge PRs to `main-fixed` after tests pass — Cloud Run auto-deploy runs on merge.
+**Auto-publish (default):** After local tests pass, open the PR as ready for review (`draft: false`), base `main-fixed`, then **squash-merge immediately** — do not wait for the user to ask. Cloud Run auto-deploy runs on merge.
 
-**Default:** test locally, open PR as ready for review (`draft: false`), base `main-fixed`.
-
-1. **Commit and push** to `cursor/<descriptive-name>-c9be`.
-2. **Open PR** — triggers will run on merge via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
-3. **Merge** when the user requests auto-publish or explicit merge.
+1. **Commit and push** to `cursor/<descriptive-name>-c7f3`.
+2. **Open PR** — triggers run on merge via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
+3. **Merge** with squash + delete branch as soon as CI is green (or immediately if checks are still pending and the change is low-risk workflow/config).
 
 ```bash
 gh pr merge <number> --squash --delete-branch
@@ -29,4 +27,4 @@ gh pr merge <number> --squash --delete-branch
 
 ## Branch naming
 
-All agent branches: `cursor/<descriptive-name>-ee8d` (lowercase).
+All agent branches: `cursor/<descriptive-name>-c7f3` (lowercase).
