@@ -3116,13 +3116,19 @@ app.get('/api/download/apk', async (req, res) => {
 });
 
 function loadDiagnoseReleaseManifestFromDisk() {
-  const manifestPath = path.join(__dirname, '../public/diagnose-mobile-releases.json');
-  if (!fs.existsSync(manifestPath)) return null;
-  try {
-    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  } catch {
-    return null;
+  const candidates = [
+    path.join(__dirname, '../public/diagnose-mobile-releases.json'),
+    path.join(__dirname, '../dist/diagnose-mobile-releases.json'),
+  ];
+  for (const manifestPath of candidates) {
+    if (!fs.existsSync(manifestPath)) continue;
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      /* try next */
+    }
   }
+  return null;
 }
 
 function loadDiagnoseVersionFromAppJson() {
@@ -3142,13 +3148,42 @@ function loadDiagnoseVersionFromAppJson() {
   }
 }
 
-async function getDiagnoseReleaseManifest() {
-  const disk = loadDiagnoseReleaseManifestFromDisk();
-  const fromApp = loadDiagnoseVersionFromAppJson();
-  const merged = { ...(disk || {}) };
-  if (fromApp && isManifestNewer(fromApp, merged)) {
-    Object.assign(merged, fromApp);
+async function fetchDiagnoseReleaseFromRemote() {
+  const bucket = firebaseConfig.storageBucket;
+  if (!bucket) return null;
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/mobile%2Fdiagnose-mobile-releases.json?alt=media`;
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('[diagnose/releases] remote manifest fetch failed:', err.message);
+    return null;
   }
+}
+
+function mergeDiagnoseManifestWithAppJson(manifest) {
+  const fromApp = loadDiagnoseVersionFromAppJson();
+  if (!fromApp) return manifest;
+  const base = manifest ?? {};
+  if (!isManifestNewer(fromApp, base)) return base;
+  return {
+    ...base,
+    ...fromApp,
+    downloadUrl: base.downloadUrl || 'https://aibhive.com/api/download/diagnose-apk',
+    fullApkUrl: base.fullApkUrl || 'https://aibhive.com/api/download/diagnose-apk',
+    publishedAt: base.publishedAt || new Date().toISOString(),
+  };
+}
+
+async function getDiagnoseReleaseManifest() {
+  const [remote, disk] = await Promise.all([
+    fetchDiagnoseReleaseFromRemote(),
+    Promise.resolve(loadDiagnoseReleaseManifestFromDisk()),
+  ]);
+  const picked =
+    isManifestNewer(remote, disk) ? remote : isManifestNewer(disk, remote) ? disk : remote || disk;
+  const merged = mergeDiagnoseManifestWithAppJson(picked) || {};
   merged.downloadUrl = merged.downloadUrl || 'https://aibhive.com/api/download/diagnose-apk';
   merged.fullApkUrl = merged.fullApkUrl || 'https://aibhive.com/api/download/diagnose-apk';
   return Object.keys(merged).length ? merged : null;
