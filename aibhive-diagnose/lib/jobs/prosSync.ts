@@ -3,6 +3,19 @@ import { loadJobs, saveJobs, upsertJob } from './storage';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
+/** Parse JSON error bodies from Pros API (`{"error":"..."}`). */
+export function parseProsApiError(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return 'Request failed';
+  try {
+    const parsed = JSON.parse(trimmed) as { error?: string };
+    if (parsed?.error) return parsed.error;
+  } catch {
+    /* plain text */
+  }
+  return trimmed.length > 160 ? `${trimmed.slice(0, 160)}…` : trimmed;
+}
+
 async function prosFetch(path: string, token: string, init?: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -14,7 +27,7 @@ async function prosFetch(path: string, token: string, init?: RequestInit) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `Pros API ${res.status}`);
+    throw new Error(parseProsApiError(text || `Pros API ${res.status}`));
   }
   return res.json();
 }

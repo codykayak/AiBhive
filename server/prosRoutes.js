@@ -293,6 +293,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
 
       const existing = await getMembership(db, user.uid);
       if (existing?.companyId) {
+        if (existing.companyId === companyId) {
+          return res.json({ companyId, role: existing.role || 'tech' });
+        }
         return res.status(400).json({ error: 'Already on a company roster' });
       }
 
@@ -324,17 +327,25 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         joinedAt: now,
       });
 
-      await logActivity(db, companyId, {
-        type: 'member_joined',
-        actorUid: user.uid,
-        actorEmail: user.email,
-        message: `${user.email || user.uid} joined as ${role}`,
-      });
+      try {
+        await logActivity(db, companyId, {
+          type: 'member_joined',
+          actorUid: user.uid,
+          actorEmail: user.email,
+          message: `${req.body?.displayName || user.email || user.uid} joined as ${role}`,
+        });
+      } catch (logErr) {
+        console.warn('[pros/join] activity log failed (non-fatal):', logErr?.message || logErr);
+      }
 
       return res.json({ companyId, role });
     } catch (err) {
-      console.error('[pros/join]', err);
-      return res.status(500).json({ error: 'Failed to join company' });
+      console.error('[pros/join]', err?.code, err?.message || err);
+      const detail =
+        err?.message && typeof err.message === 'string'
+          ? err.message.slice(0, 140)
+          : 'unknown error';
+      return res.status(500).json({ error: `Failed to join company (${detail})` });
     }
   });
 
