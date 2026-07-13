@@ -33,6 +33,12 @@ import {
   serializeNotification,
 } from './prosFieldOps.js';
 import { pushProsNotification } from './prosPush.js';
+import {
+  buildPartSearchLinks,
+  createPartRequest,
+  listPartRequests,
+  updatePartRequestStatus,
+} from './prosPartOrders.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -1589,6 +1595,158 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/assistant/chat]', err);
       return res.status(500).json({ error: err?.message || 'Assistant failed' });
+    }
+  });
+
+  // Part requests — field submit, manager approve/order
+  app.get('/api/pros/parts/requests', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const status = String(req.query.status || 'all');
+      let requests = await listPartRequests(db, membership.companyId, { status: 'all' });
+      if (status !== 'all') {
+        requests = requests.filter((r) => r.status === status);
+      }
+      return res.json({ requests });
+    } catch (err) {
+      console.error('[pros/parts/requests GET]', err);
+      return res.status(500).json({ error: 'Failed to load part requests' });
+    }
+  });
+
+  app.post('/api/pros/parts/requests', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const request = await createPartRequest(db, FieldValue, membership.companyId, user, req.body || {});
+      await logActivity(db, membership.companyId, {
+        type: 'part_request',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Part request: ${request.partName}${request.partNumber ? ` (${request.partNumber})` : ''}`,
+      });
+      return res.json({ request });
+    } catch (err) {
+      console.error('[pros/parts/requests POST]', err);
+      return res.status(400).json({ error: err?.message || 'Failed to create part request' });
+    }
+  });
+
+  app.patch('/api/pros/parts/requests/:id', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const status = req.body?.status;
+      if (!['approved', 'ordered', 'declined'].includes(status)) {
+        return res.status(400).json({ error: 'status must be approved, ordered, or declined' });
+      }
+
+      const memberSnap = await db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('members')
+        .doc(user.uid)
+        .get();
+      const memberName = memberSnap.data()?.displayName || user.email;
+
+      const request = await updatePartRequestStatus(db, FieldValue, mem.companyId, req.params.id, user, {
+        status,
+        declineReason: req.body?.declineReason,
+        supplierNote: req.body?.supplierNote,
+        memberName,
+      });
+
+      await logActivity(db, mem.companyId, {
+        type: 'part_request_update',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Part request ${status}: ${request.partName}`,
+      });
+
+      return res.json({ request });
+    } catch (err) {
+      console.error('[pros/parts/requests PATCH]', err);
+      return res.status(400).json({ error: err?.message || 'Update failed' });
+    }
+  });
+
+  app.post('/api/pros/parts/suggest', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const userText = String(req.body?.userText || '').trim();
+      const assistantReply = String(req.body?.assistantReply || '').trim();
+      const partsHints = Array.isArray(req.body?.partsHints) ? req.body.partsHints : [];
+
+      let partName = partsHints[0] || '';
+      let partNumber = '';
+      let brand = String(req.body?.brand || '').trim();
+      let equipmentModel = '';
+      let notes = '';
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (resolved?.key && (userText || assistantReply)) {
+        try {
+          const { grokChatMessages } = await import('./socialPosts/grokProvider.js');
+          const raw = await grokChatMessages(resolved.key, 'grok-2-1212', [
+            {
+              role: 'system',
+              content:
+                'Extract the most likely OEM part to order from a field diagnosis. Reply ONLY with JSON: {"partName":"","partNumber":"","brand":"","equipmentModel":"","notes":""}. Use empty strings when unknown. partNumber is OEM/SKU if inferable.',
+            },
+            {
+              role: 'user',
+              content: `Tech question: ${userText.slice(0, 800)}\n\nDiagnosis:\n${assistantReply.slice(0, 2000)}\n\nParts hints: ${partsHints.join('; ')}`,
+            },
+          ]);
+          const jsonMatch = String(raw || '').match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            partName = String(parsed.partName || partName).trim();
+            partNumber = String(parsed.partNumber || '').trim();
+            brand = String(parsed.brand || brand).trim();
+            equipmentModel = String(parsed.equipmentModel || '').trim();
+            notes = String(parsed.notes || '').trim();
+          }
+        } catch {
+          // fallback to hints
+        }
+      }
+
+      if (!partName && partsHints.length) partName = partsHints[0];
+      if (!partName && userText) partName = userText.slice(0, 120);
+
+      const searchLinks = buildPartSearchLinks({
+        partName,
+        partNumber,
+        brand,
+        model: equipmentModel,
+      });
+
+      return res.json({
+        partName,
+        partNumber,
+        brand,
+        equipmentModel,
+        notes,
+        searchLinks,
+      });
+    } catch (err) {
+      console.error('[pros/parts/suggest]', err);
+      return res.status(500).json({ error: 'Part suggestion failed' });
     }
   });
 

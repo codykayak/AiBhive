@@ -17,6 +17,7 @@ import {
   LogOut,
   MapPin,
   Navigation,
+  Package,
   Plus,
   RefreshCw,
   Settings,
@@ -37,6 +38,7 @@ import ProsSettingsPanel from '../components/pros/ProsSettingsPanel';
 import ProsWhereIsEverybody from '../components/pros/ProsWhereIsEverybody';
 import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
 import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
+import ProsPartsPanel from '../components/pros/ProsPartsPanel';
 import {
   prosExportJobsCsv,
   prosAnalytics,
@@ -56,6 +58,7 @@ import {
 type Tab =
   | 'overview'
   | 'dispatch'
+  | 'parts'
   | 'whereabouts'
   | 'notifications'
   | 'knowledge'
@@ -68,6 +71,7 @@ type Tab =
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
   { id: 'dispatch', label: 'Jobs', icon: ClipboardList },
+  { id: 'parts', label: 'Parts', icon: Package },
   { id: 'whereabouts', label: 'Where is everybody?', icon: Navigation },
   { id: 'notifications', label: 'Notify', icon: Bell },
   { id: 'knowledge', label: 'Knowledge', icon: BookOpen },
@@ -136,6 +140,7 @@ export default function ProsDashboard() {
   const [jobCustomer, setJobCustomer] = useState('');
   const [jobPhone, setJobPhone] = useState('');
   const [jobScheduled, setJobScheduled] = useState('');
+  const [jobPriority, setJobPriority] = useState<ProsJob['priority']>('normal');
   const [jobFilter, setJobFilter] = useState<'all' | ProsJob['status']>('all');
 
   const isManager = membership?.role === 'owner' || membership?.role === 'manager';
@@ -498,7 +503,8 @@ export default function ProsDashboard() {
             const Icon = t.icon;
             const hide =
               (t.id === 'whereabouts' && !isManager) ||
-              (t.id === 'knowledge' && !isManager);
+              (t.id === 'knowledge' && !isManager) ||
+              (t.id === 'parts' && !isManager);
             if (hide) return null;
             return (
               <button
@@ -779,6 +785,10 @@ export default function ProsDashboard() {
               )}
             </div>
           </div>
+        ) : null}
+
+        {activeTab === 'parts' && isManager && user ? (
+          <ProsPartsPanel user={user} isManager={isManager} onRefresh={() => refreshAll(user)} />
         ) : null}
 
         {activeTab === 'whereabouts' && isManager ? (

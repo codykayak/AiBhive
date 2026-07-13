@@ -1,7 +1,7 @@
 import { Image, Text, View } from 'react-native';
 
 import { DiagnosisCard } from '@/components/DiagnosisCard';
-import { ManualSearchLinks } from '@/components/ManualSearchLinks';
+import { DiagnoseFieldActions } from '@/components/DiagnoseFieldActions';
 import type { ChatMessage } from '@/lib/packs';
 import { theme } from '@/constants/theme';
 
@@ -45,8 +45,14 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
             Diagnosis
           </Text>
         ) : null}
-        {message.diagnoseMeta?.manualSearchLinks?.length ? (
-          <ManualSearchLinks links={message.diagnoseMeta.manualSearchLinks} />
+        {message.diagnoseMeta ? (
+          <DiagnoseFieldActions
+            manualSearchLinks={message.diagnoseMeta.manualSearchLinks}
+            userQuery={message.diagnoseMeta.userQuery}
+            assistantReply={message.content}
+            structured={message.structured}
+            jobId={message.diagnoseMeta.jobId}
+          />
         ) : null}
       </View>
     );
@@ -74,8 +80,15 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           Diagnosis
         </Text>
       ) : null}
-      {!isUser && message.diagnoseMeta?.manualSearchLinks?.length ? (
-        <ManualSearchLinks links={message.diagnoseMeta.manualSearchLinks} compact />
+      {!isUser && message.diagnoseMeta && message.role === 'assistant' ? (
+        <DiagnoseFieldActions
+          manualSearchLinks={message.diagnoseMeta.manualSearchLinks}
+          userQuery={message.diagnoseMeta.userQuery}
+          assistantReply={message.content}
+          structured={message.structured}
+          jobId={message.diagnoseMeta.jobId}
+          compact
+        />
       ) : null}
     </View>
   );
