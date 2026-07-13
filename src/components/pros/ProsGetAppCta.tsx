@@ -40,7 +40,7 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
             Download the app
           </a>
           <a
-            href="/api/download/apk"
+            href="/api/download/diagnose-apk"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
           >
             Direct APK

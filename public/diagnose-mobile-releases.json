@@ -1,0 +1,10 @@
+{
+  "shippedNativeVersion": "1.0.0",
+  "versionCode": 1,
+  "sourceVersion": "1.0.0",
+  "appName": "AiBhive Diagnose",
+  "releaseNotes": "v1.0.0 — AiBhive Diagnose ship: Pros voice diagnose, order parts by voice, manual lookup, scan part labels, company HQ sync, offline trade packs, location tracking.",
+  "downloadUrl": "https://aibhive.com/api/download/diagnose-apk",
+  "fullApkUrl": "https://aibhive.com/api/download/diagnose-apk",
+  "publishedAt": "2026-07-13T05:30:00.000Z"
+}

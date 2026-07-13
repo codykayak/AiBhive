@@ -1,0 +1,87 @@
+# Builds AiBhive Diagnose Android APK and publishes to public/aibhive-diagnose.apk
+name: Build Diagnose APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'aibhive-diagnose/**'
+      - 'public/diagnose-mobile-releases.json'
+      - 'scripts/write-diagnose-release.mjs'
+      - '.github/workflows/build-diagnose-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-diagnose-apk-main-fixed
+  cancel-in-progress: true
+
+jobs:
+  build-diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: ${{ !contains(github.event.head_commit.message, '[skip-diagnose-apk]') }}
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: ./aibhive-diagnose
+        run: npm install
+
+      - name: Build Diagnose APK
+        working-directory: ./aibhive-diagnose
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m
+          EXPO_PUBLIC_API_URL: https://aibhive.com
+        run: bash scripts/ci-android-build.sh
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aibhive-diagnose-apk
+          path: public/aibhive-diagnose.apk
+
+      - name: Update release manifest
+        run: node scripts/write-diagnose-release.mjs
+
+      - name: Commit deployed Diagnose APK + manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/aibhive-diagnose.apk public/diagnose-mobile-releases.json
+          if git diff --staged --quiet; then
+            echo "Diagnose APK unchanged, skipping commit"
+          else
+            git commit -m "chore(diagnose): deploy AiBhive Diagnose APK v1.0.0 [skip-diagnose-apk]"
+            git push origin HEAD:main-fixed
+          fi
+
+      - name: Print download links
+        if: always()
+        run: |
+          echo ""
+          echo "============================================================"
+          echo "  Diagnose APK: https://aibhive.com/api/download/diagnose-apk"
+          echo "  Pros page:    https://aibhive.com/pros"
+          echo "============================================================"

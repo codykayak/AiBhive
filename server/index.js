@@ -3115,6 +3115,96 @@ app.get('/api/download/apk', async (req, res) => {
   return res.sendFile(apkPath);
 });
 
+function loadDiagnoseReleaseManifestFromDisk() {
+  const manifestPath = path.join(__dirname, '../public/diagnose-mobile-releases.json');
+  if (!fs.existsSync(manifestPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function loadDiagnoseVersionFromAppJson() {
+  const appJsonPath = path.join(__dirname, '../aibhive-diagnose/app.json');
+  if (!fs.existsSync(appJsonPath)) return null;
+  try {
+    const expo = JSON.parse(fs.readFileSync(appJsonPath, 'utf8')).expo ?? {};
+    if (!expo.version) return null;
+    return {
+      shippedNativeVersion: expo.version,
+      versionCode: expo.android?.versionCode,
+      sourceVersion: expo.version,
+      appName: 'AiBhive Diagnose',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getDiagnoseReleaseManifest() {
+  const disk = loadDiagnoseReleaseManifestFromDisk();
+  const fromApp = loadDiagnoseVersionFromAppJson();
+  const merged = { ...(disk || {}) };
+  if (fromApp && isManifestNewer(fromApp, merged)) {
+    Object.assign(merged, fromApp);
+  }
+  merged.downloadUrl = merged.downloadUrl || 'https://aibhive.com/api/download/diagnose-apk';
+  merged.fullApkUrl = merged.fullApkUrl || 'https://aibhive.com/api/download/diagnose-apk';
+  return Object.keys(merged).length ? merged : null;
+}
+
+function resolveDiagnoseApkPath() {
+  const candidates = [
+    path.join(__dirname, '../dist/aibhive-diagnose.apk'),
+    path.join(__dirname, '../public/aibhive-diagnose.apk'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+app.get('/api/diagnose/releases', async (_req, res) => {
+  const manifest = await getDiagnoseReleaseManifest();
+  if (!manifest) {
+    return res.status(404).json({ error: 'Diagnose release manifest not available.' });
+  }
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  return res.json(manifest);
+});
+
+app.get('/api/download/diagnose-apk', async (req, res) => {
+  const manifest = await getDiagnoseReleaseManifest();
+  if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {
+    return res.redirect(302, manifest.firebaseGzUrl);
+  }
+  if (manifest?.firebaseApkUrl && req.query.compressed !== '1' && req.query.local !== '1') {
+    return res.redirect(302, manifest.firebaseApkUrl);
+  }
+
+  const apkPath = resolveDiagnoseApkPath();
+  if (!apkPath) {
+    if (manifest?.firebaseApkUrl) {
+      return res.redirect(302, manifest.firebaseApkUrl);
+    }
+    return res.status(404).json({
+      error: 'Diagnose APK not available yet. Try again after the mobile build finishes.',
+    });
+  }
+
+  if (req.query.compressed === '1') {
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="aibhive-diagnose.apk.gz"');
+    return fs.createReadStream(apkPath).pipe(zlib.createGzip()).pipe(res);
+  }
+
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="aibhive-diagnose.apk"');
+  return res.sendFile(apkPath);
+});
+
+app.get('/aibhive-diagnose.apk', async (req, res) => {
+  return res.redirect(301, '/api/download/diagnose-apk');
+});
+
 app.get('/taylored-mobile.apk', async (req, res) => {
   const manifest = await getMobileReleaseManifest();
   if (manifest?.firebaseApkUrl && req.query.local !== '1') {
