@@ -42,6 +42,7 @@ import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
 import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
 import ProsPartsPanel from '../components/pros/ProsPartsPanel';
 import ProsDemoPreviewBanner, { DemoSampleBadge } from '../components/pros/ProsDemoPreviewBanner';
+import ProsTeamWeeklyReports from '../components/pros/ProsTeamWeeklyReports';
 import { prosAdmin as t } from '../components/pros/prosAdminTheme';
 import { formatScheduledFor } from '../lib/formatScheduledFor';
 import {
@@ -926,6 +927,14 @@ export default function ProsDashboard() {
 
         {activeTab === 'team' ? (
           <div className="space-y-4">
+            {isManager ? (
+              <ProsTeamWeeklyReports
+                jobs={jobs}
+                members={members}
+                isManager={isManager}
+                currentUserUid={user?.uid}
+              />
+            ) : null}
             {isManager && company.inviteCode ? (
               <div className={`${t.card} p-4 flex flex-wrap items-center justify-between gap-3`}>
                 <div>
@@ -993,6 +1002,14 @@ export default function ProsDashboard() {
                 </div>
               ))}
             </div>
+            {!isManager ? (
+              <ProsTeamWeeklyReports
+                jobs={jobs}
+                members={members}
+                isManager={false}
+                currentUserUid={user?.uid}
+              />
+            ) : null}
           </div>
         ) : null}
 
