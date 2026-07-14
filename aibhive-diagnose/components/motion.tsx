@@ -13,12 +13,12 @@ import Animated, {
 
 import { theme } from '@/constants/theme';
 
-const AIBHIVE_LOGO = require('../assets/brand/aibhive-logo.png');
+const APP_ICON = require('../icon.png');
 
 export function AiBhiveLogo({ size = 48, rounded = true }: { size?: number; rounded?: boolean }) {
   return (
     <Image
-      source={AIBHIVE_LOGO}
+      source={APP_ICON}
       style={{
         width: size,
         height: size,

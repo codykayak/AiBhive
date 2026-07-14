@@ -184,28 +184,28 @@ export async function askGrokDetailed({
   const isDiagnosis = Boolean(attachment);
 
   if (!isDiagnosis) {
-    let metaOpts;
-    if (isMetaAppQuestion(userText)) {
-      if (getIdToken && API_BASE && !offline) {
-        try {
-          const token = await getIdToken();
-          if (token) {
-            const status = await fetchProsAiStatus(token);
-            if (status) {
-              metaOpts = {
-                offline,
-                aiConfigured: status.configured,
-                aiEnabled: status.aiEnabled,
-              };
-            }
+    let metaOpts: MetaAppReplyOpts | undefined;
+    let liveAiReady = false;
+    if (!offline && getIdToken && API_BASE) {
+      try {
+        const token = await getIdToken();
+        if (token) {
+          const status = await fetchProsAiStatus(token);
+          if (status?.aiEnabled) liveAiReady = true;
+          if (isMetaAppQuestion(userText) && status) {
+            metaOpts = {
+              offline,
+              aiConfigured: status.configured,
+              aiEnabled: status.aiEnabled,
+            };
           }
-        } catch {
-          // use generic meta reply
         }
+      } catch {
+        // use generic meta reply
       }
-      if (!metaOpts) metaOpts = { offline };
     }
-    const conversational = buildOfflineReply(pack, userText, false, metaOpts);
+    if (!metaOpts && isMetaAppQuestion(userText)) metaOpts = { offline };
+    const conversational = buildOfflineReply(pack, userText, false, metaOpts, { liveAiReady });
     if (conversational) {
       return {
         reply: conversational.reply,

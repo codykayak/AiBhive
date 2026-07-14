@@ -86,6 +86,15 @@ export function ChatBubble({
       {message.diagnoseMeta?.notice && !isUser ? (
         <Text className="mt-1 px-1 text-xs text-hive-steel">{message.diagnoseMeta.notice}</Text>
       ) : null}
+      {message.diagnoseMeta?.source && !isUser ? (
+        <Text className="mt-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-hive-steel">
+          {message.diagnoseMeta.source === 'pros'
+            ? 'Pros AI · Grok'
+            : message.diagnoseMeta.source === 'direct'
+              ? 'Grok'
+              : 'Pack library'}
+        </Text>
+      ) : null}
       {message.isDiagnosis && !isUser ? (
         <Text className="mt-1 px-1 text-xs font-semibold uppercase tracking-wide text-hive-steel">
           Diagnosis

@@ -8,7 +8,6 @@ import { BigButton } from '@/components/BigButton';
 import { ProsBrandLogo } from '@/components/ProsBrandLogo';
 import { PackBadge } from '@/components/PackBadge';
 import { theme } from '@/constants/theme';
-import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
 import { getGuidedFlows } from '@/lib/knowledge/guided';
 import { packIconComponent } from '@/lib/packs/icons';
@@ -34,7 +33,6 @@ const TIPS = [
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { activePack, setActivePackId, packs } = usePack();
-  const { profile } = useAuth();
   const [recents, setRecents] = useState<RecentDiagnosis[]>([]);
   const tip = TIPS[new Date().getDate() % TIPS.length];
   const flows = getGuidedFlows(activePack.id);
@@ -56,13 +54,6 @@ export default function HomeScreen() {
           <View style={styles.heroOverlayBottom} />
           <View style={styles.heroContent}>
             <View style={styles.brandRow}>
-              {profile?.photoUrl ? (
-                <Image
-                  source={{ uri: profile.photoUrl }}
-                  style={styles.avatar}
-                  accessibilityLabel={profile.displayName || 'You'}
-                />
-              ) : null}
               <ProsBrandLogo variant="hero" />
             </View>
             <Text style={styles.tagline}>
@@ -218,15 +209,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: R.sm,
+    alignItems: 'flex-start',
   },
   tagline: {
     marginTop: 10,

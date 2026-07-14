@@ -137,11 +137,14 @@ async function requireManager(db, uid) {
 
 async function logActivity(db, companyId, event) {
   const ref = db.collection('pros_companies').doc(companyId).collection('activity').doc();
-  await ref.set({
-    ...event,
-    id: ref.id,
-    createdAt: FieldValue().serverTimestamp(),
-  });
+  const payload = Object.fromEntries(
+    Object.entries({
+      ...event,
+      id: ref.id,
+      createdAt: FieldValue().serverTimestamp(),
+    }).filter(([, value]) => value !== undefined)
+  );
+  await ref.set(payload);
 }
 
 function serializeJob(id, data) {
@@ -1157,9 +1160,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       await logActivity(db, membership.companyId, {
         type: 'diagnose_ai',
         actorUid: user.uid,
-        actorEmail: user.email,
+        actorEmail: user.email || null,
         message: `Diagnose AI (${resolved.source}) tips=${tipIdsUsed.length}`,
-      });
+      }).catch((logErr) => console.warn('[pros/diagnose] activity', logErr?.message));
 
       return res.json({
         reply,
@@ -1410,9 +1413,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       await logActivity(db, membership.companyId, {
         type: 'diagnose_transcribe',
         actorUid: user.uid,
-        actorEmail: user.email,
+        actorEmail: user.email || null,
         message: 'Voice transcription',
-      });
+      }).catch((logErr) => console.warn('[pros/transcribe] activity', logErr?.message));
 
       return res.json({ text });
     } catch (err) {
