@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, MessageSquare, Route, ScanSearch } from 'lucide-react';
 import { useDiagnoseWeb } from '../../context/DiagnoseWebContext';
-import { getGuidedFlows } from '@/lib/knowledge/guided';
+import { getGuidedFlows } from '@diagnose/lib/knowledge/guided';
 
 export default function DiagnoseWebHome() {
   const { activePack } = useDiagnoseWeb();

@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom';
-import { getFaultById, formatFaultAsReply } from '@/lib/knowledge/search';
+import { getFaultById, formatFaultAsReply } from '@diagnose/lib/knowledge/search';
 import { DiagnoseMarkdown } from '../../lib/diagnoseWeb/markdown';
 
 export default function DiagnoseWebFault() {

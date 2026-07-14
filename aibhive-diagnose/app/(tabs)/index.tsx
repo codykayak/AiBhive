@@ -54,7 +54,7 @@ export default function HomeScreen() {
           <View style={styles.heroOverlayBottom} />
           <View style={styles.heroContent}>
             <View style={styles.brandRow}>
-              <ProsBrandLogo variant="hero" />
+              <ProsBrandLogo variant="hero-text" />
             </View>
             <Text style={styles.tagline}>
               Snap it. Say it. Fix it. Field intelligence that fits in a glove.

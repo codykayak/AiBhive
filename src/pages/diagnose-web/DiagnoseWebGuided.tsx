@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useState } from 'react';
-import { guidedFlows, getGuidedFlows } from '@/lib/knowledge/guided';
-import { getFaultById, formatFaultAsReply } from '@/lib/knowledge/search';
+import { guidedFlows, getGuidedFlows } from '@diagnose/lib/knowledge/guided';
+import { getFaultById, formatFaultAsReply } from '@diagnose/lib/knowledge/search';
 import { useDiagnoseWeb } from '../../context/DiagnoseWebContext';
 import { DiagnoseMarkdown } from '../../lib/diagnoseWeb/markdown';
 

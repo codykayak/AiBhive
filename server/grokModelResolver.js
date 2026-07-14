@@ -8,12 +8,12 @@ const FALLBACK_CHAT = process.env.GROK_CHAT_MODEL || process.env.INTEL_GROK_MODE
 const FALLBACK_VISION =
   process.env.GROK_VISION_MODEL || process.env.FABLE_GROK_VISION_MODEL || 'grok-2-vision-1212';
 
-/** Prefer newer chat models; skip image/audio-only ids. */
+/** Prefer reliable chat models for field diagnose (grok-3-mini first). */
 const CHAT_PREFERENCE = [
-  /^grok-4(?!.*image)/i,
-  /^grok-3(?!.*mini)(?!.*image)/i,
   /^grok-3-mini/i,
+  /^grok-3(?!.*mini)(?!.*image)/i,
   /^grok-2(?!.*vision)(?!.*image)/i,
+  /^grok-4(?!.*image)/i,
 ];
 
 let cache = {

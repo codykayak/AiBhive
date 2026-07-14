@@ -1160,7 +1160,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           ...history,
           { role: 'user', content: userContent },
         ],
-        { temperature: 0.25, max_tokens: 3500 }
+        { temperature: 0.25, max_tokens: 3500, vision: hasImage }
       );
 
       await logActivity(db, membership.companyId, {

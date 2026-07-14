@@ -1,6 +1,6 @@
-import { diagnoseLocally } from '@/lib/knowledge/diagnoseEngine';
-import { buildOfflineReply, isMetaAppQuestion } from '@/lib/diagnose/offlineConversation';
-import type { TradePack } from '@/lib/packs/types';
+import { diagnoseLocally } from '@diagnose/lib/knowledge/diagnoseEngine';
+import { buildOfflineReply, isMetaAppQuestion } from '@diagnose/lib/diagnose/offlineConversation';
+import type { TradePack } from '@diagnose/lib/packs/types';
 import type { ChatAttachment } from './api';
 import { sendDiagnoseChat } from './api';
 import type { DiagnoseWebMessage } from './types';

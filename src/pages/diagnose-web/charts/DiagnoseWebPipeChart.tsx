@@ -1,4 +1,4 @@
-import { COPPER_PIPE_SIZES, DRAIN_SIZING, PLUMBING_CODE_REFS } from '@/lib/knowledge/plumbing/reference';
+import { COPPER_PIPE_SIZES, DRAIN_SIZING, PLUMBING_CODE_REFS } from '@diagnose/lib/knowledge/plumbing/reference';
 
 export default function DiagnoseWebPipeChart() {
   return (
