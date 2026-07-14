@@ -51,6 +51,7 @@ Or `GET /api/health` — `env.firecrawl` and `env.serpapi` should be `true`.
 | `GOOGLE_APPLICATION_CREDENTIALS` | Firestore, GCS, admin APIs | Path to a GCP service-account JSON with Firestore + Storage access |
 | `XAI_API_KEY` or `GROK_API_KEY` | Homework, Intel chat (Grok) | From [x.ai](https://console.x.ai/) |
 | `CARTESIA_API_KEY` | Pros Diagnose high-quality narration (with Grok AI) | From [Cartesia](https://cartesia.ai/) — **server only**, never commit |
+| `CARTESIA_USD_PER_CHAR` | Cartesia TTS cost estimate (default `0.00005` ≈ $50/1M chars) | Used in Pros analytics + operation estimates |
 | `ADMIN_EMAILS` | `/admin`, `/homework` login | Comma-separated Google emails |
 | `STRIPE_SECRET_KEY` | Checkout / billing | Optional for most UI testing |
 

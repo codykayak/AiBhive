@@ -244,6 +244,20 @@ Without a key, techs still get the **offline pack library** (fault playbooks, co
 
 **Billing:** Companies in **trial** or **active** billing status can use live AI. Suspended accounts get pack library only.
 
+#### Platform API cost estimates (when using AiBhive keys)
+
+When your team uses the **platform Grok key** and **Cartesia voice** (Voice on in Diagnose), AiBhive tracks estimated raw API spend on the **Overview** dashboard:
+
+| Operation | Typical raw cost (USD) |
+|-----------|------------------------|
+| Grok text diagnose | ~$0.01 |
+| Grok photo diagnose | ~$0.022 |
+| Cartesia TTS narration | ~$0.015 (~300 spoken chars) |
+| Voice note transcription (Gemini) | ~$0.004 |
+| **Typical diagnose + voice** | **~$0.025** |
+
+Cartesia bills per input character (~$0.00005/char at pay-as-you-go). Costs are logged per activity row for the last 30 days. BYOK Grok keys bill your xAI account directly; Cartesia still uses the platform key when voice is enabled.
+
 ---
 
 ### 3.9 Settings

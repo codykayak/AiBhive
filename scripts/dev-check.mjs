@@ -64,6 +64,7 @@ const recommended = [
   ['GEMINI_API_KEY', 'Gemini AI (OCR, chat, PDF extraction)'],
   ['GOOGLE_APPLICATION_CREDENTIALS', 'Firebase Admin / Firestore / GCS (backend APIs)'],
   ['XAI_API_KEY', 'Grok (homework, intel chat)'],
+  ['CARTESIA_API_KEY', 'Cartesia TTS (Pros Diagnose narration)'],
   ['ADMIN_EMAILS', 'Your Google email for /admin and /homework'],
 ];
 for (const [key, label] of recommended) {
@@ -83,7 +84,7 @@ if (health.error) {
   console.log(`  ✓ /api/health → ${health.status}`);
   if (health.json) {
     const h = health.json;
-    console.log(`    gemini=${h.env?.gemini} grok=${h.env?.grok} gcpCreds=${h.env?.googleCredentials}`);
+    console.log(`    gemini=${h.env?.gemini} grok=${h.env?.grok} cartesia=${h.env?.cartesia} gcpCreds=${h.env?.googleCredentials}`);
     if (!h.firestore?.ok) {
       warnings.push(`Firestore not connected: ${h.firestore?.error || 'unknown'}`);
       console.log(`    ⚠ Firestore: ${h.firestore?.error || 'failed'}`);

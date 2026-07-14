@@ -7,6 +7,15 @@ export type ProsAiStatus = {
   billingStatus: string;
   aiEnabled: boolean;
   cartesiaEnabled?: boolean;
+  operationCostEstimate?: number | null;
+  operationCostRates?: {
+    grokChatRawUsd: number;
+    grokVisionRawUsd: number;
+    transcribeRawUsd: number;
+    ttsPerCharUsd: number;
+    ttsTypicalRawUsd: number;
+    typicalDiagnoseWithVoiceUsd: number;
+  };
 };
 
 export async function fetchProsAiStatus(token: string): Promise<ProsAiStatus | null> {
