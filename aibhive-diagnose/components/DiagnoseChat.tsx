@@ -124,14 +124,31 @@ export function DiagnoseChat({
       const token = await getIdToken();
       if (!token || cancelled) return;
       const status = await fetchProsAiStatus(token);
-      if (!cancelled) {
-        setProsAiEnabled(Boolean(status?.aiEnabled));
+      if (cancelled) return;
+      const enabled = Boolean(status?.aiEnabled);
+      setProsAiEnabled(enabled);
+      if (enabled) {
+        const stored = await AsyncStorage.getItem(SPEECH_KEY);
+        if (stored === null) {
+          setSpeechEnabled(true);
+          await AsyncStorage.setItem(SPEECH_KEY, '1');
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [offline, user, getIdToken]);
+
+  const resolveServerTtsEnabled = useCallback(async (): Promise<boolean> => {
+    if (offline || !user) return false;
+    const token = await getIdToken();
+    if (!token) return false;
+    const status = await fetchProsAiStatus(token);
+    const enabled = Boolean(status?.aiEnabled && status.grokTtsEnabled !== false);
+    setProsAiEnabled(Boolean(status?.aiEnabled));
+    return enabled;
+  }, [getIdToken, offline, user]);
 
   // Load / restore session per pack (+ optional job)
   useEffect(() => {
@@ -467,14 +484,28 @@ export function DiagnoseChat({
         void writeDiagnosisToJob(reply);
 
         if (!offline && speechEnabled) {
-          const useServerTts = source === 'pros' && prosAiEnabled;
+          const useServerTts = await resolveServerTtsEnabled();
           setSpeaking(true);
           void speakDiagnoseReply({
             text: reply,
             useServerTts,
             getIdToken,
+            allowDeviceFallback: !useServerTts,
             onDone: () => setSpeaking(false),
-            onError: () => setSpeaking(false),
+            onError: (message) => {
+              setSpeaking(false);
+              if (message && useServerTts) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: uid(),
+                    role: 'assistant',
+                    content: `Grok voice unavailable: ${message}`,
+                    createdAt: Date.now(),
+                  },
+                ]);
+              }
+            },
           });
         }
       } catch (error) {
@@ -505,7 +536,7 @@ export function DiagnoseChat({
       offline,
       pendingAttachment,
       speechEnabled,
-      prosAiEnabled,
+      resolveServerTtsEnabled,
       writeDiagnosisToJob,
     ]
   );
@@ -618,6 +649,15 @@ export function DiagnoseChat({
           voiceRef.current = null;
           setInput('');
           void send(text.trim());
+        },
+        onAutoSendError: (message) => {
+          voiceSendRef.current = true;
+          setListening(false);
+          voiceRef.current = null;
+          setMessages((prev) => [
+            ...prev,
+            { id: uid(), role: 'assistant', content: message, createdAt: Date.now() },
+          ]);
         },
         vadSilenceMs: 4000,
       });

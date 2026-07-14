@@ -8,13 +8,15 @@ import { packIconComponent } from '@/lib/packs/icons';
 
 /** Pack directory — each trade opens its own detail page with categories below. */
 export default function PacksScreen() {
-  const { activePackId, packs } = usePack();
+  const { activePackId, packs, allPacksUnlocked } = usePack();
 
   return (
     <ScrollView className="flex-1 bg-hive-bg" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text className="text-2xl font-bold text-hive-mist">Trade Packs</Text>
       <Text className="mt-1 text-base text-hive-steel">
-        Choose your trade — each pack has its own categories, playbooks, and field tools.
+        {allPacksUnlocked
+          ? 'All trade packs unlocked — switch anytime. Diagnose searches every library while you’re signed in.'
+          : 'Choose your trade — sign in to unlock every pack library.'}
       </Text>
 
       <View className="mt-6">

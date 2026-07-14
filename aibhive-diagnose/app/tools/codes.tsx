@@ -2,13 +2,17 @@ import { useMemo, useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePack } from '@/contexts/PackContext';
 import { searchCodes } from '@/lib/knowledge/search';
+import { resolveSearchPackId } from '@/lib/packs/access';
 
 export default function CodesScreen() {
   const { activePack } = usePack();
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
-  const codes = useMemo(() => searchCodes(query, activePack.id), [query, activePack.id]);
+  const searchPackId = resolveSearchPackId(activePack.id, Boolean(user));
+  const codes = useMemo(() => searchCodes(query, searchPackId), [query, searchPackId]);
 
   return (
     <View className="flex-1 bg-hive-bg">
