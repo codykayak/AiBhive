@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive Pros",
     "slug": "aibhive-diagnose",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./icon.png",
     "scheme": "aibhivepros",
@@ -20,12 +20,10 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#0B0F14",
-        "foregroundImage": "./icon.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./icon.png"
       },
       "package": "com.aibhive.diagnose",
-      "versionCode": 5,
+      "versionCode": 6,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "CAMERA",

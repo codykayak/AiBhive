@@ -5,22 +5,23 @@ import { theme } from '@/constants/theme';
 const APP_ICON = require('../icon.png');
 
 type ProsBrandLogoProps = {
-  /** `header` = compact; `hero` = home; `intro` = splash screen */
+  /** `header` = compact icon + wordmark; `hero` / `intro` = app icon only */
   variant?: 'header' | 'hero' | 'intro';
   dark?: boolean;
   style?: ViewStyle;
 };
 
 /**
- * AiBhive Pros wordmark — app icon + AiB(hive) Pros (matches aibhive.com/pros header).
+ * AiBhive Pros branding — hero/intro use icon.png only; header keeps compact wordmark.
  */
 export function ProsBrandLogo({ variant = 'header', dark = false, style }: ProsBrandLogoProps) {
   const hiveColor = dark ? '#FFFFFF' : theme.colors.mist;
   const prosColor = dark ? '#94A3B8' : theme.colors.steel;
   const hiveSize = variant === 'intro' ? 32 : variant === 'hero' ? 28 : 18;
   const prosSize = variant === 'intro' ? 18 : variant === 'hero' ? 16 : 13;
-  const iconSize = variant === 'intro' ? 96 : variant === 'hero' ? 48 : 32;
-  const iconRadius = variant === 'intro' ? 22 : variant === 'hero' ? 12 : 8;
+  const iconSize = variant === 'intro' ? 96 : variant === 'hero' ? 72 : 32;
+  const iconRadius = variant === 'intro' ? 22 : variant === 'hero' ? 16 : 8;
+  const iconOnly = variant === 'hero' || variant === 'intro';
 
   return (
     <View
@@ -34,12 +35,14 @@ export function ProsBrandLogo({ variant = 'header', dark = false, style }: ProsB
         resizeMode="contain"
         accessibilityIgnoresInvertColors
       />
-      <View style={styles.textRow}>
-        <Text style={[styles.hive, { color: hiveColor, fontSize: hiveSize }]}>
-          AiB<Text style={{ color: theme.colors.amber }}>hive</Text>
-        </Text>
-        <Text style={[styles.pros, { color: prosColor, fontSize: prosSize }]}> Pros</Text>
-      </View>
+      {!iconOnly ? (
+        <View style={styles.textRow}>
+          <Text style={[styles.hive, { color: hiveColor, fontSize: hiveSize }]}>
+            AiB<Text style={{ color: theme.colors.amber }}>hive</Text>
+          </Text>
+          <Text style={[styles.pros, { color: prosColor, fontSize: prosSize }]}> Pros</Text>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -58,6 +58,8 @@ manifest.releaseNotes =
   `v${version} — Pros field app: voice/chat part orders, manual PDF search, parts HQ workflow, keyboard fix, light theme, trade packs, location pings.`;
 
 const notesByVersion = {
+  '1.0.5':
+    'v1.0.5 — Fix Grok + voice for field sign-in (Firestore actorEmail), route faults to live AI when online, single icon.png branding, Android launcher icon fix.',
   '1.0.4':
     'v1.0.4 — Voice mic fix (native recording), smarter offline chat (AI status questions), Pros HQ: delete members/alerts, join dates, push targeting.',
   '1.0.3':

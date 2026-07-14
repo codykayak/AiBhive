@@ -277,7 +277,8 @@ export function buildOfflineReply(
   pack: TradePack,
   text: string,
   hasPhoto: boolean,
-  metaOpts?: MetaAppReplyOpts
+  metaOpts?: MetaAppReplyOpts,
+  opts?: { liveAiReady?: boolean }
 ): {
   reply: string;
   matchedFaultIds: string[];
@@ -289,7 +290,7 @@ export function buildOfflineReply(
   if (!hasPhoto && isMetaAppQuestion(text)) {
     return { reply: buildMetaAppReply(metaOpts), matchedFaultIds: [], kind: 'meta' };
   }
-  if (!hasPhoto && isGeneralQuestionWithoutFault(text)) {
+  if (!opts?.liveAiReady && !hasPhoto && isGeneralQuestionWithoutFault(text)) {
     return { reply: buildGeneralQuestionReply(pack), matchedFaultIds: [], kind: 'general' };
   }
   if (!hasPhoto && isEquipmentProbeOnly(text)) {
