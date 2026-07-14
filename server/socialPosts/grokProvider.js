@@ -20,7 +20,9 @@ export async function grokChat(apiKey, model, prompt, system = '') {
 }
 
 /** Multi-turn Grok chat (system + history + latest user message). */
-export async function grokChatMessages(apiKey, model, messages) {
+export async function grokChatMessages(apiKey, model, messages, opts = {}) {
+  const temperature = typeof opts.temperature === 'number' ? opts.temperature : 0.6;
+  const max_tokens = typeof opts.max_tokens === 'number' ? opts.max_tokens : 4096;
   const res = await fetch(`${XAI_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -30,8 +32,8 @@ export async function grokChatMessages(apiKey, model, messages) {
     body: JSON.stringify({
       model,
       messages,
-      temperature: 0.6,
-      max_tokens: 4096,
+      temperature,
+      max_tokens,
     }),
   });
 

@@ -1,4 +1,4 @@
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
+import { API_BASE } from '@/lib/config/apiBase';
 
 export type KnowledgeFeedbackPayload = {
   outcome: 'worked' | 'didnt';

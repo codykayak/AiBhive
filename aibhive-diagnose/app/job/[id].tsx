@@ -19,6 +19,7 @@ import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadProsImage } from '@/lib/diagnose/upload';
 import { setProsLocationJobContext } from '@/lib/location/prosLocationTracker';
+import { formatJobScheduleLabel } from '@/lib/jobs/schedule';
 import { pushJobNoteToPros, pushJobPhotoToPros, pushJobStatusToPros } from '@/lib/jobs/prosSync';
 import { loadJobs, upsertJob, type FieldJob, type JobStatus } from '@/lib/jobs/storage';
 
@@ -194,6 +195,11 @@ export default function JobDetailScreen() {
         <MapPin color={theme.colors.steel} size={16} />
         <Text className="text-base text-hive-steel">{job.address || 'Address TBD'}</Text>
       </View>
+      {formatJobScheduleLabel(job) ? (
+        <Text className="mt-2 text-sm font-semibold text-hive-amber">
+          Scheduled · {formatJobScheduleLabel(job)}
+        </Text>
+      ) : null}
 
       {job.adminNotes ? (
         <View className="mt-4 rounded-sm border border-hive-border bg-hive-elevated px-4 py-3">

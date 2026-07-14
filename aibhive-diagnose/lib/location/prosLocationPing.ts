@@ -1,9 +1,9 @@
+import { API_BASE } from '@/lib/config/apiBase';
 /**
  * Periodic GPS ping for Pros — Diagnose will call this on an interval when tracking is enabled.
  * Location permissions and background tasks: follow-up in the mobile app.
  */
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
 export type LocationPingPayload = {
   lat: number;

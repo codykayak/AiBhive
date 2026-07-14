@@ -3,10 +3,10 @@ import { diagnoseLocally } from './knowledge/diagnoseEngine';
 import type { ManualSearchLink } from './knowledge/manualSearch';
 import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
+import { API_BASE } from '@/lib/config/apiBase';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 const DEFAULT_MODEL = 'grok-2-vision-1212';
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
 export type GrokChatRequest = {
   pack: TradePack;
@@ -66,7 +66,16 @@ When giving repair guidance, prefer these markdown headers when it fits:
 
   return `${pack.systemPrompt}
 
-CRITICAL: Stay on the equipment the user named. If they say dishwasher, do not discuss pools, dryers, or unrelated gear unless they clearly ask. Prefer the local library context when it matches. If local context looks off-topic, ignore it and answer for the named equipment only.${diagnosisExtra}`;
+SCOPE — ACTIVE TRADE PACK: ${pack.name} (${pack.id})
+You help field techs on: ${pack.commonEquipment.join(', ')}.
+Stay inside trades relevant to this pack (and closely related cross-trade issues the user clearly named). Refuse or briefly redirect hobbies, medical advice, legal advice, politics, or unrelated consumer questions.
+
+CRITICAL EQUIPMENT LOCK:
+- Stay on the equipment / fixture the user named (bathtub ≠ dishwasher ≠ washer ≠ pool).
+- If local library context names different equipment, IGNORE that context and answer for the user's equipment only.
+- Prefer local library + shop tips when they match. If the library has no match, use solid trade practice for that equipment.
+- When you need knowledge beyond the local library, stick to reputable trade practice for this pack — do not invent brand-specific torque specs or part numbers. Ask for brand/model when it changes the answer.
+- Keep steps glove-friendly, safety-first, and short enough to read on a phone at a job site.${diagnosisExtra}`;
 }
 
 type ProsDiagnoseOk = {
@@ -342,7 +351,7 @@ async function tryDirectGrok(opts: {
           ...history,
           { role: 'user', content: userContent },
         ],
-        temperature: 0.3,
+        temperature: 0.25,
       }),
     });
 

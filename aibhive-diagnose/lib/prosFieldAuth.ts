@@ -1,12 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signInAnonymously, signInWithCustomToken } from 'firebase/auth';
 
+import { API_BASE } from '@/lib/config/apiBase';
 import { getDiagnoseAuth } from '@/lib/firebase';
 import { joinProsCompany, parseProsApiError } from '@/lib/jobs/prosSync';
 
 const FIELD_UID_KEY = 'aibhive.pros.fieldUid.v1';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://aibhive.com';
 
 export type FieldAuthResult = {
   companyId: string;

@@ -1,7 +1,7 @@
 import type { FieldJob } from './storage';
 import { loadJobs, saveJobs, upsertJob } from './storage';
-
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
+import { parseScheduledAt, sortJobsBySchedule } from './schedule';
+import { API_BASE } from '@/lib/config/apiBase';
 
 /** Parse JSON error bodies from Pros API (`{"error":"..."}`). */
 export function parseProsApiError(text: string): string {
@@ -33,15 +33,22 @@ async function prosFetch(path: string, token: string, init?: RequestInit) {
 }
 
 function mapCloudJob(j: Record<string, unknown>): FieldJob {
+  const packRaw = String(j.packId || '');
+  const packId: FieldJob['packId'] =
+    packRaw === 'electrical' ||
+    packRaw === 'property' ||
+    packRaw === 'pool' ||
+    packRaw === 'plumbing' ||
+    packRaw === 'hvac'
+      ? (packRaw as FieldJob['packId'])
+      : 'pool';
+  const scheduledFor = j.scheduledFor ? String(j.scheduledFor) : null;
   return {
     id: String(j.id),
     title: String(j.title || ''),
     address: String(j.address || ''),
     notes: String(j.notes || ''),
-    packId:
-      j.packId === 'electrical' || j.packId === 'property' || j.packId === 'pool'
-        ? (j.packId as FieldJob['packId'])
-        : 'pool',
+    packId,
     status: (j.status as FieldJob['status']) || 'queued',
     createdAt: Number(j.createdAt) || Date.now(),
     updatedAt: Number(j.updatedAt) || Date.now(),
@@ -50,6 +57,8 @@ function mapCloudJob(j: Record<string, unknown>): FieldJob {
     adminNotes: j.adminNotes ? String(j.adminNotes) : '',
     priority: (j.priority as FieldJob['priority']) || 'normal',
     assigneeUid: j.assigneeUid ? String(j.assigneeUid) : null,
+    scheduledFor,
+    scheduledAt: parseScheduledAt(scheduledFor),
     fieldNotes: Array.isArray(j.fieldNotes) ? (j.fieldNotes as FieldJob['fieldNotes']) : [],
     photos: Array.isArray(j.photos) ? (j.photos as FieldJob['photos']) : [],
     cloudSynced: true,
@@ -69,12 +78,12 @@ export async function syncJobsFromPros(token: string): Promise<FieldJob[]> {
         byId.set(c.id, { ...existing, ...c, cloudSynced: true });
       }
     }
-    const merged = Array.from(byId.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+    const merged = sortJobsBySchedule(Array.from(byId.values()));
     await saveJobs(merged);
     return merged;
   } catch (err) {
     console.warn('[prosSync] pull failed', err);
-    return loadJobs();
+    return sortJobsBySchedule(await loadJobs());
   }
 }
 

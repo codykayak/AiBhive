@@ -32,6 +32,10 @@ export type FieldJob = {
   adminNotes?: string;
   priority?: 'low' | 'normal' | 'high' | 'emergency';
   assigneeUid?: string | null;
+  /** Display string from Pros admin (date + time). */
+  scheduledFor?: string | null;
+  /** Parsed millis for sorting / calendar (optional cache). */
+  scheduledAt?: number | null;
   fieldNotes?: FieldNote[];
   photos?: FieldPhoto[];
   cloudSynced?: boolean;

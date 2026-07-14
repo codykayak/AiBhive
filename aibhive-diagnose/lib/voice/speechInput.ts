@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
+import { API_BASE } from '@/lib/config/apiBase';
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
 type WebSpeechRecognition = {
   continuous: boolean;
