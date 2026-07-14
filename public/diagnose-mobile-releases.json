@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.0.3",
-  "versionCode": 4,
-  "sourceVersion": "1.0.3",
+  "shippedNativeVersion": "1.0.4",
+  "versionCode": 5,
+  "sourceVersion": "1.0.4",
   "appName": "AiBhive Pros",
-  "releaseNotes": "v1.0.3 — Offline chat: hello on hi, related topics for equipment names, sink≠bath matching, Grok 400 fix, keyboard fix, ordering_parts intent.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3ce1e545-0416-4f5d-a2fb-4d813f322cf8",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3ce1e545-0416-4f5d-a2fb-4d813f322cf8",
-  "publishedAt": "2026-07-14T02:15:16.190Z",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3ce1e545-0416-4f5d-a2fb-4d813f322cf8",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1783995313908%2Faibhive-diagnose.apk.gz?alt=media&token=34562c89-7c30-4f08-a384-1cd0e7f44913"
+  "releaseNotes": "v1.0.4 — Voice mic fix (native recording), smarter offline chat (AI status questions), Pros HQ: delete members/alerts, join dates, push targeting.",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6b58d6dd-a292-436a-988a-4d5da3d4cdb3",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6b58d6dd-a292-436a-988a-4d5da3d4cdb3",
+  "publishedAt": "2026-07-14T03:00:50.165Z",
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6b58d6dd-a292-436a-988a-4d5da3d4cdb3",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1783998047045%2Faibhive-diagnose.apk.gz?alt=media&token=4a63aa10-b704-4296-a6ec-002e8ef5c716"
 }
