@@ -6,6 +6,8 @@ import {
   buildGreetingReply,
   buildOfflineReply,
   isEquipmentProbeOnly,
+  isMetaAppQuestion,
+  buildMetaAppReply,
 } from '../lib/diagnose/offlineConversation';
 import { detectEquipment, searchFaults } from '../lib/knowledge/search';
 
@@ -93,6 +95,24 @@ describe('searchFaults equipment disambiguation', () => {
     assert.ok(offline);
     assert.match(offline!.reply, /toilet/i);
     assert.doesNotMatch(offline!.reply, /shower or tub drain slow/i);
+  });
+
+  it('meta question Is AI live now does not match washer faults', () => {
+    assert.ok(isMetaAppQuestion('Is AI live now?'));
+    assert.equal(searchFaults('Is AI live now?', 'property').length, 0);
+    const offline = buildOfflineReply(
+      { id: 'property', shortName: 'Property', name: 'Property' } as never,
+      'Is AI live now?',
+      false,
+      { offline: true }
+    );
+    assert.ok(offline);
+    assert.match(offline!.reply, /offline|pack/i);
+    assert.doesNotMatch(offline!.reply, /washer/i);
+  });
+
+  it('meta reply when ai configured', () => {
+    assert.match(buildMetaAppReply({ aiConfigured: true, aiEnabled: true }), /live/i);
   });
 });
 

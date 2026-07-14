@@ -3,7 +3,8 @@ import { diagnoseLocally } from './knowledge/diagnoseEngine';
 import type { ManualSearchLink } from './knowledge/manualSearch';
 import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
-import { buildOfflineReply } from '@/lib/diagnose/offlineConversation';
+import { buildOfflineReply, isMetaAppQuestion } from '@/lib/diagnose/offlineConversation';
+import { fetchProsAiStatus } from '@/lib/diagnose/aiStatus';
 import { buildGrokUserContent } from '@/lib/diagnose/grokMessage';
 import { API_BASE } from '@/lib/config/apiBase';
 
@@ -183,7 +184,28 @@ export async function askGrokDetailed({
   const isDiagnosis = Boolean(attachment);
 
   if (!isDiagnosis) {
-    const conversational = buildOfflineReply(pack, userText, false);
+    let metaOpts;
+    if (isMetaAppQuestion(userText)) {
+      if (getIdToken && API_BASE && !offline) {
+        try {
+          const token = await getIdToken();
+          if (token) {
+            const status = await fetchProsAiStatus(token);
+            if (status) {
+              metaOpts = {
+                offline,
+                aiConfigured: status.configured,
+                aiEnabled: status.aiEnabled,
+              };
+            }
+          }
+        } catch {
+          // use generic meta reply
+        }
+      }
+      if (!metaOpts) metaOpts = { offline };
+    }
+    const conversational = buildOfflineReply(pack, userText, false, metaOpts);
     if (conversational) {
       return {
         reply: conversational.reply,

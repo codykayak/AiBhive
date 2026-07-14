@@ -41,6 +41,10 @@ export type ProsMember = {
   role: 'owner' | 'manager' | 'tech';
   status: 'active' | 'inactive';
   tradePack?: 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac';
+  joinedAt?: number | null;
+  pushUpdatedAt?: number | null;
+  hasPushToken?: boolean;
+  authMethod?: string | null;
 };
 
 export type ProsCompanySettings = {
@@ -186,6 +190,30 @@ export async function prosRespondNotification(
   return prosJson<{ success: boolean }>(`/api/pros/notifications/${id}/respond`, user, {
     method: 'PATCH',
     body: JSON.stringify(payload),
+  });
+}
+
+export async function prosDeleteMember(user: User, uid: string) {
+  return prosJson<{ success: boolean }>(`/api/pros/team/${uid}`, user, { method: 'DELETE' });
+}
+
+export async function prosDeleteNotification(user: User, id: string) {
+  return prosJson<{ success: boolean }>(`/api/pros/notifications/${id}`, user, { method: 'DELETE' });
+}
+
+export function formatMemberLabel(m: ProsMember): string {
+  const name = m.displayName || m.email || 'Tech';
+  const shortUid = m.uid.length > 8 ? m.uid.slice(-6) : m.uid;
+  const push = m.hasPushToken ? ' · push ✓' : ' · no push';
+  return `${name} (${shortUid}${push})`;
+}
+
+export function formatJoinedDate(joinedAt?: number | null): string {
+  if (!joinedAt) return 'Join date unknown';
+  return new Date(joinedAt).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 }
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { User } from 'firebase/auth';
-import { Bell, CheckCircle2, Loader2, Send, XCircle } from 'lucide-react';
+import { Bell, CheckCircle2, Loader2, Send, Trash2, XCircle } from 'lucide-react';
 import {
   prosRespondNotification,
   prosSendNotification,
+  prosDeleteNotification,
+  formatMemberLabel,
   type ProsJob,
   type ProsMember,
   type ProsNotification,
@@ -35,6 +37,7 @@ export default function ProsNotificationsPanel({
   const [priority, setPriority] = useState<ProsNotification['priority']>('normal');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pushFeedback, setPushFeedback] = useState<string | null>(null);
 
   const techs = members.filter((m) => m.status === 'active' && m.role !== 'owner');
 
@@ -42,10 +45,11 @@ export default function ProsNotificationsPanel({
     if (!title.trim()) return;
     setBusy(true);
     setError(null);
+    setPushFeedback(null);
     try {
       const assignee = members.find((m) => m.uid === assigneeUid);
       const job = jobs.find((j) => j.id === jobId);
-      await prosSendNotification(user, {
+      const result = await prosSendNotification(user, {
         title: title.trim(),
         body: body.trim(),
         assigneeUid: assigneeUid || null,
@@ -55,6 +59,18 @@ export default function ProsNotificationsPanel({
         priority,
         type: jobId ? 'job_update' : 'announcement',
       });
+      const push = (result as { push?: { sent?: number; targets?: number } }).push;
+      if (push) {
+        if (push.targets === 0) {
+          setPushFeedback(
+            'Saved to inbox, but no push tokens registered — pick a tech with “push ✓” in Team, or have them open the app while signed in.'
+          );
+        } else if ((push.sent || 0) < (push.targets || 0)) {
+          setPushFeedback(`Push sent to ${push.sent} of ${push.targets} device(s).`);
+        } else {
+          setPushFeedback(`Push delivered to ${push.sent} device(s).`);
+        }
+      }
       setTitle('');
       setBody('');
       setAssigneeUid('');
@@ -84,6 +100,20 @@ export default function ProsNotificationsPanel({
       await onRefresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Response failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removeNotification = async (n: ProsNotification) => {
+    if (!window.confirm(`Delete “${n.title}”?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await prosDeleteNotification(user, n.id);
+      await onRefresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
     } finally {
       setBusy(false);
     }
@@ -123,7 +153,7 @@ export default function ProsNotificationsPanel({
               <option value="">All techs / broadcast</option>
               {techs.map((m) => (
                 <option key={m.uid} value={m.uid}>
-                  {m.displayName || m.email}
+                  {formatMemberLabel(m)}
                 </option>
               ))}
             </select>
@@ -152,6 +182,7 @@ export default function ProsNotificationsPanel({
             </select>
           </div>
           {error ? <p className={t.errorInline}>{error}</p> : null}
+          {pushFeedback ? <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{pushFeedback}</p> : null}
           <button
             type="button"
             disabled={busy || !title.trim()}
@@ -192,6 +223,17 @@ export default function ProsNotificationsPanel({
               ) : null}
               {n.createdAt ? (
                 <div className="text-[11px] text-slate-500 mt-2">{new Date(n.createdAt).toLocaleString()}</div>
+              ) : null}
+
+              {isManager ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void removeNotification(n)}
+                  className="inline-flex items-center gap-1 mt-3 rounded-lg bg-red-50 text-red-700 px-3 py-1.5 text-xs font-bold"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
               ) : null}
 
               {!isManager && n.status === 'pending' && (!n.assigneeUid || n.assigneeUid === user.uid) ? (

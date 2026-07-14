@@ -277,7 +277,6 @@ function scoreFault(fault: FaultEntry, query: string): number {
     else if (wordRe.test(category)) score += 3;
     else if (wordRe.test(symptoms) || wordRe.test(causes)) score += 2;
     else if (wordRe.test(steps)) score += 1;
-    else if (t.length >= 4 && blob.includes(t)) score += 1;
   }
 
   // Equipment family boost / penalty
@@ -430,12 +429,13 @@ export function searchFaults(query: string, packId?: TradePackId): FaultEntry[] 
 
   return candidates
     .map((fault) => {
-      let score = scoreFault(fault, q);
-      if (packId && fault.packId === packId) score += 3;
-      if (packId === 'property' && fault.packId === 'property') score += 2;
-      return { fault, score };
+      const semantic = scoreFault(fault, q);
+      let score = semantic;
+      if (packId && fault.packId === packId && semantic >= 2) score += 3;
+      if (packId === 'property' && fault.packId === 'property' && semantic >= 2) score += 2;
+      return { fault, score, semantic };
     })
-    .filter((x) => x.score >= 4)
+    .filter((x) => x.score >= 4 && x.semantic >= 2)
     .sort((a, b) => b.score - a.score || a.fault.title.localeCompare(b.fault.title))
     .map((x) => x.fault);
 }

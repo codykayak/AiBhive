@@ -13,7 +13,7 @@ export function ProsFieldServices() {
 
   useEffect(() => {
     if (!user) return;
-    void registerDiagnosePush(getIdToken);
+    void registerDiagnosePush(getIdToken, user.uid);
     void requestLocationPermissionIfTracking(getIdToken);
     const stopTracker = startProsLocationTracker(getIdToken);
     const removeListener = addNotificationResponseListener((data) => {

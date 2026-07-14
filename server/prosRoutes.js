@@ -400,6 +400,32 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         }
       }
 
+      // Reuse existing field member with same name (avoids duplicate roster entries).
+      if (displayName) {
+        const normalized = displayName.trim().toLowerCase();
+        const existingSnap = await companyDoc.ref.collection('members').where('status', '==', 'active').get();
+        const nameMatches = existingSnap.docs.filter((d) => {
+          const row = d.data();
+          if (row.role === 'owner') return false;
+          const name = String(row.displayName || '').trim().toLowerCase();
+          return name && name === normalized;
+        });
+        if (nameMatches.length === 1) {
+          const reuseDoc = nameMatches[0];
+          const reuseUid = reuseDoc.id;
+          if (displayName) {
+            await reuseDoc.ref.set({ displayName }, { merge: true });
+          }
+          const customToken = await admin.auth().createCustomToken(reuseUid);
+          return res.json({
+            customToken,
+            companyId,
+            role: reuseDoc.data().role || 'tech',
+            uid: reuseUid,
+          });
+        }
+      }
+
       const uid = `field_${crypto.randomBytes(16).toString('hex')}`;
 
       await companyDoc.ref.collection('members').doc(uid).set({
@@ -515,10 +541,15 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const snap = await db.collection('pros_companies').doc(mem.companyId).collection('members').get();
       const members = snap.docs.map((d) => {
         const data = d.data();
+        const token = data.expoPushToken;
         return {
           uid: d.id,
           ...data,
           joinedAt: data.joinedAt?.toMillis?.() ?? null,
+          pushUpdatedAt: data.pushUpdatedAt?.toMillis?.() ?? null,
+          hasPushToken: Boolean(
+            token && typeof token === 'string' && token.startsWith('ExponentPushToken')
+          ),
         };
       });
       const [demoCtx, sparseCounts] = await Promise.all([
@@ -563,6 +594,50 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/team patch]', err);
       return res.status(500).json({ error: 'Failed to update member' });
+    }
+  });
+
+  app.delete('/api/pros/team/:uid', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(404).json({ error: 'No company' });
+      const mem = await assertCompanyAccess(db, user.uid, membership.companyId, ['owner', 'manager']);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const targetUid = req.params.uid;
+      if (targetUid === user.uid) {
+        return res.status(400).json({ error: 'Cannot remove yourself' });
+      }
+
+      const memberRef = db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('members')
+        .doc(targetUid);
+      const memberSnap = await memberRef.get();
+      if (!memberSnap.exists) return res.status(404).json({ error: 'Member not found' });
+
+      const memberData = memberSnap.data();
+      if (memberData.role === 'owner') {
+        return res.status(400).json({ error: 'Cannot remove the company owner' });
+      }
+
+      await memberRef.delete();
+      await db.collection('pros_memberships').doc(targetUid).delete().catch(() => undefined);
+
+      await logActivity(db, mem.companyId, {
+        type: 'member_removed',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Removed ${memberData.displayName || memberData.email || targetUid} from team`,
+      });
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/team delete]', err);
+      return res.status(500).json({ error: 'Failed to remove member' });
     }
   });
 
@@ -1537,10 +1612,16 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         actorEmail: user.email,
         message: `Notification: ${created.title}`,
       });
-      void pushProsNotification(db, mem.companyId, { id: created.id, ...created }).catch((err) =>
-        console.warn('[pros/notifications push]', err?.message)
-      );
-      return res.json({ notification: serializeNotification(created.id, created) });
+      let pushResult = { sent: 0, targets: 0 };
+      try {
+        pushResult = await pushProsNotification(db, mem.companyId, { id: created.id, ...created });
+      } catch (pushErr) {
+        console.warn('[pros/notifications push]', pushErr?.message);
+      }
+      return res.json({
+        notification: serializeNotification(created.id, created),
+        push: pushResult,
+      });
     } catch (err) {
       console.error('[pros/notifications post]', err);
       return res.status(400).json({ error: err?.message || 'Failed to send notification' });
@@ -1612,6 +1693,29 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/notifications respond]', err);
       return res.status(500).json({ error: 'Failed to save response' });
+    }
+  });
+
+  app.delete('/api/pros/notifications/:id', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const mem = await requireManager(db, user.uid);
+      if (!mem) return res.status(403).json({ error: 'Managers only' });
+
+      const ref = db
+        .collection('pros_companies')
+        .doc(mem.companyId)
+        .collection('notifications')
+        .doc(req.params.id);
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'Notification not found' });
+
+      await ref.delete();
+      return res.json({ success: true });
+    } catch (err) {
+      console.error('[pros/notifications delete]', err);
+      return res.status(500).json({ error: 'Failed to delete notification' });
     }
   });
 
