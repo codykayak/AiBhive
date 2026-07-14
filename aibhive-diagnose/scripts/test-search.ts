@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { parseDiagnosis } from '../lib/diagnose/parseDiagnosis';
+import {
+  buildGreetingReply,
+  buildOfflineReply,
+  isEquipmentProbeOnly,
+} from '../lib/diagnose/offlineConversation';
 import { detectEquipment, searchFaults } from '../lib/knowledge/search';
 
 describe('searchFaults equipment disambiguation', () => {
@@ -46,6 +51,48 @@ describe('searchFaults equipment disambiguation', () => {
   it('finds pool pump no prime', () => {
     const hits = searchFaults('pump humming air in basket no prime', 'pool');
     assert.ok(hits.some((h) => h.id.includes('pump')));
+  });
+
+  it('returns no fault hits for bare greeting hi', () => {
+    assert.equal(searchFaults('hi', 'property').length, 0);
+    assert.equal(searchFaults('hi', 'hvac').length, 0);
+  });
+
+  it('ranks sink topics ahead of tub/shower for bare sink query', () => {
+    const hits = searchFaults('sink slow drain', 'property');
+    assert.ok(hits.length > 0, 'expected sink-related hits');
+    assert.ok(
+      hits[0]!.id.includes('kitchen') ||
+        hits[0]!.id.includes('under-sink') ||
+        hits[0]!.title.toLowerCase().includes('sink'),
+      `unexpected top hit ${hits[0]!.id} (${hits[0]!.title})`
+    );
+    assert.ok(!hits[0]!.id.includes('shower-tub'), 'must not rank tub/shower first for sink');
+  });
+
+  it('offline greeting hi responds with hello', () => {
+    assert.match(buildGreetingReply('hi'), /hello/i);
+    const offline = buildOfflineReply(
+      { id: 'property', shortName: 'Property', name: 'Property' } as never,
+      'hi',
+      false
+    );
+    assert.ok(offline);
+    assert.match(offline!.reply, /hello/i);
+  });
+
+  it('bare sink returns related topics not a full tub playbook', () => {
+    assert.ok(isEquipmentProbeOnly('sink'));
+    assert.ok(isEquipmentProbeOnly('kitchen sink'));
+    assert.ok(!isEquipmentProbeOnly('sink slow drain'));
+    const offline = buildOfflineReply(
+      { id: 'property', shortName: 'Property', name: 'Property Maintenance' } as never,
+      'sink',
+      false
+    );
+    assert.ok(offline);
+    assert.match(offline!.reply, /toilet/i);
+    assert.doesNotMatch(offline!.reply, /shower or tub drain slow/i);
   });
 });
 

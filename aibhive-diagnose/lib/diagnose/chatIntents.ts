@@ -15,7 +15,7 @@ export type OrderPartPrefill = {
 export type ChatIntent =
   | { type: 'diagnose' }
   | {
-      type: 'order_part';
+      type: 'ordering_parts';
       prefill: OrderPartPrefill;
       summary: string;
     }
@@ -29,8 +29,9 @@ export type ChatIntent =
       summary: string;
     };
 
-const ORDER_HINTS =
-  /\b(?:order|buy|purchase|get\s+me|need\s+(?:to\s+)?(?:order|a\s+part|part)|submit\s+(?:a\s+)?part|parts?\s+order)\b/i;
+/** User explicitly wants to order / buy a part — not generic diagnosis chatter. */
+const ORDERING_PARTS_HINTS =
+  /\b(?:order(?:ing)?\s+parts?|order\s+(?:a\s+)?part|buy\s+(?:a\s+)?part|purchase\s+(?:a\s+)?part|need\s+(?:to\s+)?order|get\s+me\s+(?:a\s+)?part|submit\s+(?:a\s+)?part(?:\s+request)?|parts?\s+order)\b/i;
 
 const MANUAL_HINTS =
   /\b(?:(?:owner'?s?|instruction|service|user|repair|installation|parts?)\s+manual|manual\s+for|find\s+(?:a\s+)?manual|need\s+(?:an?\s+)?manual|look\s+up\s+(?:the\s+)?manual)\b/i;
@@ -106,7 +107,7 @@ function extractProductName(text: string, brand: string): string {
   if (match?.[1]) return titleCase(match[1].replace(/\s+/g, ' '));
 
   let cleaned = text
-    .replace(ORDER_HINTS, '')
+    .replace(ORDERING_PARTS_HINTS, '')
     .replace(MANUAL_HINTS, '')
     .replace(/\b(?:part\s*(?:number|#)?\s*[:#]?\s*[A-Za-z0-9./_-]+)/gi, '')
     .replace(/\b(?:hey|hi|hello|croc|please|the|a|an|for|my|i need|i want)\b/gi, '')
@@ -163,7 +164,7 @@ export function parseChatIntent(text: string): ChatIntent {
   const productName = extractProductName(raw, brand);
   const model = extractModelCandidates(raw)[0] || partNumber;
 
-  if (MANUAL_HINTS.test(raw) && !ORDER_HINTS.test(raw)) {
+  if (MANUAL_HINTS.test(raw) && !ORDERING_PARTS_HINTS.test(raw)) {
     const query = [brand, productName, model].filter(Boolean).join(' ').trim() || raw;
     const links = buildManualIntentLinks(raw, brand, productName);
     const label = [brand, productName, model].filter(Boolean).join(' ') || 'that equipment';
@@ -178,7 +179,7 @@ export function parseChatIntent(text: string): ChatIntent {
     };
   }
 
-  if (ORDER_HINTS.test(raw) || (/\bpart\s+(?:number|#)/i.test(raw) && productName)) {
+  if (ORDERING_PARTS_HINTS.test(raw) || (/\bpart\s+(?:number|#)/i.test(raw) && productName)) {
     const partName =
       [brand, productName, partNumber ? `part ${partNumber}` : ''].filter(Boolean).join(' ').trim() ||
       raw.slice(0, 120);
@@ -192,7 +193,7 @@ export function parseChatIntent(text: string): ChatIntent {
     };
 
     return {
-      type: 'order_part',
+      type: 'ordering_parts',
       prefill,
       summary: partName,
     };
@@ -204,5 +205,5 @@ export function parseChatIntent(text: string): ChatIntent {
 /** True when voice/text should auto-send without tapping Send. */
 export function shouldAutoSendIntent(text: string): boolean {
   const intent = parseChatIntent(text);
-  return intent.type === 'order_part' || intent.type === 'find_manual';
+  return intent.type === 'ordering_parts' || intent.type === 'find_manual';
 }

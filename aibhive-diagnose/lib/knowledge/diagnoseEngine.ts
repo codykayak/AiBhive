@@ -1,4 +1,5 @@
 import type { TradePack } from '@/lib/packs';
+import { buildOfflineReply } from '@/lib/diagnose/offlineConversation';
 import { buildLocalDiagnosisReply } from '@/lib/localReply';
 import {
   detectEquipment,
@@ -14,40 +15,23 @@ export type LocalDiagnosis = {
   matchedCodes: string[];
 };
 
-const VAGUE_GENERIC_REPLIES = [
-  'Could you tell me more about the problem so I can help?',
-  'Please describe what the equipment is doing — or not doing — and I’ll narrow it down.',
-  'What are you working on today? Brand, model, and any error codes help a lot.',
-  'Give me the symptom in your own words and I’ll walk you through the next checks.',
-];
-
-function isVagueMessage(text: string): boolean {
-  const t = text.trim().toLowerCase();
-  if (!t) return true;
-  if (t.length <= 3) return true;
-  if (/^(hi|hey|hello|help|yo|sup|thanks|thank you|ok|okay|test)[!.?\s]*$/.test(t)) return true;
-  if (/^(good morning|good afternoon|what'?s up)[!.?\s]*$/.test(t)) return true;
-  return false;
-}
-
-function pickGenericReply(): string {
-  return VAGUE_GENERIC_REPLIES[Math.floor(Math.random() * VAGUE_GENERIC_REPLIES.length)]!;
-}
-
 export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boolean): LocalDiagnosis {
   const text = userText.trim();
+
+  const conversational = buildOfflineReply(pack, text, hasPhoto);
+  if (conversational) {
+    return {
+      reply: conversational.reply,
+      matchedFaultIds: conversational.matchedFaultIds,
+      matchedCodes: [],
+    };
+  }
+
   const equipment = detectEquipment(text);
   const faults = searchFaults(text, pack.id).slice(0, 3);
   const codes = searchCodes(text, pack.id).slice(0, 2);
 
   if (faults.length === 0 && codes.length === 0) {
-    if (!hasPhoto && isVagueMessage(text)) {
-      return {
-        reply: pickGenericReply(),
-        matchedFaultIds: [],
-        matchedCodes: [],
-      };
-    }
     const rag = pack.id === 'property' || equipment.length ? formatRagAppendix(text) : '';
     return {
       reply: `${buildLocalDiagnosisReply(pack, text, hasPhoto)}${rag}`,
@@ -83,10 +67,10 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
     sections.push(formatFaultAsReply(faults[0]));
   }
 
-  // Only list closely related alternates (same category / shared equipment token).
+  const primary = faults[0];
   const related = faults.slice(1).filter((f) => {
-    if (!faults[0]) return false;
-    if (f.category === faults[0].category) return true;
+    if (!primary) return false;
+    if (f.category === primary.category) return true;
     const blob = `${f.id} ${f.title}`.toLowerCase();
     return equipment.some((e) => blob.includes(e.replace('-', '')));
   });

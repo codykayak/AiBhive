@@ -1012,8 +1012,20 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         messages = [],
         attachment = null,
         packId = 'property',
-        model = process.env.GROK_DIAGNOSE_MODEL || process.env.EXPO_PUBLIC_GROK_MODEL || 'grok-2-vision-1212',
+        model: requestedModel = null,
       } = req.body || {};
+
+      const { getCachedGrokChatModel, getCachedGrokVisionModel } = await import('./grokModelResolver.js');
+      const { buildGrokUserContent } = await import('./prosGrokMessage.js');
+      const hasImage = Boolean(attachment?.base64);
+      const model =
+        requestedModel ||
+        (hasImage
+          ? process.env.GROK_DIAGNOSE_VISION_MODEL ||
+            getCachedGrokVisionModel()
+          : process.env.GROK_DIAGNOSE_MODEL ||
+            process.env.GROK_CHAT_MODEL ||
+            getCachedGrokChatModel());
 
       const tips = await searchKnowledgeTips(db, {
         companyId: membership.companyId,
@@ -1054,20 +1066,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         '\nCRITICAL: Answer for the equipment the user named only (bathtub ≠ dishwasher). Prefer matching local library + field tips + OEM manual excerpts. If local context is off-topic, ignore it. If the library has no match, give solid trade practice for the named equipment within this pack — do not invent part numbers. Decline unrelated non-trade questions briefly.',
       ].join('');
 
-      const userContent = [];
-      userContent.push({
-        type: 'text',
-        text: String(userText || 'Help me on this job.').slice(0, 4000),
-      });
-      if (attachment?.base64) {
-        const mime = attachment.mimeType || 'image/jpeg';
-        userContent.push({
-          type: 'image_url',
-          image_url: {
-            url: `data:${mime};base64,${attachment.base64}`,
-          },
-        });
-      }
+      const userContent = buildGrokUserContent(userText, attachment);
 
       const reply = await grokChatMessages(
         resolved.key,

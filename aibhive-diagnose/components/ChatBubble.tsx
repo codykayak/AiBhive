@@ -32,6 +32,8 @@ export function ChatBubble({
 }) {
   const isUser = message.role === 'user';
 
+  const showOrderPart = message.diagnoseMeta?.intentType === 'ordering_parts';
+
   if (!isUser && message.structured) {
     return (
       <View>
@@ -60,6 +62,7 @@ export function ChatBubble({
             jobId={message.diagnoseMeta.jobId}
             orderPartPrefill={message.diagnoseMeta.orderPartPrefill}
             autoOpenOrder={message.diagnoseMeta.autoOpenOrder}
+            showOrderPart={showOrderPart}
           />
         ) : null}
       </View>
@@ -97,6 +100,7 @@ export function ChatBubble({
           jobId={message.diagnoseMeta.jobId}
           orderPartPrefill={message.diagnoseMeta.orderPartPrefill}
           autoOpenOrder={message.diagnoseMeta.autoOpenOrder}
+          showOrderPart={showOrderPart}
           compact
         />
       ) : null}

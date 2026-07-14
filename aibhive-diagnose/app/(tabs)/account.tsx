@@ -26,6 +26,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { fetchProsAiStatus, type ProsAiStatus } from '@/lib/diagnose/aiStatus';
 import { joinProsCompany } from '@/lib/jobs/prosSync';
 import { safeAlert } from '@/lib/safeAlert';
+import Constants from 'expo-constants';
+
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.3';
 
 function formatAuthError(err: unknown): string {
   if (!err || typeof err !== 'object') return 'Sign-in failed. Try again.';
@@ -221,6 +224,7 @@ export default function AccountScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Text className="text-2xl font-bold text-hive-mist">Account</Text>
+        <Text className="text-xs text-hive-steel mt-1">AiBhive Pros v{APP_VERSION}</Text>
         <Text className="mt-1 text-base text-hive-steel">
           Sign in with your shop team code to unlock Pros AI and job sync.
         </Text>

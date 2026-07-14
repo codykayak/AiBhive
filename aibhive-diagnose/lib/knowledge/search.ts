@@ -5,6 +5,7 @@ import { plumbingFaults } from './plumbing/faults';
 import { poolFaults } from './pool/faults';
 import { propertyFaults } from './property/faults';
 import { formatCorpusHit, searchApplianceCorpus } from './property/applianceCorpus';
+import { isVagueUserMessage } from '../diagnose/vagueMessage';
 import type { TradePackId } from '../packs/types';
 import type { ErrorCode, FaultEntry } from './types';
 
@@ -65,6 +66,11 @@ const STOP = new Set([
   'stuff',
   'thing',
   'things',
+  'hi',
+  'hey',
+  'yo',
+  'ha',
+  'ok',
 ]);
 
 /** Equipment families — used to keep cross-pack search on-topic. */
@@ -129,6 +135,16 @@ const EQUIPMENT: Array<{ id: string; packHint: TradePackId; terms: string[] }> =
     ],
   },
   {
+    id: 'sink',
+    packHint: 'plumbing',
+    terms: ['kitchen sink', 'bathroom sink', 'lavatory sink', 'sink drain', 'under sink'],
+  },
+  {
+    id: 'toilet',
+    packHint: 'plumbing',
+    terms: ['toilet', 'closet', 'wax ring'],
+  },
+  {
     id: 'plumbing',
     packHint: 'plumbing',
     terms: [
@@ -154,9 +170,6 @@ const EQUIPMENT: Array<{ id: string; packHint: TradePackId; terms: string[] }> =
       'shower',
       'tub',
       'bath',
-      'sink drain',
-      'lavatory',
-      'lav',
       'floor drain',
     ],
   },
@@ -189,7 +202,7 @@ function normalize(text: string): string {
 function tokens(text: string): string[] {
   return normalize(text)
     .split(/\s+/)
-    .filter((t) => t.length > 1 && !STOP.has(t));
+    .filter((t) => t.length > 2 && !STOP.has(t));
 }
 
 export function detectEquipment(query: string): string[] {
@@ -211,10 +224,14 @@ export function detectEquipment(query: string): string[] {
   if (/\bwasher\b/.test(q) && !/\bdish\s*washer\b/.test(q) && !hits.includes('washer')) {
     hits.push('washer');
   }
-  // Fixture drains without naming "plumbing"
+  // Bare fixture nouns
+  if (/\bsink\b/.test(q) && !/\bdish\s*washer\b/.test(q) && !hits.includes('sink')) {
+    hits.push('sink');
+  }
+  if (/\btoilet\b/.test(q) && !hits.includes('toilet')) hits.push('toilet');
   if (
     !hits.includes('plumbing') &&
-    /\b(bathtub|bath\s*tub|\btub\b|shower|sink|lavatory|\blav\b|floor\s*drain)\b/.test(q)
+    /\b(bathtub|bath\s*tub|\btub\b|shower|lavatory|\blav\b|floor\s*drain)\b/.test(q)
   ) {
     hits.push('plumbing');
   }
@@ -252,14 +269,15 @@ function scoreFault(fault: FaultEntry, query: string): number {
   if (aliases.some((a) => a === q || a.includes(q) || q.includes(a))) score += 18;
   if (title.includes(q)) score += 16;
 
-  // Title token hits (strong)
+  // Token hits — short tokens must match whole words (avoid "hi" → "high"/"ignition").
   for (const t of qTokens) {
-    if (title.includes(t)) score += 6;
-    else if (aliases.some((a) => a.includes(t))) score += 4;
-    else if (category.includes(t)) score += 3;
-    else if (symptoms.includes(t) || causes.includes(t)) score += 2;
-    else if (steps.includes(t)) score += 1;
-    else if (blob.includes(t)) score += 1;
+    const wordRe = new RegExp(`\\b${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    if (wordRe.test(title)) score += 6;
+    else if (aliases.some((a) => wordRe.test(a))) score += 4;
+    else if (wordRe.test(category)) score += 3;
+    else if (wordRe.test(symptoms) || wordRe.test(causes)) score += 2;
+    else if (wordRe.test(steps)) score += 1;
+    else if (t.length >= 4 && blob.includes(t)) score += 1;
   }
 
   // Equipment family boost / penalty
@@ -301,17 +319,29 @@ function scoreFault(fault: FaultEntry, query: string): number {
     if (id === 'pool' && fault.packId === 'pool') score += 12;
     if (id === 'electrical' && fault.packId === 'electrical') score += 12;
     if (id === 'plumbing' && fault.packId === 'plumbing') score += 12;
+    if (id === 'sink' && isSinkDrainFault) score += 24;
+    if (id === 'sink' && isTubShowerFault) score -= 32;
+    if (id === 'toilet' && /toilet/.test(inFault)) score += 20;
     if (id === 'hvac' && fault.packId === 'hvac') score += 12;
   }
 
   // Fixture-named drain queries must not land on dishwasher/washer playbooks.
-  if (mentionsTubBathShower) {
+  if (mentionsSink && !mentionsTubBathShower && !/\bdish/.test(q)) {
+    if (isSinkDrainFault) score += 28;
+    else if (isPlumbingDrainFault && !isTubShowerFault) score += 14;
+    if (isTubShowerFault) score -= 40;
+    if (isDishwasherFault) score -= 24;
+    if (/toilet/.test(inFault) && fault.packId === 'plumbing') score += 10;
+  }
+  if (mentionsTubBathShower && !mentionsSink) {
     if (isTubShowerFault || (isPlumbingDrainFault && !isSinkDrainFault)) score += 28;
     if (isDishwasherFault || isWasherFault) score -= 30;
+    if (isSinkDrainFault && !isTubShowerFault) score -= 12;
   }
-  if (mentionsSink && !/\bdish/.test(q)) {
-    if (isSinkDrainFault || (isPlumbingDrainFault && !isTubShowerFault)) score += 22;
-    if (isDishwasherFault) score -= 24;
+  if (mentionsTubBathShower && mentionsSink) {
+    // Both named — prefer whichever fault matches more fixtures.
+    if (isTubShowerFault) score += 12;
+    if (isSinkDrainFault) score += 12;
   }
 
   // Phrase: "won't drain" / "not draining"
@@ -382,6 +412,8 @@ function packFilter(
 
 export function searchFaults(query: string, packId?: TradePackId): FaultEntry[] {
   const q = query.trim();
+  if (q && isVagueUserMessage(q)) return [];
+
   const base = ALL_FAULTS.filter((f) => packFilter(packId, f.packId, q));
 
   if (!normalize(q)) {

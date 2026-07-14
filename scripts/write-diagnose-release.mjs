@@ -58,6 +58,8 @@ manifest.releaseNotes =
   `v${version} — Pros field app: voice/chat part orders, manual PDF search, parts HQ workflow, keyboard fix, light theme, trade packs, location pings.`;
 
 const notesByVersion = {
+  '1.0.3':
+    'v1.0.3 — Offline chat: hello on hi, related topics for equipment names, sink≠bath matching, Grok 400 fix, keyboard fix, ordering_parts intent.',
   '1.0.2':
     'v1.0.2 — Smarter offline diagnosis (bathtub/plumbing vs dishwasher), Pros AI API fix for APK, keyboard sits on keys, job schedule calendar, light Pros HQ web.',
   '1.0.1':
