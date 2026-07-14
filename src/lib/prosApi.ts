@@ -21,7 +21,7 @@ export type ProsJob = {
   customerPhone: string;
   notes: string;
   adminNotes: string;
-  packId: 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac';
+  packId: 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac' | 'fiber';
   status: 'queued' | 'in_progress' | 'needs_parts' | 'done';
   priority: 'low' | 'normal' | 'high' | 'emergency';
   assigneeUid: string | null;
@@ -40,7 +40,7 @@ export type ProsMember = {
   photoUrl?: string | null;
   role: 'owner' | 'manager' | 'tech';
   status: 'active' | 'inactive';
-  tradePack?: 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac';
+  tradePack?: 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac' | 'fiber';
   joinedAt?: number | null;
   pushUpdatedAt?: number | null;
   hasPushToken?: boolean;

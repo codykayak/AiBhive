@@ -40,6 +40,7 @@ function packLabel(packId: FieldJob['packId']) {
   if (packId === 'property') return 'Property Maintenance';
   if (packId === 'plumbing') return 'Plumbing';
   if (packId === 'hvac') return 'HVAC';
+  if (packId === 'fiber') return 'Fiber Optics';
   return 'Electrical';
 }
 

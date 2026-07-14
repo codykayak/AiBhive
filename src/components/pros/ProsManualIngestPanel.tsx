@@ -87,6 +87,7 @@ export default function ProsManualIngestPanel({ user }: Props) {
           <option value="property">Property</option>
           <option value="plumbing">Plumbing</option>
           <option value="hvac">HVAC</option>
+          <option value="fiber">Fiber Optics</option>
         </select>
         <input
           value={modelPrefixes}

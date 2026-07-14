@@ -39,7 +39,8 @@ function mapCloudJob(j: Record<string, unknown>): FieldJob {
     packRaw === 'property' ||
     packRaw === 'pool' ||
     packRaw === 'plumbing' ||
-    packRaw === 'hvac'
+    packRaw === 'hvac' ||
+    packRaw === 'fiber'
       ? (packRaw as FieldJob['packId'])
       : 'pool';
   const scheduledFor = j.scheduledFor ? String(j.scheduledFor) : null;

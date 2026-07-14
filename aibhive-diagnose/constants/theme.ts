@@ -21,6 +21,7 @@ export const theme = {
     plumbing: '#4A9FD4',
     hvac: '#7B9FD4',
     property: '#7C9A6E',
+    fiber: '#8B5CF6',
   },
   radius: {
     sm: 4,

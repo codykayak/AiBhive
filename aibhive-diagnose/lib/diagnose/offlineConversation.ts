@@ -123,6 +123,7 @@ const FIXTURE_PATTERNS: Array<{ id: string; re: RegExp }> = [
   { id: 'water-heater', re: /\bwater heater\b/i },
   { id: 'pool-pump', re: /\b(pool pump|filter pump)\b/i },
   { id: 'breaker', re: /\b(breaker|panel|gfci)\b/i },
+  { id: 'fiber', re: /\b(fiber optic|fibre optic|otdr|olt|ont|gpon|pon|fusion splicer|splitter|fdh)\b/i },
 ];
 
 export function detectFixtureMention(text: string): string | null {
@@ -209,6 +210,13 @@ const RELATED_BY_FIXTURE: Record<string, TopicRef[]> = {
     { faultId: 'elec-breaker-nuisance', prompt: 'Breaker keeps tripping' },
     { faultId: 'elec-no-power-circuit', prompt: 'Dead outlet or circuit' },
   ],
+  fiber: [
+    { faultId: 'fiber-ont-los-alarm', prompt: 'ONT LOS / no light at customer' },
+    { faultId: 'fiber-fusion-high-loss', prompt: 'High fusion splice loss' },
+    { faultId: 'fiber-otdr-ghost-event', prompt: 'OTDR ghost or false event' },
+    { faultId: 'fiber-dirty-sc-apc', prompt: 'Dirty SC/APC connector' },
+    { faultId: 'fiber-power-meter-high-loss', prompt: 'Power budget / high span loss' },
+  ],
 };
 
 function fixtureLabel(fixture: string): string {
@@ -226,6 +234,7 @@ function fixtureLabel(fixture: string): string {
     'water-heater': 'water heater',
     'pool-pump': 'pool pump',
     breaker: 'breaker / panel',
+    fiber: 'fiber optic',
   };
   return labels[fixture] || fixture;
 }
@@ -236,6 +245,7 @@ function followUpQuestion(fixture: string): string {
     toilet: 'Is it a weak flush, running constantly, or leaking at the base?',
     tub: 'Is the tub/shower slow to drain, or a valve/temperature issue?',
     furnace: 'No heat at all, ignitor glowing with no fire, or flame that drops out?',
+    fiber: 'ONT LOS, high splice loss, OTDR issue, or dirty connector?',
     default: 'Describe the symptom and I’ll narrow the playbook.',
   };
   return qs[fixture] || qs.default;

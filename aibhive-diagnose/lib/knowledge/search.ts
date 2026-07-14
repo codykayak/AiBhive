@@ -1,5 +1,7 @@
-import { electricalErrorCodes, hvacErrorCodes, plumbingErrorCodes, poolErrorCodes } from './codes';
+import { electricalErrorCodes, fiberErrorCodes, hvacErrorCodes, plumbingErrorCodes, poolErrorCodes } from './codes';
 import { electricalFaults } from './electrical/faults';
+import { fiberFaults } from './fiber/faults';
+import { formatFiberCorpusHit, searchFiberCorpus } from './fiber/corpus';
 import { hvacFaults } from './hvac/faults';
 import { plumbingFaults } from './plumbing/faults';
 import { poolFaults } from './pool/faults';
@@ -15,12 +17,14 @@ export const ALL_FAULTS: FaultEntry[] = [
   ...propertyFaults,
   ...plumbingFaults,
   ...hvacFaults,
+  ...fiberFaults,
 ];
 export const ALL_CODES: ErrorCode[] = [
   ...poolErrorCodes,
   ...electricalErrorCodes,
   ...plumbingErrorCodes,
   ...hvacErrorCodes,
+  ...fiberErrorCodes,
 ];
 
 const STOP = new Set([
@@ -188,6 +192,39 @@ const EQUIPMENT: Array<{ id: string; packHint: TradePackId; terms: string[] }> =
     packHint: 'electrical',
     terms: ['breaker', 'panel', 'gfci', 'afci', 'outlet', 'neutral', 'subpanel', 'lug'],
   },
+  {
+    id: 'fiber',
+    packHint: 'fiber',
+    terms: [
+      'fiber optic',
+      'fibre optic',
+      'fiber optics',
+      'otdr',
+      'olt',
+      'ont',
+      'gpon',
+      'xgs-pon',
+      'xgs pon',
+      'pon',
+      'fusion splicer',
+      'splice',
+      'sc/apc',
+      'sc apc',
+      'lc connector',
+      'splitter',
+      'fdh',
+      'patch panel',
+      'vfl',
+      'visual fault locator',
+      'power meter',
+      'optical power',
+      'drop cable',
+      'mpo',
+      'cleaver',
+      'single mode',
+      'multimode',
+    ],
+  },
 ];
 
 function normalize(text: string): string {
@@ -322,6 +359,7 @@ function scoreFault(fault: FaultEntry, query: string): number {
     if (id === 'sink' && isTubShowerFault) score -= 32;
     if (id === 'toilet' && /toilet/.test(inFault)) score += 20;
     if (id === 'hvac' && fault.packId === 'hvac') score += 12;
+    if (id === 'fiber' && fault.packId === 'fiber') score += 12;
   }
 
   // Fixture-named drain queries must not land on dishwasher/washer playbooks.
@@ -396,7 +434,7 @@ function packFilter(
     if (!hints.length) {
       return false;
     }
-    const crossTrade = ['pool', 'electrical', 'plumbing', 'hvac'] as const;
+    const crossTrade = ['pool', 'electrical', 'plumbing', 'hvac', 'fiber'] as const;
     const onlyProperty =
       hints.includes('property') && !crossTrade.some((p) => hints.includes(p));
     if (onlyProperty) {
@@ -484,7 +522,9 @@ export function formatFaultAsReply(fault: FaultEntry): string {
           ? 'Plumbing'
           : fault.packId === 'hvac'
             ? 'HVAC'
-            : 'Property Maintenance';
+            : fault.packId === 'fiber'
+              ? 'Fiber Optics'
+              : 'Property Maintenance';
   return [
     `**${fault.title}**`,
     '',
@@ -511,8 +551,18 @@ export function formatFaultAsReply(fault: FaultEntry): string {
   ].join('\n');
 }
 
-export function formatRagAppendix(query: string): string {
+export function formatRagAppendix(query: string, packId?: TradePackId): string {
+  const parts: string[] = [];
+  if (packId === 'fiber' || detectEquipment(query).includes('fiber')) {
+    const fiberHits = searchFiberCorpus(query).slice(0, 3);
+    if (fiberHits.length) {
+      parts.push('**Fiber field notes (local corpus)**', ...fiberHits.map((h) => formatFiberCorpusHit(h)));
+    }
+  }
   const hits = searchApplianceCorpus(query).slice(0, 2);
-  if (!hits.length) return '';
-  return ['', '**Model / code hits (local corpus)**', ...hits.map((h) => formatCorpusHit(h))].join('\n');
+  if (hits.length) {
+    parts.push('**Model / code hits (local corpus)**', ...hits.map((h) => formatCorpusHit(h)));
+  }
+  if (!parts.length) return '';
+  return ['', ...parts].join('\n');
 }

@@ -59,6 +59,14 @@ function equipmentChecklist(equip: string[], pack: TradePack, userText: string):
       '- Verify prime and look for suction-side air leaks before chasing the impeller.',
     ];
   }
+  if (equip.includes('fiber') || pack.id === 'fiber') {
+    return [
+      '- Never look into live fiber — measure with power meter or VFL.',
+      '- Clean and inspect SC/APC or LC connectors before re-testing loss.',
+      '- Segment test: OLT/splitter → field → ONT to isolate high loss.',
+      '- For ONT LOS: confirm RX dBm before opening provisioning tickets.',
+    ];
+  }
   // Pack-generic fallbacks from categories
   return pack.categories.slice(0, 3).flatMap((c) => [`- ${c.label}: ${c.examples[0]}`]);
 }
@@ -97,7 +105,9 @@ export function buildLocalDiagnosisReply(pack: TradePack, userText: string, hasP
     `**Safety**`,
     pack.id === 'electrical'
       ? '- De-energize and verify absence of voltage before opening enclosures.'
-      : pack.id === 'property' || pack.id === 'plumbing'
+      : pack.id === 'fiber'
+        ? '- Laser safety: never view live fiber. Cap open ports. PON power can exceed eye-safe levels.'
+        : pack.id === 'property' || pack.id === 'plumbing'
         ? '- Lock out power/gas/water before opening cabinets. Watch wet tub floors — use mats.'
         : '- Kill power at the breaker before opening pump or heater compartments. Mind chemical exposure.',
     '',

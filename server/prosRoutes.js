@@ -60,6 +60,12 @@ const PROVIDER_META = {
   gemini: { label: 'Gemini (Google)', hint: 'GEMINI_API_KEY', envFallback: ['GEMINI_API_KEY'] },
 };
 
+const PROS_VALID_PACK_IDS = ['pool', 'electrical', 'property', 'plumbing', 'hvac', 'fiber'];
+
+function normalizeProsPackId(packId) {
+  return PROS_VALID_PACK_IDS.includes(packId) ? packId : 'pool';
+}
+
 function FieldValue() {
   return admin.firestore.FieldValue;
 }
@@ -580,7 +586,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       if (req.body?.role && ['owner', 'manager', 'tech'].includes(req.body.role)) updates.role = req.body.role;
       if (req.body?.status && ['active', 'inactive'].includes(req.body.status)) updates.status = req.body.status;
       if (typeof req.body?.displayName === 'string') updates.displayName = req.body.displayName.trim();
-      if (req.body?.tradePack && ['pool', 'electrical', 'property'].includes(req.body.tradePack)) {
+      if (req.body?.tradePack && PROS_VALID_PACK_IDS.includes(req.body.tradePack)) {
         updates.tradePack = req.body.tradePack;
       }
       updates.updatedAt = FieldValue().serverTimestamp();
@@ -705,7 +711,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         customerPhone,
         notes,
         adminNotes,
-        packId: ['pool', 'electrical', 'property'].includes(packId) ? packId : 'pool',
+        packId: normalizeProsPackId(packId),
         priority: ['low', 'normal', 'high', 'emergency'].includes(priority) ? priority : 'normal',
         status: 'queued',
         assigneeUid,
@@ -792,7 +798,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       for (const key of keys) {
         if (req.body?.[key] !== undefined) updates[key] = req.body[key];
       }
-      if (updates.packId && !['pool', 'electrical', 'property'].includes(updates.packId)) {
+      if (updates.packId && !PROS_VALID_PACK_IDS.includes(updates.packId)) {
         updates.packId = 'pool';
       }
 

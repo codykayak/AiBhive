@@ -79,6 +79,14 @@ const ALL_TOOLS: ToolEntry[] = [
     packs: ['hvac'],
   },
   {
+    href: '/tools/fiber-chart' as Href,
+    title: 'Fiber loss & wavelengths',
+    subtitle: 'Budgets, GPON/XGS nm, laser safety',
+    icon: Cable,
+    color: theme.colors.fiber,
+    packs: ['fiber'],
+  },
+  {
     href: '/tools/safety',
     title: 'Safety checklists',
     subtitle: 'LOTO, gas, chemical, bonding',

@@ -32,7 +32,7 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
   const codes = searchCodes(text, pack.id).slice(0, 2);
 
   if (faults.length === 0 && codes.length === 0) {
-    const rag = pack.id === 'property' || equipment.length ? formatRagAppendix(text) : '';
+    const rag = pack.id === 'property' || pack.id === 'fiber' || equipment.length ? formatRagAppendix(text, pack.id) : '';
     return {
       reply: `${buildLocalDiagnosisReply(pack, text, hasPhoto)}${rag}`,
       matchedFaultIds: [],
@@ -83,7 +83,7 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
   }
 
   if (pack.id === 'property' || equipment.length) {
-    const rag = formatRagAppendix(text);
+    const rag = formatRagAppendix(text, pack.id);
     if (rag) sections.push(rag);
   }
 

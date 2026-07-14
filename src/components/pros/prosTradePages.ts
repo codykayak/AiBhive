@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { Building2, Droplets, Wind, Zap } from 'lucide-react';
+import { Building2, Cable, Droplets, Wind, Zap } from 'lucide-react';
 
-export type ProsTradeId = 'hvac' | 'property' | 'pool' | 'electrical';
+export type ProsTradeId = 'hvac' | 'property' | 'pool' | 'electrical' | 'fiber';
 
 export type ProsTradePageConfig = {
   id: ProsTradeId;
@@ -176,6 +176,45 @@ export const PROS_TRADE_PAGES: Record<ProsTradeId, ProsTradePageConfig> = {
       'Document fixes for repeat service calls',
       'Team roster with optional periodic GPS check-ins',
       'Anonymized tips can help the wider trade network',
+    ],
+  },
+  fiber: {
+    id: 'fiber',
+    slug: 'fiber',
+    name: 'Fiber Optics',
+    shortName: 'Fiber',
+    tagline: 'Splicing · OTDR · PON · Premises',
+    description:
+      'Field diagnosis for fiber optic installation and repair — fusion splicing, OTDR traces, power budgets, GPON/XGS-PON, ONT/OLT, splitters, connectors, and drop troubleshooting.',
+    accentColor: '#8B5CF6',
+    icon: Cable,
+    seoTitle: 'AiBhive Pros for Fiber Optics — Splicing, OTDR & PON field knowledge',
+    seoDescription:
+      'Fiber contractors and ISP field crews use Pros HQ to dispatch jobs and grow a living knowledge base. Techs get splice playbooks, OTDR triage, and ONT/OLT alarm guidance in AiBhive Diagnose.',
+    heroEyebrow: 'Fiber optic contractors & ISP field techs',
+    categories: [
+      { label: 'Fusion splicing', examples: ['High splice loss', 'Bubble in splice', 'Wrong fiber program', 'Cleave angle off'] },
+      { label: 'Testing & OTDR', examples: ['Ghost events', 'High dB loss', 'No return trace', 'VFL shows break'] },
+      { label: 'PON / OLT / ONT', examples: ['ONT LOS alarm', 'ONT not registering', 'Splitter overload', 'OLT port down'] },
+      { label: 'Connectors & drops', examples: ['Dirty SC/APC', 'Bad LC polish', 'MPO polarity swap', 'Cut aerial drop'] },
+    ],
+    quickPrompts: [
+      'Fusion splice loss too high on single-mode',
+      'OTDR shows ghost event at 2 km',
+      'ONT LOS red alarm — no light at customer',
+      'Dirty SC/APC connector high loss',
+    ],
+    commonEquipment: [
+      'Fusion splicer',
+      'OTDR',
+      'Optical power meter',
+      'OLT / ONT (GPON)',
+    ],
+    prosFeatures: [
+      'Dispatch splice and restore jobs with push updates to Diagnose',
+      'Capture field fixes after every span or drop repair',
+      'Manual ingest for OEM splicer and OLT documentation',
+      'Laser-safety prompts synced to every truck',
     ],
   },
 };
