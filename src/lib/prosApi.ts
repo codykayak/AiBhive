@@ -115,6 +115,23 @@ export type ProsAnalytics = {
     packId: string;
     helpfulCount: number;
   } | null;
+  platformCosts?: {
+    windowDays: number;
+    countedOps: number;
+    grokRawUsd: number;
+    ttsRawUsd: number;
+    transcribeRawUsd: number;
+    totalRawUsd: number;
+    typicalDiagnoseWithVoiceUsd: number;
+    rates: {
+      grokChatRawUsd: number;
+      grokVisionRawUsd: number;
+      transcribeRawUsd: number;
+      ttsPerCharUsd: number;
+      ttsTypicalRawUsd: number;
+      typicalDiagnoseWithVoiceUsd: number;
+    };
+  };
 };
 
 export const prosJson = adminJson;

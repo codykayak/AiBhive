@@ -1033,6 +1033,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           billingStatus: 'none',
           aiEnabled: false,
           cartesiaEnabled: false,
+          operationCostRates: (await import('./diagnoseBilling.js')).getDiagnoseOperationCostRates(),
+          operationCostEstimate: null,
         });
       }
 
@@ -1043,7 +1045,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const resolved = await resolveGrokKey(db, membership.companyId);
 
       const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const { getDiagnoseOperationCostRates } = await import('./diagnoseBilling.js');
       const aiEnabled = Boolean(resolved) && billingOk;
+      const cartesiaEnabled = aiEnabled && isCartesiaConfigured();
 
       return res.json({
         configured: Boolean(resolved),
@@ -1051,7 +1055,11 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         source: resolved?.source || 'none',
         billingStatus,
         aiEnabled,
-        cartesiaEnabled: aiEnabled && isCartesiaConfigured(),
+        cartesiaEnabled,
+        operationCostRates: getDiagnoseOperationCostRates(),
+        operationCostEstimate: cartesiaEnabled
+          ? getDiagnoseOperationCostRates().typicalDiagnoseWithVoiceUsd
+          : getDiagnoseOperationCostRates().grokChatRawUsd,
       });
     } catch (err) {
       console.error('[pros/ai-status]', err);
@@ -1168,11 +1176,21 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         { temperature: 0.25, max_tokens: 3500, vision: hasImage }
       );
 
+      const { estimateDiagnoseOperation } = await import('./diagnoseBilling.js');
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const operationCost = estimateDiagnoseOperation({
+        hasImage,
+        replyText: reply,
+        includeTts: isCartesiaConfigured(),
+      });
+
       await logActivity(db, membership.companyId, {
         type: 'diagnose_ai',
         actorUid: user.uid,
         actorEmail: user.email || null,
         message: `Diagnose AI (${resolved.source}) tips=${tipIdsUsed.length}`,
+        rawCostUsd: operationCost.grokRawUsd,
+        operationCost,
       }).catch((logErr) => console.warn('[pros/diagnose] activity', logErr?.message));
 
       return res.json({
@@ -1189,6 +1207,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         })),
         manualSearchLinks,
         modelCandidates,
+        operationCost,
       });
     } catch (err) {
       console.error('[pros/diagnose]', err);
@@ -1391,17 +1410,23 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       }
 
       const wav = await synthesizeCartesiaSpeech(text);
+      const { cartesiaTtsRawCost } = await import('./diagnoseBilling.js');
+      const ttsRawUsd = cartesiaTtsRawCost(text);
+      const operationCost = { ttsRawUsd, totalRawUsd: ttsRawUsd };
 
       await logActivity(db, membership.companyId, {
         type: 'diagnose_tts',
         actorUid: user.uid,
         actorEmail: user.email || null,
         message: 'Cartesia narration',
+        rawCostUsd: ttsRawUsd,
+        operationCost,
       }).catch((logErr) => console.warn('[pros/tts] activity', logErr?.message));
 
       return res.json({
         audioBase64: wav.toString('base64'),
         mimeType: 'audio/wav',
+        operationCost,
       });
     } catch (err) {
       console.error('[pros/tts]', err);
@@ -1491,14 +1516,22 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         return res.status(502).json({ error: 'Empty transcription' });
       }
 
+      const { DIAGNOSE_TRANSCRIBE_RAW } = await import('./diagnoseBilling.js');
+      const operationCost = {
+        transcribeRawUsd: DIAGNOSE_TRANSCRIBE_RAW,
+        totalRawUsd: DIAGNOSE_TRANSCRIBE_RAW,
+      };
+
       await logActivity(db, membership.companyId, {
         type: 'diagnose_transcribe',
         actorUid: user.uid,
         actorEmail: user.email || null,
         message: 'Voice transcription',
+        rawCostUsd: DIAGNOSE_TRANSCRIBE_RAW,
+        operationCost,
       }).catch((logErr) => console.warn('[pros/transcribe] activity', logErr?.message));
 
-      return res.json({ text });
+      return res.json({ text, operationCost });
     } catch (err) {
       console.error('[pros/transcribe]', err);
       return res.status(500).json({ error: err?.message || 'Transcription failed' });

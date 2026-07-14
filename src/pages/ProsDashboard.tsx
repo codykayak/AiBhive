@@ -605,6 +605,30 @@ export default function ProsDashboard() {
               </button>
             </div>
 
+            {analytics?.platformCosts ? (
+              <div className={`${t.card} p-5`}>
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Platform API spend (estimate)
+                </div>
+                <p className="text-sm text-slate-700">
+                  Last {analytics.platformCosts.windowDays} days:{' '}
+                  <strong>${analytics.platformCosts.totalRawUsd.toFixed(2)}</strong> raw API across{' '}
+                  {analytics.platformCosts.countedOps} billed ops
+                  {analytics.platformCosts.ttsRawUsd > 0
+                    ? ` (Grok $${analytics.platformCosts.grokRawUsd.toFixed(2)} · Cartesia TTS $${analytics.platformCosts.ttsRawUsd.toFixed(2)}`
+                    : ` (Grok $${analytics.platformCosts.grokRawUsd.toFixed(2)}`}
+                  {analytics.platformCosts.transcribeRawUsd > 0
+                    ? ` · STT $${analytics.platformCosts.transcribeRawUsd.toFixed(2)}`
+                    : ''}
+                  ).
+                </p>
+                <p className="text-xs text-slate-500 mt-2">
+                  Typical diagnose + Cartesia voice: ~$
+                  {analytics.platformCosts.typicalDiagnoseWithVoiceUsd.toFixed(3)} per turn (Grok + TTS).
+                </p>
+              </div>
+            ) : null}
+
             {analytics?.featuredTip ? (
               <div className={`${t.featuredTip} p-5`}>
                 <div className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">

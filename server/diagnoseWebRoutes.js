@@ -7,9 +7,10 @@ import { verifyHiveAuth } from './hiveAuth.js';
 import { ensureHiveUser, getHiveAccount, createCreditsCheckout } from './hiveBilling.js';
 import * as hiveUsage from './hiveUsage.js';
 import { markCostForUser } from './hiveUsage.js';
+import {
+  grokDiagnoseRawCost,
+} from './diagnoseBilling.js';
 
-const CHAT_RAW_COST = Number(process.env.DIAGNOSE_WEB_CHAT_RAW_COST ?? 0.01);
-const VISION_RAW_COST = Number(process.env.DIAGNOSE_WEB_VISION_RAW_COST ?? 0.022);
 const FEATURE_ID = 'diagnose_web_grok';
 
 export function resolveDiagnoseWebHiveUserId(firebaseUid) {
@@ -111,7 +112,7 @@ export function registerDiagnoseWebRoutes(app, db, deps = {}) {
       } = req.body || {};
 
       const hasImage = Boolean(attachment?.base64);
-      const rawCost = hasImage ? VISION_RAW_COST : CHAT_RAW_COST;
+      const rawCost = grokDiagnoseRawCost(hasImage);
       const { markedUsd: markedEstimate } = await markCostForUser(db, hiveUserId, rawCost);
 
       const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, FEATURE_ID, {
@@ -205,6 +206,29 @@ export function registerDiagnoseWebRoutes(app, db, deps = {}) {
         error: err?.message || 'Diagnose AI failed',
         code: 'diagnose_failed',
       });
+    }
+  });
+
+  app.post('/api/diagnose-web/estimate', express.json(), async (req, res) => {
+    try {
+      const authUser = await verifyHiveAuth(req);
+      if (!authUser) {
+        return res.status(401).json({ error: 'Sign in required', code: 'auth_required' });
+      }
+      const hiveUserId = resolveDiagnoseWebHiveUserId(authUser.uid);
+      await ensureHiveUser(db, hiveUserId);
+
+      const { hasImage = false, includeTts = false } = req.body || {};
+      const { estimateDiagnoseForUser } = await import('./diagnoseBilling.js');
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const estimate = await estimateDiagnoseForUser(db, hiveUserId, {
+        hasImage: Boolean(hasImage),
+        includeTts: Boolean(includeTts) && isCartesiaConfigured(),
+      });
+      return res.json(estimate);
+    } catch (err) {
+      console.error('[diagnose-web/estimate]', err);
+      return res.status(500).json({ error: err?.message || 'Estimate failed' });
     }
   });
 }

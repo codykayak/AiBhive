@@ -63,6 +63,7 @@ export function mergeAnalytics(real, settings, counts) {
       totals: hasTotals ? real.totals : getDemoAnalyticsTotals(),
       knowledgeGrowth: hasGrowth ? real.knowledgeGrowth : getDemoKnowledgeGrowth(),
       featuredTip: real.featuredTip || getDemoFeaturedTip(),
+      platformCosts: real.platformCosts,
     },
     true
   );

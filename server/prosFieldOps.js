@@ -212,7 +212,7 @@ export async function buildProsAnalytics(db, companyId) {
     companyRef.collection('knowledge_feedback').get(),
     companyRef.collection('manual_chunks').where('status', '==', 'active').get(),
     companyRef.collection('jobs').get(),
-    companyRef.collection('activity').orderBy('createdAt', 'desc').limit(200).get(),
+    companyRef.collection('activity').orderBy('createdAt', 'desc').limit(500).get(),
   ]);
 
   const jobs = jobsSnap.docs.map((d) => d.data());
@@ -263,6 +263,28 @@ export async function buildProsAnalytics(db, companyId) {
       activity: row.activity,
     }));
 
+  const { getDiagnoseOperationCostRates } = await import('./diagnoseBilling.js');
+  const rates = getDiagnoseOperationCostRates();
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  let grokRawUsd = 0;
+  let ttsRawUsd = 0;
+  let transcribeRawUsd = 0;
+  let totalRawUsd = 0;
+  let countedOps = 0;
+
+  for (const doc of activitySnap.docs) {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toMillis?.() ?? 0;
+    if (createdAt && createdAt < thirtyDaysAgo) continue;
+    const cost = Number(data.rawCostUsd);
+    if (!Number.isFinite(cost) || cost <= 0) continue;
+    totalRawUsd += cost;
+    countedOps += 1;
+    if (data.type === 'diagnose_ai') grokRawUsd += cost;
+    else if (data.type === 'diagnose_tts') ttsRawUsd += cost;
+    else if (data.type === 'diagnose_transcribe') transcribeRawUsd += cost;
+  }
+
   return {
     totals: {
       tips: tipsSnap.size,
@@ -275,6 +297,16 @@ export async function buildProsAnalytics(db, companyId) {
     },
     knowledgeGrowth,
     featuredTip: await pickFeaturedTip(db, companyId),
+    platformCosts: {
+      windowDays: 30,
+      countedOps,
+      grokRawUsd: Math.round(grokRawUsd * 10000) / 10000,
+      ttsRawUsd: Math.round(ttsRawUsd * 10000) / 10000,
+      transcribeRawUsd: Math.round(transcribeRawUsd * 10000) / 10000,
+      totalRawUsd: Math.round(totalRawUsd * 10000) / 10000,
+      rates,
+      typicalDiagnoseWithVoiceUsd: rates.typicalDiagnoseWithVoiceUsd,
+    },
   };
 }
 
