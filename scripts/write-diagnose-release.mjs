@@ -58,6 +58,8 @@ manifest.releaseNotes =
   `v${version} — Pros field app: voice/chat part orders, manual PDF search, parts HQ workflow, keyboard fix, light theme, trade packs, location pings.`;
 
 const notesByVersion = {
+  '1.0.7':
+    'v1.0.7 — Fix Grok 400 (model fallback), Android launcher icon, home wordmark (no duplicate icon), fiber pack.',
   '1.0.6':
     'v1.0.6 — New Fiber Optics pack: fusion/OTDR/PON playbooks, local RAG corpus, guided flows, Pros HQ job dispatch.',
   '1.0.5':

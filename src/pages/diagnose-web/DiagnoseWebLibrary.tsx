@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { searchFaults } from '@/lib/knowledge/search';
+import { searchFaults } from '@diagnose/lib/knowledge/search';
 import { useDiagnoseWeb } from '../../context/DiagnoseWebContext';
 
 export default function DiagnoseWebLibrary() {

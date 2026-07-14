@@ -3,7 +3,7 @@ import {
   FILTER_GUIDE,
   SUBCOOL_TARGETS,
   SUPERHEAT_TARGETS,
-} from '@/lib/knowledge/hvac/reference';
+} from '@diagnose/lib/knowledge/hvac/reference';
 
 export default function DiagnoseWebHvacChart() {
   return (

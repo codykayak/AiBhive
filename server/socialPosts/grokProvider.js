@@ -1,5 +1,21 @@
 const XAI_BASE = 'https://api.x.ai/v1';
 
+const CHAT_MODEL_FALLBACKS = [
+  process.env.GROK_CHAT_MODEL,
+  process.env.GROK_DIAGNOSE_MODEL,
+  process.env.INTEL_GROK_MODEL,
+  'grok-3-mini',
+  'grok-2-1212',
+].filter(Boolean);
+
+const VISION_MODEL_FALLBACKS = [
+  process.env.GROK_VISION_MODEL,
+  process.env.GROK_DIAGNOSE_VISION_MODEL,
+  process.env.FABLE_GROK_VISION_MODEL,
+  'grok-2-vision-1212',
+  'grok-vision-beta',
+].filter(Boolean);
+
 function extractJson(text) {
   const raw = String(text || '').trim();
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -12,17 +28,40 @@ function extractJson(text) {
   return JSON.parse(candidate);
 }
 
-export async function grokChat(apiKey, model, prompt, system = '') {
-  const messages = [];
-  if (system) messages.push({ role: 'system', content: system });
-  messages.push({ role: 'user', content: prompt });
-  return grokChatMessages(apiKey, model, messages);
+function uniqueModels(models) {
+  const seen = new Set();
+  const out = [];
+  for (const m of models) {
+    const id = String(m || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
 }
 
-/** Multi-turn Grok chat (system + history + latest user message). */
-export async function grokChatMessages(apiKey, model, messages, opts = {}) {
+export function messagesIncludeImage(messages) {
+  return (messages || []).some((m) => {
+    if (!m || !Array.isArray(m.content)) return false;
+    return m.content.some((part) => part && (part.type === 'image_url' || part.type === 'image'));
+  });
+}
+
+function normalizeMessages(messages) {
+  return (messages || [])
+    .filter((m) => m && (m.role === 'system' || m.role === 'user' || m.role === 'assistant'))
+    .map((m) => {
+      if (typeof m.content === 'string') return m;
+      if (Array.isArray(m.content)) return m;
+      return { role: m.role, content: String(m.content ?? '') };
+    });
+}
+
+async function grokChatMessagesOnce(apiKey, model, messages, opts = {}) {
   const temperature = typeof opts.temperature === 'number' ? opts.temperature : 0.6;
   const max_tokens = typeof opts.max_tokens === 'number' ? opts.max_tokens : 4096;
+  const normalized = normalizeMessages(messages);
+
   const res = await fetch(`${XAI_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -31,7 +70,7 @@ export async function grokChatMessages(apiKey, model, messages, opts = {}) {
     },
     body: JSON.stringify({
       model,
-      messages,
+      messages: normalized,
       temperature,
       max_tokens,
     }),
@@ -39,11 +78,47 @@ export async function grokChatMessages(apiKey, model, messages, opts = {}) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data?.error?.message || `Grok API error (${res.status})`);
+    const msg = data?.error?.message || `Grok API error (${res.status})`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.model = model;
+    throw err;
   }
   const text = data.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error('Empty response from Grok.');
   return text;
+}
+
+export async function grokChat(apiKey, model, prompt, system = '') {
+  const messages = [];
+  if (system) messages.push({ role: 'system', content: system });
+  messages.push({ role: 'user', content: prompt });
+  return grokChatMessages(apiKey, model, messages);
+}
+
+/**
+ * Multi-turn Grok chat with automatic model fallback on 400/404.
+ * Pass opts.vision=true when messages include image_url parts.
+ */
+export async function grokChatMessages(apiKey, model, messages, opts = {}) {
+  const hasImage = opts.vision ?? messagesIncludeImage(messages);
+  const chain = uniqueModels([
+    model,
+    ...(hasImage ? VISION_MODEL_FALLBACKS : CHAT_MODEL_FALLBACKS),
+  ]);
+
+  let lastErr;
+  for (const candidate of chain) {
+    try {
+      return await grokChatMessagesOnce(apiKey, candidate, messages, opts);
+    } catch (err) {
+      lastErr = err;
+      const retryable = err?.status === 400 || err?.status === 404 || err?.status === 422;
+      if (!retryable || candidate === chain[chain.length - 1]) break;
+      console.warn(`[grok] model ${candidate} failed (${err?.status || '?'}): ${err?.message} — trying fallback`);
+    }
+  }
+  throw lastErr || new Error('Grok chat failed');
 }
 
 const ASPECT_MAP = {
@@ -115,37 +190,23 @@ export async function grokWriteCaptions(topic, article, knowledge, brand, platfo
 
 BRAND VOICE: ${brand.voice}
 
-SITE KNOWLEDGE:
-${knowledge.slice(0, 6000)}
+TOPIC: ${topic.title}
+ANGLE: ${topic.angle}
+ARTICLE: ${article.title} — ${article.summary}
 
-TODAY'S TOPIC: ${topic.title} — ${topic.angle}
-SITE LINK: ${topic.siteLink}
+KNOWLEDGE BASE:
+${knowledge}
 
-NEWS TO COMMENT ON:
-Title: ${article.title}
-Source: ${article.source}
-URL: ${article.url}
-Summary: ${article.summary}
+PLATFORMS:
+${platformSpecs}
 
 Return ONLY valid JSON:
 {
-  "facebook": { "caption": "${platformSpecs.facebook.captionGuide}" },
-  "instagram": { "caption": "${platformSpecs.instagram.captionGuide}", "hashtags": ["#AI", "#automation"] },
-  "x": { "caption": "${platformSpecs.x.captionGuide}" },
-  "imagePrompt": "Short headline + visual scene. ${brand.imageStyle}"
+  "linkedin": "caption",
+  "twitter": "caption",
+  "facebook": "caption"
 }`;
 
   const raw = await grokChat(apiKey, textModel, prompt);
-  return { captions: extractJson(raw), raw };
-}
-
-export async function grokGeneratePlatformImage(apiKey, imageModel, imagePrompt, brand, aspectHint) {
-  const fullPrompt = `${imagePrompt}
-
-${brand.imageStyle}
-Aspect: ${aspectHint}.
-Professional social marketing graphic for ${brand.name}.`;
-
-  const buffer = await grokGenerateImage(apiKey, imageModel, fullPrompt, aspectHint);
-  return { buffer, model: imageModel };
+  return extractJson(raw);
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { searchCodes } from '@/lib/knowledge/search';
+import { searchCodes } from '@diagnose/lib/knowledge/search';
 import { useDiagnoseWeb } from '../../context/DiagnoseWebContext';
 
 export default function DiagnoseWebCodes() {

@@ -1,4 +1,4 @@
-import { FIBER_CODE_REFS, FIBER_LOSS_BUDGET, FIBER_WAVELENGTHS } from '@/lib/knowledge/fiber/reference';
+import { FIBER_CODE_REFS, FIBER_LOSS_BUDGET, FIBER_WAVELENGTHS } from '@diagnose/lib/knowledge/fiber/reference';
 
 export default function DiagnoseWebFiberChart() {
   const laser = FIBER_CODE_REFS.find((r) => r.id === 'laser-safety');

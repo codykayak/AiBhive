@@ -5,7 +5,7 @@ import {
   estimateLiquidChlorineOz,
   estimateSaltLbs,
   slamFcTarget,
-} from '@/lib/knowledge/pool/chemistry';
+} from '@diagnose/lib/knowledge/pool/chemistry';
 
 export default function DiagnoseWebPoolChem() {
   const [gallons, setGallons] = useState('15000');

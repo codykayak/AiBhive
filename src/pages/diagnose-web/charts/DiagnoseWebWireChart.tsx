@@ -1,4 +1,4 @@
-import { COPPER_AMPACITY, COMMON_TORQUE } from '@/lib/knowledge/electrical/reference';
+import { COPPER_AMPACITY, COMMON_TORQUE } from '@diagnose/lib/knowledge/electrical/reference';
 
 export default function DiagnoseWebWireChart() {
   return (

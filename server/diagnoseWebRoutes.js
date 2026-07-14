@@ -161,7 +161,7 @@ export function registerDiagnoseWebRoutes(app, db, deps = {}) {
           ...history,
           { role: 'user', content: userContent },
         ],
-        { temperature: 0.25, max_tokens: 3500 }
+        { temperature: 0.25, max_tokens: 3500, vision: hasImage }
       );
 
       const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
