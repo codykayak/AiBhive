@@ -16,6 +16,7 @@ import { SEO } from '../components/SEO';
 import ProsGetAppCta from '../components/pros/ProsGetAppCta';
 import ProsHeroVideo from '../components/pros/ProsHeroVideo';
 import ProsPageHeader from '../components/pros/ProsPageHeader';
+import ProsFieldAiFeatures from '../components/pros/ProsFieldAiFeatures';
 import ProsPoweredByGrokVideo from '../components/pros/ProsPoweredByGrokVideo';
 import {
   LANDING_CHART_DEMO,
@@ -114,7 +115,10 @@ export default function ProsLanding() {
             Each pack ships with field prompts, equipment playbooks, and Pros HQ workflows tuned to how your shop runs.
           </p>
           <div className="grid lg:grid-cols-2 gap-8 mt-12 items-stretch">
-            <ProsPoweredByGrokVideo className="h-full min-h-[320px]" />
+            <div className="flex flex-col gap-6">
+              <ProsPoweredByGrokVideo className="min-h-[280px]" />
+              <ProsFieldAiFeatures />
+            </div>
             <div className="grid sm:grid-cols-2 gap-5">
             {PROS_TRADE_LIST.map((trade, i) => {
               const Icon = trade.icon;
