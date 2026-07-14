@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.0.6",
-  "versionCode": 7,
-  "sourceVersion": "1.0.6",
+  "shippedNativeVersion": "1.0.7",
+  "versionCode": 8,
+  "sourceVersion": "1.0.7",
   "appName": "AiBhive Pros",
-  "releaseNotes": "v1.0.6 — New Fiber Optics pack: fusion/OTDR/PON playbooks, local RAG corpus, guided flows, Pros HQ job dispatch.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=9fffc979-9e26-47ac-a1ca-dae812f29c98",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=9fffc979-9e26-47ac-a1ca-dae812f29c98",
-  "publishedAt": "2026-07-14T05:25:01.768Z",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=9fffc979-9e26-47ac-a1ca-dae812f29c98",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1784006696404%2Faibhive-diagnose.apk.gz?alt=media&token=ea85247c-cce3-4ce0-91c6-a877a23d41b7"
+  "releaseNotes": "v1.0.7 — Fix Grok 400 (model fallback), Android launcher icon, home wordmark (no duplicate icon), fiber pack.",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=870b0f51-1888-4c31-aa93-a8eada88b2dc",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=870b0f51-1888-4c31-aa93-a8eada88b2dc",
+  "publishedAt": "2026-07-14T06:43:33.351Z",
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=870b0f51-1888-4c31-aa93-a8eada88b2dc",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1784011411207%2Faibhive-diagnose.apk.gz?alt=media&token=aef2bd87-b697-4967-81a2-6f41c90b5331"
 }
