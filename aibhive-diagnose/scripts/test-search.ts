@@ -26,6 +26,23 @@ describe('searchFaults equipment disambiguation', () => {
     assert.ok(eq.includes('dishwasher'));
   });
 
+  it('matches bathtub not draining to tub/shower plumbing — not dishwasher', () => {
+    const hits = searchFaults('bathtub not draining', 'property');
+    assert.ok(hits.length > 0, 'expected bathtub/plumbing hits');
+    assert.ok(
+      hits[0]!.id.includes('shower-tub') ||
+        hits[0]!.title.toLowerCase().includes('tub') ||
+        hits[0]!.packId === 'plumbing',
+      `unexpected top hit ${hits[0]!.id} (${hits[0]!.title})`
+    );
+    assert.ok(!hits[0]!.id.includes('dishwasher'), 'must not return dishwasher for bathtub');
+  });
+
+  it('detects plumbing equipment from bathtub wording', () => {
+    const eq = detectEquipment('bathtub not draining');
+    assert.ok(eq.includes('plumbing'), `expected plumbing, got ${eq.join(',')}`);
+  });
+
   it('finds pool pump no prime', () => {
     const hits = searchFaults('pump humming air in basket no prime', 'pool');
     assert.ok(hits.some((h) => h.id.includes('pump')));

@@ -147,6 +147,17 @@ const EQUIPMENT: Array<{ id: string; packHint: TradePackId; terms: string[] }> =
       'pex',
       'angle stop',
       'cleanout',
+      'bathtub',
+      'bath tub',
+      'tub drain',
+      'shower drain',
+      'shower',
+      'tub',
+      'bath',
+      'sink drain',
+      'lavatory',
+      'lav',
+      'floor drain',
     ],
   },
   {
@@ -200,6 +211,13 @@ export function detectEquipment(query: string): string[] {
   if (/\bwasher\b/.test(q) && !/\bdish\s*washer\b/.test(q) && !hits.includes('washer')) {
     hits.push('washer');
   }
+  // Fixture drains without naming "plumbing"
+  if (
+    !hits.includes('plumbing') &&
+    /\b(bathtub|bath\s*tub|\btub\b|shower|sink|lavatory|\blav\b|floor\s*drain)\b/.test(q)
+  ) {
+    hits.push('plumbing');
+  }
   // Bare "heater" for pool vs water-heater already handled via phrases
   return hits;
 }
@@ -252,6 +270,17 @@ function scoreFault(fault: FaultEntry, query: string): number {
     (inFault.includes('washer') || inFault.includes('laundry')) && !isDishwasherFault;
   const isDryerFault = inFault.includes('dryer');
   const isDisposalFault = inFault.includes('disposal');
+  const isTubShowerFault =
+    /tub|shower|bath|hair clog|strainer/.test(inFault) || fault.id.includes('shower-tub');
+  const isSinkDrainFault = /sink|lav|p-trap|ptrap/.test(inFault);
+  const isPlumbingDrainFault =
+    fault.packId === 'plumbing' && (fault.category === 'drains' || /drain/.test(inFault));
+
+  const mentionsTubBathShower = /\b(bathtub|bath\s*tub|\btub\b|shower|bath)\b/.test(q);
+  const mentionsSink = /\b(sink|lavatory|\blav\b)\b/.test(q);
+  const drainSymptom =
+    /\b(wont|won't|not|no)\s*(drain|draining)\b/.test(q) ||
+    /\b(slow\s*drain|clog|clogged|standing\s*water|backup|backed\s*up)\b/.test(q);
 
   for (const id of equip) {
     if (id === 'dishwasher') {
@@ -275,13 +304,36 @@ function scoreFault(fault: FaultEntry, query: string): number {
     if (id === 'hvac' && fault.packId === 'hvac') score += 12;
   }
 
+  // Fixture-named drain queries must not land on dishwasher/washer playbooks.
+  if (mentionsTubBathShower) {
+    if (isTubShowerFault || (isPlumbingDrainFault && !isSinkDrainFault)) score += 28;
+    if (isDishwasherFault || isWasherFault) score -= 30;
+  }
+  if (mentionsSink && !/\bdish/.test(q)) {
+    if (isSinkDrainFault || (isPlumbingDrainFault && !isTubShowerFault)) score += 22;
+    if (isDishwasherFault) score -= 24;
+  }
+
   // Phrase: "won't drain" / "not draining"
-  if (/\b(wont|not|no)\s*(drain|draining)\b/.test(q) || q.includes('standing water')) {
-    if (/wont drain|no drain|not drain|standing water/.test(title) || /drain/.test(fault.id)) {
+  if (drainSymptom) {
+    if (/wont drain|no drain|not drain|standing water|slow drain|clog/.test(title) || /drain/.test(fault.id)) {
       score += 14;
     }
     if (/wont spin|no spin|drains but/.test(title) || /no-spin/.test(fault.id)) score -= 8;
     if (title.includes('leak') && !title.includes('drain')) score -= 4;
+
+    // Symptom-only drain (no appliance named) → prefer plumbing fixture drains over appliances.
+    const namedAppliance = equip.some((id) =>
+      ['dishwasher', 'washer', 'dryer', 'disposal', 'fridge', 'range', 'microwave'].includes(id)
+    );
+    if (!namedAppliance && (mentionsTubBathShower || mentionsSink || equip.includes('plumbing'))) {
+      if (isPlumbingDrainFault) score += 18;
+      if (isDishwasherFault || isWasherFault) score -= 20;
+    } else if (!namedAppliance && !equip.length) {
+      // Completely bare "not draining" — still prefer plumbing over random appliance hits.
+      if (isPlumbingDrainFault) score += 10;
+      if (isDishwasherFault) score -= 8;
+    }
   }
   if (/\b(wont|not|no)\s*(spin|spinning)\b/.test(q)) {
     if (/spin/.test(title) || /spin/.test(fault.id)) score += 12;
@@ -301,9 +353,17 @@ function packFilter(
   if (!packId) return true;
   if (packId === faultPackId) return true;
 
-  // Property may pull other packs only when the query clearly points there.
+  // Property may pull other packs when the query clearly points there.
   if (packId === 'property') {
     const hints = detectedPackHints(query);
+    // Drain / fixture wording with no appliance → allow plumbing playbooks.
+    const q = normalize(query);
+    const fixtureDrain =
+      /\b(bathtub|bath\s*tub|\btub\b|shower|sink|lavatory|floor\s*drain)\b/.test(q) ||
+      (/\b(wont|won't|not|no)\s*(drain|draining)\b/.test(q) &&
+        !/\b(dishwasher|washer|washing\s*machine|disposal)\b/.test(q));
+    if (fixtureDrain && faultPackId === 'plumbing') return true;
+
     if (!hints.length) {
       return false;
     }

@@ -1046,11 +1046,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
 
       const system = [
-        String(systemPrompt || '').slice(0, 4000),
-        localContext ? `\nLocal library context:\n${String(localContext).slice(0, 2500)}` : '',
+        String(systemPrompt || '').slice(0, 4500),
+        localContext ? `\nLocal library context (use only if it matches the user's equipment):\n${String(localContext).slice(0, 2500)}` : '',
         tipsContext,
         manualContext,
-        '\nCRITICAL: Stay on the equipment the user named. Prefer local library + field knowledge + ingested OEM manual excerpts when they match.',
+        `\nActive packId: ${packId}. Stay on-topic for that trade pack.`,
+        '\nCRITICAL: Answer for the equipment the user named only (bathtub ≠ dishwasher). Prefer matching local library + field tips + OEM manual excerpts. If local context is off-topic, ignore it. If the library has no match, give solid trade practice for the named equipment within this pack — do not invent part numbers. Decline unrelated non-trade questions briefly.',
       ].join('');
 
       const userContent = [];
@@ -1068,11 +1069,16 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         });
       }
 
-      const reply = await grokChatMessages(resolved.key, model, [
-        { role: 'system', content: system },
-        ...history,
-        { role: 'user', content: userContent },
-      ]);
+      const reply = await grokChatMessages(
+        resolved.key,
+        model,
+        [
+          { role: 'system', content: system },
+          ...history,
+          { role: 'user', content: userContent },
+        ],
+        { temperature: 0.25, max_tokens: 3500 }
+      );
 
       await logActivity(db, membership.companyId, {
         type: 'diagnose_ai',

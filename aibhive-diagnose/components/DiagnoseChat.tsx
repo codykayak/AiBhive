@@ -6,7 +6,6 @@ import { useNavigation } from 'expo-router';
 import { Camera, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Dimensions,
   FlatList,
   Keyboard,
   Platform,
@@ -159,10 +158,10 @@ export function DiagnoseChat({
     };
 
     const onShow = (e: KeyboardEvent) => {
-      const { screenY } = e.endCoordinates;
-      const windowHeight = Dimensions.get('window').height;
-      const inset = Math.max(0, Math.round(windowHeight - screenY));
-      setKeyboardHeight(inset);
+      // app.json uses android softwareKeyboardLayoutMode: "pan" so the window
+      // does not resize — lift the composer by the real keyboard height only.
+      const kb = Math.max(0, Math.round(e.endCoordinates?.height || 0));
+      setKeyboardHeight(kb);
       if (embedInTabs) {
         navigation.getParent()?.setOptions({
           tabBarStyle: { display: 'none' },
@@ -603,8 +602,9 @@ export function DiagnoseChat({
   }, [jobId, activePack.id, setActivePackId]);
 
   const restingFooterPad = embedInTabs ? 8 : Math.max(insets.bottom, 8);
-  const footerBottomPad = keyboardHeight > 0 ? 8 : restingFooterPad;
-  const listBottomPad = keyboardHeight > 0 ? inputBarHeight + 16 : inputBarHeight + 8;
+  // Sit flush on the keyboard — only a thin breathing gap, never a floating island.
+  const footerBottomPad = keyboardHeight > 0 ? 4 : restingFooterPad;
+  const listBottomPad = keyboardHeight > 0 ? inputBarHeight + 12 : inputBarHeight + 8;
   const showQuickPrompts = messages.every((m) => m.role !== 'user');
 
   const modeLabel = offline

@@ -1,8 +1,8 @@
+import { API_BASE } from '@/lib/config/apiBase';
 /**
  * Pros dispatch notifications — fetch inbox + respond from Diagnose.
  */
 
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || '';
 
 export type ProsNotification = {
   id: string;
