@@ -6,6 +6,7 @@ export type ProsAiStatus = {
   source: string;
   billingStatus: string;
   aiEnabled: boolean;
+  cartesiaEnabled?: boolean;
 };
 
 export async function fetchProsAiStatus(token: string): Promise<ProsAiStatus | null> {

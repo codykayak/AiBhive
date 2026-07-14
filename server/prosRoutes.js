@@ -1032,6 +1032,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           source: 'none',
           billingStatus: 'none',
           aiEnabled: false,
+          cartesiaEnabled: false,
         });
       }
 
@@ -1041,12 +1042,16 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const billingOk = ['trial', 'active'].includes(billingStatus);
       const resolved = await resolveGrokKey(db, membership.companyId);
 
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const aiEnabled = Boolean(resolved) && billingOk;
+
       return res.json({
         configured: Boolean(resolved),
         provider: resolved ? 'grok' : null,
         source: resolved?.source || 'none',
         billingStatus,
-        aiEnabled: Boolean(resolved) && billingOk,
+        aiEnabled,
+        cartesiaEnabled: aiEnabled && isCartesiaConfigured(),
       });
     } catch (err) {
       console.error('[pros/ai-status]', err);
@@ -1331,6 +1336,76 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/upload]', err);
       return res.status(500).json({ error: err?.message || 'Upload failed' });
+    }
+  });
+
+  /**
+   * Cartesia TTS for Diagnose narration — only when Grok AI is active (paid/trial).
+   * Returns base64 WAV; key never leaves the server.
+   */
+  app.post('/api/pros/tts', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({
+          error: 'Join a Pros company to use voice narration',
+          code: 'no_company',
+        });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      if (!['trial', 'active'].includes(billingStatus)) {
+        return res.status(402).json({
+          error: 'Subscription required for live AI narration',
+          code: 'billing_required',
+          billingStatus,
+        });
+      }
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (!resolved?.key) {
+        return res.status(503).json({
+          error: 'No Grok key configured. Add one in Pros → AI Keys.',
+          code: 'no_key',
+        });
+      }
+
+      const { synthesizeCartesiaSpeech, isCartesiaConfigured } = await import('./cartesiaTts.js');
+      if (!isCartesiaConfigured()) {
+        return res.status(503).json({
+          error: 'Cartesia TTS not configured on the server',
+          code: 'no_cartesia',
+        });
+      }
+
+      const { text = '' } = req.body || {};
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: 'text required' });
+      }
+      if (text.length > 2000) {
+        return res.status(413).json({ error: 'text too long' });
+      }
+
+      const wav = await synthesizeCartesiaSpeech(text);
+
+      await logActivity(db, membership.companyId, {
+        type: 'diagnose_tts',
+        actorUid: user.uid,
+        actorEmail: user.email || null,
+        message: 'Cartesia narration',
+      }).catch((logErr) => console.warn('[pros/tts] activity', logErr?.message));
+
+      return res.json({
+        audioBase64: wav.toString('base64'),
+        mimeType: 'audio/wav',
+      });
+    } catch (err) {
+      console.error('[pros/tts]', err);
+      return res.status(500).json({ error: err?.message || 'TTS failed' });
     }
   });
 
