@@ -12,6 +12,7 @@ import {
 import { SEO } from '../../components/SEO';
 import ProsGetAppCta from '../../components/pros/ProsGetAppCta';
 import ProsPageHeader from '../../components/pros/ProsPageHeader';
+import ProsFieldAiFeatures from '../../components/pros/ProsFieldAiFeatures';
 import ProsPoweredByGrokVideo from '../../components/pros/ProsPoweredByGrokVideo';
 import { DiagnoseWebProvider, useDiagnoseWeb, WEB_TRADE_PACK_LIST } from '../../context/DiagnoseWebContext';
 import { PACK_ICONS } from './diagnoseWebShared';
@@ -126,10 +127,13 @@ function DiagnoseLandingInner() {
             Each pack includes fault playbooks, RAG corpus, guided flows, and reference tools — identical to AiBhive Pros in the field.
           </p>
           <div className="grid lg:grid-cols-2 gap-8 mt-12 items-stretch">
-            <ProsPoweredByGrokVideo
-              title="Powered by Grok & AiBhive AI"
-              subtitle="Trade services intelligence — snap equipment, ask in plain English, get glove-friendly steps."
-            />
+            <div className="flex flex-col gap-6">
+              <ProsPoweredByGrokVideo
+                title="Powered by Grok & AiBhive AI"
+                subtitle="Trade services intelligence — snap equipment, ask in plain English, get glove-friendly steps."
+              />
+              <ProsFieldAiFeatures />
+            </div>
             <div className="grid sm:grid-cols-2 gap-5">
               {WEB_TRADE_PACK_LIST.map((pack) => {
                 const Icon = PACK_ICONS[pack.icon] || Layers;
