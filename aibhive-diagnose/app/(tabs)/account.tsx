@@ -62,7 +62,10 @@ function formatAuthError(err: unknown): string {
 function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
   if (!signedIn) return 'Sign in + join a team to unlock Pros AI.';
   if (!status) return 'Could not load AI status (join a Pros team if you haven’t).';
-  if (status.aiEnabled) return `Pros AI on · ${status.provider || 'grok'} (${status.source})`;
+  if (status.aiEnabled) {
+    const voice = status.cartesiaEnabled ? ' · Cartesia voice' : '';
+    return `Pros AI on · ${status.provider || 'grok'} (${status.source})${voice}`;
+  }
   if (status.billingStatus && !['trial', 'active'].includes(status.billingStatus)) {
     return `Billing ${status.billingStatus} — pack library still works offline.`;
   }

@@ -50,6 +50,7 @@ Or `GET /api/health` — `env.firecrawl` and `env.serpapi` should be `true`.
 | `GEMINI_API_KEY` | OCR, PDF text, most AI features | From [Google AI Studio](https://aistudio.google.com/apikey) |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Firestore, GCS, admin APIs | Path to a GCP service-account JSON with Firestore + Storage access |
 | `XAI_API_KEY` or `GROK_API_KEY` | Homework, Intel chat (Grok) | From [x.ai](https://console.x.ai/) |
+| `CARTESIA_API_KEY` | Pros Diagnose high-quality narration (with Grok AI) | From [Cartesia](https://cartesia.ai/) — **server only**, never commit |
 | `ADMIN_EMAILS` | `/admin`, `/homework` login | Comma-separated Google emails |
 | `STRIPE_SECRET_KEY` | Checkout / billing | Optional for most UI testing |
 
@@ -64,6 +65,7 @@ Or `GET /api/health` — `env.firecrawl` and `env.serpapi` should be `true`.
    ADMIN_EMAILS=you@gmail.com
    GEMINI_API_KEY=...
    XAI_API_KEY=...
+   CARTESIA_API_KEY=...
    ```
 
 Without GCP credentials the **frontend still loads**, but admin/homework APIs and Firestore-backed features will fail.
