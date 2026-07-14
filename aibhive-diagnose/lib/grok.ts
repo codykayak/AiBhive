@@ -3,6 +3,8 @@ import { diagnoseLocally } from './knowledge/diagnoseEngine';
 import type { ManualSearchLink } from './knowledge/manualSearch';
 import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
+import { buildOfflineReply } from '@/lib/diagnose/offlineConversation';
+import { buildGrokUserContent } from '@/lib/diagnose/grokMessage';
 import { API_BASE } from '@/lib/config/apiBase';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
@@ -179,6 +181,19 @@ export async function askGrokDetailed({
   offline = false,
 }: GrokChatRequest): Promise<DiagnoseReply> {
   const isDiagnosis = Boolean(attachment);
+
+  if (!isDiagnosis) {
+    const conversational = buildOfflineReply(pack, userText, false);
+    if (conversational) {
+      return {
+        reply: conversational.reply,
+        source: 'local',
+        tipIdsUsed: [],
+        matchedFaultIds: conversational.matchedFaultIds,
+      };
+    }
+  }
+
   const local = diagnoseLocally(pack, userText, isDiagnosis);
   const remoteTips = await getCachedTipsContext(pack.id, userText);
   const localWithTips = remoteTips
@@ -318,21 +333,10 @@ async function tryDirectGrok(opts: {
       content: m.content,
     }));
 
-  const userContent: Array<Record<string, unknown>> = [
-    {
-      type: 'text',
-      text: opts.userText || (opts.isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.'),
-    },
-  ];
-
-  if (opts.attachment?.base64) {
-    userContent.push({
-      type: 'image_url',
-      image_url: {
-        url: `data:${opts.attachment.mimeType || 'image/jpeg'};base64,${opts.attachment.base64}`,
-      },
-    });
-  }
+  const userContent = buildGrokUserContent(
+    opts.userText || (opts.isDiagnosis ? 'Diagnose this equipment photo.' : 'Help me on this job.'),
+    opts.attachment
+  );
 
   try {
     const response = await fetch(GROK_API_URL, {
@@ -342,7 +346,9 @@ async function tryDirectGrok(opts: {
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: process.env.EXPO_PUBLIC_GROK_MODEL || DEFAULT_MODEL,
+        model: opts.attachment?.base64
+          ? process.env.EXPO_PUBLIC_GROK_VISION_MODEL || DEFAULT_MODEL
+          : process.env.EXPO_PUBLIC_GROK_CHAT_MODEL || 'grok-3-mini',
         messages: [
           {
             role: 'system',

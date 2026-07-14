@@ -67,7 +67,7 @@ export type ChatMessage = {
       notes?: string;
     };
     autoOpenOrder?: boolean;
-    intentType?: 'order_part' | 'find_manual' | 'diagnose';
+    intentType?: 'ordering_parts' | 'find_manual' | 'diagnose';
   };
   /** Parsed structured diagnosis for checkbox UI */
   structured?: DiagnosisResult;

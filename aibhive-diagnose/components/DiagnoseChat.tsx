@@ -32,6 +32,7 @@ import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
 import { parseDiagnosis } from '@/lib/diagnose/parseDiagnosis';
 import { parseChatIntent, shouldAutoSendIntent } from '@/lib/diagnose/chatIntents';
+import { buildGreetingReply, buildOfflineReply, isVagueUserMessage } from '@/lib/diagnose/offlineConversation';
 import { loadSession, saveSession, welcomeMessage } from '@/lib/diagnose/sessionStore';
 import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
 import { pushJobNoteToPros } from '@/lib/jobs/prosSync';
@@ -158,9 +159,9 @@ export function DiagnoseChat({
     };
 
     const onShow = (e: KeyboardEvent) => {
-      // app.json uses android softwareKeyboardLayoutMode: "pan" so the window
-      // does not resize — lift the composer by the real keyboard height only.
-      const kb = Math.max(0, Math.round(e.endCoordinates?.height || 0));
+      // Android pan mode already shifts the window — only lift manually on iOS.
+      const kb =
+        Platform.OS === 'ios' ? Math.max(0, Math.round(e.endCoordinates?.height || 0)) : 0;
       setKeyboardHeight(kb);
       if (embedInTabs) {
         navigation.getParent()?.setOptions({
@@ -308,7 +309,26 @@ export function DiagnoseChat({
 
       const intent = !pendingAttachment ? parseChatIntent(text) : { type: 'diagnose' as const };
 
-      if (intent.type === 'order_part') {
+      if (!pendingAttachment && isVagueUserMessage(text)) {
+        const assistantMessage: ChatMessage = {
+          id: uid(),
+          role: 'assistant',
+          content: buildGreetingReply(text),
+          createdAt: Date.now(),
+          askFeedback: false,
+          diagnoseMeta: {
+            userQuery: userMessage.content,
+            source: 'local',
+            packId: activePack.id,
+            jobId,
+            intentType: 'diagnose',
+          },
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        return;
+      }
+
+      if (intent.type === 'ordering_parts') {
         const reply = `Got it — opening **part order** for **${intent.summary}**. Review the form, add a supplier link if you have one, and submit for office approval.`;
         const assistantMessage: ChatMessage = {
           id: uid(),
@@ -321,7 +341,7 @@ export function DiagnoseChat({
             source: 'local',
             packId: activePack.id,
             jobId,
-            intentType: 'order_part',
+            intentType: 'ordering_parts',
             orderPartPrefill: intent.prefill,
             autoOpenOrder: true,
           },
@@ -601,10 +621,10 @@ export function DiagnoseChat({
     })();
   }, [jobId, activePack.id, setActivePackId]);
 
+  const keyboardInset = Platform.OS === 'ios' ? keyboardHeight : 0;
   const restingFooterPad = embedInTabs ? 8 : Math.max(insets.bottom, 8);
-  // Sit flush on the keyboard — only a thin breathing gap, never a floating island.
-  const footerBottomPad = keyboardHeight > 0 ? 4 : restingFooterPad;
-  const listBottomPad = keyboardHeight > 0 ? inputBarHeight + 12 : inputBarHeight + 8;
+  const footerBottomPad = keyboardInset > 0 ? 4 : restingFooterPad;
+  const listBottomPad = keyboardInset > 0 ? inputBarHeight + 12 : inputBarHeight + 8;
   const showQuickPrompts = messages.every((m) => m.role !== 'user');
 
   const modeLabel = offline
@@ -618,7 +638,7 @@ export function DiagnoseChat({
   return (
     <View
       className="flex-1 bg-hive-bg"
-      style={{ flex: 1, backgroundColor: theme.colors.bg, paddingBottom: keyboardHeight }}
+      style={{ flex: 1, backgroundColor: theme.colors.bg, paddingBottom: keyboardInset }}
     >
       <View className="flex-row items-center justify-between border-b border-hive-border px-4 py-3">
         <PackBadge pack={activePack} />

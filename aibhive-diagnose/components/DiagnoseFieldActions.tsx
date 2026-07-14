@@ -19,6 +19,7 @@ type Props = {
   compact?: boolean;
   orderPartPrefill?: OrderPartPrefill;
   autoOpenOrder?: boolean;
+  showOrderPart?: boolean;
 };
 
 /** Manual search + order part actions below a diagnosis. */
@@ -32,40 +33,48 @@ export function DiagnoseFieldActions({
   compact = false,
   orderPartPrefill,
   autoOpenOrder = false,
+  showOrderPart = false,
 }: Props) {
   const [orderOpen, setOrderOpen] = useState(false);
   const showManual = Boolean(manualSearchLinks?.length);
+  const showActions = showManual || showOrderPart;
 
   useEffect(() => {
     if (autoOpenOrder) setOrderOpen(true);
   }, [autoOpenOrder]);
+
+  if (!showActions) return null;
 
   return (
     <View className={compact ? 'mt-2' : 'mt-0'}>
       <View
         className={`${compact ? '' : 'rounded-sm border border-hive-border bg-hive-card p-3'} ${showManual ? 'border-t border-hive-border pt-3 mt-3' : ''}`}
       >
-        <Text className="text-xs font-bold uppercase tracking-wider text-hive-brand mb-2">
-          Field resources
-        </Text>
+        {showManual || showOrderPart ? (
+          <Text className="text-xs font-bold uppercase tracking-wider text-hive-brand mb-2">
+            Field resources
+          </Text>
+        ) : null}
 
         {showManual ? <ManualSearchLinks links={manualSearchLinks!} compact /> : null}
 
-        <Pressable
-          onPress={() => setOrderOpen(true)}
-          className={`min-h-[48px] flex-row items-center gap-3 border border-hive-border bg-hive-elevated px-3 py-2.5 active:opacity-80 ${showManual ? 'mt-3' : ''}`}
-          style={{ borderRadius: theme.radius.sm }}
-        >
-          <Package color={theme.colors.amber} size={18} />
-          <View className="flex-1">
-            <Text className="font-bold text-hive-mist text-sm">Order part</Text>
-            <Text className="text-[11px] text-hive-steel mt-0.5">
-              AI suggests part # · office approves & orders
-            </Text>
-          </View>
-        </Pressable>
+        {showOrderPart ? (
+          <Pressable
+            onPress={() => setOrderOpen(true)}
+            className={`min-h-[48px] flex-row items-center gap-3 border border-hive-border bg-hive-elevated px-3 py-2.5 active:opacity-80 ${showManual ? 'mt-3' : ''}`}
+            style={{ borderRadius: theme.radius.sm }}
+          >
+            <Package color={theme.colors.amber} size={18} />
+            <View className="flex-1">
+              <Text className="font-bold text-hive-mist text-sm">Order part</Text>
+              <Text className="text-[11px] text-hive-steel mt-0.5">
+                AI suggests part # · office approves & orders
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
 
-        {!showManual ? (
+        {!showManual && showOrderPart ? (
           <View className="flex-row items-center gap-2 mt-3 opacity-70">
             <FileSearch color={theme.colors.steel} size={14} />
             <Text className="text-[11px] text-hive-steel">
