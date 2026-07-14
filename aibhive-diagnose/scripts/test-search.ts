@@ -9,6 +9,7 @@ import {
   isMetaAppQuestion,
   buildMetaAppReply,
 } from '../lib/diagnose/offlineConversation';
+import { searchFiberCorpus } from '../lib/knowledge/fiber/corpus';
 import { detectEquipment, searchFaults } from '../lib/knowledge/search';
 
 describe('searchFaults equipment disambiguation', () => {
@@ -113,6 +114,19 @@ describe('searchFaults equipment disambiguation', () => {
 
   it('meta reply when ai configured', () => {
     assert.match(buildMetaAppReply({ aiConfigured: true, aiEnabled: true }), /live/i);
+  });
+
+  it('finds fiber ONT LOS faults', () => {
+    const hits = searchFaults('ONT LOS alarm no light at customer', 'fiber');
+    assert.ok(hits.length > 0, 'expected fiber hits');
+    assert.ok(hits[0]!.packId === 'fiber', `unexpected ${hits[0]!.id}`);
+    assert.ok(/ont|los/i.test(hits[0]!.title + hits[0]!.id), `unexpected top ${hits[0]!.id}`);
+  });
+
+  it('fiber corpus returns GPON RX guidance', () => {
+    const hits = searchFiberCorpus('gpon rx power ont');
+    assert.ok(hits.length > 0);
+    assert.ok(hits[0]!.id === 'gpon-rx-levels');
   });
 });
 

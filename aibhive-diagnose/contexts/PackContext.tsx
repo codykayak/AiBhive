@@ -21,7 +21,8 @@ function isPackId(value: unknown): value is TradePackId {
     value === 'electrical' ||
     value === 'property' ||
     value === 'plumbing' ||
-    value === 'hvac'
+    value === 'hvac' ||
+    value === 'fiber'
   );
 }
 

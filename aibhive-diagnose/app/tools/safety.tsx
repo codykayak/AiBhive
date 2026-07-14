@@ -34,6 +34,15 @@ const PROPERTY_CHECKS: CheckItem[] = [
   { id: 'm6', label: 'If electrical panel or pool gear — switch to that pack checklist' },
 ];
 
+const FIBER_CHECKS: CheckItem[] = [
+  { id: 'f1', label: 'Never look into fiber or ports — use meter or scope' },
+  { id: 'f2', label: 'Cap open ports and patch panel holes immediately' },
+  { id: 'f3', label: 'Confirm PON is correct technology before mating optics' },
+  { id: 'f4', label: 'Inspect SC/APC endfaces before every mate' },
+  { id: 'f5', label: 'Maintain bend radius — no zip ties on buffer tube' },
+  { id: 'f6', label: 'Confined-space / handhole entry per company policy' },
+];
+
 export default function SafetyScreen() {
   const { activePack } = usePack();
   const items =
@@ -41,7 +50,9 @@ export default function SafetyScreen() {
       ? POOL_CHECKS
       : activePack.id === 'property'
         ? PROPERTY_CHECKS
-        : ELEC_CHECKS;
+        : activePack.id === 'fiber'
+          ? FIBER_CHECKS
+          : ELEC_CHECKS;
   const [done, setDone] = useState<Record<string, boolean>>({});
 
   const completed = items.filter((i) => done[i.id]).length;

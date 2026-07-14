@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive Pros",
     "slug": "aibhive-diagnose",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./icon.png",
     "scheme": "aibhivepros",
@@ -23,7 +23,7 @@
         "foregroundImage": "./icon.png"
       },
       "package": "com.aibhive.diagnose",
-      "versionCode": 6,
+      "versionCode": 7,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "CAMERA",

@@ -1,4 +1,5 @@
 import { electricalPack } from './electrical';
+import { fiberPack } from './fiber';
 import { hvacPack } from './hvac';
 import { plumbingPack } from './plumbing';
 import { poolPack } from './pool';
@@ -11,6 +12,7 @@ export const TRADE_PACKS: Record<TradePackId, TradePack> = {
   property: propertyPack,
   plumbing: plumbingPack,
   hvac: hvacPack,
+  fiber: fiberPack,
 };
 
 export const TRADE_PACK_LIST: TradePack[] = [
@@ -19,6 +21,7 @@ export const TRADE_PACK_LIST: TradePack[] = [
   propertyPack,
   plumbingPack,
   hvacPack,
+  fiberPack,
 ];
 
 export function getTradePack(id: TradePackId): TradePack {
@@ -31,7 +34,8 @@ export function isTradePackId(value: string): value is TradePackId {
     value === 'electrical' ||
     value === 'property' ||
     value === 'plumbing' ||
-    value === 'hvac'
+    value === 'hvac' ||
+    value === 'fiber'
   );
 }
 

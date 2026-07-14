@@ -477,6 +477,82 @@ export const guidedFlows: GuidedFlow[] = [
       'result-other': { id: 'result-other', prompt: '', resultFaultId: 'hvac-ac-warm-air' },
     },
   },
+  {
+    id: 'fiber-ont-los',
+    packId: 'fiber',
+    title: 'ONT LOS — no light',
+    description: 'Optical power → drop → splitter path.',
+    startStepId: 'rx',
+    steps: {
+      rx: {
+        id: 'rx',
+        prompt: 'Is optical power at the ONT within vendor RX range (roughly -8 to -27 dBm GPON)?',
+        yesNext: 'provision',
+        noNext: 'vfl',
+      },
+      vfl: {
+        id: 'vfl',
+        prompt: 'Does VFL from FDH show light reaching the customer pedestal/NID?',
+        yesNext: 'result-dirty',
+        noNext: 'result-cut',
+      },
+      provision: {
+        id: 'provision',
+        prompt: 'Is ONT serial and PON type correct in EMS?',
+        yesNext: 'result-register',
+        noNext: 'result-register',
+      },
+      'result-cut': { id: 'result-cut', prompt: '', resultFaultId: 'fiber-vfl-no-light-customer' },
+      'result-dirty': { id: 'result-dirty', prompt: '', resultFaultId: 'fiber-dirty-sc-apc' },
+      'result-register': { id: 'result-register', prompt: '', resultFaultId: 'fiber-ont-not-registering' },
+    },
+  },
+  {
+    id: 'fiber-high-splice-loss',
+    packId: 'fiber',
+    title: 'High fusion splice loss',
+    description: 'Cleave → clean → program → re-fuse.',
+    startStepId: 'cleave',
+    steps: {
+      cleave: {
+        id: 'cleave',
+        prompt: 'Do both fiber endfaces look clean under scope with good cleave angle?',
+        yesNext: 'program',
+        noNext: 'result-cleave',
+      },
+      program: {
+        id: 'program',
+        prompt: 'Is the fusion program correct for this fiber type (G.652 vs G.657)?',
+        yesNext: 'result-fusion',
+        noNext: 'result-fusion',
+      },
+      'result-cleave': { id: 'result-cleave', prompt: '', resultFaultId: 'fiber-cleave-angle-bad' },
+      'result-fusion': { id: 'result-fusion', prompt: '', resultFaultId: 'fiber-fusion-high-loss' },
+    },
+  },
+  {
+    id: 'fiber-span-loss',
+    packId: 'fiber',
+    title: 'High span loss / power budget fail',
+    description: 'Segment test from OLT to ONT.',
+    startStepId: 'clean',
+    steps: {
+      clean: {
+        id: 'clean',
+        prompt: 'Are all patch connectors cleaned and inspected before measuring?',
+        yesNext: 'segment',
+        noNext: 'result-dirty',
+      },
+      segment: {
+        id: 'segment',
+        prompt: 'Can you isolate loss to one leg (splitter port vs drop vs splice case)?',
+        yesNext: 'result-budget',
+        noNext: 'result-budget',
+      },
+      'result-dirty': { id: 'result-dirty', prompt: '', resultFaultId: 'fiber-dirty-sc-apc' },
+      'result-budget': { id: 'result-budget', prompt: '', resultFaultId: 'fiber-power-meter-high-loss' },
+    },
+  },
 ];
 
 export function getGuidedFlows(packId?: import('../packs/types').TradePackId) {

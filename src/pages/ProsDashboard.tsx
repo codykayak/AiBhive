@@ -141,7 +141,7 @@ export default function ProsDashboard() {
   const [jobTitle, setJobTitle] = useState('');
   const [jobAddress, setJobAddress] = useState('');
   const [jobAssignee, setJobAssignee] = useState('');
-  const [jobPack, setJobPack] = useState<'pool' | 'electrical' | 'property'>('pool');
+  const [jobPack, setJobPack] = useState<ProsJob['packId']>('pool');
   const [jobNotes, setJobNotes] = useState('');
   const [jobCustomer, setJobCustomer] = useState('');
   const [jobPhone, setJobPhone] = useState('');
@@ -758,6 +758,9 @@ export default function ProsDashboard() {
                       <option value="pool">Pool</option>
                       <option value="electrical">Electrical</option>
                       <option value="property">Property</option>
+                      <option value="plumbing">Plumbing</option>
+                      <option value="hvac">HVAC</option>
+                      <option value="fiber">Fiber Optics</option>
                     </select>
                     <select
                       value={jobPriority}

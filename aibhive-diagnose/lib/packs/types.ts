@@ -1,4 +1,4 @@
-export type TradePackId = 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac';
+export type TradePackId = 'pool' | 'electrical' | 'property' | 'plumbing' | 'hvac' | 'fiber';
 
 export type DiagnosisCategory = {
   id: string;
@@ -15,7 +15,7 @@ export type TradePack = {
   tagline: string;
   description: string;
   accentColor: string;
-  icon: 'waves' | 'zap' | 'wrench' | 'droplets' | 'wind';
+  icon: 'waves' | 'zap' | 'wrench' | 'droplets' | 'wind' | 'cable';
   /** Pack-level hero for Packs / Home cards */
   heroImage?: number;
   categories: DiagnosisCategory[];
