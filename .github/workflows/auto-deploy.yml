@@ -41,6 +41,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[skip-deploy]') }}
     timeout-minutes: 25
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+      CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
     steps:
       - uses: actions/checkout@v4
 
