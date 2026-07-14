@@ -31,6 +31,7 @@ export type ProsJob = {
   photos: Array<{ id: string; url: string; caption?: string; createdAt: number }>;
   createdAt: number | null;
   updatedAt: number | null;
+  completedAt?: number | null;
 };
 
 export type ProsMember = {

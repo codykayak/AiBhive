@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import ProsGetAppCta from '../components/pros/ProsGetAppCta';
+import ProsPricingSection from '../components/pros/ProsPricingSection';
 import ProsHeroVideo from '../components/pros/ProsHeroVideo';
 import ProsPageHeader from '../components/pros/ProsPageHeader';
 import ProsFieldAiFeatures from '../components/pros/ProsFieldAiFeatures';
@@ -234,6 +235,8 @@ export default function ProsLanding() {
           </div>
         </div>
       </section>
+
+      <ProsPricingSection />
 
       {/* CTA */}
       <section className="py-20">
