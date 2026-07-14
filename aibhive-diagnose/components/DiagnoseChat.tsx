@@ -42,6 +42,8 @@ import { refreshRemoteTips } from '@/lib/knowledge/remotePackCache';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
 import { startVoiceCapture, type VoiceSession } from '@/lib/voice/speechInput';
+import { speakDiagnoseReply, stopDiagnoseSpeech } from '@/lib/voice/cartesiaSpeech';
+import { fetchProsAiStatus } from '@/lib/diagnose/aiStatus';
 
 const SPEECH_KEY = 'aibhive.diagnose.speechEnabled';
 
@@ -83,6 +85,7 @@ export function DiagnoseChat({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [inputBarHeight, setInputBarHeight] = useState(132);
   const [aiSource, setAiSource] = useState<DiagnoseSource | null>(null);
+  const [cartesiaEnabled, setCartesiaEnabled] = useState(false);
   const [feedbackBusyId, setFeedbackBusyId] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<{ id: string; message: string } | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -105,10 +108,29 @@ export function DiagnoseChat({
 
   useEffect(() => {
     return () => {
-      Speech.stop();
+      void stopDiagnoseSpeech();
       void voiceRef.current?.cancel();
     };
   }, []);
+
+  useEffect(() => {
+    if (offline || !user) {
+      setCartesiaEnabled(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const token = await getIdToken();
+      if (!token || cancelled) return;
+      const status = await fetchProsAiStatus(token);
+      if (!cancelled) {
+        setCartesiaEnabled(Boolean(status?.cartesiaEnabled));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [offline, user, getIdToken]);
 
   // Load / restore session per pack (+ optional job)
   useEffect(() => {
@@ -197,7 +219,7 @@ export function DiagnoseChat({
       const next = !prev;
       void AsyncStorage.setItem(SPEECH_KEY, next ? '1' : '0');
       if (!next) {
-        Speech.stop();
+        void stopDiagnoseSpeech();
         setSpeaking(false);
       }
       return next;
@@ -206,7 +228,7 @@ export function DiagnoseChat({
   }, []);
 
   const stopSpeech = useCallback(() => {
-    Speech.stop();
+    void stopDiagnoseSpeech();
     setSpeaking(false);
   }, []);
 
@@ -440,13 +462,13 @@ export function DiagnoseChat({
         void writeDiagnosisToJob(reply);
 
         if (!offline && speechEnabled) {
-          const spoken = reply.replace(/\*\*/g, '').slice(0, 420);
+          const useCartesia = source === 'pros' && cartesiaEnabled;
           setSpeaking(true);
-          Speech.speak(spoken, {
-            rate: 0.95,
-            pitch: 0.95,
+          void speakDiagnoseReply({
+            text: reply,
+            useCartesia,
+            getIdToken,
             onDone: () => setSpeaking(false),
-            onStopped: () => setSpeaking(false),
             onError: () => setSpeaking(false),
           });
         }
@@ -478,6 +500,7 @@ export function DiagnoseChat({
       offline,
       pendingAttachment,
       speechEnabled,
+      cartesiaEnabled,
       writeDiagnosisToJob,
     ]
   );

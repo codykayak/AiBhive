@@ -40,7 +40,8 @@ export default function DiagnoseWebAccount() {
         </div>
         <p className="text-slate-400 text-sm mt-4 leading-relaxed">
           New accounts receive ${account?.welcomeCreditUsd?.toFixed(2) ?? '2.00'} in free credits to try live Grok
-          diagnosis. Pack library and tools stay free. Each chat message uses a small credit amount.
+          diagnosis. Pack library and tools stay free. Each chat message uses a small credit amount (~$0.01 text,
+          ~$0.022 with a photo). Cartesia voice narration adds ~$0.015 per reply when enabled on Pros teams.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
           {[5, 10, 20].map((amt) => (

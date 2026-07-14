@@ -802,6 +802,7 @@ app.get('/api/health', async (_req, res) => {
     env: {
       gemini: Boolean(process.env.GEMINI_API_KEY),
       grok: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
+      cartesia: Boolean(process.env.CARTESIA_API_KEY),
       stripe: Boolean(process.env.STRIPE_SECRET_KEY),
       googleCredentials: Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS),
       firecrawl: intelCloudKeyStatus().firecrawl,
