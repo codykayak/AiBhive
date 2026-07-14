@@ -2,8 +2,9 @@ import { Platform } from 'react-native';
 import { API_BASE } from '@/lib/config/apiBase';
 
 const DEFAULT_SILENCE_MS = 4000;
-const SPEECH_LEVEL_DB = -42;
-const SILENCE_LEVEL_DB = -50;
+const SPEECH_LEVEL_DB = -55;
+const SILENCE_LEVEL_DB = -62;
+const METERING_FALLBACK_DELAY_MS = 1800;
 
 type WebSpeechRecognition = {
   continuous: boolean;
@@ -41,6 +42,7 @@ export type VoiceCaptureOptions = {
   onPartial?: (text: string) => void;
   /** When set, auto-stop after this much silence and invoke with the transcript. */
   onAutoSend?: (text: string) => void;
+  onAutoSendError?: (message: string) => void;
   vadSilenceMs?: number;
 };
 
@@ -144,7 +146,33 @@ async function startRecordingSession(opts: VoiceCaptureOptions): Promise<VoiceSe
   let finishing = false;
   let heardSpeech = false;
   let silenceAccumMs = 0;
+  let meteringSeen = false;
   const silenceMs = opts.vadSilenceMs ?? DEFAULT_SILENCE_MS;
+  const recordingStartedAt = Date.now();
+
+  const triggerAutoSend = () => {
+    if (autoSent || finishing) return;
+    autoSent = true;
+    void finishRecording(true)
+      .then((text) => {
+        if (text) {
+          opts.onAutoSend?.(text);
+        } else {
+          opts.onAutoSendError?.('No speech detected — try again.');
+          autoSent = false;
+          finishing = false;
+        }
+      })
+      .catch((err) => {
+        autoSent = false;
+        finishing = false;
+        const message =
+          err instanceof Error && err.message?.trim()
+            ? err.message.trim()
+            : 'Voice auto-send failed.';
+        opts.onAutoSendError?.(message);
+      });
+  };
 
   const finishRecording = async (transcribe: boolean): Promise<string> => {
     if (finishing) return '';
@@ -245,6 +273,7 @@ async function startRecordingSession(opts: VoiceCaptureOptions): Promise<VoiceSe
         const status = recording.getStatus();
         const level = status.metering;
         if (typeof level === 'number') {
+          meteringSeen = true;
           if (level >= SPEECH_LEVEL_DB) {
             heardSpeech = true;
             silenceAccumMs = 0;
@@ -253,18 +282,16 @@ async function startRecordingSession(opts: VoiceCaptureOptions): Promise<VoiceSe
           } else if (!heardSpeech) {
             silenceAccumMs = 0;
           }
+        } else if (!meteringSeen) {
+          const elapsed = now - recordingStartedAt;
+          if (elapsed >= METERING_FALLBACK_DELAY_MS) {
+            heardSpeech = true;
+            silenceAccumMs = elapsed - METERING_FALLBACK_DELAY_MS;
+          }
         }
 
         if (heardSpeech && silenceAccumMs >= silenceMs) {
-          autoSent = true;
-          void finishRecording(true)
-            .then((text) => {
-              if (text) opts.onAutoSend?.(text);
-            })
-            .catch(() => {
-              autoSent = false;
-              finishing = false;
-            });
+          triggerAutoSend();
         }
       }, 200);
     }

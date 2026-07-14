@@ -115,7 +115,7 @@ async function playServerAudio(audioBase64: string, mimeType: string): Promise<v
     source = toPlaybackUri(path);
   }
 
-  const player = createAudioPlayer({ uri: source }, { downloadFirst: Platform.OS !== 'web' });
+  const player = createAudioPlayer({ uri: source }, { downloadFirst: false });
   activePlayer = player;
   await waitForPlayerLoaded(player);
 
@@ -187,7 +187,14 @@ async function fetchServerTts(opts: {
   });
 
   if (!res.ok) {
-    throw new Error(`TTS ${res.status}`);
+    let detail = `TTS ${res.status}`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body?.error) detail = body.error;
+    } catch {
+      // keep status
+    }
+    throw new Error(detail);
   }
 
   const payload = (await res.json()) as { audioBase64?: string; mimeType?: string };
@@ -246,9 +253,10 @@ export async function speakDiagnoseReply(opts: {
   provider?: TtsProvider;
   voiceId?: string;
   getIdToken?: () => Promise<string | null>;
+  allowDeviceFallback?: boolean;
   onStart?: () => void;
   onDone?: () => void;
-  onError?: () => void;
+  onError?: (message?: string) => void;
 }): Promise<void> {
   const spoken = cleanTextForSpeech(opts.text);
   if (!spoken) {
@@ -263,9 +271,9 @@ export async function speakDiagnoseReply(opts: {
     void cleanupPlaybackAssets();
     opts.onDone?.();
   };
-  const fail = () => {
+  const fail = (message?: string) => {
     void cleanupPlaybackAssets();
-    opts.onError?.();
+    opts.onError?.(message);
   };
 
   if (opts.useServerTts && opts.getIdToken && API_BASE) {
@@ -284,10 +292,20 @@ export async function speakDiagnoseReply(opts: {
         finish();
         return;
       }
-    } catch {
-      // Fall through to device TTS
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Grok voice failed';
+      console.warn('[tts] server narration failed:', message);
+      if (opts.allowDeviceFallback === false) {
+        fail(message);
+        return;
+      }
     }
   }
 
-  speakWithDeviceTts(spoken, finish, fail);
+  if (opts.allowDeviceFallback === false) {
+    fail('Grok voice unavailable');
+    return;
+  }
+
+  speakWithDeviceTts(spoken, finish, () => fail());
 }

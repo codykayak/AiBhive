@@ -15,8 +15,14 @@ export type LocalDiagnosis = {
   matchedCodes: string[];
 };
 
-export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boolean): LocalDiagnosis {
+export function diagnoseLocally(
+  pack: TradePack,
+  userText: string,
+  hasPhoto: boolean,
+  opts?: { fullLibrary?: boolean }
+): LocalDiagnosis {
   const text = userText.trim();
+  const searchPackId = opts?.fullLibrary ? undefined : pack.id;
 
   const conversational = buildOfflineReply(pack, text, hasPhoto);
   if (conversational) {
@@ -28,11 +34,11 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
   }
 
   const equipment = detectEquipment(text);
-  const faults = searchFaults(text, pack.id).slice(0, 3);
-  const codes = searchCodes(text, pack.id).slice(0, 2);
+  const faults = searchFaults(text, searchPackId).slice(0, 3);
+  const codes = searchCodes(text, searchPackId).slice(0, 2);
 
   if (faults.length === 0 && codes.length === 0) {
-    const rag = pack.id === 'property' || pack.id === 'fiber' || equipment.length ? formatRagAppendix(text, pack.id) : '';
+    const rag = pack.id === 'property' || pack.id === 'fiber' || equipment.length ? formatRagAppendix(text, searchPackId ?? pack.id) : '';
     return {
       reply: `${buildLocalDiagnosisReply(pack, text, hasPhoto)}${rag}`,
       matchedFaultIds: [],
@@ -83,7 +89,7 @@ export function diagnoseLocally(pack: TradePack, userText: string, hasPhoto: boo
   }
 
   if (pack.id === 'property' || equipment.length) {
-    const rag = formatRagAppendix(text, pack.id);
+    const rag = formatRagAppendix(text, searchPackId ?? pack.id);
     if (rag) sections.push(rag);
   }
 

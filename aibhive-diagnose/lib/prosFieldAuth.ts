@@ -6,6 +6,8 @@ import { getDiagnoseAuth } from '@/lib/firebase';
 import { joinProsCompany, parseProsApiError } from '@/lib/jobs/prosSync';
 
 const FIELD_UID_KEY = 'aibhive.pros.fieldUid.v1';
+const FIELD_INVITE_KEY = 'aibhive.pros.fieldInviteCode.v1';
+const FIELD_NAME_KEY = 'aibhive.pros.fieldDisplayName.v1';
 
 export type FieldAuthResult = {
   companyId: string;
@@ -21,12 +23,36 @@ export async function readStoredFieldUid(): Promise<string | null> {
   }
 }
 
-async function storeFieldUid(uid: string) {
-  await AsyncStorage.setItem(FIELD_UID_KEY, uid);
+export async function readStoredFieldInviteCode(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(FIELD_INVITE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+async function readStoredFieldDisplayName(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(FIELD_NAME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+async function storeFieldCredentials(uid: string, inviteCode: string, displayName: string) {
+  await AsyncStorage.multiSet([
+    [FIELD_UID_KEY, uid],
+    [FIELD_INVITE_KEY, inviteCode.trim().toUpperCase()],
+    [FIELD_NAME_KEY, displayName.trim().slice(0, 80) || 'Tech'],
+  ]);
 }
 
 export async function clearStoredFieldUid() {
-  await AsyncStorage.removeItem(FIELD_UID_KEY);
+  await clearStoredFieldCredentials();
+}
+
+export async function clearStoredFieldCredentials() {
+  await AsyncStorage.multiRemove([FIELD_UID_KEY, FIELD_INVITE_KEY, FIELD_NAME_KEY]);
 }
 
 async function fetchProsMe(token: string): Promise<{
@@ -38,6 +64,75 @@ async function fetchProsMe(token: string): Promise<{
     });
     if (!res.ok) return null;
     return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function signInWithFieldAuthToken(
+  inviteCode: string,
+  displayName: string,
+  existingUid: string
+): Promise<FieldAuthResult | null> {
+  const auth = getDiagnoseAuth();
+  if (!auth) return null;
+
+  const res = await fetch(`${API_BASE}/api/pros/field-auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ inviteCode, displayName, existingUid }),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || !payload.customToken || !payload.uid) {
+    return null;
+  }
+
+  await signInWithCustomToken(auth, payload.customToken);
+  await storeFieldCredentials(payload.uid, inviteCode, displayName);
+  return {
+    companyId: payload.companyId || '',
+    role: payload.role || 'tech',
+    uid: payload.uid,
+  };
+}
+
+/**
+ * Restore a field tech session on cold start using stored team code + UID.
+ * Keeps techs signed in until the employer revokes membership or they sign out.
+ */
+export async function restoreProsFieldSession(): Promise<FieldAuthResult | null> {
+  const auth = getDiagnoseAuth();
+  if (!auth) return null;
+
+  if (auth.currentUser) {
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const me = await fetchProsMe(token);
+      if (me?.membership?.companyId) {
+        const inviteCode = (await readStoredFieldInviteCode()) || '';
+        const displayName =
+          (await readStoredFieldDisplayName()) || auth.currentUser.displayName || 'Tech';
+        if (inviteCode) {
+          await storeFieldCredentials(auth.currentUser.uid, inviteCode, displayName);
+        }
+        return {
+          companyId: me.membership.companyId,
+          role: me.membership.role || 'tech',
+          uid: auth.currentUser.uid,
+        };
+      }
+    } catch {
+      // continue to custom-token restore
+    }
+  }
+
+  const existingUid = await readStoredFieldUid();
+  const inviteCode = await readStoredFieldInviteCode();
+  const displayName = (await readStoredFieldDisplayName()) || 'Tech';
+  if (!existingUid || !inviteCode) return null;
+
+  try {
+    return await signInWithFieldAuthToken(inviteCode, displayName, existingUid);
   } catch {
     return null;
   }
@@ -77,7 +172,7 @@ async function signInWithTeamCodeViaAnonymous(
   const token = await user.getIdToken();
   const me = await fetchProsMe(token);
   if (me?.membership?.companyId) {
-    await storeFieldUid(user.uid);
+    await storeFieldCredentials(user.uid, inviteCode, displayName);
     return {
       companyId: me.membership.companyId,
       role: me.membership.role || 'tech',
@@ -87,12 +182,12 @@ async function signInWithTeamCodeViaAnonymous(
 
   try {
     const joined = await joinProsCompany(token, inviteCode, displayName);
-    await storeFieldUid(user.uid);
+    await storeFieldCredentials(user.uid, inviteCode, displayName);
     return { companyId: joined.companyId, role: joined.role, uid: user.uid };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/already on a company roster/i.test(msg)) {
-      await storeFieldUid(user.uid);
+      await storeFieldCredentials(user.uid, inviteCode, displayName);
       const again = await fetchProsMe(token);
       return {
         companyId: again?.membership?.companyId || '',
@@ -124,29 +219,14 @@ export async function signInWithTeamCode(
 
   const existingUid = await readStoredFieldUid();
 
-  // Try custom-token re-login for returning field users.
   if (existingUid) {
     try {
-      const res = await fetch(`${API_BASE}/api/pros/field-auth`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteCode: code, displayName: name, existingUid }),
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (res.ok && payload.customToken && payload.uid) {
-        await signInWithCustomToken(auth, payload.customToken);
-        await storeFieldUid(payload.uid);
-        return {
-          companyId: payload.companyId || '',
-          role: payload.role || 'tech',
-          uid: payload.uid,
-        };
-      }
+      const restored = await signInWithFieldAuthToken(code, name, existingUid);
+      if (restored) return restored;
     } catch {
       /* fall through to anonymous join */
     }
   }
 
-  // Default: anonymous Firebase + join (works when Admin createUser/custom token is blocked).
   return signInWithTeamCodeViaAnonymous(code, name);
 }

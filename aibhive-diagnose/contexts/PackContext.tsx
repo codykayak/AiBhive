@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 import { useAuth } from '@/contexts/AuthContext';
 import { TRADE_PACKS, getTradePack, type TradePack, type TradePackId } from '@/lib/packs';
+import { hasFullPackLibraryAccess } from '@/lib/packs/access';
 
 const STORAGE_KEY = 'aibhive.diagnose.activePack';
 
@@ -11,6 +12,7 @@ type PackContextValue = {
   activePack: TradePack;
   setActivePackId: (id: TradePackId) => void;
   packs: TradePack[];
+  allPacksUnlocked: boolean;
 };
 
 const PackContext = createContext<PackContextValue | null>(null);
@@ -27,7 +29,7 @@ function isPackId(value: unknown): value is TradePackId {
 }
 
 export function PackProvider({ children }: { children: React.ReactNode }) {
-  const { profile, saveProfile } = useAuth();
+  const { profile, saveProfile, user } = useAuth();
   const [activePackId, setActivePackIdState] = useState<TradePackId>('pool');
   const [hydrated, setHydrated] = useState(false);
 
@@ -81,8 +83,9 @@ export function PackProvider({ children }: { children: React.ReactNode }) {
       activePack: getTradePack(activePackId),
       setActivePackId,
       packs: Object.values(TRADE_PACKS),
+      allPacksUnlocked: hasFullPackLibraryAccess(Boolean(user)),
     }),
-    [activePackId, setActivePackId]
+    [activePackId, setActivePackId, user]
   );
 
   return <PackContext.Provider value={value}>{children}</PackContext.Provider>;

@@ -29,7 +29,7 @@ import { joinProsCompany } from '@/lib/jobs/prosSync';
 import { safeAlert } from '@/lib/safeAlert';
 import Constants from 'expo-constants';
 
-const APP_VERSION = Constants.expoConfig?.version ?? '1.0.8';
+const APP_VERSION = Constants.expoConfig?.version ?? '1.1.1';
 
 function formatAuthError(err: unknown): string {
   if (!err || typeof err !== 'object') return 'Sign-in failed. Try again.';

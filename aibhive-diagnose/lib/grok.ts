@@ -3,9 +3,10 @@ import { diagnoseLocally } from './knowledge/diagnoseEngine';
 import type { ManualSearchLink } from './knowledge/manualSearch';
 import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
-import { buildOfflineReply, isMetaAppQuestion } from '@/lib/diagnose/offlineConversation';
+import { buildOfflineReply, isMetaAppQuestion, type MetaAppReplyOpts } from '@/lib/diagnose/offlineConversation';
 import { fetchProsAiStatus } from '@/lib/diagnose/aiStatus';
 import { buildGrokUserContent } from '@/lib/diagnose/grokMessage';
+import { hasFullPackLibraryAccess } from '@/lib/packs/access';
 import { API_BASE } from '@/lib/config/apiBase';
 
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
@@ -182,6 +183,15 @@ export async function askGrokDetailed({
   offline = false,
 }: GrokChatRequest): Promise<DiagnoseReply> {
   const isDiagnosis = Boolean(attachment);
+  let fullLibrary = false;
+  if (!offline && getIdToken) {
+    try {
+      const token = await getIdToken();
+      fullLibrary = hasFullPackLibraryAccess(Boolean(token));
+    } catch {
+      fullLibrary = false;
+    }
+  }
 
   if (!isDiagnosis) {
     let metaOpts: MetaAppReplyOpts | undefined;
@@ -216,7 +226,7 @@ export async function askGrokDetailed({
     }
   }
 
-  const local = diagnoseLocally(pack, userText, isDiagnosis);
+  const local = diagnoseLocally(pack, userText, isDiagnosis, { fullLibrary });
   const remoteTips = await getCachedTipsContext(pack.id, userText);
   const localWithTips = remoteTips
     ? `${local.reply}\n\n**Shop / network tips**\n${remoteTips}`

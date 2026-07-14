@@ -10,7 +10,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { Platform } from 'react-native';
 
 import { getDiagnoseAuth, googleProvider } from '@/lib/firebase';
-import { signInWithTeamCode as fieldSignInWithTeamCode, clearStoredFieldUid } from '@/lib/prosFieldAuth';
+import { signInWithTeamCode as fieldSignInWithTeamCode, clearStoredFieldCredentials, restoreProsFieldSession } from '@/lib/prosFieldAuth';
 import type { TradePackId } from '@/lib/packs/types';
 
 const PROFILE_KEY = 'aibhive.diagnose.profile.v1';
@@ -71,26 +71,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const unsub = onAuthStateChanged(auth, async (next) => {
-      setUser(next);
-      const local = await readLocalProfile();
-      if (next) {
-        setProfile({
-          displayName: local?.displayName || next.displayName || next.email?.split('@')[0] || 'Tech',
-          photoUrl: local?.photoUrl || next.photoURL || null,
-          tradePack: local?.tradePack || 'pool',
-          shareAnonymously: local?.shareAnonymously !== false,
-        });
-      } else {
-        setProfile(
-          local
-            ? { ...local, shareAnonymously: local.shareAnonymously !== false }
-            : { displayName: 'Tech', photoUrl: null, tradePack: 'pool', shareAnonymously: true }
-        );
+    let unsub: (() => void) | undefined;
+
+    void (async () => {
+      if (!auth.currentUser) {
+        try {
+          await restoreProsFieldSession();
+        } catch {
+          // non-fatal — user can sign in manually
+        }
       }
-      setLoading(false);
-    });
-    return () => unsub();
+
+      unsub = onAuthStateChanged(auth, async (next) => {
+        setUser(next);
+        const local = await readLocalProfile();
+        if (next) {
+          setProfile({
+            displayName: local?.displayName || next.displayName || next.email?.split('@')[0] || 'Tech',
+            photoUrl: local?.photoUrl || next.photoURL || null,
+            tradePack: local?.tradePack || 'pool',
+            shareAnonymously: local?.shareAnonymously !== false,
+          });
+        } else {
+          setProfile(
+            local
+              ? { ...local, shareAnonymously: local.shareAnonymously !== false }
+              : { displayName: 'Tech', photoUrl: null, tradePack: 'pool', shareAnonymously: true }
+          );
+        }
+        setLoading(false);
+      });
+    })();
+
+    return () => unsub?.();
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
@@ -135,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     const auth = getDiagnoseAuth();
     if (auth) await firebaseSignOut(auth);
-    await clearStoredFieldUid();
+    await clearStoredFieldCredentials();
   }, []);
 
   const saveProfile = useCallback(
