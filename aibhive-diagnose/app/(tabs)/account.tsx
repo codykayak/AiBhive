@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as Linking from 'expo-linking';
-import { LogIn, LogOut, Users, UserRound } from 'lucide-react-native';
+import { LogIn, LogOut, Settings2, Users, UserRound } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Image,
@@ -62,7 +63,15 @@ function formatAuthError(err: unknown): string {
 function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
   if (!signedIn) return 'Sign in + join a team to unlock Pros AI.';
   if (!status) return 'Could not load AI status (join a Pros team if you haven’t).';
-  if (status.aiEnabled) return `Pros AI on · ${status.provider || 'grok'} (${status.source})`;
+  if (status.aiEnabled) {
+    const voice =
+      status.grokTtsEnabled !== false
+        ? ' · Grok voice'
+        : status.cartesiaEnabled
+          ? ' · Cartesia voice'
+          : '';
+    return `Pros AI on · ${status.provider || 'grok'} (${status.source})${voice}`;
+  }
   if (status.billingStatus && !['trial', 'active'].includes(status.billingStatus)) {
     return `Billing ${status.billingStatus} — pack library still works offline.`;
   }
@@ -72,6 +81,7 @@ function aiStatusLabel(status: ProsAiStatus | null, signedIn: boolean): string {
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { user, profile, loading, signInWithGoogle, signInWithTeamCode, signOut, saveProfile, getIdToken } =
     useAuth();
   const [name, setName] = useState(profile?.displayName || '');
@@ -276,6 +286,14 @@ export default function AccountScreen() {
           <Text className="mt-2 text-sm leading-5 text-hive-mist">
             {aiStatusLabel(aiStatus, Boolean(user))}
           </Text>
+          <View className="mt-3">
+            <BigButton
+              label="Voice settings"
+              variant="secondary"
+              icon={<Settings2 color={theme.colors.amber} size={20} />}
+              onPress={() => router.push('/voice-settings')}
+            />
+          </View>
         </View>
 
         <View className="mt-6 rounded-sm border border-hive-amber/30 bg-hive-elevated p-4">

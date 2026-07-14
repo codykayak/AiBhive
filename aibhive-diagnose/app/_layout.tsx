@@ -245,6 +245,14 @@ export default function RootLayout() {
                     }}
                   />
                   <Stack.Screen
+                    name="voice-settings"
+                    options={{
+                      title: 'Voice settings',
+                      headerStyle: { backgroundColor: theme.colors.elevated },
+                      headerTintColor: theme.colors.mist,
+                    }}
+                  />
+                  <Stack.Screen
                     name="pack/[packId]"
                     options={({ route }) => ({
                       title: 'Trade pack',

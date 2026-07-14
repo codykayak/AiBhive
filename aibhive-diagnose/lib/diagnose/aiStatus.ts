@@ -6,6 +6,18 @@ export type ProsAiStatus = {
   source: string;
   billingStatus: string;
   aiEnabled: boolean;
+  grokTtsEnabled?: boolean;
+  cartesiaEnabled?: boolean;
+  defaultTtsProvider?: string;
+  defaultGrokVoiceId?: string;
+  operationCostEstimate?: number | null;
+  operationCostRates?: {
+    grokChatRawUsd: number;
+    grokVisionRawUsd: number;
+    transcribeRawUsd: number;
+    grokTtsTypicalRawUsd?: number;
+    typicalDiagnoseWithVoiceUsd: number;
+  };
 };
 
 export async function fetchProsAiStatus(token: string): Promise<ProsAiStatus | null> {

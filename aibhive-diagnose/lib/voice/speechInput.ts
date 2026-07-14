@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 import { API_BASE } from '@/lib/config/apiBase';
 
+const DEFAULT_SILENCE_MS = 4000;
+const SPEECH_LEVEL_DB = -42;
+const SILENCE_LEVEL_DB = -50;
 
 type WebSpeechRecognition = {
   continuous: boolean;
@@ -33,33 +36,55 @@ export type VoiceSession = {
   cancel: () => Promise<void>;
 };
 
-/**
- * Start voice capture.
- * - Web: live SpeechRecognition when available
- * - Native / fallback: expo-audio recording → Pros `/api/pros/transcribe`
- *
- * expo-audio is required lazily so a missing native module cannot crash app boot.
- */
-export async function startVoiceCapture(opts: {
+export type VoiceCaptureOptions = {
   getIdToken?: () => Promise<string | null>;
   onPartial?: (text: string) => void;
-}): Promise<VoiceSession> {
+  /** When set, auto-stop after this much silence and invoke with the transcript. */
+  onAutoSend?: (text: string) => void;
+  vadSilenceMs?: number;
+};
+
+/**
+ * Start voice capture with optional VAD auto-send (default 4s silence).
+ * - Web: live SpeechRecognition when available
+ * - Native: expo-audio recording + metering VAD → Pros `/api/pros/transcribe`
+ */
+export async function startVoiceCapture(opts: VoiceCaptureOptions): Promise<VoiceSession> {
   const WebSpeech = getWebSpeechCtor();
   if (WebSpeech) {
-    return startWebSpeech(WebSpeech, opts.onPartial);
+    return startWebSpeech(WebSpeech, opts);
   }
-  return startRecordingSession(opts.getIdToken);
+  return startRecordingSession(opts);
 }
 
-function startWebSpeech(
-  Ctor: WebSpeechCtor,
-  onPartial?: (text: string) => void
-): VoiceSession {
+function startWebSpeech(Ctor: WebSpeechCtor, opts: VoiceCaptureOptions): VoiceSession {
   const recognition = new Ctor();
   recognition.continuous = true;
   recognition.interimResults = true;
   recognition.lang = 'en-US';
   let finalText = '';
+  let lastSpeechAt = Date.now();
+  let cancelled = false;
+  let autoSent = false;
+  const silenceMs = opts.vadSilenceMs ?? DEFAULT_SILENCE_MS;
+
+  let vadTimer: ReturnType<typeof setInterval> | null = null;
+  if (opts.onAutoSend) {
+    vadTimer = setInterval(() => {
+      if (cancelled || autoSent) return;
+      if (!finalText.trim()) return;
+      if (Date.now() - lastSpeechAt >= silenceMs) {
+        autoSent = true;
+        try {
+          recognition.stop();
+        } catch {
+          // ignore
+        }
+        const text = finalText.trim();
+        if (text) opts.onAutoSend?.(text);
+      }
+    }, 250);
+  }
 
   recognition.onresult = (event) => {
     let interim = '';
@@ -69,16 +94,28 @@ function startWebSpeech(
       finals += piece + ' ';
       interim = piece;
     }
-    finalText = finals.trim() || interim.trim();
-    if (finalText) onPartial?.(finalText);
+    const next = finals.trim() || interim.trim();
+    if (next) {
+      finalText = next;
+      lastSpeechAt = Date.now();
+      opts.onPartial?.(finalText);
+    }
   };
 
   recognition.onerror = () => undefined;
   recognition.onend = () => undefined;
   recognition.start();
 
+  const clearVad = () => {
+    if (vadTimer) {
+      clearInterval(vadTimer);
+      vadTimer = null;
+    }
+  };
+
   return {
     stop: async () => {
+      clearVad();
       try {
         recognition.stop();
       } catch {
@@ -88,6 +125,8 @@ function startWebSpeech(
       return finalText.trim();
     },
     cancel: async () => {
+      cancelled = true;
+      clearVad();
       try {
         recognition.stop();
       } catch {
@@ -97,49 +136,23 @@ function startWebSpeech(
   };
 }
 
-async function startRecordingSession(
-  getIdToken?: () => Promise<string | null>
-): Promise<VoiceSession> {
-  // Dynamic import keeps expo-audio off the critical boot path (SDK 57+ — expo-av removed).
+async function startRecordingSession(opts: VoiceCaptureOptions): Promise<VoiceSession> {
   let recording: import('expo-audio').AudioRecorder | null = null;
-  try {
-    const {
-      AudioModule,
-      RecordingPresets,
-      requestRecordingPermissionsAsync,
-      setAudioModeAsync,
-    } = await import('expo-audio');
+  let vadTimer: ReturnType<typeof setInterval> | null = null;
+  let cancelled = false;
+  let autoSent = false;
+  let finishing = false;
+  let heardSpeech = false;
+  let silenceAccumMs = 0;
+  const silenceMs = opts.vadSilenceMs ?? DEFAULT_SILENCE_MS;
 
-    if (!AudioModule?.AudioRecorder) {
-      throw new Error(
-        'Voice input is not available in this preview. Type your fault in the chat box instead.'
-      );
+  const finishRecording = async (transcribe: boolean): Promise<string> => {
+    if (finishing) return '';
+    finishing = true;
+    if (vadTimer) {
+      clearInterval(vadTimer);
+      vadTimer = null;
     }
-
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Microphone permission is required for voice input.');
-    }
-
-    await setAudioModeAsync({
-      allowsRecording: true,
-      playsInSilentMode: true,
-    });
-
-    recording = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
-    await recording.prepareToRecordAsync();
-    recording.record();
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (message.includes('Cannot find native module') || message.includes('ExponentAV')) {
-      throw new Error(
-        'Voice input needs the updated app build. Type your fault in the chat box for now.'
-      );
-    }
-    throw err;
-  }
-
-  const finish = async (transcribe: boolean): Promise<string> => {
     try {
       await recording?.stop();
     } catch {
@@ -151,12 +164,12 @@ async function startRecordingSession(
     } catch {
       // ignore
     }
-    if (!transcribe) return '';
+    if (!transcribe || cancelled) return '';
 
     const uri = recording?.uri;
     if (!uri) throw new Error('Recording failed — try again.');
 
-    const token = getIdToken ? await getIdToken() : null;
+    const token = opts.getIdToken ? await opts.getIdToken() : null;
     if (!token || !API_BASE) {
       throw new Error(
         'Voice transcription needs Pros sign-in. Type the fault, or sign in under Account.'
@@ -190,9 +203,87 @@ async function startRecordingSession(
     return (data.text || '').trim();
   };
 
+  try {
+    const {
+      AudioModule,
+      RecordingPresets,
+      requestRecordingPermissionsAsync,
+      setAudioModeAsync,
+    } = await import('expo-audio');
+
+    if (!AudioModule?.AudioRecorder) {
+      throw new Error(
+        'Voice input is not available in this preview. Type your fault in the chat box instead.'
+      );
+    }
+
+    const permission = await requestRecordingPermissionsAsync();
+    if (!permission.granted) {
+      throw new Error('Microphone permission is required for voice input.');
+    }
+
+    await setAudioModeAsync({
+      allowsRecording: true,
+      playsInSilentMode: true,
+    });
+
+    recording = new AudioModule.AudioRecorder({
+      ...RecordingPresets.HIGH_QUALITY,
+      isMeteringEnabled: true,
+    });
+    await recording.prepareToRecordAsync();
+    recording.record();
+
+    if (opts.onAutoSend) {
+      let lastTick = Date.now();
+      vadTimer = setInterval(() => {
+        if (cancelled || autoSent || finishing || !recording) return;
+        const now = Date.now();
+        const delta = now - lastTick;
+        lastTick = now;
+
+        const status = recording.getStatus();
+        const level = status.metering;
+        if (typeof level === 'number') {
+          if (level >= SPEECH_LEVEL_DB) {
+            heardSpeech = true;
+            silenceAccumMs = 0;
+          } else if (heardSpeech && level <= SILENCE_LEVEL_DB) {
+            silenceAccumMs += delta;
+          } else if (!heardSpeech) {
+            silenceAccumMs = 0;
+          }
+        }
+
+        if (heardSpeech && silenceAccumMs >= silenceMs) {
+          autoSent = true;
+          void finishRecording(true)
+            .then((text) => {
+              if (text) opts.onAutoSend?.(text);
+            })
+            .catch(() => {
+              autoSent = false;
+              finishing = false;
+            });
+        }
+      }, 200);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (message.includes('Cannot find native module') || message.includes('ExponentAV')) {
+      throw new Error(
+        'Voice input needs the updated app build. Type your fault in the chat box for now.'
+      );
+    }
+    throw err;
+  }
+
   return {
-    stop: () => finish(true),
-    cancel: () => finish(false).then(() => undefined),
+    stop: () => finishRecording(true),
+    cancel: async () => {
+      cancelled = true;
+      await finishRecording(false);
+    },
   };
 }
 

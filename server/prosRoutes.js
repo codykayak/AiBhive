@@ -1032,6 +1032,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           source: 'none',
           billingStatus: 'none',
           aiEnabled: false,
+          cartesiaEnabled: false,
+          grokTtsEnabled: false,
+          defaultTtsProvider: 'grok',
+          defaultGrokVoiceId: 'ara',
+          operationCostRates: (await import('./diagnoseBilling.js')).getDiagnoseOperationCostRates(),
+          operationCostEstimate: null,
         });
       }
 
@@ -1041,12 +1047,24 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const billingOk = ['trial', 'active'].includes(billingStatus);
       const resolved = await resolveGrokKey(db, membership.companyId);
 
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const { getDiagnoseOperationCostRates } = await import('./diagnoseBilling.js');
+      const aiEnabled = Boolean(resolved) && billingOk;
+      const cartesiaEnabled = aiEnabled && isCartesiaConfigured();
+      const rates = getDiagnoseOperationCostRates();
+
       return res.json({
         configured: Boolean(resolved),
         provider: resolved ? 'grok' : null,
         source: resolved?.source || 'none',
         billingStatus,
-        aiEnabled: Boolean(resolved) && billingOk,
+        aiEnabled,
+        grokTtsEnabled: aiEnabled,
+        cartesiaEnabled,
+        defaultTtsProvider: 'grok',
+        defaultGrokVoiceId: 'ara',
+        operationCostRates: rates,
+        operationCostEstimate: aiEnabled ? rates.typicalDiagnoseWithVoiceUsd : rates.grokChatRawUsd,
       });
     } catch (err) {
       console.error('[pros/ai-status]', err);
@@ -1163,11 +1181,21 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         { temperature: 0.25, max_tokens: 3500, vision: hasImage }
       );
 
+      const { estimateDiagnoseOperation } = await import('./diagnoseBilling.js');
+      const operationCost = estimateDiagnoseOperation({
+        hasImage,
+        replyText: reply,
+        includeTts: true,
+        ttsProvider: 'grok',
+      });
+
       await logActivity(db, membership.companyId, {
         type: 'diagnose_ai',
         actorUid: user.uid,
         actorEmail: user.email || null,
         message: `Diagnose AI (${resolved.source}) tips=${tipIdsUsed.length}`,
+        rawCostUsd: operationCost.grokRawUsd,
+        operationCost,
       }).catch((logErr) => console.warn('[pros/diagnose] activity', logErr?.message));
 
       return res.json({
@@ -1184,6 +1212,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         })),
         manualSearchLinks,
         modelCandidates,
+        operationCost,
       });
     } catch (err) {
       console.error('[pros/diagnose]', err);
@@ -1335,6 +1364,142 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
   });
 
   /**
+   * List TTS voices + provider availability for Voice Settings.
+   */
+  app.get('/api/pros/tts/voices', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company first' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      const billingOk = ['trial', 'active'].includes(billingStatus);
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      const aiEnabled = Boolean(resolved) && billingOk;
+
+      const { GROK_VOICES, DEFAULT_GROK_VOICE_ID } = await import('./grokTts.js');
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+
+      return res.json({
+        defaultProvider: 'grok',
+        defaultVoiceId: DEFAULT_GROK_VOICE_ID,
+        grokAvailable: aiEnabled,
+        cartesiaAvailable: aiEnabled && isCartesiaConfigured(),
+        grokVoices: GROK_VOICES,
+      });
+    } catch (err) {
+      console.error('[pros/tts/voices]', err);
+      return res.status(500).json({ error: 'Failed to load voices' });
+    }
+  });
+
+  /**
+   * Grok (default) or Cartesia TTS for Diagnose narration when Grok AI is active.
+   * Returns base64 audio; keys never leave the server.
+   */
+  app.post('/api/pros/tts', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({
+          error: 'Join a Pros company to use voice narration',
+          code: 'no_company',
+        });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      if (!['trial', 'active'].includes(billingStatus)) {
+        return res.status(402).json({
+          error: 'Subscription required for live AI narration',
+          code: 'billing_required',
+          billingStatus,
+        });
+      }
+
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      if (!resolved?.key) {
+        return res.status(503).json({
+          error: 'No Grok key configured. Add one in Pros → AI Keys.',
+          code: 'no_key',
+        });
+      }
+
+      const {
+        text = '',
+        provider = 'grok',
+        voiceId = 'ara',
+        preview = false,
+      } = req.body || {};
+
+      const spoken =
+        preview && typeof text === 'string' && !text.trim()
+          ? (await import('./grokTts.js')).GROK_TTS_PREVIEW_TEXT
+          : String(text || '').trim();
+
+      if (!spoken) {
+        return res.status(400).json({ error: 'text required' });
+      }
+      if (spoken.length > 2000) {
+        return res.status(413).json({ error: 'text too long' });
+      }
+
+      const wantCartesia = provider === 'cartesia';
+      const { synthesizeCartesiaSpeech, isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const { synthesizeGrokSpeech } = await import('./grokTts.js');
+      const { ttsRawCost } = await import('./diagnoseBilling.js');
+
+      let audioBuffer;
+      let mimeType;
+      let usedProvider;
+
+      if (wantCartesia && isCartesiaConfigured()) {
+        audioBuffer = await synthesizeCartesiaSpeech(spoken);
+        mimeType = 'audio/wav';
+        usedProvider = 'cartesia';
+      } else {
+        audioBuffer = await synthesizeGrokSpeech(resolved.key, spoken, { voiceId });
+        mimeType = 'audio/mpeg';
+        usedProvider = 'grok';
+      }
+
+      const ttsRawUsd = ttsRawCost(spoken, usedProvider);
+      const operationCost = { ttsRawUsd, totalRawUsd: ttsRawUsd, provider: usedProvider };
+
+      if (!preview) {
+        await logActivity(db, membership.companyId, {
+          type: 'diagnose_tts',
+          actorUid: user.uid,
+          actorEmail: user.email || null,
+          message: `${usedProvider} narration`,
+          rawCostUsd: ttsRawUsd,
+          operationCost,
+          ttsProvider: usedProvider,
+        }).catch((logErr) => console.warn('[pros/tts] activity', logErr?.message));
+      }
+
+      return res.json({
+        audioBase64: audioBuffer.toString('base64'),
+        mimeType,
+        provider: usedProvider,
+        voiceId: usedProvider === 'grok' ? String(voiceId || 'ara').toLowerCase() : null,
+        operationCost,
+      });
+    } catch (err) {
+      console.error('[pros/tts]', err);
+      return res.status(500).json({ error: err?.message || 'TTS failed' });
+    }
+  });
+
+  /**
    * Transcribe field voice notes (Gemini). Used by Diagnose mic on native / Expo Go.
    */
   app.post('/api/pros/transcribe', async (req, res) => {
@@ -1416,14 +1581,22 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         return res.status(502).json({ error: 'Empty transcription' });
       }
 
+      const { DIAGNOSE_TRANSCRIBE_RAW } = await import('./diagnoseBilling.js');
+      const operationCost = {
+        transcribeRawUsd: DIAGNOSE_TRANSCRIBE_RAW,
+        totalRawUsd: DIAGNOSE_TRANSCRIBE_RAW,
+      };
+
       await logActivity(db, membership.companyId, {
         type: 'diagnose_transcribe',
         actorUid: user.uid,
         actorEmail: user.email || null,
         message: 'Voice transcription',
+        rawCostUsd: DIAGNOSE_TRANSCRIBE_RAW,
+        operationCost,
       }).catch((logErr) => console.warn('[pros/transcribe] activity', logErr?.message));
 
-      return res.json({ text });
+      return res.json({ text, operationCost });
     } catch (err) {
       console.error('[pros/transcribe]', err);
       return res.status(500).json({ error: err?.message || 'Transcription failed' });
