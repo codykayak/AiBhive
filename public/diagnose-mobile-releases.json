@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.0.8",
-  "versionCode": 9,
-  "sourceVersion": "1.0.8",
+  "shippedNativeVersion": "1.1.0",
+  "versionCode": 11,
+  "sourceVersion": "1.1.0",
   "appName": "AiBhive Pros",
   "releaseNotes": "v1.0.8 — Home hero shows app icon beside AiBhive Pros wordmark; plumbing pack on Pros web; Diagnose web matches Pros styling.",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3724daaf-4eb0-44d7-9037-d29fd3411d38",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3724daaf-4eb0-44d7-9037-d29fd3411d38",
-  "publishedAt": "2026-07-14T11:26:27.600Z",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=3724daaf-4eb0-44d7-9037-d29fd3411d38",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1784028385835%2Faibhive-diagnose.apk.gz?alt=media&token=f7edaf2c-a559-4821-853a-1bdb8fb91c75"
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6d9912f9-76b9-4b58-8ca1-09b16f31c0ef",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6d9912f9-76b9-4b58-8ca1-09b16f31c0ef",
+  "publishedAt": "2026-07-14T22:17:43.058Z",
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-diagnose.apk?alt=media&token=6d9912f9-76b9-4b58-8ca1-09b16f31c0ef",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fdiagnose-apk-1784067457199%2Faibhive-diagnose.apk.gz?alt=media&token=c07e9eff-6b16-4ef1-b268-3ad549b393cc"
 }
