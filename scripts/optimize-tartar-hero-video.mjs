@@ -29,12 +29,18 @@ function fmt(bytes) {
 }
 
 if (!fs.existsSync(SOURCE)) {
-  console.error(
-    '[optimize-tartar-hero-video] Source not found:\n' +
-      `  ${SOURCE}\n\n` +
-      'Add your video at that path, then run: npm run optimize:tartar-video'
-  );
-  process.exit(1);
+  console.warn('[optimize-tartar-hero-video] Source not found, skipping:', SOURCE);
+  process.exit(0);
+}
+
+try {
+  execSync('ffmpeg -version', { stdio: 'ignore' });
+} catch {
+  if (!fs.existsSync(OUT_MP4)) {
+    fs.copyFileSync(SOURCE, OUT_MP4);
+  }
+  console.log('[optimize-tartar-hero-video] ffmpeg missing — copied source to public/');
+  process.exit(0);
 }
 
 const before = fs.statSync(SOURCE).size;
