@@ -58,6 +58,8 @@ manifest.releaseNotes =
   `v${version} — Pros field app: voice/chat part orders, manual PDF search, parts HQ workflow, keyboard fix, light theme, trade packs, location pings.`;
 
 const notesByVersion = {
+  '1.0.8':
+    'v1.0.8 — Home hero shows app icon beside AiBhive Pros wordmark; plumbing pack on Pros web; Diagnose web matches Pros styling.',
   '1.0.7':
     'v1.0.7 — Fix Grok 400 (model fallback), Android launcher icon, home wordmark (no duplicate icon), fiber pack.',
   '1.0.6':

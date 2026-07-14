@@ -26,6 +26,12 @@ export default function ProsPageHeader({ variant = 'light', transparent = false 
         </Link>
         <div className="flex items-center gap-3">
           <Link
+            to="/diagnose"
+            className={`text-sm hidden sm:inline ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            Diagnose web
+          </Link>
+          <Link
             to="/"
             className={`text-sm hidden sm:inline ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
           >

@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { Building2, Cable, Droplets, Wind, Zap } from 'lucide-react';
+import { Building2, Cable, Droplets, Wind, Wrench, Zap } from 'lucide-react';
 
-export type ProsTradeId = 'hvac' | 'property' | 'pool' | 'electrical' | 'fiber';
+export type ProsTradeId = 'hvac' | 'property' | 'pool' | 'electrical' | 'plumbing' | 'fiber';
 
 export type ProsTradePageConfig = {
   id: ProsTradeId;
@@ -176,6 +176,45 @@ export const PROS_TRADE_PAGES: Record<ProsTradeId, ProsTradePageConfig> = {
       'Document fixes for repeat service calls',
       'Team roster with optional periodic GPS check-ins',
       'Anonymized tips can help the wider trade network',
+    ],
+  },
+  plumbing: {
+    id: 'plumbing',
+    slug: 'plumbing',
+    name: 'Plumbing',
+    shortName: 'Plumbing',
+    tagline: 'Drains · Supply · Fixtures · Water heaters',
+    description:
+      'Field diagnosis for residential and light commercial plumbing — drains, supply pressure, fixtures, water heaters, and venting.',
+    accentColor: '#4A9FD4',
+    icon: Wrench,
+    seoTitle: 'AiBhive Pros for Plumbing Companies — Drains, fixtures & supply diagnosis',
+    seoDescription:
+      'Plumbing service companies dispatch from Pros HQ and grow a living knowledge base. Techs get drain, fixture, and water heater playbooks in AiBhive Diagnose.',
+    heroEyebrow: 'Plumbing contractors',
+    categories: [
+      { label: 'Drains & sewer', examples: ['Main line backup', 'Slow kitchen drain', 'Vent blockage', 'Cleanout access'] },
+      { label: 'Water supply', examples: ['Low pressure', 'PRV failure', 'Water hammer', 'Frozen / burst pipe'] },
+      { label: 'Fixtures', examples: ['Running toilet', 'Faucet drip', 'Shower valve', 'Angle stop seized'] },
+      { label: 'Water heaters', examples: ['No hot water', 'T&P discharge', 'Pilot out', 'Sediment noise'] },
+    ],
+    quickPrompts: [
+      'Main line backs up when washer drains',
+      'Low hot water pressure at one fixture only',
+      'Toilet runs every 20 minutes',
+      'Water heater T&P dripping after heat cycle',
+    ],
+    commonEquipment: [
+      'Tank / tankless water heater',
+      'PRV / expansion tank',
+      'Kitchen / bath fixtures',
+      'Cleanout & main line',
+    ],
+    prosFeatures: [
+      'Dispatch drain and water heater calls with push updates',
+      'Capture fixture model numbers before ordering parts',
+      'Pipe sizing and code quick refs in the field app',
+      'Job photos sync to HQ for warranty documentation',
     ],
   },
   fiber: {

@@ -193,6 +193,7 @@ function AppShell() {
   const isAdminRoute = pathname.startsWith('/admin');
   const isProsAdminRoute = pathname.startsWith('/pros/app');
   const isProsPublicRoute = pathname.startsWith('/pros') && !pathname.startsWith('/pros/app');
+  const isDiagnosePublicRoute = pathname === '/diagnose';
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
@@ -203,14 +204,13 @@ function AppShell() {
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build') ||
-    isProsPublicRoute ||
-    pathname.startsWith('/diagnose');
+    pathname.startsWith('/diagnose/app');
 
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
         {!isPrivateRoute && !isEmbedRoute && <SEO />}
-        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && (
+        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
@@ -218,7 +218,7 @@ function AppShell() {
         {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
-        <main className={`flex-grow ${isEmbedRoute || isProsPublicRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
+        <main className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>
