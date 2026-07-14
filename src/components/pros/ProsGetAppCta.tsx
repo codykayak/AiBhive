@@ -47,6 +47,13 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
             <ArrowRight className="w-5 h-5" />
           </a>
           <Link
+            to="/diagnose"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
+          >
+            Try Diagnose on web
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+          <Link
             to="/pros/app"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
           >
