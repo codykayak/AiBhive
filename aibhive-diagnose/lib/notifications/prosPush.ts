@@ -6,7 +6,7 @@ type NotificationsModule = typeof import('expo-notifications');
 
 let notificationsModule: NotificationsModule | null | undefined;
 let handlerConfigured = false;
-let registered = false;
+let registeredForUid: string | null = null;
 
 /** Remote push was removed from Expo Go in SDK 53 — only load in dev/production builds. */
 function canUsePushNotifications(): boolean {
@@ -50,8 +50,12 @@ export async function ensureNotificationPermission(): Promise<boolean> {
   return status === 'granted';
 }
 
-export async function registerDiagnosePush(getIdToken: () => Promise<string | null>): Promise<void> {
-  if (registered || !canUsePushNotifications()) return;
+export async function registerDiagnosePush(
+  getIdToken: () => Promise<string | null>,
+  uid?: string | null
+): Promise<void> {
+  if (uid && registeredForUid === uid) return;
+  if (!canUsePushNotifications()) return;
   try {
     const Notifications = await loadNotifications();
     if (!Notifications) return;
@@ -73,7 +77,7 @@ export async function registerDiagnosePush(getIdToken: () => Promise<string | nu
     if (!authToken) return;
 
     const saved = await registerProsPushToken(authToken, expoPushToken, Platform.OS);
-    if (saved) registered = true;
+    if (saved && uid) registeredForUid = uid;
   } catch {
     // Missing push credentials or unsupported runtime — non-fatal
   }

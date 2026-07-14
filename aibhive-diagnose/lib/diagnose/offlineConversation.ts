@@ -1,5 +1,5 @@
 import type { TradePack } from '@/lib/packs/types';
-import { getFaultById, searchFaults } from '@/lib/knowledge/search';
+import { detectEquipment, getFaultById } from '@/lib/knowledge/search';
 
 /** Greetings and other messages with no fault described yet. */
 export function isVagueUserMessage(text: string): boolean {
@@ -29,6 +29,80 @@ export function buildGreetingReply(text: string): string {
   if (/^good afternoon/.test(key)) return 'Good afternoon! What fault or equipment can I help with?';
   if (/^what'?s up/.test(key)) return 'Hey — what are you working on?';
   return 'Hello! Tell me what you’re working on — equipment, symptom, or error code.';
+}
+
+/** Questions about the app / AI itself — not equipment faults. */
+export function isMetaAppQuestion(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return false;
+  if (
+    /\b(ai|grok|assistant|bot|aibhive)\b.*\b(live|online|working|connected|up|ready|available|on)\b/.test(
+      t
+    )
+  ) {
+    return true;
+  }
+  if (/\b(is|are)\s+(you|ai|grok|the\s+ai)\s+(live|online|working|there|up|on|ready)\b/.test(t)) {
+    return true;
+  }
+  if (/\b(what can you do|who are you|how do you work|are you real)\b/.test(t)) return true;
+  return false;
+}
+
+export type MetaAppReplyOpts = {
+  offline?: boolean;
+  aiConfigured?: boolean | null;
+  aiEnabled?: boolean;
+};
+
+export function buildMetaAppReply(opts: MetaAppReplyOpts = {}): string {
+  const { offline, aiConfigured, aiEnabled } = opts;
+  if (offline) {
+    return (
+      'You’re **offline** right now, so I’m using the **pack playbook library** on your phone — not live Grok.\n\n' +
+      'When you have cell service and your shop has AI keys in Pros HQ, I can answer with live AI. ' +
+      'For now, describe the equipment and symptom (e.g. sink slow drain, furnace no heat) and I’ll walk you through checks.'
+    );
+  }
+  if (aiConfigured && aiEnabled) {
+    return (
+      '**Yes — shop AI is live.** Describe the equipment and what’s wrong, or tap the **mic** and talk through the fault. ' +
+      'I’ll combine your trade pack playbooks with live Grok when you’re connected.'
+    );
+  }
+  if (aiConfigured === false) {
+    return (
+      'You’re connected, but **shop AI keys aren’t configured** in Pros HQ yet. ' +
+      'I’m using the offline pack library until your manager adds keys under **AI Keys**. ' +
+      'You can still describe equipment and symptoms for step-by-step checks.'
+    );
+  }
+  return (
+    'I’m **AiBhive Pros** — your field diagnosis assistant. Tell me the equipment and symptom ' +
+    '(slow drain, no heat, error code…) or tap the **mic**. Name equipment only (e.g. **sink**, **furnace**) for related topics.'
+  );
+}
+
+const QUESTION_START_RE =
+  /^(is|are|can|could|do|does|did|will|would|what|who|how|when|where|why|am)\b/i;
+
+/** General questions with no equipment or symptom — avoid false fault matches. */
+export function isGeneralQuestionWithoutFault(text: string): boolean {
+  const t = text.trim();
+  if (!t || isVagueUserMessage(t) || isMetaAppQuestion(t) || isEquipmentProbeOnly(t)) return false;
+  if (!QUESTION_START_RE.test(t) && !/\?$/.test(t)) return false;
+  if (detectFixtureMention(t)) return false;
+  if (SYMPTOM_RE.test(t)) return false;
+  if (detectEquipment(t).length > 0) return false;
+  return true;
+}
+
+export function buildGeneralQuestionReply(pack: TradePack): string {
+  return (
+    `I’m here for **${pack.shortName}** field work. Tell me the equipment and symptom — ` +
+    'slow drain, no heat, leak, error code — and I’ll walk you through checks. ' +
+    'You can also name equipment only (e.g. **sink**, **furnace**) for related topics.'
+  );
 }
 
 /** User named a fixture/equipment but not a symptom yet (e.g. "sink", "kitchen sink"). */
@@ -202,10 +276,21 @@ export function buildEquipmentProbeReply(pack: TradePack, text: string): {
 export function buildOfflineReply(
   pack: TradePack,
   text: string,
-  hasPhoto: boolean
-): { reply: string; matchedFaultIds: string[]; kind: 'greeting' | 'probe' | 'diagnose' } | null {
+  hasPhoto: boolean,
+  metaOpts?: MetaAppReplyOpts
+): {
+  reply: string;
+  matchedFaultIds: string[];
+  kind: 'greeting' | 'probe' | 'meta' | 'general';
+} | null {
   if (!hasPhoto && isVagueUserMessage(text)) {
     return { reply: buildGreetingReply(text), matchedFaultIds: [], kind: 'greeting' };
+  }
+  if (!hasPhoto && isMetaAppQuestion(text)) {
+    return { reply: buildMetaAppReply(metaOpts), matchedFaultIds: [], kind: 'meta' };
+  }
+  if (!hasPhoto && isGeneralQuestionWithoutFault(text)) {
+    return { reply: buildGeneralQuestionReply(pack), matchedFaultIds: [], kind: 'general' };
   }
   if (!hasPhoto && isEquipmentProbeOnly(text)) {
     const probe = buildEquipmentProbeReply(pack, text);
