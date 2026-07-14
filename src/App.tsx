@@ -58,6 +58,26 @@ const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/Researc
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
 const CommunalLibraryPage = lazy(() => import('./pages/research-lab/CommunalLibraryPage'));
 const CommunalArchiveTopicPage = lazy(() => import('./pages/research-lab/CommunalArchiveTopicPage'));
+const DiagnoseWebLanding = lazy(() => import('./pages/diagnose-web/DiagnoseWebLanding'));
+const DiagnoseWebLayout = lazy(() => import('./pages/diagnose-web/DiagnoseWebLayout'));
+const DiagnoseWebHome = lazy(() => import('./pages/diagnose-web/DiagnoseWebHome'));
+const DiagnoseWebChat = lazy(() => import('./pages/diagnose-web/DiagnoseWebChat'));
+const DiagnoseWebPacks = lazy(() => import('./pages/diagnose-web/DiagnoseWebPacks'));
+const DiagnoseWebPackDetail = lazy(() => import('./pages/diagnose-web/DiagnoseWebPackDetail'));
+const DiagnoseWebJobs = lazy(() => import('./pages/diagnose-web/DiagnoseWebJobs'));
+const DiagnoseWebTools = lazy(() => import('./pages/diagnose-web/DiagnoseWebTools'));
+const DiagnoseWebLibrary = lazy(() => import('./pages/diagnose-web/DiagnoseWebLibrary'));
+const DiagnoseWebCodes = lazy(() => import('./pages/diagnose-web/DiagnoseWebCodes'));
+const DiagnoseWebSafety = lazy(() => import('./pages/diagnose-web/DiagnoseWebSafety'));
+const DiagnoseWebGuidedList = lazy(() => import('./pages/diagnose-web/DiagnoseWebGuided'));
+const DiagnoseWebGuidedPlayer = lazy(() => import('./pages/diagnose-web/DiagnoseWebGuidedPlayer'));
+const DiagnoseWebFault = lazy(() => import('./pages/diagnose-web/DiagnoseWebFault'));
+const DiagnoseWebAccount = lazy(() => import('./pages/diagnose-web/DiagnoseWebAccount'));
+const DiagnoseWebPoolChem = lazy(() => import('./pages/diagnose-web/charts/DiagnoseWebPoolChem'));
+const DiagnoseWebWireChart = lazy(() => import('./pages/diagnose-web/charts/DiagnoseWebWireChart'));
+const DiagnoseWebPipeChart = lazy(() => import('./pages/diagnose-web/charts/DiagnoseWebPipeChart'));
+const DiagnoseWebHvacChart = lazy(() => import('./pages/diagnose-web/charts/DiagnoseWebHvacChart'));
+const DiagnoseWebFiberChart = lazy(() => import('./pages/diagnose-web/charts/DiagnoseWebFiberChart'));
 
 function PageLoader() {
   return (
@@ -95,6 +115,7 @@ function AnimatedRoutes() {
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/pros" element={<ProsLanding />} />
             <Route path="/pros/:tradeSlug" element={<ProsTradePage />} />
+            <Route path="/diagnose" element={<DiagnoseWebLanding />} />
             <Route path="/test" element={<TestGetStarted />} />
             <Route path="/use-cases/podcasters" element={<Podcasters />} />
             <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -173,7 +194,8 @@ function AppShell() {
   const isProsAdminRoute = pathname.startsWith('/pros/app');
   const isProsPublicRoute = pathname.startsWith('/pros') && !pathname.startsWith('/pros/app');
   const isHomeworkRoute = pathname.startsWith('/homework');
-  const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute;
+  const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
+  const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const hideFooter =
     pathname.startsWith('/app/research') ||
@@ -181,7 +203,8 @@ function AppShell() {
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build') ||
-    isProsPublicRoute;
+    isProsPublicRoute ||
+    pathname.startsWith('/diagnose');
 
   return (
     <AssistantDockProvider>
@@ -202,6 +225,26 @@ function AppShell() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/pros/app" element={<ProsDashboard />} />
                 <Route path="/homework" element={<Homework />} />
+                <Route path="/diagnose/app" element={<DiagnoseWebLayout />}>
+                  <Route index element={<DiagnoseWebHome />} />
+                  <Route path="chat" element={<DiagnoseWebChat />} />
+                  <Route path="packs" element={<DiagnoseWebPacks />} />
+                  <Route path="packs/:packId" element={<DiagnoseWebPackDetail />} />
+                  <Route path="jobs" element={<DiagnoseWebJobs />} />
+                  <Route path="tools" element={<DiagnoseWebTools />} />
+                  <Route path="tools/library" element={<DiagnoseWebLibrary />} />
+                  <Route path="tools/codes" element={<DiagnoseWebCodes />} />
+                  <Route path="tools/safety" element={<DiagnoseWebSafety />} />
+                  <Route path="tools/chemistry" element={<DiagnoseWebPoolChem />} />
+                  <Route path="tools/wire" element={<DiagnoseWebWireChart />} />
+                  <Route path="tools/pipe" element={<DiagnoseWebPipeChart />} />
+                  <Route path="tools/hvac" element={<DiagnoseWebHvacChart />} />
+                  <Route path="tools/fiber" element={<DiagnoseWebFiberChart />} />
+                  <Route path="guided" element={<DiagnoseWebGuidedList />} />
+                  <Route path="guided/:flowId" element={<DiagnoseWebGuidedPlayer />} />
+                  <Route path="fault/:faultId" element={<DiagnoseWebFault />} />
+                  <Route path="account" element={<DiagnoseWebAccount />} />
+                </Route>
               </Routes>
             </Suspense>
           ) : (

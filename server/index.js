@@ -92,6 +92,7 @@ import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { registerTartarRoutes } from './tartarRoutes.js';
 import { registerResearchLabRoutes } from './researchLabRoutes.js';
 import { registerProsRoutes } from './prosRoutes.js';
+import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -1543,6 +1544,7 @@ app.post('/api/homework/complete', verifyHomeworkUser, async (req, res) => {
 registerTartarRoutes(app, db);
 registerResearchLabRoutes(app, db);
 registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
+registerDiagnoseWebRoutes(app, db, { stripe });
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
