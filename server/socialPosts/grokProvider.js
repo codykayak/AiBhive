@@ -210,3 +210,14 @@ Return ONLY valid JSON:
   const raw = await grokChat(apiKey, textModel, prompt);
   return extractJson(raw);
 }
+
+export async function grokGeneratePlatformImage(apiKey, imageModel, imagePrompt, brand, aspectHint) {
+  const fullPrompt = `${imagePrompt}
+
+${brand.imageStyle}
+Aspect: ${aspectHint}.
+Professional social marketing graphic for ${brand.name}.`;
+
+  const buffer = await grokGenerateImage(apiKey, imageModel, fullPrompt, aspectHint);
+  return { buffer, model: imageModel };
+}
