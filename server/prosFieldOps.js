@@ -266,7 +266,8 @@ export async function buildProsAnalytics(db, companyId) {
   const { getDiagnoseOperationCostRates } = await import('./diagnoseBilling.js');
   const rates = getDiagnoseOperationCostRates();
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  let grokRawUsd = 0;
+  let grokChatRawUsd = 0;
+  let grokTtsRawUsd = 0;
   let ttsRawUsd = 0;
   let transcribeRawUsd = 0;
   let totalRawUsd = 0;
@@ -280,9 +281,11 @@ export async function buildProsAnalytics(db, companyId) {
     if (!Number.isFinite(cost) || cost <= 0) continue;
     totalRawUsd += cost;
     countedOps += 1;
-    if (data.type === 'diagnose_ai') grokRawUsd += cost;
-    else if (data.type === 'diagnose_tts') ttsRawUsd += cost;
-    else if (data.type === 'diagnose_transcribe') transcribeRawUsd += cost;
+    if (data.type === 'diagnose_ai') grokChatRawUsd += cost;
+    else if (data.type === 'diagnose_tts') {
+      ttsRawUsd += cost;
+      if (data.ttsProvider === 'grok' || !data.ttsProvider) grokTtsRawUsd += cost;
+    } else if (data.type === 'diagnose_transcribe') transcribeRawUsd += cost;
   }
 
   return {
@@ -300,7 +303,8 @@ export async function buildProsAnalytics(db, companyId) {
     platformCosts: {
       windowDays: 30,
       countedOps,
-      grokRawUsd: Math.round(grokRawUsd * 10000) / 10000,
+      grokRawUsd: Math.round((grokChatRawUsd + grokTtsRawUsd) * 10000) / 10000,
+      grokTtsRawUsd: Math.round(grokTtsRawUsd * 10000) / 10000,
       ttsRawUsd: Math.round(ttsRawUsd * 10000) / 10000,
       transcribeRawUsd: Math.round(transcribeRawUsd * 10000) / 10000,
       totalRawUsd: Math.round(totalRawUsd * 10000) / 10000,

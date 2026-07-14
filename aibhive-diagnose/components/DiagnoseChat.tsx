@@ -31,7 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNetwork } from '@/contexts/NetworkContext';
 import { usePack } from '@/contexts/PackContext';
 import { parseDiagnosis } from '@/lib/diagnose/parseDiagnosis';
-import { parseChatIntent, shouldAutoSendIntent } from '@/lib/diagnose/chatIntents';
+import { parseChatIntent } from '@/lib/diagnose/chatIntents';
 import { buildGreetingReply, buildOfflineReply, isVagueUserMessage } from '@/lib/diagnose/offlineConversation';
 import { loadSession, saveSession, welcomeMessage } from '@/lib/diagnose/sessionStore';
 import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
@@ -42,7 +42,7 @@ import { refreshRemoteTips } from '@/lib/knowledge/remotePackCache';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
 import { startVoiceCapture, type VoiceSession } from '@/lib/voice/speechInput';
-import { speakDiagnoseReply, stopDiagnoseSpeech } from '@/lib/voice/cartesiaSpeech';
+import { speakDiagnoseReply, stopDiagnoseSpeech } from '@/lib/voice/speechOutput';
 import { fetchProsAiStatus } from '@/lib/diagnose/aiStatus';
 
 const SPEECH_KEY = 'aibhive.diagnose.speechEnabled';
@@ -85,7 +85,7 @@ export function DiagnoseChat({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [inputBarHeight, setInputBarHeight] = useState(132);
   const [aiSource, setAiSource] = useState<DiagnoseSource | null>(null);
-  const [cartesiaEnabled, setCartesiaEnabled] = useState(false);
+  const [prosAiEnabled, setProsAiEnabled] = useState(false);
   const [feedbackBusyId, setFeedbackBusyId] = useState<string | null>(null);
   const [feedbackError, setFeedbackError] = useState<{ id: string; message: string } | null>(null);
   const listRef = useRef<FlatList<ChatMessage>>(null);
@@ -94,6 +94,7 @@ export function DiagnoseChat({
   const voiceOpenedRef = useRef(false);
   const inputRef = useRef<TextInput>(null);
   const voiceRef = useRef<VoiceSession | null>(null);
+  const voiceSendRef = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export function DiagnoseChat({
 
   useEffect(() => {
     if (offline || !user) {
-      setCartesiaEnabled(false);
+      setProsAiEnabled(false);
       return;
     }
     let cancelled = false;
@@ -124,7 +125,7 @@ export function DiagnoseChat({
       if (!token || cancelled) return;
       const status = await fetchProsAiStatus(token);
       if (!cancelled) {
-        setCartesiaEnabled(Boolean(status?.cartesiaEnabled));
+        setProsAiEnabled(Boolean(status?.aiEnabled));
       }
     })();
     return () => {
@@ -370,10 +371,12 @@ export function DiagnoseChat({
         };
         setMessages((prev) => [...prev, assistantMessage]);
         if (speechEnabled) {
-          Speech.speak(`Opening part order for ${intent.summary.replace(/\*\*/g, '')}`, {
-            rate: 0.95,
+          setSpeaking(true);
+          void speakDiagnoseReply({
+            text: `Opening part order for ${intent.summary.replace(/\*\*/g, '')}`,
+            useServerTts: false,
             onDone: () => setSpeaking(false),
-            onStopped: () => setSpeaking(false),
+            onError: () => setSpeaking(false),
           });
         }
         return;
@@ -401,10 +404,12 @@ export function DiagnoseChat({
         };
         setMessages((prev) => [...prev, assistantMessage]);
         if (speechEnabled && intent.links.length) {
-          Speech.speak(`Found manual search links for ${intent.summary}`, {
-            rate: 0.95,
+          setSpeaking(true);
+          void speakDiagnoseReply({
+            text: `Found manual search links for ${intent.summary}`,
+            useServerTts: false,
             onDone: () => setSpeaking(false),
-            onStopped: () => setSpeaking(false),
+            onError: () => setSpeaking(false),
           });
         }
         return;
@@ -462,11 +467,11 @@ export function DiagnoseChat({
         void writeDiagnosisToJob(reply);
 
         if (!offline && speechEnabled) {
-          const useCartesia = source === 'pros' && cartesiaEnabled;
+          const useServerTts = source === 'pros' && prosAiEnabled;
           setSpeaking(true);
           void speakDiagnoseReply({
             text: reply,
-            useCartesia,
+            useServerTts,
             getIdToken,
             onDone: () => setSpeaking(false),
             onError: () => setSpeaking(false),
@@ -500,7 +505,7 @@ export function DiagnoseChat({
       offline,
       pendingAttachment,
       speechEnabled,
-      cartesiaEnabled,
+      prosAiEnabled,
       writeDiagnosisToJob,
     ]
   );
@@ -583,13 +588,8 @@ export function DiagnoseChat({
       try {
         const text = await voiceRef.current.stop();
         voiceRef.current = null;
-        if (text) {
-          if (shouldAutoSendIntent(text)) {
-            void send(text);
-          } else {
-            setInput(text);
-            inputRef.current?.focus();
-          }
+        if (text && !voiceSendRef.current) {
+          void send(text);
         }
       } catch (err) {
         voiceRef.current = null;
@@ -606,10 +606,20 @@ export function DiagnoseChat({
     }
 
     try {
+      voiceSendRef.current = false;
       setListening(true);
       voiceRef.current = await startVoiceCapture({
         getIdToken,
         onPartial: (partial) => setInput(partial),
+        onAutoSend: (text) => {
+          if (voiceSendRef.current || !text.trim()) return;
+          voiceSendRef.current = true;
+          setListening(false);
+          voiceRef.current = null;
+          setInput('');
+          void send(text.trim());
+        },
+        vadSilenceMs: 4000,
       });
     } catch (err) {
       setListening(false);
@@ -623,7 +633,7 @@ export function DiagnoseChat({
         { id: uid(), role: 'assistant', content: msg, createdAt: Date.now() },
       ]);
     }
-  }, [getIdToken, listening]);
+  }, [getIdToken, listening, send]);
 
   useEffect(() => {
     if (autoVoice && sessionReady && !voiceOpenedRef.current) {

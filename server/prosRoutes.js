@@ -1033,6 +1033,9 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           billingStatus: 'none',
           aiEnabled: false,
           cartesiaEnabled: false,
+          grokTtsEnabled: false,
+          defaultTtsProvider: 'grok',
+          defaultGrokVoiceId: 'ara',
           operationCostRates: (await import('./diagnoseBilling.js')).getDiagnoseOperationCostRates(),
           operationCostEstimate: null,
         });
@@ -1048,6 +1051,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const { getDiagnoseOperationCostRates } = await import('./diagnoseBilling.js');
       const aiEnabled = Boolean(resolved) && billingOk;
       const cartesiaEnabled = aiEnabled && isCartesiaConfigured();
+      const rates = getDiagnoseOperationCostRates();
 
       return res.json({
         configured: Boolean(resolved),
@@ -1055,11 +1059,12 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         source: resolved?.source || 'none',
         billingStatus,
         aiEnabled,
+        grokTtsEnabled: aiEnabled,
         cartesiaEnabled,
-        operationCostRates: getDiagnoseOperationCostRates(),
-        operationCostEstimate: cartesiaEnabled
-          ? getDiagnoseOperationCostRates().typicalDiagnoseWithVoiceUsd
-          : getDiagnoseOperationCostRates().grokChatRawUsd,
+        defaultTtsProvider: 'grok',
+        defaultGrokVoiceId: 'ara',
+        operationCostRates: rates,
+        operationCostEstimate: aiEnabled ? rates.typicalDiagnoseWithVoiceUsd : rates.grokChatRawUsd,
       });
     } catch (err) {
       console.error('[pros/ai-status]', err);
@@ -1177,11 +1182,11 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       );
 
       const { estimateDiagnoseOperation } = await import('./diagnoseBilling.js');
-      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
       const operationCost = estimateDiagnoseOperation({
         hasImage,
         replyText: reply,
-        includeTts: isCartesiaConfigured(),
+        includeTts: true,
+        ttsProvider: 'grok',
       });
 
       await logActivity(db, membership.companyId, {
@@ -1359,8 +1364,43 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
   });
 
   /**
-   * Cartesia TTS for Diagnose narration — only when Grok AI is active (paid/trial).
-   * Returns base64 WAV; key never leaves the server.
+   * List TTS voices + provider availability for Voice Settings.
+   */
+  app.get('/api/pros/tts/voices', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company first' });
+      }
+
+      const companySnap = await db.collection('pros_companies').doc(membership.companyId).get();
+      const settings = companySnap.data()?.settings || {};
+      const billingStatus = settings.billingStatus || 'trial';
+      const billingOk = ['trial', 'active'].includes(billingStatus);
+      const resolved = await resolveGrokKey(db, membership.companyId);
+      const aiEnabled = Boolean(resolved) && billingOk;
+
+      const { GROK_VOICES, DEFAULT_GROK_VOICE_ID } = await import('./grokTts.js');
+      const { isCartesiaConfigured } = await import('./cartesiaTts.js');
+
+      return res.json({
+        defaultProvider: 'grok',
+        defaultVoiceId: DEFAULT_GROK_VOICE_ID,
+        grokAvailable: aiEnabled,
+        cartesiaAvailable: aiEnabled && isCartesiaConfigured(),
+        grokVoices: GROK_VOICES,
+      });
+    } catch (err) {
+      console.error('[pros/tts/voices]', err);
+      return res.status(500).json({ error: 'Failed to load voices' });
+    }
+  });
+
+  /**
+   * Grok (default) or Cartesia TTS for Diagnose narration when Grok AI is active.
+   * Returns base64 audio; keys never leave the server.
    */
   app.post('/api/pros/tts', async (req, res) => {
     try {
@@ -1393,39 +1433,64 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         });
       }
 
-      const { synthesizeCartesiaSpeech, isCartesiaConfigured } = await import('./cartesiaTts.js');
-      if (!isCartesiaConfigured()) {
-        return res.status(503).json({
-          error: 'Cartesia TTS not configured on the server',
-          code: 'no_cartesia',
-        });
-      }
+      const {
+        text = '',
+        provider = 'grok',
+        voiceId = 'ara',
+        preview = false,
+      } = req.body || {};
 
-      const { text = '' } = req.body || {};
-      if (!text || typeof text !== 'string') {
+      const spoken =
+        preview && typeof text === 'string' && !text.trim()
+          ? (await import('./grokTts.js')).GROK_TTS_PREVIEW_TEXT
+          : String(text || '').trim();
+
+      if (!spoken) {
         return res.status(400).json({ error: 'text required' });
       }
-      if (text.length > 2000) {
+      if (spoken.length > 2000) {
         return res.status(413).json({ error: 'text too long' });
       }
 
-      const wav = await synthesizeCartesiaSpeech(text);
-      const { cartesiaTtsRawCost } = await import('./diagnoseBilling.js');
-      const ttsRawUsd = cartesiaTtsRawCost(text);
-      const operationCost = { ttsRawUsd, totalRawUsd: ttsRawUsd };
+      const wantCartesia = provider === 'cartesia';
+      const { synthesizeCartesiaSpeech, isCartesiaConfigured } = await import('./cartesiaTts.js');
+      const { synthesizeGrokSpeech } = await import('./grokTts.js');
+      const { ttsRawCost } = await import('./diagnoseBilling.js');
 
-      await logActivity(db, membership.companyId, {
-        type: 'diagnose_tts',
-        actorUid: user.uid,
-        actorEmail: user.email || null,
-        message: 'Cartesia narration',
-        rawCostUsd: ttsRawUsd,
-        operationCost,
-      }).catch((logErr) => console.warn('[pros/tts] activity', logErr?.message));
+      let audioBuffer;
+      let mimeType;
+      let usedProvider;
+
+      if (wantCartesia && isCartesiaConfigured()) {
+        audioBuffer = await synthesizeCartesiaSpeech(spoken);
+        mimeType = 'audio/wav';
+        usedProvider = 'cartesia';
+      } else {
+        audioBuffer = await synthesizeGrokSpeech(resolved.key, spoken, { voiceId });
+        mimeType = 'audio/mpeg';
+        usedProvider = 'grok';
+      }
+
+      const ttsRawUsd = ttsRawCost(spoken, usedProvider);
+      const operationCost = { ttsRawUsd, totalRawUsd: ttsRawUsd, provider: usedProvider };
+
+      if (!preview) {
+        await logActivity(db, membership.companyId, {
+          type: 'diagnose_tts',
+          actorUid: user.uid,
+          actorEmail: user.email || null,
+          message: `${usedProvider} narration`,
+          rawCostUsd: ttsRawUsd,
+          operationCost,
+          ttsProvider: usedProvider,
+        }).catch((logErr) => console.warn('[pros/tts] activity', logErr?.message));
+      }
 
       return res.json({
-        audioBase64: wav.toString('base64'),
-        mimeType: 'audio/wav',
+        audioBase64: audioBuffer.toString('base64'),
+        mimeType,
+        provider: usedProvider,
+        voiceId: usedProvider === 'grok' ? String(voiceId || 'ara').toLowerCase() : null,
         operationCost,
       });
     } catch (err) {

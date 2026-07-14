@@ -19,6 +19,14 @@ export const DIAGNOSE_TRANSCRIBE_RAW = Number(process.env.DIAGNOSE_TRANSCRIBE_RA
  */
 export const CARTESIA_USD_PER_CHAR = Number(process.env.CARTESIA_USD_PER_CHAR ?? 0.00005);
 
+/**
+ * Grok TTS: ~$4.20 per 1M characters (xAI pricing).
+ */
+export const GROK_TTS_USD_PER_CHAR = Number(process.env.GROK_TTS_USD_PER_CHAR ?? 0.0000042);
+
+/** Minimum charge per Grok TTS request. */
+export const GROK_TTS_RAW_MIN = Number(process.env.GROK_TTS_RAW_MIN ?? 0.0003);
+
 /** Minimum charge per TTS request (covers very short replies). */
 export const DIAGNOSE_TTS_RAW_MIN = Number(process.env.DIAGNOSE_TTS_RAW_MIN ?? 0.0005);
 
@@ -45,6 +53,21 @@ export function cartesiaTtsRawCost(text) {
   return roundUsd(Math.max(DIAGNOSE_TTS_RAW_MIN, billable * CARTESIA_USD_PER_CHAR));
 }
 
+export function grokTtsRawCost(text) {
+  const chars = String(text || '')
+    .replace(/\*\*/g, '')
+    .replace(/_/g, '')
+    .trim()
+    .length;
+  const billable = chars > 0 ? Math.min(chars, DIAGNOSE_TTS_MAX_CHARS) : DIAGNOSE_TTS_TYPICAL_CHARS;
+  return roundUsd(Math.max(GROK_TTS_RAW_MIN, billable * GROK_TTS_USD_PER_CHAR));
+}
+
+export function ttsRawCost(text, provider = 'grok') {
+  if (provider === 'cartesia') return cartesiaTtsRawCost(text);
+  return grokTtsRawCost(text);
+}
+
 export function grokDiagnoseRawCost(hasImage = false) {
   return hasImage ? DIAGNOSE_GROK_VISION_RAW : DIAGNOSE_GROK_CHAT_RAW;
 }
@@ -53,16 +76,19 @@ export function grokDiagnoseRawCost(hasImage = false) {
  * Published rate card for UI / ai-status.
  */
 export function getDiagnoseOperationCostRates() {
-  const typicalTts = cartesiaTtsRawCost('x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS));
+  const typicalGrokTts = grokTtsRawCost('x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS));
+  const typicalTts = typicalGrokTts;
   return {
     grokChatRawUsd: DIAGNOSE_GROK_CHAT_RAW,
     grokVisionRawUsd: DIAGNOSE_GROK_VISION_RAW,
     transcribeRawUsd: DIAGNOSE_TRANSCRIBE_RAW,
+    grokTtsPerCharUsd: GROK_TTS_USD_PER_CHAR,
+    grokTtsTypicalRawUsd: typicalGrokTts,
     ttsPerCharUsd: CARTESIA_USD_PER_CHAR,
     ttsTypicalChars: DIAGNOSE_TTS_TYPICAL_CHARS,
-    ttsTypicalRawUsd: typicalTts,
-    typicalDiagnoseWithVoiceUsd: roundUsd(DIAGNOSE_GROK_CHAT_RAW + typicalTts),
-    typicalVisionDiagnoseWithVoiceUsd: roundUsd(DIAGNOSE_GROK_VISION_RAW + typicalTts),
+    ttsTypicalRawUsd: cartesiaTtsRawCost('x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS)),
+    typicalDiagnoseWithVoiceUsd: roundUsd(DIAGNOSE_GROK_CHAT_RAW + typicalGrokTts),
+    typicalVisionDiagnoseWithVoiceUsd: roundUsd(DIAGNOSE_GROK_VISION_RAW + typicalGrokTts),
   };
 }
 
@@ -77,7 +103,9 @@ export function estimateDiagnoseOperation(opts = {}) {
 
   const grokRawUsd = grokDiagnoseRawCost(hasImage);
   const ttsRawUsd = includeTts
-    ? cartesiaTtsRawCost(opts.replyText || 'x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS))
+    ? (opts.ttsProvider === 'cartesia'
+        ? cartesiaTtsRawCost(opts.replyText || 'x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS))
+        : grokTtsRawCost(opts.replyText || 'x'.repeat(DIAGNOSE_TTS_TYPICAL_CHARS)))
     : 0;
   const transcribeRawUsd = includeTranscribe ? DIAGNOSE_TRANSCRIBE_RAW : 0;
   const totalRawUsd = roundUsd(grokRawUsd + ttsRawUsd + transcribeRawUsd);
