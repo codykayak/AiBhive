@@ -170,12 +170,6 @@ export default function ProsTradePage() {
       </section>
 
       <ProsGetAppCta tradeName={trade.name} accentColor={trade.accentColor} />
-
-      <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        <Link to="/pros" className="hover:text-slate-800">
-          ← Back to AiBhive Pros
-        </Link>
-      </footer>
     </div>
   );
 }

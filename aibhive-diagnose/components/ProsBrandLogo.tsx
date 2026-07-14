@@ -5,8 +5,8 @@ import { theme } from '@/constants/theme';
 const APP_ICON = require('../icon.png');
 
 type ProsBrandLogoProps = {
-  /** `header` = compact icon + wordmark; `hero` / `intro` = app icon only; `hero-text` = wordmark only */
-  variant?: 'header' | 'hero' | 'intro' | 'hero-text';
+  /** `header` = compact icon + wordmark; `hero-brand` = large icon + wordmark on home */
+  variant?: 'header' | 'hero' | 'intro' | 'hero-text' | 'hero-brand';
   dark?: boolean;
   style?: ViewStyle;
 };
@@ -23,10 +23,28 @@ export function ProsBrandLogo({ variant = 'header', dark = false, style }: ProsB
   const iconRadius = variant === 'intro' ? 22 : variant === 'hero' ? 16 : 8;
   const iconOnly = variant === 'hero' || variant === 'intro';
   const textOnly = variant === 'hero-text';
+  const heroBrand = variant === 'hero-brand';
 
   if (textOnly) {
     return (
       <View style={style} accessibilityRole="header" accessibilityLabel="AiBhive Pros">
+        <Text style={[styles.hive, { color: hiveColor, fontSize: 30 }]}>
+          AiB<Text style={{ color: theme.colors.amber }}>hive</Text>
+          <Text style={[styles.pros, { color: prosColor, fontSize: 22 }]}> Pros</Text>
+        </Text>
+      </View>
+    );
+  }
+
+  if (heroBrand) {
+    return (
+      <View style={[styles.row, style]} accessibilityRole="header" accessibilityLabel="AiBhive Pros">
+        <Image
+          source={APP_ICON}
+          style={{ width: 52, height: 52, borderRadius: 14 }}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
         <Text style={[styles.hive, { color: hiveColor, fontSize: 30 }]}>
           AiB<Text style={{ color: theme.colors.amber }}>hive</Text>
           <Text style={[styles.pros, { color: prosColor, fontSize: 22 }]}> Pros</Text>

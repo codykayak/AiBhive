@@ -61,6 +61,9 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2">
+              <li><Link to="/pros" className="text-slate-400 hover:text-bee-amber transition-colors">AiBhive Pros HQ</Link></li>
+              <li><Link to="/diagnose" className="text-slate-400 hover:text-bee-amber transition-colors">Diagnose Web</Link></li>
+              <li><a href="/api/download/diagnose-apk" className="text-slate-400 hover:text-bee-amber transition-colors">Diagnose Android APK</a></li>
               <li><Link to="/app" className="text-slate-400 hover:text-bee-amber transition-colors">App hub</Link></li>
               <li><Link to="/hive-apps" className="text-slate-400 hover:text-bee-amber transition-colors">Hive Apps</Link></li>
               <li><Link to="/research-lab" className="text-slate-400 hover:text-bee-amber transition-colors">Research Lab</Link></li>

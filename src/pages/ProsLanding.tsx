@@ -16,6 +16,7 @@ import { SEO } from '../components/SEO';
 import ProsGetAppCta from '../components/pros/ProsGetAppCta';
 import ProsHeroVideo from '../components/pros/ProsHeroVideo';
 import ProsPageHeader from '../components/pros/ProsPageHeader';
+import ProsPoweredByGrokVideo from '../components/pros/ProsPoweredByGrokVideo';
 import {
   LANDING_CHART_DEMO,
   ProsKnowledgeGrowthChart,
@@ -105,14 +106,16 @@ export default function ProsLanding() {
         </div>
       </ProsHeroVideo>
 
-      {/* Trade packs */}
+      {/* Trade packs + powered-by video */}
       <section className="py-16 bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <h2 className="text-3xl font-black tracking-tight text-center">Built for your trade</h2>
           <p className="text-center text-slate-600 mt-3 max-w-2xl mx-auto">
             Each pack ships with field prompts, equipment playbooks, and Pros HQ workflows tuned to how your shop runs.
           </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-12">
+          <div className="grid lg:grid-cols-2 gap-8 mt-12 items-stretch">
+            <ProsPoweredByGrokVideo className="h-full min-h-[320px]" />
+            <div className="grid sm:grid-cols-2 gap-5">
             {PROS_TRADE_LIST.map((trade, i) => {
               const Icon = trade.icon;
               return (
@@ -145,6 +148,7 @@ export default function ProsLanding() {
                 </motion.div>
               );
             })}
+            </div>
           </div>
         </div>
       </section>
@@ -245,12 +249,6 @@ export default function ProsLanding() {
       </section>
 
       <ProsGetAppCta />
-
-      <footer className="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        <Link to="/" className="hover:text-slate-800">
-          ← Back to AiBhive
-        </Link>
-      </footer>
     </div>
   );
 }
