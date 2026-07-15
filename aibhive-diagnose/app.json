@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive Pros",
     "slug": "aibhive-diagnose",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./icon.png",
     "scheme": "aibhivepros",
@@ -24,7 +24,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "com.aibhive.diagnose",
-      "versionCode": 12,
+      "versionCode": 13,
       "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "CAMERA",

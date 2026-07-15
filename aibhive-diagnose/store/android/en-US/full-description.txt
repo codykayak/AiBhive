@@ -1,0 +1,30 @@
+AiBhive Pros puts AI in the hands of HVAC, plumbing, electrical, and mechanical field technicians.
+
+DIAGNOSE ON SITE
+• Snap a photo of equipment, nameplates, or error codes
+• Get step-by-step troubleshooting grounded in trade knowledge
+• Voice input with hands-free auto-send — built for the jobsite
+• Optional Grok-powered voice replies for signed-in Pros users
+
+TRADE LIBRARY & CODES
+• Search manufacturer fault codes and technical references
+• Access trade packs when signed in with your team
+
+TEAM & JOBS (OPTIONAL)
+• Sign in with your Pros team code
+• Log jobs with optional GPS for site context
+• Anonymous field tips help improve the product (no PII in tips)
+
+BUILT FOR PROS
+• Dark theme, large tap targets, glove-friendly UI
+• Works with AiBhive web — same account on phone and desktop
+
+SUBSCRIPTION & BILLING
+Team and Pro features may require an AiBhive Pros subscription. See https://aibhive.com/pros for plans.
+
+IMPORTANT — READ BEFORE USE
+AiBhive Pros provides AI-assisted suggestions only. It is NOT a substitute for licensed professional judgment, manufacturer procedures, local codes, or safety requirements. Always verify diagnoses, follow lockout/tagout and PPE, and comply with applicable regulations. You are solely responsible for work performed in the field.
+
+Privacy: https://aibhive.com/privacy-policy.html
+Terms: https://aibhive.com/terms-of-service.html
+Support: support@aibhive.com

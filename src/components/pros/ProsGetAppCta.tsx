@@ -64,6 +64,19 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
         <p className="mt-6 text-xs text-slate-500">
           Android APK · Team code from your manager · Works offline with trade packs
         </p>
+        <p className="mt-3 text-xs text-slate-500">
+          <a href="/privacy-policy.html" className="hover:text-amber-400 underline-offset-2 hover:underline">
+            Privacy Policy
+          </a>
+          {' · '}
+          <a href="/terms-of-service.html" className="hover:text-amber-400 underline-offset-2 hover:underline">
+            Terms of Service
+          </a>
+          {' · '}
+          <a href="mailto:support@aibhive.com" className="hover:text-amber-400 underline-offset-2 hover:underline">
+            support@aibhive.com
+          </a>
+        </p>
       </div>
     </section>
   );

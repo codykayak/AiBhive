@@ -83,8 +83,9 @@ export default function Footer() {
           <p className="text-slate-500 text-sm">
             © {new Date().getFullYear()} AiBHive. All rights reserved.
           </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0">
             <a href="/privacy-policy.html" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</a>
+            <a href="/terms-of-service.html" className="text-slate-500 hover:text-slate-300 text-sm">Terms of Service</a>
             <a href="/llms.txt" className="text-slate-500 hover:text-slate-300 text-sm">LLM index</a>
             <a href="/sitemap.xml" className="text-slate-500 hover:text-slate-300 text-sm">Sitemap</a>
           </div>
