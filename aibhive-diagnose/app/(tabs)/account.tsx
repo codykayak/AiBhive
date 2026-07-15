@@ -22,6 +22,7 @@ import {
   markJoinPromptSkipped,
   shouldShowJoinPrompt,
 } from '@/components/JoinTeamModal';
+import { LegalLinks } from '@/components/LegalLinks';
 import { theme } from '@/constants/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchProsAiStatus, type ProsAiStatus } from '@/lib/diagnose/aiStatus';
@@ -379,6 +380,8 @@ export default function AccountScreen() {
           Managers create companies and team codes at aibhive.com/pros/app — including Grok, Claude, Kimi,
           and Gemini API keys for the company.
         </Text>
+
+        <LegalLinks />
       </ScrollView>
 
       <JoinTeamModal

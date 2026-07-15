@@ -55,7 +55,7 @@ export function welcomeMessage(packName: string): ChatMessage {
   return {
     id: `welcome-${Date.now()}`,
     role: 'assistant',
-    content: `Ready on **${packName}**. Snap a photo, tap the mic, or describe the fault — I’ll match the field library and walk the fix.`,
+    content: `Ready on **${packName}**. Snap a photo, tap the mic, or describe the fault — I'll match the field library and walk the fix.\n\n_AI guidance only — verify against manufacturer specs, safety procedures, and local codes before performing work._`,
     createdAt: Date.now(),
   };
 }

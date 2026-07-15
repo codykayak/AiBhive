@@ -90,6 +90,25 @@ export default function DiagnoseWebAccount() {
           </div>
         </div>
       </div>
+
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#0c1018] p-6 text-sm text-slate-400 leading-relaxed">
+        <p className="font-bold text-white mb-2">Legal</p>
+        <p className="mb-4">
+          AI guidance only — verify against manufacturer specs, safety procedures, and local codes. Not a
+          substitute for licensed professional judgment.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a href="https://aibhive.com/privacy-policy.html" className="text-amber-400 hover:underline">
+            Privacy Policy
+          </a>
+          <a href="https://aibhive.com/terms-of-service.html" className="text-amber-400 hover:underline">
+            Terms of Service
+          </a>
+          <a href="mailto:support@aibhive.com" className="text-amber-400 hover:underline">
+            support@aibhive.com
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

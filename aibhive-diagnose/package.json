@@ -63,7 +63,10 @@
     "web": "node scripts/serve-web.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npx --yes tsx --test scripts/test-search.ts",
-    "test:search": "npx --yes tsx --test scripts/test-search.ts"
+    "test:search": "npx --yes tsx --test scripts/test-search.ts",
+    "build:android:production": "eas build --platform android --profile production",
+    "build:android:preview": "eas build --platform android --profile preview",
+    "submit:android": "eas submit --platform android --profile production --latest"
   },
   "private": true
 }

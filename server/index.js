@@ -3270,6 +3270,16 @@ app.get('/privacy-policy.html', (_req, res) => {
 
 app.get('/privacy', (_req, res) => res.redirect(301, '/privacy-policy.html'));
 
+app.get('/terms-of-service.html', (_req, res) => {
+  const termsPath = path.join(__dirname, '../public/terms-of-service.html');
+  if (!fs.existsSync(termsPath)) {
+    return res.status(404).send('Terms of service not found.');
+  }
+  return res.sendFile(termsPath);
+});
+
+app.get('/terms', (_req, res) => res.redirect(301, '/terms-of-service.html'));
+
 app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
 app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));

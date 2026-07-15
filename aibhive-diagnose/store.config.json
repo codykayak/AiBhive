@@ -1,0 +1,26 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "info": {
+      "en-US": {
+        "title": "AiBhive Pros",
+        "subtitle": "Field AI for trade pros",
+        "description": "See store/android/en-US/full-description.txt",
+        "keywords": ["HVAC", "plumbing", "electrical", "diagnose", "field service", "AI", "technician"],
+        "marketingUrl": "https://aibhive.com/pros",
+        "supportUrl": "https://aibhive.com/about-contact",
+        "privacyPolicyUrl": "https://aibhive.com/privacy-policy.html"
+      }
+    }
+  },
+  "android": {
+    "info": {
+      "en-US": {
+        "title": "AiBhive Pros",
+        "shortDescription": "AI diagnose, codes & voice for field techs. Camera, mic & optional GPS.",
+        "fullDescription": "See store/android/en-US/full-description.txt",
+        "video": "https://aibhive.com/aibhive_grok_diagnose.mp4"
+      }
+    }
+  }
+}

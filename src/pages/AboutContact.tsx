@@ -161,8 +161,8 @@ export default function AboutContact() {
 
         <footer className="text-center py-16 border-t border-white/5">
           <nav className="flex justify-center space-x-12 text-slate-500 font-bold text-sm uppercase tracking-widest">
-            <a href="#" className="hover:text-bee-amber transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-bee-amber transition-colors">Terms of Service</a>
+            <a href="/privacy-policy.html" className="hover:text-bee-amber transition-colors">Privacy Policy</a>
+            <a href="/terms-of-service.html" className="hover:text-bee-amber transition-colors">Terms of Service</a>
             <a href="#" className="hover:text-bee-amber transition-colors">Socials</a>
           </nav>
         </footer>
