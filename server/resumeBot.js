@@ -113,7 +113,7 @@ Job source:
 ${jobSource}
 ${jobUrl ? `Original URL: ${jobUrl}` : ''}
 
-Return exactly four sections with these headers in ALL CAPS brackets:
+Return exactly five sections with these headers in ALL CAPS brackets:
 
 [JOB DETAILS]
 Extract company name, role title, requirements, and keywords from the listing.
@@ -126,6 +126,27 @@ Rewrite the resume content to match this role. Use concise bullet points and mea
 
 [COLD EMAIL]
 Write a 3-sentence outreach email to a hiring manager or recruiter.
+
+[VISUAL RESUME JSON]
+Return ONE JSON object only (no markdown fences) shaped exactly like:
+{
+  "firstName": "JANE",
+  "lastName": "DOE",
+  "tagline": "One-line professional headline",
+  "aboutMe": "2-3 sentences about background",
+  "profile": "2-3 sentences tailored to this job",
+  "experience": [
+    { "company": "Employer", "dates": "2020 - 2023", "role": "Title", "bullets": ["Outcome bullet"] }
+  ],
+  "education": [
+    { "credential": "Degree or cert", "dates": "2018", "school": "School name" }
+  ],
+  "skills": ["Skill one", "Skill two"],
+  "phone": "${phone || ''}",
+  "email": "${email || ''}",
+  "website": ""
+}
+Use the candidate's real history. Tailor profile, experience bullets, and skills to the target role. Keep JSON valid.
 `;
 
   const parts = [{ text: prompt }];
@@ -177,7 +198,11 @@ Write a 3-sentence outreach email to a hiring manager or recruiter.
       coverLetter: extractSection(text, 'COVER LETTER', 'REWRITTEN RESUME') || 'Could not parse cover letter.',
       rewrittenResume:
         extractSection(text, 'REWRITTEN RESUME', 'COLD EMAIL') || 'Could not parse resume rewrite.',
-      coldEmail: extractSection(text, 'COLD EMAIL') || text,
+      coldEmail: extractSection(text, 'COLD EMAIL', 'VISUAL RESUME JSON') || extractSection(text, 'COLD EMAIL') || text,
+      visualResumeJson:
+        extractSection(text, 'VISUAL RESUME JSON') ||
+        extractSection(text, 'VISUAL RESUME JSON', 'JOB DETAILS') ||
+        '',
       scrapedJob: !!scrapedJob,
     };
   } catch (err) {

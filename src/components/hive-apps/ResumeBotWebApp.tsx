@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Camera,
   Copy,
+  Download,
   FileText,
   ImagePlus,
   Link2,
@@ -9,9 +10,18 @@ import {
   Sparkles,
   Trash2,
   ChevronLeft,
+  LayoutTemplate,
 } from 'lucide-react';
 import { brandFor } from '../../lib/hiveAppBranding';
 import { fileToBase64, generateResumeKit, type ResumeKitResult } from '../../lib/resumeBotApi';
+import CodyVisualResume from '../resume/CodyVisualResume';
+import {
+  buildFallbackResumeDocument,
+  downloadResumePdf,
+  mergeResumeDocument,
+  parseVisualResumeJson,
+  type ResumeDocument,
+} from '../../lib/resumeTemplate';
 
 const PROFILE_KEY = 'aibhive_resume_bot_profile';
 
@@ -82,6 +92,8 @@ export default function ResumeBotWebApp({ expanded }: Props) {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [kit, setKit] = useState<ResumeKitResult | null>(null);
+  const [resultsView, setResultsView] = useState<'visual' | 'text'>('visual');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     saveProfile(profile);
@@ -165,6 +177,34 @@ export default function ResumeBotWebApp({ expanded }: Props) {
     }
   }, [profile, jobUrl, jobDescription, resumeFile, jobImages]);
 
+  const resumeDocument = useMemo<ResumeDocument | null>(() => {
+    if (!kit) return null;
+    const structured = kit.visualResumeJson ? parseVisualResumeJson(kit.visualResumeJson) : null;
+    const fallback = buildFallbackResumeDocument({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      history: profile.history,
+      rewrittenResume: kit.rewrittenResume,
+    });
+    return mergeResumeDocument(structured, fallback);
+  }, [kit, profile]);
+
+  const handleDownloadPdf = useCallback(async () => {
+    if (!resumeDocument) return;
+    setPdfLoading(true);
+    setError('');
+    try {
+      await downloadResumePdf(resumeDocument);
+      setStatus('Resume PDF downloaded');
+      setTimeout(() => setStatus(''), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export PDF.');
+    } finally {
+      setPdfLoading(false);
+    }
+  }, [resumeDocument]);
+
   if (step === 'results' && kit) {
     return (
       <div
@@ -182,14 +222,73 @@ export default function ResumeBotWebApp({ expanded }: Props) {
           </button>
         </div>
         <h2 className="text-xl font-black text-white mb-1">Your Application Kit</h2>
-        <p className="text-slate-400 text-sm mb-6">Copy any section into the employer site or your email app.</p>
-        {status && <p className="text-emerald-400 text-xs mb-3">{status}</p>}
-        <div className="space-y-5 overflow-y-auto flex-1 pr-1">
-          <ResultSection title="Job details" text={kit.jobDetails} onCopy={() => void copyText(kit.jobDetails, 'Job details')} />
-          <ResultSection title="Cover letter" text={kit.coverLetter} onCopy={() => void copyText(kit.coverLetter, 'Cover letter')} />
-          <ResultSection title="Tailored resume" text={kit.rewrittenResume} onCopy={() => void copyText(kit.rewrittenResume, 'Resume')} />
-          <ResultSection title="Cold outreach email" text={kit.coldEmail} onCopy={() => void copyText(kit.coldEmail, 'Cold email')} />
+        <p className="text-slate-400 text-sm mb-4">
+          Preview your visual resume, download a PDF, or copy text sections for applications.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setResultsView('visual')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              resultsView === 'visual'
+                ? 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
+                : 'text-slate-400 hover:text-white border border-white/10'
+            }`}
+          >
+            <LayoutTemplate className="w-3.5 h-3.5" />
+            Visual resume
+          </button>
+          <button
+            type="button"
+            onClick={() => setResultsView('text')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              resultsView === 'text'
+                ? 'bg-amber-500/20 text-amber-200 border border-amber-500/40'
+                : 'text-slate-400 hover:text-white border border-white/10'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Text kit
+          </button>
+          {resultsView === 'visual' && resumeDocument && (
+            <button
+              type="button"
+              disabled={pdfLoading}
+              onClick={() => void handleDownloadPdf()}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ml-auto disabled:opacity-50"
+              style={{ backgroundColor: brand.primary, color: brand.contrastText }}
+            >
+              {pdfLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Download PDF
+            </button>
+          )}
         </div>
+
+        {error && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/30 text-red-200 text-sm px-3 py-2 mb-3">
+            {error}
+          </div>
+        )}
+        {status && <p className="text-emerald-400 text-xs mb-3">{status}</p>}
+
+        {resultsView === 'visual' && resumeDocument ? (
+          <div className="overflow-auto flex-1 pr-1 -mx-1 px-1 pb-4">
+            <div
+              className="mx-auto origin-top"
+              style={{ transform: 'scale(min(1, calc((100vw - 3rem) / 816px)))' }}
+            >
+              <CodyVisualResume doc={resumeDocument} />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-5 overflow-y-auto flex-1 pr-1">
+            <ResultSection title="Job details" text={kit.jobDetails} onCopy={() => void copyText(kit.jobDetails, 'Job details')} />
+            <ResultSection title="Cover letter" text={kit.coverLetter} onCopy={() => void copyText(kit.coverLetter, 'Cover letter')} />
+            <ResultSection title="Tailored resume" text={kit.rewrittenResume} onCopy={() => void copyText(kit.rewrittenResume, 'Resume')} />
+            <ResultSection title="Cold outreach email" text={kit.coldEmail} onCopy={() => void copyText(kit.coldEmail, 'Cold email')} />
+          </div>
+        )}
         <p className="text-slate-600 text-xs mt-4 text-center">
           Get Job Tracker & cloud sync in the{' '}
           <a href="/download.html" className="text-amber-400 hover:underline">
