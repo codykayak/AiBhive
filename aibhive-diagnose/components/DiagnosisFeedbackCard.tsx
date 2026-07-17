@@ -176,7 +176,7 @@ export function DiagnosisFeedbackCard({ defaultAnonymous, busy, error, onSubmit,
           className={`min-h-[48px] flex-1 items-center justify-center rounded-sm ${busy ? 'bg-hive-border' : 'bg-hive-amber'}`}
         >
           {busy ? (
-            <ActivityIndicator color={theme.colors.onPrimary} />
+            <ActivityIndicator color={theme.colors.onOrange} />
           ) : (
             <Text className="font-bold text-hive-bg">Submit</Text>
           )}

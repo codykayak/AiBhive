@@ -2,8 +2,8 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Speech from 'expo-speech';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from 'expo-router';
-import { Camera, Mic, Send, Square } from 'lucide-react-native';
+import { useNavigation, router } from 'expo-router';
+import { Camera, FileText, Mic, Send, Square } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   FlatList,
@@ -38,6 +38,7 @@ import { askGrokDetailed, type DiagnoseSource } from '@/lib/grok';
 import { pushJobNoteToPros } from '@/lib/jobs/prosSync';
 import { loadJobs, upsertJob } from '@/lib/jobs/storage';
 import { submitFieldFeedback } from '@/lib/knowledge/fieldKnowledge';
+import { modelPromptContent, shouldAskForModel } from '@/lib/knowledge/modelPrompt';
 import { refreshRemoteTips } from '@/lib/knowledge/remotePackCache';
 import type { ChatAttachment, ChatMessage } from '@/lib/packs';
 import { pushRecent } from '@/lib/recents';
@@ -96,6 +97,7 @@ export function DiagnoseChat({
   const voiceRef = useRef<VoiceSession | null>(null);
   const voiceSendRef = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
+  const modelAskedRef = useRef(false);
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -164,6 +166,7 @@ export function DiagnoseChat({
       }
       setAiSource(null);
       seededRef.current = false;
+      modelAskedRef.current = false;
       setSessionReady(true);
     })();
     return () => {
@@ -475,6 +478,19 @@ export function DiagnoseChat({
         };
         setMessages((prev) => [...prev, assistantMessage]);
 
+        if (shouldAskForModel(userMessage.content) && !modelAskedRef.current) {
+          modelAskedRef.current = true;
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              role: 'assistant',
+              content: modelPromptContent(),
+              createdAt: Date.now(),
+            },
+          ]);
+        }
+
         void pushRecent({
           title: userMessage.content.slice(0, 80),
           packId: activePack.id,
@@ -780,7 +796,7 @@ export function DiagnoseChat({
                 <Pressable
                   key={prompt}
                   onPress={() => void send(prompt)}
-                  className="rounded-full border border-hive-border bg-hive-card px-3 py-2 active:opacity-70"
+                  className="rounded-lg border border-hive-border bg-hive-card px-3 py-2 active:opacity-70"
                 >
                   <Text className="text-xs text-hive-steel">{prompt}</Text>
                 </Pressable>
@@ -789,8 +805,8 @@ export function DiagnoseChat({
         </View>
 
         {pendingAttachment ? (
-          <View className="mb-2 flex-row items-center justify-between rounded-sm border border-hive-amber/40 bg-hive-card px-3 py-2">
-            <Text className="text-sm text-hive-amber">Photo attached — ready to diagnose</Text>
+          <View className="mb-2 flex-row items-center justify-between rounded-lg border border-hive-orange/40 bg-hive-card px-3 py-2">
+            <Text className="text-sm text-hive-orange">Photo attached — ready to diagnose</Text>
             <Pressable onPress={() => setPendingAttachment(null)}>
               <Text className="text-sm font-semibold text-hive-steel">Remove</Text>
             </Pressable>
@@ -801,32 +817,43 @@ export function DiagnoseChat({
           <Pressable
             accessibilityLabel="Take photo"
             onPress={() => void pickImage(true)}
-            className="h-14 w-14 items-center justify-center rounded-sm border border-hive-border bg-hive-card active:opacity-70"
+            className="h-14 w-14 items-center justify-center rounded-lg border border-hive-border bg-hive-card active:opacity-70"
           >
-            <Camera color={theme.colors.amber} size={26} strokeWidth={2.4} />
+            <Camera color={theme.colors.orange} size={26} strokeWidth={2.4} />
           </Pressable>
 
           <Pressable
             accessibilityLabel={listening ? 'Stop voice' : 'Voice input'}
             onPress={() => void toggleVoice()}
-            className={`h-14 w-14 items-center justify-center rounded-sm border active:opacity-70 ${listening ? 'border-hive-danger bg-hive-danger/20' : 'border-hive-border bg-hive-card'}`}
+            className={`h-14 w-14 items-center justify-center rounded-lg border active:opacity-70 ${listening ? 'border-hive-danger bg-hive-danger/10' : 'border-hive-border bg-hive-card'}`}
           >
             {listening ? (
               <Square color={theme.colors.danger} size={22} strokeWidth={2.4} />
             ) : (
-              <Mic color={theme.colors.mist} size={26} strokeWidth={2.4} />
+              <Mic color={theme.colors.ink} size={26} strokeWidth={2.4} />
             )}
           </Pressable>
 
-          <View className="min-h-14 flex-1 justify-center rounded-sm border border-hive-border bg-hive-card px-3">
+          <Pressable
+            accessibilityLabel="Look up equipment manual"
+            onPress={() => {
+              const q = input.trim();
+              router.push(q ? `/tools/manuals?q=${encodeURIComponent(q)}` : '/tools/manuals');
+            }}
+            className="h-14 w-14 items-center justify-center rounded-lg border border-hive-border bg-hive-card active:opacity-70"
+          >
+            <FileText color={theme.colors.navy} size={24} strokeWidth={2.2} />
+          </Pressable>
+
+          <View className="min-h-14 flex-1 justify-center rounded-lg border border-hive-border bg-hive-card px-3">
             <TextInput
               ref={inputRef}
               value={input}
               onChangeText={setInput}
               placeholder={listening ? 'Listening…' : 'Describe the fault…'}
-              placeholderTextColor={theme.colors.steel}
+              placeholderTextColor={theme.colors.muted}
               multiline
-              className="max-h-28 py-3 text-base text-hive-mist"
+              className="max-h-28 py-3 text-base text-hive-ink"
               onFocus={() =>
                 requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))
               }
@@ -837,9 +864,9 @@ export function DiagnoseChat({
             accessibilityLabel="Send"
             disabled={busy || (!input.trim() && !pendingAttachment)}
             onPress={() => void send()}
-            className={`h-14 w-14 items-center justify-center rounded-sm active:opacity-70 ${busy || (!input.trim() && !pendingAttachment) ? 'bg-hive-border' : 'bg-hive-amber'}`}
+            className={`h-14 w-14 items-center justify-center rounded-lg active:opacity-70 ${busy || (!input.trim() && !pendingAttachment) ? 'bg-hive-border' : 'bg-hive-orange'}`}
           >
-            <Send color={theme.colors.onPrimary} size={24} strokeWidth={2.5} />
+            <Send color={theme.colors.onOrange} size={24} strokeWidth={2.5} />
           </Pressable>
         </View>
       </View>

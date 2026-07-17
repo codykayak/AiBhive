@@ -16,15 +16,15 @@ export function DiagnosisCard({ result }: Props) {
   }, []);
 
   return (
-    <View className="mb-3 max-w-[92%] self-start rounded-sm rounded-bl-md border border-hive-border bg-hive-card px-4 py-3">
+    <View className="mb-3 max-w-[92%] self-start rounded-lg rounded-bl-sm border border-hive-border bg-hive-card px-4 py-3">
       {result.summary ? (
-        <Text className="text-base leading-6 text-hive-mist">{result.summary}</Text>
+        <Text className="text-base leading-6 text-hive-ink">{result.summary}</Text>
       ) : null}
 
       {result.likelyCauses.length ? (
         <Section title="Likely causes">
           {result.likelyCauses.map((cause) => (
-            <Text key={cause} className="mb-1 text-sm leading-5 text-hive-steel">
+            <Text key={cause} className="mb-1 text-sm leading-5 text-hive-muted">
               · {cause}
             </Text>
           ))}
@@ -46,18 +46,18 @@ export function DiagnosisCard({ result }: Props) {
                 <View
                   className="mt-0.5 h-6 w-6 items-center justify-center rounded-md border"
                   style={{
-                    borderColor: checked ? theme.colors.amber : theme.colors.border,
-                    backgroundColor: checked ? theme.colors.amber : 'transparent',
+                    borderColor: checked ? theme.colors.orange : theme.colors.border,
+                    backgroundColor: checked ? theme.colors.orange : 'transparent',
                   }}
                 >
                   {checked ? (
-                    <Text style={{ color: theme.colors.bg, fontWeight: '800', fontSize: 12 }}>✓</Text>
+                    <Text style={{ color: theme.colors.onOrange, fontWeight: '800', fontSize: 12 }}>✓</Text>
                   ) : null}
                 </View>
                 <Text
                   className="flex-1 text-sm leading-5"
                   style={{
-                    color: checked ? theme.colors.steel : theme.colors.mist,
+                    color: checked ? theme.colors.muted : theme.colors.ink,
                     textDecorationLine: checked ? 'line-through' : 'none',
                   }}
                 >

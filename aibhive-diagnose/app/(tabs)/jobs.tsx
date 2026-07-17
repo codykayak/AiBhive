@@ -257,7 +257,7 @@ export default function JobsScreen() {
         <View className="mt-3">
           <BigButton
             label="Add job"
-            icon={<Plus color={theme.colors.onPrimary} size={22} strokeWidth={2.5} />}
+            icon={<Plus color={theme.colors.onOrange} size={22} strokeWidth={2.5} />}
             onPress={() => void addJob()}
             disabled={!draftTitle.trim()}
           />

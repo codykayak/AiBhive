@@ -59,3 +59,11 @@ export {
   hvacErrorCodes,
   fiberErrorCodes,
 } from './codes';
+export { formatManualHit, getManualById, searchManuals, MANUAL_CORPUS, filterManualSources } from './manuals';
+export type { EquipmentManual } from './manuals/types';
+export {
+  searchManualChunksFromServer,
+  formatManualChunksContext,
+  ingestManualChunks,
+} from './manualRag';
+export { shouldAskForModel, modelPromptContent, hasModelToken } from './modelPrompt';

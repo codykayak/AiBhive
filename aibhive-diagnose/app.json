@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./icon.png",
     "scheme": "aibhivepros",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aibhive.diagnose",
