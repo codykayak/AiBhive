@@ -31,7 +31,7 @@ export function BigButton({
           : styles.ghost;
 
   const labelStyle =
-    variant === 'primary' ? styles.labelPrimary : variant === 'danger' ? styles.labelLight : styles.labelLight;
+    variant === 'primary' || variant === 'danger' ? styles.labelOnColor : styles.labelInk;
 
   return (
     <Pressable
@@ -67,12 +67,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    borderRadius: R.sm,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
   primary: {
-    backgroundColor: theme.colors.amber,
+    backgroundColor: theme.colors.orange,
   },
   secondary: {
     backgroundColor: theme.colors.elevated,
@@ -97,15 +97,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  labelPrimary: {
-    color: theme.colors.onPrimary,
+  labelOnColor: {
+    color: theme.colors.onOrange,
   },
-  labelLight: {
-    color: theme.colors.mist,
+  labelInk: {
+    color: theme.colors.ink,
   },
   subtitle: {
     marginTop: 2,
     fontSize: 14,
-    color: theme.colors.steel,
+    color: theme.colors.muted,
   },
 });

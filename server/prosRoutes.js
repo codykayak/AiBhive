@@ -20,13 +20,10 @@ import {
 import {
   buildManualDorkLinks,
   extractModelCandidates,
-  formatManualsForPrompt,
-  searchManualChunks,
 } from './prosManualSearch.js';
 import {
   buildProsAnalytics,
   createProsNotification,
-  ingestManualChunks,
   listTeamLocations,
   normalizePingInterval,
   recordLocationPing,
@@ -50,6 +47,13 @@ import {
   mergePartRequests,
   mergeTeam,
 } from './prosDemoMerge.js';
+import {
+  filterManualSources,
+  formatManualChunksForPrompt,
+  ingestManualChunks,
+  MANUAL_SOURCE_INDEX,
+  searchManualChunks,
+} from './prosManualKnowledge.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -1138,17 +1142,18 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const tipsContext = formatTipsForPrompt(tips);
       const tipIdsUsed = tips.map((t) => t.id);
 
-      const manuals = await searchManualChunks(db, {
+      const manualChunks = await searchManualChunks(db, {
         companyId: membership.companyId,
         query: userText,
         packId,
         limit: 4,
       });
-      const manualContext = formatManualsForPrompt(manuals);
+      const manualContext = formatManualChunksForPrompt(manualChunks);
+      const manualChunkIds = manualChunks.map((c) => c.id);
       const modelCandidates = extractModelCandidates(userText);
       const brand = String(req.body?.brand || '').trim();
       const manualSearchLinks =
-        manuals.length === 0 && modelCandidates.length > 0
+        manualChunks.length === 0 && modelCandidates.length > 0
           ? buildManualDorkLinks({ query: userText, brand, model: modelCandidates[0] })
           : [];
 
@@ -1162,8 +1167,8 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
       const system = [
         String(systemPrompt || '').slice(0, 4500),
         localContext ? `\nLocal library context (use only if it matches the user's equipment):\n${String(localContext).slice(0, 2500)}` : '',
-        tipsContext,
         manualContext,
+        tipsContext,
         `\nActive packId: ${packId}. Stay on-topic for that trade pack.`,
         '\nCRITICAL: Answer for the equipment the user named only (bathtub ≠ dishwasher). Prefer matching local library + field tips + OEM manual excerpts. If local context is off-topic, ignore it. If the library has no match, give solid trade practice for the named equipment within this pack — do not invent part numbers. Decline unrelated non-trade questions briefly.',
       ].join('');
@@ -1203,15 +1208,16 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
         source: resolved.source,
         provider: 'grok',
         tipIdsUsed,
+        manualChunkIds,
+        manualSearchLinks,
+        modelCandidates,
         tipsUsed: tips.map((t) => ({ id: t.id, scope: t.scope, text: t.text })),
-        manualsUsed: manuals.map((m) => ({
+        manualsUsed: manualChunks.map((m) => ({
           id: m.id,
           brand: m.brand,
           title: m.title,
           page: m.page,
         })),
-        manualSearchLinks,
-        modelCandidates,
         operationCost,
       });
     } catch (err) {
@@ -1241,6 +1247,103 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/knowledge tips]', err);
       return res.status(500).json({ error: 'Failed to search tips' });
+    }
+  });
+
+  /** OEM manual chunk search (company + global RAG corpus). */
+  app.get('/api/pros/knowledge/manuals/search', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
+
+      const query = String(req.query?.q || req.query.query || '').trim();
+      const packId = req.query?.packId || undefined;
+      const brand = String(req.query?.brand || '').trim();
+      const chunks = await searchManualChunks(db, {
+        companyId: membership.companyId,
+        query,
+        packId,
+        limit: Number(req.query?.limit) || 8,
+      });
+      const modelCandidates = query ? extractModelCandidates(query) : [];
+      const manualSearchLinks =
+        chunks.length === 0 && modelCandidates.length > 0
+          ? buildManualDorkLinks({ query, brand, model: modelCandidates[0] })
+          : [];
+      return res.json({ chunks, manualSearchLinks, modelCandidates });
+    } catch (err) {
+      console.error('[pros/knowledge manuals search]', err);
+      return res.status(500).json({ error: 'Failed to search manuals' });
+    }
+  });
+
+  /** Where to find OEM PDFs fast (portal index). Public to signed-in Pros users. */
+  app.get('/api/pros/knowledge/manuals/sources', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const packId = req.query?.packId || undefined;
+      const sources = packId ? filterManualSources(packId) : MANUAL_SOURCE_INDEX;
+      return res.json({ sources });
+    } catch (err) {
+      console.error('[pros/knowledge manuals sources]', err);
+      return res.status(500).json({ error: 'Failed to load manual sources' });
+    }
+  });
+
+  /**
+   * Ingest manual text chunks (from PDF parse pipeline).
+   * Managers can ingest company playbooks; platform admins can set scope=global.
+   */
+  app.post('/api/pros/knowledge/manuals/ingest', async (req, res) => {
+    try {
+      const user = await requireProsUser(req, res);
+      if (!user) return;
+      const membership = await getMembership(db, user.uid);
+      if (!membership?.companyId) {
+        return res.status(403).json({ error: 'Join a Pros company to ingest manuals' });
+      }
+      if (!['owner', 'manager', 'admin'].includes(membership.role)) {
+        return res.status(403).json({ error: 'Manager role required to ingest manuals' });
+      }
+
+      const {
+        brand = '',
+        packId = 'property',
+        title = '',
+        manualId = null,
+        sourceUrl = null,
+        modelPrefixes = [],
+        chunks = [],
+        scope = 'company',
+      } = req.body || {};
+
+      const result = await ingestManualChunks(db, FieldValue, {
+        companyId: membership.companyId,
+        user,
+        brand,
+        packId,
+        title,
+        manualId,
+        sourceUrl,
+        modelPrefixes,
+        chunks,
+        scope: scope === 'global' ? 'global' : 'company',
+      });
+
+      await logActivity(db, membership.companyId, {
+        type: 'manual_ingest',
+        actorUid: user.uid,
+        actorEmail: user.email,
+        message: `Manual ingest ${result.manualId} (${result.chunksWritten} chunks)`,
+      });
+
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      console.error('[pros/knowledge manuals ingest]', err);
+      return res.status(500).json({ error: err?.message || 'Manual ingest failed' });
     }
   });
 
@@ -1898,65 +2001,6 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
     } catch (err) {
       console.error('[pros/notifications delete]', err);
       return res.status(500).json({ error: 'Failed to delete notification' });
-    }
-  });
-
-  // Manual chunk ingest (manager+) — bulk PDF pipeline uses same endpoint
-  app.post('/api/pros/knowledge/manuals/ingest', async (req, res) => {
-    try {
-      const user = await requireProsUser(req, res);
-      if (!user) return;
-      const mem = await requireManager(db, user.uid);
-      if (!mem) return res.status(403).json({ error: 'Manager role required to ingest manuals' });
-
-      const scope = req.body?.scope === 'global' ? 'global' : 'company';
-      if (scope === 'global' && !platformAdmin(user.email)) {
-        return res.status(403).json({ error: 'Platform admin required for global ingest' });
-      }
-
-      const result = await ingestManualChunks(db, mem.companyId, req.body || {}, { global: scope === 'global' });
-      await logActivity(db, mem.companyId, {
-        type: 'manual_ingest',
-        actorUid: user.uid,
-        actorEmail: user.email,
-        message: `Ingested ${result.chunksWritten} manual chunk(s)`,
-      });
-      return res.json({ success: true, ...result });
-    } catch (err) {
-      console.error('[pros/knowledge manuals ingest]', err);
-      return res.status(400).json({ error: err?.message || 'Ingest failed' });
-    }
-  });
-
-  // Manual RAG search + dork fallback links (field app / managers)
-  app.get('/api/pros/knowledge/manuals/search', async (req, res) => {
-    try {
-      const user = await requireProsUser(req, res);
-      if (!user) return;
-      const membership = await getMembership(db, user.uid);
-      if (!membership?.companyId) return res.status(403).json({ error: 'Join a Pros company first' });
-
-      const query = String(req.query.q || req.query.query || '').trim();
-      const packId = String(req.query.packId || 'property').trim();
-      const brand = String(req.query.brand || '').trim();
-      if (!query) return res.status(400).json({ error: 'Query required' });
-
-      const manuals = await searchManualChunks(db, {
-        companyId: membership.companyId,
-        query,
-        packId,
-        limit: 6,
-      });
-      const modelCandidates = extractModelCandidates(query);
-      const manualSearchLinks =
-        manuals.length === 0 && modelCandidates.length > 0
-          ? buildManualDorkLinks({ query, brand, model: modelCandidates[0] })
-          : [];
-
-      return res.json({ manuals, manualSearchLinks, modelCandidates });
-    } catch (err) {
-      console.error('[pros/knowledge manuals search]', err);
-      return res.status(500).json({ error: 'Manual search failed' });
     }
   });
 

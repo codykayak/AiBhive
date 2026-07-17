@@ -12,10 +12,10 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.elevated },
-        headerTintColor: theme.colors.mist,
-        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
-        tabBarActiveTintColor: theme.colors.amber,
-        tabBarInactiveTintColor: theme.colors.steel,
+        headerTintColor: theme.colors.ink,
+        headerTitleStyle: { fontWeight: '700', fontSize: 18, color: theme.colors.ink },
+        tabBarActiveTintColor: theme.colors.orange,
+        tabBarInactiveTintColor: theme.colors.muted,
         tabBarStyle: buildTabBarStyle(insets.bottom),
         tabBarLabelStyle: {
           fontSize: 12,

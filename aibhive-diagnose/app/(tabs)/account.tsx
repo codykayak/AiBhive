@@ -352,14 +352,14 @@ export default function AccountScreen() {
                   autoCapitalize="characters"
                   placeholder="PROS-XXXXXX"
                   placeholderTextColor={theme.colors.steel}
-                  className="min-h-[52px] rounded-sm border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
+                  className="min-h-[52px] rounded-lg border border-hive-border bg-hive-bg px-3 text-base text-hive-mist"
                 />
                 <Text className="text-xs text-hive-steel">
                   Your manager shares this from AiBhive Pros HQ (aibhive.com/pros/app → Team tab).
                 </Text>
                 <BigButton
                   label={loading ? 'Loading…' : 'Sign in with team code'}
-                  icon={<Users color={theme.colors.onPrimary} size={22} />}
+                  icon={<Users color={theme.colors.onOrange} size={22} />}
                   onPress={() => void handleTeamSignIn()}
                 />
               </View>

@@ -1,36 +1,44 @@
 /** Light field-app palette — aligned with AiBhive Pros marketing (slate + amber + brand blue/teal). */
 export const theme = {
   colors: {
-    bg: '#FAFBFC',
-    elevated: '#FFFFFF',
-    card: '#F1F5F9',
-    surface: '#FFFFFF',
+    bg: '#FFFFFF',
+    elevated: '#F8FAFC',
+    surface: '#F8FAFC',
+    card: '#FFFFFF',
     border: '#E2E8F0',
-    borderSubtle: '#F1F5F9',
+    ink: '#0F172A',
+    muted: '#64748B',
     amber: '#F5A623',
-    amberDim: '#C4841A',
+    orange: '#F5A623',
+    navy: '#1E3A8A',
+    /** @deprecated use navy — kept for gradual migration */
     brand: '#1E3A8A',
-    teal: '#2BB8C8',
-    steel: '#64748B',
+    teal: '#0891B2',
+    amberDim: '#D4880C',
+    /** @deprecated use ink — kept for gradual migration */
     mist: '#0F172A',
-    onPrimary: '#0F172A',
+    /** @deprecated use muted */
+    steel: '#64748B',
+    onOrange: '#FFFFFF',
+    /** @deprecated use onOrange */
+    onPrimary: '#FFFFFF',
     danger: '#DC2626',
     success: '#16A34A',
-    pool: '#2BB8C8',
-    electrical: '#F0B429',
-    plumbing: '#4A9FD4',
-    hvac: '#7B9FD4',
+    pool: '#0891B2',
+    electrical: '#F5A623',
+    plumbing: '#2563EB',
+    hvac: '#1E3A8A',
     property: '#7C9A6E',
     fiber: '#8B5CF6',
-  },
-  radius: {
-    sm: 4,
-    md: 6,
-    lg: 8,
   },
   touch: {
     minHeight: 56,
     iconSize: 28,
+  },
+  radius: {
+    sm: 6,
+    md: 8,
+    lg: 10,
   },
 } as const;
 

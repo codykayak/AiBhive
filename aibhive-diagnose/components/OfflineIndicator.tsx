@@ -12,7 +12,7 @@ export function OfflineIndicator() {
 
   return (
     <View style={styles.banner}>
-      <WifiOff color={theme.colors.mist} size={16} strokeWidth={2.5} />
+      <WifiOff color="#FFFFFF" size={16} strokeWidth={2.5} />
       <Text style={styles.text}>Offline — local pack guidance only</Text>
     </View>
   );
@@ -31,6 +31,6 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 14,
     fontWeight: '600',
-    color: theme.colors.mist,
+    color: '#FFFFFF',
   },
 });

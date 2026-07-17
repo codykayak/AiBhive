@@ -73,7 +73,7 @@ export function JoinTeamModal({
             className={`mt-4 min-h-[52px] items-center justify-center rounded-sm ${busy || !code.trim() ? 'bg-hive-border' : 'bg-hive-amber'}`}
           >
             {busy ? (
-              <ActivityIndicator color={theme.colors.onPrimary} />
+              <ActivityIndicator color={theme.colors.onOrange} />
             ) : (
               <Text className="text-base font-bold text-hive-bg">Join with code</Text>
             )}

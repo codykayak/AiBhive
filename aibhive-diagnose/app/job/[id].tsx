@@ -216,7 +216,7 @@ export default function JobDetailScreen() {
         <BigButton
           label="Diagnose this job"
           subtitle="Open chat with job context — result saves as a note"
-          icon={<Stethoscope color={theme.colors.onPrimary} size={22} />}
+          icon={<Stethoscope color={theme.colors.onOrange} size={22} />}
           onPress={openDiagnose}
         />
       </View>
@@ -244,7 +244,7 @@ export default function JobDetailScreen() {
         <View className="mt-3">
           <BigButton
             label={busy ? 'Saving…' : 'Save note'}
-            icon={<Send color={theme.colors.onPrimary} size={22} />}
+            icon={<Send color={theme.colors.onOrange} size={22} />}
             onPress={() => void addNote()}
           />
         </View>

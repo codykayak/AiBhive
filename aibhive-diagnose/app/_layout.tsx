@@ -31,12 +31,12 @@ const DiagnoseTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: theme.colors.amber,
+    primary: theme.colors.orange,
     background: theme.colors.bg,
     card: theme.colors.elevated,
-    text: theme.colors.mist,
+    text: theme.colors.ink,
     border: theme.colors.border,
-    notification: theme.colors.amber,
+    notification: theme.colors.orange,
   },
 };
 
@@ -94,10 +94,10 @@ export default function RootLayout() {
         }}
       >
         <StatusBar style="dark" />
-        <Text style={{ color: theme.colors.amber, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
+        <Text style={{ color: theme.colors.orange, fontSize: 18, fontWeight: '800', letterSpacing: 2 }}>
           AiBhive Pros
         </Text>
-        <Text style={{ color: theme.colors.mist, marginTop: 10, textAlign: 'center', opacity: 0.75 }}>
+        <Text style={{ color: theme.colors.muted, marginTop: 10, textAlign: 'center', opacity: 0.85 }}>
           Loading the field app…
         </Text>
       </View>
@@ -119,7 +119,7 @@ export default function RootLayout() {
                     <Stack
                       screenOptions={{
                         headerStyle: { backgroundColor: theme.colors.elevated },
-                        headerTintColor: theme.colors.mist,
+                        headerTintColor: theme.colors.ink,
                         contentStyle: { backgroundColor: theme.colors.bg },
                       }}
                     >
@@ -129,7 +129,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Job detail',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -137,7 +137,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Diagnosis',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -145,7 +145,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Fault playbook',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -153,7 +153,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Guided diagnose',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -161,7 +161,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Field tools',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -169,7 +169,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Pool chemistry',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -177,7 +177,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Wire & torque',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -185,7 +185,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Pipe & venting',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -193,7 +193,7 @@ export default function RootLayout() {
                     options={{
                       title: 'HVAC targets',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -201,7 +201,15 @@ export default function RootLayout() {
                     options={{
                       title: 'Error codes',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="tools/manuals"
+                    options={{
+                      title: 'Equipment manuals',
+                      headerStyle: { backgroundColor: theme.colors.elevated },
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -209,7 +217,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Fault library',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -217,7 +225,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Safety checklists',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -225,7 +233,7 @@ export default function RootLayout() {
                     options={{
                       title: 'How-to guides',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -233,7 +241,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Shop tips',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -241,7 +249,7 @@ export default function RootLayout() {
                     options={{
                       title: 'How-to',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                   <Stack.Screen
@@ -265,7 +273,7 @@ export default function RootLayout() {
                     options={{
                       title: 'Category',
                       headerStyle: { backgroundColor: theme.colors.elevated },
-                      headerTintColor: theme.colors.mist,
+                      headerTintColor: theme.colors.ink,
                     }}
                   />
                 </Stack>

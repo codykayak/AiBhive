@@ -78,7 +78,7 @@ export default function HomeScreen() {
         <BigButton
           label="Voice Chat"
           subtitle="Talk the fault — hands stay free"
-          icon={<Mic color={theme.colors.onPrimary} size={26} strokeWidth={2.5} />}
+          icon={<Mic color={theme.colors.onOrange} size={26} strokeWidth={2.5} />}
           onPress={() =>
             router.push({ pathname: '/(tabs)/diagnose', params: { voice: '1' } })
           }
@@ -94,7 +94,7 @@ export default function HomeScreen() {
           label="Field Tools"
           subtitle="Codes, chemistry, wire charts, safety"
           variant="ghost"
-          icon={<Wrench color={theme.colors.teal} size={26} strokeWidth={2.5} />}
+          icon={<Wrench color={theme.colors.navy} size={26} strokeWidth={2.5} />}
           onPress={() => router.push('/tools')}
         />
       </View>
@@ -223,10 +223,13 @@ const styles = StyleSheet.create({
   },
   tipBlock: {
     marginHorizontal: 20,
-    marginTop: 20,
-    paddingLeft: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: theme.colors.teal,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   tipRow: {
     flexDirection: 'row',
@@ -268,11 +271,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.elevated,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   listRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    marginTop: 8,
   },
   listRowActive: {
     backgroundColor: `${theme.colors.amber}12`,
@@ -281,9 +288,9 @@ const styles = StyleSheet.create({
     borderRadius: R.sm,
   },
   packIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: R.sm,
+    width: 56,
+    height: 56,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

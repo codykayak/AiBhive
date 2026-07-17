@@ -2,6 +2,7 @@ import type { ChatAttachment, ChatMessage, TradePack } from './packs/types';
 import { diagnoseLocally } from './knowledge/diagnoseEngine';
 import type { ManualSearchLink } from './knowledge/manualSearch';
 import { buildLocalManualDorkLinks, extractModelCandidates } from './knowledge/manualSearch';
+import { formatManualChunksContext, searchManualChunksFromServer } from './knowledge/manualRag';
 import { getCachedTipsContext } from './knowledge/remotePackCache';
 import { buildOfflineReply, isMetaAppQuestion, type MetaAppReplyOpts } from '@/lib/diagnose/offlineConversation';
 import { fetchProsAiStatus } from '@/lib/diagnose/aiStatus';
@@ -232,8 +233,22 @@ export async function askGrokDetailed({
     ? `${local.reply}\n\n**Shop / network tips**\n${remoteTips}`
     : local.reply;
 
+  let manualRagContext = '';
+  if (getIdToken && API_BASE && !offline) {
+    try {
+      const token = await getIdToken();
+      if (token) {
+        const chunks = await searchManualChunksFromServer(token, userText, pack.id);
+        manualRagContext = formatManualChunksContext(chunks);
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+  const localContext = `${localWithTips}${manualRagContext}`.slice(0, 2800);
+
   const baseLocal: DiagnoseReply = {
-    reply: localWithTips,
+    reply: localContext,
     source: 'local',
     tipIdsUsed: [],
     matchedFaultIds: local.matchedFaultIds,
@@ -263,7 +278,7 @@ export async function askGrokDetailed({
           messages,
           userText,
           attachment,
-          localContext: localWithTips,
+          localContext,
           isDiagnosis,
         });
         if (proxied && !('error' in proxied)) {
@@ -285,15 +300,15 @@ export async function askGrokDetailed({
             userText,
             attachment,
             apiKey,
-            localContext: localWithTips,
+            localContext,
             isDiagnosis,
-            localReply: localWithTips,
+            localReply: localContext,
             matchedFaultIds: local.matchedFaultIds,
           });
           if (direct.source !== 'local') return direct;
           return {
             ...baseLocal,
-            reply: `${localWithTips}\n\n_(${proxied.notice})_`,
+            reply: `${localContext}\n\n_(${proxied.notice})_`,
             notice: proxied.notice,
             noticeCode: proxied.noticeCode,
           };
@@ -306,9 +321,9 @@ export async function askGrokDetailed({
           userText,
           attachment,
           apiKey,
-          localContext: localWithTips,
+          localContext,
           isDiagnosis,
-          localReply: localWithTips,
+          localReply: localContext,
           matchedFaultIds: local.matchedFaultIds,
         });
         if (direct.source !== 'local') return direct;
@@ -329,9 +344,9 @@ export async function askGrokDetailed({
     userText,
     attachment,
     apiKey,
-    localContext: localWithTips,
+            localContext,
     isDiagnosis,
-    localReply: localWithTips,
+    localReply: localContext,
     matchedFaultIds: local.matchedFaultIds,
   });
 }
