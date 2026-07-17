@@ -17,6 +17,7 @@ export type ResumeKitResult = {
   coverLetter: string;
   rewrittenResume: string;
   coldEmail: string;
+  visualResumeJson?: string;
   scrapedJob?: boolean;
 };
 
@@ -42,6 +43,7 @@ export async function generateResumeKit(payload: ResumeGeneratePayload): Promise
     coverLetter: data.coverLetter,
     rewrittenResume: data.rewrittenResume,
     coldEmail: data.coldEmail,
+    visualResumeJson: data.visualResumeJson,
     scrapedJob: data.scrapedJob,
   };
 }
