@@ -51,6 +51,24 @@ steps:
         cp android/app/build/outputs/apk/release/app-release.apk /workspace/app-release.apk
         ls -lh /workspace/app-release.apk
 
+        # Publish to Firebase so "Check for updates" works without a manual step.
+        # Still push public/* to main-fixed when possible for Cloud Run disk serving.
+        mkdir -p /workspace/public
+        cp /workspace/app-release.apk /workspace/public/taylored-mobile.apk
+        cd /workspace
+        npm ci
+        node scripts/write-mobile-release.mjs
+        OUTPUT_FILE="$$(mktemp)"
+        node scripts/publish-apk-firebase.mjs | tee "$$OUTPUT_FILE"
+        GZ_URL=$$(grep '^FIREBASE_GZ_URL=' "$$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+        rm -f "$$OUTPUT_FILE"
+        if [ -n "$$GZ_URL" ]; then
+          node scripts/write-mobile-release.mjs --firebase-gz-url "$$GZ_URL"
+        fi
+        node scripts/publish-mobile-manifest-storage.mjs
+        echo "Published to Firebase. Verify: curl https://aibhive.com/api/mobile/releases"
+        echo "Optional: bash scripts/publish-mobile-from-apk.sh && git push origin main-fixed"
+
   - name: gcr.io/cloud-builders/gsutil
     id: upload-apk
     entrypoint: bash
