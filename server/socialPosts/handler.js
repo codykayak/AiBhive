@@ -1,6 +1,7 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { generateDailySocialPost, resendPostNotification } from './generator.js';
 import { sendTestSms } from './notify.js';
+import { publishAndSavePost } from './publish.js';
 import {
   getConfig,
   getPostByDate,
@@ -119,10 +120,18 @@ export async function handleSocialPostsRequest(req, authUser) {
   }
 
   if (action === 'approve' && postId) {
-    const post = await savePost(postId, {
+    let post = await savePost(postId, {
       status: 'approved',
       approvedAt: Timestamp.now(),
     });
+
+    if (authUser?.uid) {
+      const profile = await getUserProfile(authUser.uid);
+      if (profile.autoPublishOnApprove) {
+        post = await publishAndSavePost(postId, profile, ['facebook', 'instagram']);
+      }
+    }
+
     return { status: 200, data: { post: serializePost(post) } };
   }
 
@@ -160,6 +169,18 @@ export async function handleSocialPostsRequest(req, authUser) {
     const { action: _a, ...updates } = req.body ?? {};
     const profile = await saveUserProfile(authUser.uid, authUser.email, updates);
     return { status: 200, data: { profile: sanitizeUserProfile(profile) } };
+  }
+
+  if (action === 'publish' && postId && authUser?.uid) {
+    const profile = await getUserProfile(authUser.uid);
+    const platforms = Array.isArray(req.body?.platforms)
+      ? req.body.platforms.filter((p) => p === 'facebook' || p === 'instagram')
+      : ['facebook', 'instagram'];
+    if (!platforms.length) {
+      return { status: 400, data: { error: 'Specify platforms: facebook and/or instagram.' } };
+    }
+    const post = await publishAndSavePost(postId, profile, platforms);
+    return { status: 200, data: { post: serializePost(post) } };
   }
 
   if (action === 'updateConfig') {

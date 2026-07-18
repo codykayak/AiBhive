@@ -73,6 +73,7 @@ export interface UserAutoSocialProfile {
     gemini: ProviderSettings;
   };
   dayPrompts?: Record<string, DayPromptEntry>;
+  autoPublishOnApprove?: boolean;
   socialApiKeys?: {
     facebook: SocialApiKeyFields;
     instagram: SocialApiKeyFields;
@@ -99,6 +100,14 @@ export const GEMINI_IMAGE_MODELS = [
   { id: 'gemini-2.5-flash-image', label: 'Gemini 2.5 Flash Image' },
 ];
 
+export interface PublishStatusEntry {
+  status: 'posted' | 'failed';
+  platformPostId?: string;
+  postUrl?: string | null;
+  postedAt?: string;
+  error?: string;
+}
+
 export interface SocialPost {
   id: string;
   date: string;
@@ -115,9 +124,14 @@ export interface SocialPost {
   instagram?: { caption?: string; hashtags?: string[]; imageUrl?: string; link?: string };
   x?: { caption?: string; imageUrl?: string; link?: string };
   imagePrompt?: string;
+  imageHeadline?: string;
   workflowLog?: WorkflowStep[];
   modelsUsed?: { provider?: string; text?: string; image?: string };
   provider?: string;
+  publishStatus?: {
+    facebook?: PublishStatusEntry;
+    instagram?: PublishStatusEntry;
+  };
   errors?: string[] | null;
   notifyError?: string;
 }
@@ -178,6 +192,11 @@ export const rejectPost = (user: User, postId: string) =>
 
 export const markPosted = (user: User, postId: string) =>
   autoSocialRequest(user, 'POST', { body: { action: 'markPosted', postId } });
+
+export const publishPost = (user: User, postId: string, platforms: Array<'facebook' | 'instagram'>) =>
+  autoSocialRequest<{ post: SocialPost }>(user, 'POST', {
+    body: { action: 'publish', postId, platforms },
+  });
 
 export const updateCaptions = (
   user: User,
