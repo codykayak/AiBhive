@@ -1,0 +1,587 @@
+/*
+================================================================================
+  CLAW XBOX PREMIUM — Cronus Zen GPC Script for Xbox (Turtle Beach / Claw)
+================================================================================
+  Platform : Xbox Series X|S / Xbox One
+  Layout   : Claw — RB = Fire | LB = Grenade | Broken RT bypassed
+  Game     : Call of Duty (MW / Warzone / BO6) — set in-game to TACTICAL preset
+
+  ── IN-GAME SETTINGS (required) ─────────────────────────────────────────────
+  • Button Layout : Tactical (or Tactical Flip)
+  • Lethal          : D-Pad Right (LB on this script sends grenade)
+  • Fire in-game    : RT (script converts RB press → RT for the console)
+
+  ── MOD MENU (Zen OLED) ─────────────────────────────────────────────────────
+  Open Menu     : Hold LT (ADS) + press VIEW
+  Scroll Mods   : D-Pad UP / DOWN
+  Toggle ON/OFF : D-Pad LEFT / RIGHT
+  Edit Values   : Press A on selected mod
+  Exit + Save   : Press B
+
+  In Edit Menu  : D-Pad UP/DOWN = ±10 | LEFT/RIGHT = ±1
+  Kill Switch   : Hold LT + press SHARE to disable entire script
+
+  ── QUICK ADJUST (in-game) ──────────────────────────────────────────────────
+  Hold RS + D-Pad UP/DOWN        = Anti-Recoil vertical ±1
+  Hold RS + D-Pad LEFT/RIGHT     = Anti-Recoil horizontal ±1
+  Hold RS + VIEW                 = Save AR values
+
+  ── DEFAULTS ────────────────────────────────────────────────────────────────
+  Anti-Recoil ON (low recoil) | Polar AA ON | Hold Breath ON | Auto Run ON
+  Slide Cancel OFF | Hair Triggers ON | VM Speed 3 | Move Boost OFF
+================================================================================
+*/
+
+// ── CLAW BUTTON DEFINES ──────────────────────────────────────────────────────
+define FIRE_BTN     = XB1_RB;
+define ADS_BTN      = XB1_LT;
+define GRENADE_BTN  = XB1_LB;
+define CROUCH_BTN   = XB1_RS;
+define SPRINT_BTN   = XB1_LS;
+define RX           = XB1_RX;
+define RY           = XB1_RY;
+define LX           = XB1_LX;
+define LY           = XB1_LY;
+
+unmap XB1_RT;
+
+define MAX_MODS_COUNT = 8;
+
+int mod_antirecoil    = 1;
+int mod_polar_aa      = 1;
+int mod_hold_breath   = 1;
+int mod_auto_run      = 1;
+int mod_slide_cancel  = 0;
+int mod_hair_trigger  = 1;
+int mod_vm_speed      = 3;
+int mod_move_boost    = 0;
+int mod_hipfire_aa    = 1;
+
+int AR_vertical       = 18;
+int AR_horizontal     = 2;
+int AA_radius         = 12;
+int AA_speed          = 18;
+int Move_boost_val    = 15;
+int Slide_delay       = 75;
+
+int modName_idx       = 0;
+int adjust_var_idx    = 0;
+int ModMenu           = FALSE;
+int ModEdit           = FALSE;
+int display_EDIT      = FALSE;
+int refresh_OLED      = FALSE;
+int display_title     = TRUE;
+int display_black     = FALSE;
+int EntireScript_On   = TRUE;
+int show_msg_time     = 0;
+int count_black       = 0;
+int MenuTimeOut       = 0;
+define menu_time_active = 30000;
+define TimeToShowTitle  = 30000;
+
+int aa_time;
+int aa_angle;
+int aa_sin;
+int aa_cos;
+int aa_actual_x;
+int aa_actual_y;
+int aa_magnitude;
+int aa_should_run;
+int slide_active;
+int edit_display_val;
+int n_digits;
+int n_str;
+int n_cc;
+int n_cval;
+int led_state;
+
+const string MOD_AR       = "Anti-Recoil";
+const string MOD_POLAR    = "Polar AA";
+const string MOD_BREATH   = "Hold Breath";
+const string MOD_AUTORUN  = "Auto Run";
+const string MOD_SLIDE    = "Slide Cancel";
+const string MOD_HAIR     = "Hair Trigger";
+const string MOD_VMSPEED  = "VM Speed";
+const string MOD_MOVEBOOST= "Move Boost";
+const string MOD_HIPFIRE  = "Hipfire AA";
+const string TITLE        = "CLAW XBOX";
+const string ON_TXT       = "ON";
+const string OFF_TXT      = "OFF";
+const string SAVED1       = "SETTINGS";
+const string SAVED2       = "SAVED";
+const string NO_EDIT1     = "No values to";
+const string NO_EDIT2     = "edit for mod";
+const string LBL_AR_VERT  = "AR Vertical";
+const string LBL_AR_HORZ  = "AR Horizont";
+const string LBL_AA_RAD   = "AA Radius";
+const string LBL_AA_SPD   = "AA Speed";
+const string LBL_SLIDE    = "Slide Delay";
+const string LBL_MOVE     = "Move Boost%";
+
+const uint8 Options[]  = { 1, 1, 0, 0, 1, 0, 0, 1, 0 };
+const uint8 EditVal[]  = { 1, 1, 0, 0, 1, 0, 0, 1, 0 };
+
+const uint8 OptRange[][] = {
+    { 0, 1 }, { 2, 3 }, { 0, 0 }, { 0, 0 }, { 4, 4 },
+    { 0, 0 }, { 0, 0 }, { 5, 5 }, { 0, 0 }
+};
+
+const int16 ValRange[][] = {
+    {  0, 99 }, { -50, 50 }, { 1, 50 }, { 1, 50 }, { 40, 120 }, { 5, 30 }
+};
+
+const int8 ASCII_NUM[] = { 48,49,50,51,52,53,54,55,56,57 };
+
+const int8 Polar_Array[] = {
+    100,100,100,100,100,100,100,100,99,99,99,99,98,98,97,97,97,96,95,95,94,94,93,92,92,91,90,89,89,88,87,86,85,84,83,82,81,
+    80,79,78,77,75,74,73,72,71,70,69,67,66,65,63,62,61,59,58,56,55,53,52,50,49,47,46,44,43,41,40,38,36,35,33,31,30,28,26,25,23,21,20,18,16,14,13,11,9,7,
+    6,4,2,0,-1,-3,-5,-7,-8,-10,-12,-13,-15,-17,-19,-20,-22,-24,-25,-27,-29,-30,-32,-34,-35,-37,-39,-40,-42,-43,-45,-46,-48,-50,-51,-53,-54,-55,-57,-58,
+    -60,-61,-62,-64,-65,-66,-68,-69,-70,-71,-73,-74,-75,-76,-77,-78,-79,-80,-81,-82,-83,-84,-85,-86,-87,-88,-89,-89,-90,-91,-92,-92,-93,-93,-94,-95,-95,
+    -96,-96,-97,-97,-97,-98,-98,-99,-99,-99,-99,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-100,-99,-99,-99,-98,-98,-98,-97,-97,
+    -96,-96,-95,-94,-94,-93,-93,-92,-91,-90,-90,-89,-88,-87,-86,-85,-84,-83,-82,-81,-80,-79,-78,-77,-76,-75,-74,-72,-71,-70,-69,-67,-66,-65,-63,-62,-61,
+    -59,-58,-56,-55,-53,-52,-50,-49,-47,-46,-44,-43,-41,-40,-38,-36,-35,-33,-31,-30,-28,-26,-25,-23,-21,-20,-18,-16,-14,-13,-11,-9,-7,-6,-4,-2,0,2,4,6,7,
+    9,11,13,14,16,18,20,21,23,25,26,28,30,31,33,35,36,38,40,41,43,44,46,47,49,51,52,54,55,56,58,59,61,62,63,65,66,67,69,70,70,72,73,74,75,77,78,79,80,81,
+    82,83,84,85,86,87,88,89,89,90,91,92,92,93,94,94,95,95,96,97,97,97,98,98,99,99,99,99,100,100,100,100,100,100,100
+};
+
+define AR_Release = 35;
+
+init {
+    mod_antirecoil   = get_pvar(SPVAR_1,  0, 1, 1);
+    mod_polar_aa     = get_pvar(SPVAR_2,  0, 1, 1);
+    mod_hold_breath  = get_pvar(SPVAR_3,  0, 1, 1);
+    mod_auto_run     = get_pvar(SPVAR_4,  0, 1, 1);
+    mod_slide_cancel = get_pvar(SPVAR_5,  0, 1, 0);
+    mod_hair_trigger = get_pvar(SPVAR_6,  0, 1, 1);
+    mod_vm_speed     = get_pvar(SPVAR_7,  0, 5, 3);
+    mod_move_boost   = get_pvar(SPVAR_8,  0, 1, 0);
+    mod_hipfire_aa   = get_pvar(SPVAR_9,  0, 1, 1);
+    AR_vertical      = get_pvar(SPVAR_10, 0, 99, 18);
+    AR_horizontal    = get_pvar(SPVAR_11, -50, 50, 2);
+    AA_radius        = get_pvar(SPVAR_12, 1, 50, 12);
+    AA_speed         = get_pvar(SPVAR_13, 1, 50, 18);
+    Move_boost_val   = get_pvar(SPVAR_14, 5, 30, 15);
+    Slide_delay      = get_pvar(SPVAR_15, 40, 120, 75);
+}
+
+main {
+    if(get_ival(ADS_BTN) && event_press(XB1_SHARE)) {
+        EntireScript_On = !EntireScript_On;
+        blink_led(EntireScript_On);
+        cls_oled(0);
+        print(center_x(9, OLED_FONT_MEDIUM_WIDTH), 10, OLED_FONT_MEDIUM, 1, TITLE[0]);
+        if(EntireScript_On) print(center_x(2, OLED_FONT_MEDIUM_WIDTH), 30, OLED_FONT_MEDIUM, 1, ON_TXT[0]);
+        else                print(center_x(3, OLED_FONT_MEDIUM_WIDTH), 30, OLED_FONT_MEDIUM, 1, OFF_TXT[0]);
+        show_msg_time = 2000;
+        if(!EntireScript_On) set_vm_speed(0);
+    }
+
+    if(show_msg_time) {
+        show_msg_time -= get_rtime();
+        if(show_msg_time <= 0) cls_oled(0);
+    }
+
+    if(EntireScript_On) {
+        apply_claw_layout();
+
+        if(ModEdit || ModMenu) set_vm_speed(0);
+
+        if(display_EDIT) {
+            cls_oled(0);
+            if(EditVal[modName_idx] == 0) {
+                line_oled(1, 45, 127, 45, 1, 0);
+                print(center_x(11, OLED_FONT_SMALL_WIDTH), 20, OLED_FONT_SMALL, 1, NO_EDIT1[0]);
+                print(center_x(12, OLED_FONT_SMALL_WIDTH), 33, OLED_FONT_SMALL, 1, NO_EDIT2[0]);
+            } else {
+                display_edit_screen(adjust_var_idx);
+                adjust_var_idx = edit_value(adjust_var_idx);
+            }
+        }
+
+        if(refresh_OLED) {
+            cls_oled(0);
+            draw_menu_border();
+            display_current_mod();
+            refresh_OLED = FALSE;
+        }
+
+        if(display_title) {
+            cls_oled(0);
+            print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 13, OLED_FONT_MEDIUM, 1, TITLE[0]);
+            ModMenu = FALSE;
+            display_title = FALSE;
+            display_black = TRUE;
+        }
+
+        if(display_black) {
+            count_black += get_rtime();
+            if(count_black >= TimeToShowTitle) {
+                cls_oled(0);
+                count_black = 0;
+                display_black = FALSE;
+            }
+        }
+
+        if(get_ival(ADS_BTN) && event_press(XB1_VIEW)) {
+            ModMenu = TRUE;
+            modName_idx = 0;
+            refresh_OLED = TRUE;
+            display_EDIT = FALSE;
+            MenuTimeOut = menu_time_active;
+        }
+
+        if(ModEdit) {
+            block_all_inputs();
+            if(event_release(XB1_B)) {
+                ModEdit = FALSE;
+                display_EDIT = FALSE;
+                ModMenu = TRUE;
+                refresh_OLED = TRUE;
+            }
+            if(!get_ival(ADS_BTN) && event_press(XB1_DOWN)) {
+                adjust_var_idx++;
+                if(adjust_var_idx > OptRange[modName_idx][1]) adjust_var_idx = OptRange[modName_idx][1];
+                refresh_OLED = FALSE;
+                display_EDIT = TRUE;
+            }
+            if(!get_ival(ADS_BTN) && event_press(XB1_UP)) {
+                adjust_var_idx--;
+                if(adjust_var_idx < OptRange[modName_idx][0]) adjust_var_idx = OptRange[modName_idx][0];
+                refresh_OLED = FALSE;
+                display_EDIT = TRUE;
+            }
+            check_menu_timeout();
+        }
+
+        if(ModMenu) {
+            block_all_inputs();
+            if(event_press(XB1_B)) combo_run(SAVE_EXIT);
+            if(event_press(XB1_A)) {
+                ModMenu = FALSE;
+                adjust_var_idx = OptRange[modName_idx][0];
+                ModEdit = TRUE;
+                display_EDIT = TRUE;
+            }
+            if(!get_ival(ADS_BTN) && event_press(XB1_DOWN)) {
+                modName_idx++;
+                if(modName_idx > MAX_MODS_COUNT) modName_idx = 0;
+                blink_led(get_mod_toggle(modName_idx));
+            }
+            if(!get_ival(ADS_BTN) && event_press(XB1_UP)) {
+                modName_idx--;
+                if(modName_idx < 0) modName_idx = MAX_MODS_COUNT;
+                blink_led(get_mod_toggle(modName_idx));
+            }
+            if(!get_ival(ADS_BTN)) {
+                if(event_press(XB1_RIGHT)) adjust_mod_value(modName_idx, -1);
+                if(event_press(XB1_LEFT))  adjust_mod_value(modName_idx,  1);
+            }
+            display_black = FALSE;
+            display_title = FALSE;
+            refresh_OLED = TRUE;
+            set_val(XB1_RIGHT, 0);
+            set_val(XB1_LEFT, 0);
+            set_val(XB1_UP, 0);
+            set_val(XB1_DOWN, 0);
+            check_menu_timeout();
+        }
+
+        if(!ModEdit && !ModMenu) {
+            set_vm_speed(mod_vm_speed);
+
+            if(mod_hair_trigger && get_val(ADS_BTN) > 20) set_val(ADS_BTN, 100);
+
+            if(mod_auto_run && get_val(LY) < -25 && !get_val(ADS_BTN)) set_val(SPRINT_BTN, 100);
+
+            if(mod_hold_breath && get_val(ADS_BTN)) set_val(SPRINT_BTN, 100);
+
+            if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
+                set_val(LY, clamp(get_val(LY) - Move_boost_val, -100, -1));
+            }
+
+            if(mod_antirecoil) {
+                if(get_ival(ADS_BTN) && get_ival(FIRE_BTN)) combo_run(AntiRecoil);
+                if(abs(get_ival(RY)) > AR_Release || abs(get_ival(RX)) > AR_Release) combo_stop(AntiRecoil);
+
+                if(get_ival(CROUCH_BTN)) {
+                    if(event_press(XB1_UP))    AR_vertical++;
+                    if(event_press(XB1_DOWN))  AR_vertical--;
+                    if(event_press(XB1_LEFT))  AR_horizontal--;
+                    if(event_press(XB1_RIGHT)) AR_horizontal++;
+                    set_val(XB1_UP, 0); set_val(XB1_DOWN, 0);
+                    set_val(XB1_LEFT, 0); set_val(XB1_RIGHT, 0);
+                    if(event_press(XB1_VIEW)) save_settings();
+                    set_val(XB1_VIEW, 0);
+                }
+            }
+
+            if(mod_polar_aa) run_polar_aa();
+            else if(mod_hipfire_aa && !get_val(ADS_BTN)) run_polar_aa();
+
+            if(mod_slide_cancel && !slide_active) {
+                if(event_release(CROUCH_BTN) && (abs(get_val(LX)) > 50 || abs(get_val(LY)) > 50)) {
+                    if(!get_val(ADS_BTN)) {
+                        slide_active = TRUE;
+                        combo_run(SlideCancel);
+                    }
+                }
+            }
+        }
+    }
+}
+
+combo AntiRecoil {
+    set_val(RY, clamp(get_ival(RY) + AR_vertical, -100, 100));
+    set_val(RX, clamp(get_ival(RX) + AR_horizontal, -100, 100));
+}
+
+combo SlideCancel {
+    set_val(CROUCH_BTN, 100);
+    wait(Slide_delay);
+    set_val(CROUCH_BTN, 0);
+    wait(20);
+    set_val(CROUCH_BTN, 100);
+    wait(20);
+    set_val(CROUCH_BTN, 0);
+    slide_active = FALSE;
+}
+
+combo SAVE_EXIT {
+    wait(20);
+    save_settings();
+    cls_oled(0);
+    print(center_x(sizeof(SAVED1) - 1, OLED_FONT_MEDIUM_WIDTH), 2, OLED_FONT_MEDIUM, 1, SAVED1[0]);
+    print(center_x(sizeof(SAVED2) - 1, OLED_FONT_MEDIUM_WIDTH), 23, OLED_FONT_MEDIUM, 1, SAVED2[0]);
+    wait(1500);
+    cls_oled(0);
+    ModMenu = FALSE;
+    ModEdit = FALSE;
+    display_EDIT = FALSE;
+    display_title = TRUE;
+}
+
+combo LED_BLINK_ON {
+    set_rgb(0, 255, 0);
+    wait(200);
+    set_rgb(0, 0, 0);
+    wait(100);
+}
+
+combo LED_BLINK_OFF {
+    set_rgb(255, 0, 0);
+    wait(200);
+    set_rgb(0, 0, 0);
+    wait(100);
+}
+
+function apply_claw_layout() {
+    set_val(XB1_RT, 0);
+    if(get_val(FIRE_BTN)) set_val(XB1_RT, 100);
+    if(get_val(GRENADE_BTN)) set_val(XB1_RIGHT, 100);
+    set_val(FIRE_BTN, 0);
+    set_val(GRENADE_BTN, 0);
+}
+
+function run_polar_aa() {
+    aa_actual_x = get_ival(RX);
+    aa_actual_y = get_ival(RY);
+    aa_magnitude = isqrt(pow(aa_actual_x, 2) + pow(aa_actual_y, 2));
+
+    if(!(aa_time++ % 1)) aa_angle += AA_speed;
+    aa_angle = aa_angle % 360;
+
+    aa_sin = Polar_Array[aa_angle % 360];
+    aa_cos = Polar_Array[(aa_angle + 270) % 360];
+    aa_cos = (aa_cos * AA_radius) / 100;
+    aa_sin = (aa_sin * AA_radius) / 100;
+
+    aa_should_run = FALSE;
+    if(mod_polar_aa) aa_should_run = TRUE;
+    else if(mod_hipfire_aa && !get_val(ADS_BTN)) aa_should_run = TRUE;
+
+    if(aa_should_run) {
+        if(aa_magnitude <= AA_radius) {
+            aa_sin = aa_sin - aa_actual_y;
+            aa_cos = aa_cos - aa_actual_x;
+        }
+        set_val(RX, clamp(aa_actual_x + aa_cos, -100, 100));
+        set_val(RY, clamp(aa_actual_y + aa_sin, -100, 100));
+    }
+}
+
+function set_vm_speed(f_speed) {
+    if     (f_speed == 0) vm_tctrl(-0);
+    else if(f_speed == 1) vm_tctrl(-2);
+    else if(f_speed == 2) vm_tctrl(-4);
+    else if(f_speed == 3) vm_tctrl(-6);
+    else if(f_speed == 4) vm_tctrl(-8);
+    else if(f_speed == 5) vm_tctrl(-9);
+}
+
+function clamp(f_val, f_lo, f_hi) {
+    if(f_val < f_lo) return f_lo;
+    if(f_val > f_hi) return f_hi;
+    return f_val;
+}
+
+function center_x(chars, font_w) {
+    return (128 - chars * font_w) / 2;
+}
+
+function draw_menu_border() {
+    rect_oled(0, 0, 127, 63, 0, 1);
+    line_oled(1, 17, 126, 17, 1, 1);
+}
+
+function get_mod_toggle(idx) {
+    if(idx == 0) return mod_antirecoil;
+    if(idx == 1) return mod_polar_aa;
+    if(idx == 2) return mod_hold_breath;
+    if(idx == 3) return mod_auto_run;
+    if(idx == 4) return mod_slide_cancel;
+    if(idx == 5) return mod_hair_trigger;
+    if(idx == 6) return mod_vm_speed > 0;
+    if(idx == 7) return mod_move_boost;
+    if(idx == 8) return mod_hipfire_aa;
+    return 0;
+}
+
+function display_current_mod() {
+    if(modName_idx == 0) print(center_x(sizeof(MOD_AR) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_AR[0]);
+    if(modName_idx == 1) print(center_x(sizeof(MOD_POLAR) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_POLAR[0]);
+    if(modName_idx == 2) print(center_x(sizeof(MOD_BREATH) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_BREATH[0]);
+    if(modName_idx == 3) print(center_x(sizeof(MOD_AUTORUN) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_AUTORUN[0]);
+    if(modName_idx == 4) print(center_x(sizeof(MOD_SLIDE) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_SLIDE[0]);
+    if(modName_idx == 5) print(center_x(sizeof(MOD_HAIR) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_HAIR[0]);
+    if(modName_idx == 6) print(center_x(sizeof(MOD_VMSPEED) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_VMSPEED[0]);
+    if(modName_idx == 7) print(center_x(sizeof(MOD_MOVEBOOST) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_MOVEBOOST[0]);
+    if(modName_idx == 8) print(center_x(sizeof(MOD_HIPFIRE) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 1, MOD_HIPFIRE[0]);
+
+    if(modName_idx == 6) print_number(mod_vm_speed, find_digits(mod_vm_speed), center_x(1, OLED_FONT_MEDIUM_WIDTH), 22, OLED_FONT_MEDIUM);
+    else if(get_mod_toggle(modName_idx)) print(center_x(2, OLED_FONT_MEDIUM_WIDTH), 22, OLED_FONT_MEDIUM, 1, ON_TXT[0]);
+    else print(center_x(3, OLED_FONT_MEDIUM_WIDTH), 22, OLED_FONT_MEDIUM, 1, OFF_TXT[0]);
+}
+
+function adjust_mod_value(idx, dir) {
+    if(idx == 0) mod_antirecoil    = clamp_toggle(mod_antirecoil,    dir);
+    if(idx == 1) mod_polar_aa      = clamp_toggle(mod_polar_aa,      dir);
+    if(idx == 2) mod_hold_breath   = clamp_toggle(mod_hold_breath,   dir);
+    if(idx == 3) mod_auto_run      = clamp_toggle(mod_auto_run,      dir);
+    if(idx == 4) mod_slide_cancel  = clamp_toggle(mod_slide_cancel,  dir);
+    if(idx == 5) mod_hair_trigger  = clamp_toggle(mod_hair_trigger,  dir);
+    if(idx == 6) mod_vm_speed      = clamp(mod_vm_speed + dir, 0, 5);
+    if(idx == 7) mod_move_boost    = clamp_toggle(mod_move_boost,    dir);
+    if(idx == 8) mod_hipfire_aa   = clamp_toggle(mod_hipfire_aa,    dir);
+    blink_led(get_mod_toggle(idx));
+}
+
+function clamp_toggle(val, dir) {
+    val += dir;
+    if(val < 0) return 0;
+    if(val > 1) return 1;
+    return val;
+}
+
+function get_edit_value(idx) {
+    if(idx == 0) return AR_vertical;
+    if(idx == 1) return AR_horizontal;
+    if(idx == 2) return AA_radius;
+    if(idx == 3) return AA_speed;
+    if(idx == 4) return Slide_delay;
+    if(idx == 5) return Move_boost_val;
+    return 0;
+}
+
+function display_edit_screen(var_idx) {
+    line_oled(1, 18, 127, 18, 1, 1);
+    if(var_idx == 0) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_VERT[0]);
+    if(var_idx == 1) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_HORZ[0]);
+    if(var_idx == 2) print(center_x(9, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_RAD[0]);
+    if(var_idx == 3) print(center_x(8, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_SPD[0]);
+    if(var_idx == 4) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_SLIDE[0]);
+    if(var_idx == 5) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_MOVE[0]);
+    edit_display_val = get_edit_value(var_idx);
+    print_number(edit_display_val, find_digits(edit_display_val), center_x(find_digits(edit_display_val), OLED_FONT_MEDIUM_WIDTH), 28, OLED_FONT_MEDIUM);
+}
+
+function edit_value(var_idx) {
+    if(event_press(XB1_RIGHT)) change_var(var_idx,  1);
+    if(event_press(XB1_LEFT))  change_var(var_idx, -1);
+    if(event_press(XB1_UP))    change_var(var_idx, 10);
+    if(event_press(XB1_DOWN))  change_var(var_idx, -10);
+    return var_idx;
+}
+
+function change_var(idx, delta) {
+    if(idx == 0) AR_vertical    = clamp(AR_vertical    + delta, ValRange[0][0], ValRange[0][1]);
+    if(idx == 1) AR_horizontal  = clamp(AR_horizontal  + delta, ValRange[1][0], ValRange[1][1]);
+    if(idx == 2) AA_radius      = clamp(AA_radius      + delta, ValRange[2][0], ValRange[2][1]);
+    if(idx == 3) AA_speed       = clamp(AA_speed       + delta, ValRange[3][0], ValRange[3][1]);
+    if(idx == 4) Slide_delay    = clamp(Slide_delay    + delta, ValRange[4][0], ValRange[4][1]);
+    if(idx == 5) Move_boost_val = clamp(Move_boost_val + delta, ValRange[5][0], ValRange[5][1]);
+    blink_led(TRUE);
+}
+
+function find_digits(f_num) {
+    f_num = abs(f_num);
+    if(f_num > 9999) return 5;
+    if(f_num > 999)  return 4;
+    if(f_num > 99)   return 3;
+    if(f_num > 9)    return 2;
+    return 1;
+}
+
+function print_number(f_val, f_digits, print_x, print_y, f_font) {
+    n_str = 1;
+    n_cval = 10000;
+    if(f_val < 0) {
+        putc_oled(n_str, 45);
+        n_str++;
+        f_val = abs(f_val);
+    }
+    for(n_cc = 5; n_cc >= 1; n_cc--) {
+        if(f_digits >= n_cc) {
+            putc_oled(n_str, ASCII_NUM[f_val / n_cval]);
+            f_val = f_val % n_cval;
+            n_str++;
+        }
+        n_cval /= 10;
+    }
+    puts_oled(print_x, print_y, f_font, n_str - 1, OLED_WHITE);
+}
+
+function blink_led(on) {
+    led_state = on;
+    if(led_state) combo_run(LED_BLINK_ON);
+    else combo_run(LED_BLINK_OFF);
+}
+
+function check_menu_timeout() {
+    if(MenuTimeOut) {
+        MenuTimeOut -= get_rtime();
+        if(MenuTimeOut <= 0) {
+            ModMenu = FALSE;
+            ModEdit = FALSE;
+            display_EDIT = FALSE;
+            combo_run(SAVE_EXIT);
+        }
+    }
+}
+
+function save_settings() {
+    set_pvar(SPVAR_1,  mod_antirecoil);
+    set_pvar(SPVAR_2,  mod_polar_aa);
+    set_pvar(SPVAR_3,  mod_hold_breath);
+    set_pvar(SPVAR_4,  mod_auto_run);
+    set_pvar(SPVAR_5,  mod_slide_cancel);
+    set_pvar(SPVAR_6,  mod_hair_trigger);
+    set_pvar(SPVAR_7,  mod_vm_speed);
+    set_pvar(SPVAR_8,  mod_move_boost);
+    set_pvar(SPVAR_9,  mod_hipfire_aa);
+    set_pvar(SPVAR_10, AR_vertical);
+    set_pvar(SPVAR_11, AR_horizontal);
+    set_pvar(SPVAR_12, AA_radius);
+    set_pvar(SPVAR_13, AA_speed);
+    set_pvar(SPVAR_14, Move_boost_val);
+    set_pvar(SPVAR_15, Slide_delay);
+}
