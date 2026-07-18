@@ -14,10 +14,12 @@ import ResearchLabPricingPlans from './ResearchLabPricingPlans';
 import styles from '../researchLab.module.css';
 
 /**
- * Example bundled estimate per archive page through scrape → OCR → translate orchestration.
- * BYOK lowers AI portions; platform orchestration still applies in the workspace.
+ * Example bundled estimate per archive page through scrape → OCR → translate.
+ * Aligned with server rates (browser scrape + platform OCR + translate, ×1.3 markup):
+ *   0.004 + 0.003 + 0.008 = 0.015 raw → ~0.02 Hive credits/page.
+ * BYOK keys and your own IP/proxy lower AI and scrape portions further.
  */
-const CREDITS_PER_PIPELINE_PAGE = 0.08;
+const CREDITS_PER_PIPELINE_PAGE = 0.02;
 
 const EXAMPLES = [
   {
@@ -87,9 +89,9 @@ export default function ResearchLabToolsSection() {
           <div className={styles.rlToolsIntroBlock}>
             <Layers className={styles.rlToolsIntroIcon} aria-hidden />
             <p>
-              The tools provided here are all fully customizable. You can build your own web apps and add or
-              tweak the tools for your specific needs. This is only a scaffolding of what is possible for
-              you to build on and research through.
+              The tools provided here are all fully customizable. Tweaks you save in the workspace (AI roster,
+              routing defaults) stay on your account and never change the public AiBhive site. For bigger builds,
+              use Bhive Builder to publish your own app at your personal URL — same model as Hive apps.
             </p>
           </div>
         </div>
@@ -99,8 +101,8 @@ export default function ResearchLabToolsSection() {
             <h3>Use case example</h3>
             <p>
               Estimates for scraping an archived site, OCRing cuneiform tablet images, and translating into
-              English. Drag the slider to model your run — shown in Hive credits (billed when you use the
-              workspace tools).
+              English. Drag the slider to model your run — shown in Hive credits (1 credit ≈ $1 of metered
+              usage). Typical BYOK + browser-routing runs land near {CREDITS_PER_PIPELINE_PAGE} credits per page.
             </p>
           </header>
 

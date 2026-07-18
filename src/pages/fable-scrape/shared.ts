@@ -204,6 +204,9 @@ export type FableApiOptions = {
   apiBase: string;
   ocrEndpoint: string;
   getAuthHeaders?: () => Promise<Record<string, string>>;
+  /** When true, roster + routing defaults load/save to the signed-in user's account. */
+  persistPrefs?: boolean;
+  prefsEndpoint?: string;
 };
 
 export const PUBLIC_FABLE_API: FableApiOptions = {
@@ -218,6 +221,8 @@ export function meteredFableApi(
     apiBase: '/api/research-lab/fable-scrape',
     ocrEndpoint: '/api/research-lab/ocr',
     getAuthHeaders,
+    persistPrefs: true,
+    prefsEndpoint: '/api/research-lab/fable-prefs',
   };
 }
 
@@ -259,5 +264,41 @@ export async function fableGet(api: FableApiOptions, path: string) {
   const headers: Record<string, string> = {};
   if (api.getAuthHeaders) Object.assign(headers, await api.getAuthHeaders());
   const res = await fetch(`${api.apiBase}${path}`, { headers });
+  return parseFableJson(res);
+}
+
+export type FableSavedRouting = {
+  mode: RouteMode;
+  proxyProvider?: 'dataimpulse' | 'iproyal' | 'webshare' | 'generic';
+  ackMyIp?: boolean;
+};
+
+export async function fablePrefsGet(api: FableApiOptions) {
+  if (!api.prefsEndpoint || !api.getAuthHeaders) {
+    return { roster: null, routing: null, updatedAt: null };
+  }
+  const headers = await api.getAuthHeaders();
+  const res = await fetch(api.prefsEndpoint, { headers });
+  return parseFableJson(res) as Promise<{
+    roster: Roster | null;
+    routing: FableSavedRouting | null;
+    updatedAt: string | null;
+  }>;
+}
+
+export async function fablePrefsPut(
+  api: FableApiOptions,
+  body: { roster?: Roster; routing?: FableSavedRouting },
+) {
+  if (!api.prefsEndpoint || !api.getAuthHeaders) return;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(await api.getAuthHeaders()),
+  };
+  const res = await fetch(api.prefsEndpoint, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body),
+  });
   return parseFableJson(res);
 }

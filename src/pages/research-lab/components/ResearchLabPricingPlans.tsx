@@ -54,9 +54,11 @@ export default function ResearchLabPricingPlans() {
         <h3>Hive credits &amp; research plans</h3>
         <p>
           Research Lab runs on <strong>Hive credits</strong> — simple, tracked usage for scrapes, OCR,
-          translation, and multi-agent analysis. Start with a one-time pool, or subscribe monthly for a
-          renewing allowance built for serious investigators. Every plan can publish discoveries into the{' '}
-          <strong>community library</strong> so other researchers can build on your work.
+          translation, and multi-agent analysis. Start with <strong>$5</strong> (5 Hive credits; 1 credit ≈ $1 of
+          metered usage). At typical BYOK + browser-routing rates, that covers roughly{' '}
+          <strong>250 archive pages</strong> through scrape, OCR, and translate (~0.02 credits/page in the chart
+          above). Subscribe monthly for a renewing allowance built for serious investigators. Every plan can publish
+          discoveries into the <strong>community library</strong> so other researchers can build on your work.
         </p>
       </header>
 
