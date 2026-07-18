@@ -3,13 +3,14 @@
   CLAW XBOX PREMIUM — Cronus Zen GPC Script for Xbox (Turtle Beach / Claw)
 ================================================================================
   Platform : Xbox Series X|S / Xbox One
-  Layout   : Claw — RB = Fire | LB = Grenade | Broken RT bypassed
+  Layout   : Claw — RB = Fire | LB = ADS | Grenade = D-Pad Right | Broken RT bypassed
   Game     : Call of Duty (MW / Warzone / BO6) — set in-game to TACTICAL preset
 
   ── IN-GAME SETTINGS (required) ─────────────────────────────────────────────
   • Button Layout : Tactical (or Tactical Flip)
-  • Lethal          : D-Pad Right (LB on this script sends grenade)
+  • Lethal          : D-Pad Right (press D-Pad Right to throw grenade)
   • Fire in-game    : RT (script converts RB press → RT for the console)
+  • ADS in-game     : LT (script converts LB press → LT for the console)
 
   ── MOD MENU (Zen OLED) ─────────────────────────────────────────────────────
   Open Menu     : Hold LT (ADS) + press VIEW
@@ -33,9 +34,10 @@
 */
 
 // ── CLAW BUTTON DEFINES ──────────────────────────────────────────────────────
-define FIRE_BTN     = XB1_RB;
-define ADS_BTN      = XB1_LT;
-define GRENADE_BTN  = XB1_LB;
+define FIRE_BTN     = XB1_RB;    // Claw: right bumper shoots
+define ADS_BTN      = XB1_LB;    // Claw: left bumper aims (outputs LT)
+define ADS_OUT      = XB1_LT;    // Console ADS button
+define GRENADE_BTN  = XB1_RIGHT; // D-Pad Right = grenade (press directly)
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
 define RX           = XB1_RX;
@@ -182,8 +184,6 @@ main {
     }
 
     if(EntireScript_On) {
-        apply_claw_layout();
-
         if(ModEdit || ModMenu) set_vm_speed(0);
 
         if(display_EDIT) {
@@ -289,11 +289,11 @@ main {
         if(!ModEdit && !ModMenu) {
             set_vm_speed(mod_vm_speed);
 
-            if(mod_hair_trigger && get_val(ADS_BTN) > 20) set_val(ADS_BTN, 100);
+            if(mod_hair_trigger && get_ival(ADS_BTN)) set_val(ADS_OUT, 100);
 
-            if(mod_auto_run && get_val(LY) < -25 && !get_val(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            if(mod_auto_run && get_val(LY) < -25 && !get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
 
-            if(mod_hold_breath && get_val(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            if(mod_hold_breath && get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
 
             if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
                 set_val(LY, clamp(get_val(LY) - Move_boost_val, -100, -1));
@@ -316,16 +316,19 @@ main {
             }
 
             if(mod_polar_aa) run_polar_aa();
-            else if(mod_hipfire_aa && !get_val(ADS_BTN)) run_polar_aa();
+            else if(mod_hipfire_aa && !get_ival(ADS_BTN)) run_polar_aa();
 
             if(mod_slide_cancel && !slide_active) {
                 if(event_release(CROUCH_BTN) && (abs(get_val(LX)) > 50 || abs(get_val(LY)) > 50)) {
-                    if(!get_val(ADS_BTN)) {
+                    if(!get_ival(ADS_BTN)) {
                         slide_active = TRUE;
                         combo_run(SlideCancel);
                     }
                 }
             }
+
+            // Claw remaps run LAST so mods read raw input, console gets remapped output
+            apply_claw_layout();
         }
     }
 }
@@ -375,11 +378,18 @@ combo LED_BLINK_OFF {
 }
 
 function apply_claw_layout() {
+    // Always block broken physical RT from reaching the console
     set_val(XB1_RT, 0);
-    if(get_val(FIRE_BTN)) set_val(XB1_RT, 100);
-    if(get_val(GRENADE_BTN)) set_val(XB1_RIGHT, 100);
+
+    // Claw fire: physical RB → console RT (must use get_ival = raw controller input)
+    if(get_ival(FIRE_BTN)) set_val(XB1_RT, 100);
+
+    // Claw ADS: physical LB → console LT
+    if(get_ival(ADS_BTN)) set_val(ADS_OUT, 100);
+
+    // Stop remapped bumpers from also sending their default console actions
     set_val(FIRE_BTN, 0);
-    set_val(GRENADE_BTN, 0);
+    set_val(ADS_BTN, 0);
 }
 
 function run_polar_aa() {
@@ -397,7 +407,7 @@ function run_polar_aa() {
 
     aa_should_run = FALSE;
     if(mod_polar_aa) aa_should_run = TRUE;
-    else if(mod_hipfire_aa && !get_val(ADS_BTN)) aa_should_run = TRUE;
+    else if(mod_hipfire_aa && !get_ival(ADS_BTN)) aa_should_run = TRUE;
 
     if(aa_should_run) {
         if(aa_magnitude <= AA_radius) {
