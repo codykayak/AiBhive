@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Claw Xbox Premium — Settings Guide</title>
+  <style>
+    @page { margin: 0.65in; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+      color: #1a1a1a;
+      line-height: 1.55;
+      font-size: 11pt;
+      max-width: 7.5in;
+      margin: 0 auto;
+      padding: 0.25in;
+    }
+    h1 {
+      font-size: 22pt;
+      margin: 0 0 6px;
+      color: #107c10;
+      border-bottom: 3px solid #107c10;
+      padding-bottom: 8px;
+    }
+    h2 {
+      font-size: 14pt;
+      margin: 22px 0 8px;
+      color: #0b5c0b;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 11.5pt;
+      margin: 14px 0 6px;
+      color: #333;
+      page-break-after: avoid;
+    }
+    .subtitle { color: #555; font-size: 10.5pt; margin-bottom: 18px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 6px 0 10px 20px; padding: 0; }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 10pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 7px 9px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #e8f5e9; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+    .callout {
+      background: #f3f9f3;
+      border-left: 4px solid #107c10;
+      padding: 10px 14px;
+      margin: 12px 0;
+      page-break-inside: avoid;
+    }
+    .warning {
+      background: #fff8e6;
+      border-left: 4px solid #e6a700;
+      padding: 10px 14px;
+      margin: 12px 0;
+      page-break-inside: avoid;
+    }
+    .kbd {
+      display: inline-block;
+      background: #eee;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: Consolas, monospace;
+      font-size: 9.5pt;
+    }
+    .step-num {
+      display: inline-block;
+      background: #107c10;
+      color: #fff;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 22px;
+      font-size: 10pt;
+      font-weight: bold;
+      margin-right: 6px;
+    }
+    .footer {
+      margin-top: 28px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      font-size: 9pt;
+      color: #666;
+    }
+    .page-break { page-break-before: always; }
+    code { font-family: Consolas, monospace; font-size: 9.5pt; background: #f4f4f4; padding: 1px 4px; }
+  </style>
+</head>
+<body>
+
+<h1>Claw Xbox Premium — Settings Guide</h1>
+<p class="subtitle">Cronus Zen GPC Script &bull; Xbox Series X|S / Xbox One &bull; Call of Duty (BO6 / BO7 / Warzone)</p>
+
+<div class="callout">
+  <strong>Script file:</strong> <code>claw-xbox-premium.gpc</code><br>
+  <strong>Claw layout:</strong> RB = Fire &bull; LB = ADS &bull; D-Pad Right = Grenade &bull; Broken RT bypassed
+</div>
+
+<h2>1. Before You Start</h2>
+
+<h3>Required in-game settings (Call of Duty)</h3>
+<ul>
+  <li><strong>Button Layout:</strong> Tactical (or Tactical Flip)</li>
+  <li><strong>Fire:</strong> RT (the script converts your RB press to RT)</li>
+  <li><strong>ADS:</strong> LT (the script converts your LB press to LT)</li>
+  <li><strong>Lethal / Grenade:</strong> D-Pad Right (press D-Pad Right directly)</li>
+</ul>
+
+<h3>Loading the script (first time only)</h3>
+<ol>
+  <li>Connect Cronus Zen to your PC using the <strong>PROG</strong> port (right side).</li>
+  <li>Open <strong>Zen Studio</strong> on Windows.</li>
+  <li>Go to <strong>File → Open</strong> and select <code>claw-xbox-premium.gpc</code>.</li>
+  <li>Press <strong>F7</strong> to compile. Fix any errors shown in the output panel.</li>
+  <li>Drag the compiled script to a memory slot (1–8) in the Programmer panel.</li>
+  <li>Click <strong>Program Device</strong> to save it to the Zen.</li>
+  <li>Unplug from PC, connect Zen to Xbox, and select that slot on the Zen OLED.</li>
+</ol>
+
+<div class="warning">
+  <strong>Note:</strong> You only need a PC to load or update the script. All settings below can be changed on your Xbox controller once the script is programmed.
+</div>
+
+<h2>2. Opening the Mod Menu</h2>
+
+<p>You can open the menu <strong>any time</strong> the Cronus is plugged in — at the Xbox home screen or in a match.</p>
+
+<table>
+  <tr><th>Action</th><th>Controller Input</th></tr>
+  <tr><td><strong>Open Mod Menu</strong></td><td>Hold <span class="kbd">LT</span> (left trigger) + press <span class="kbd">VIEW</span> (Menu button, two lines)</td></tr>
+  <tr><td>Confirmation</td><td>Controller rumbles + mod list appears on Zen OLED screen</td></tr>
+  <tr><td>Kill Switch (disable all mods)</td><td>Hold <span class="kbd">LT</span> + press <span class="kbd">SHARE</span></td></tr>
+</table>
+
+<p>When the Zen first loads, the OLED briefly shows <strong>CLAW XBOX</strong> and <strong>LT+VIEW</strong> as a reminder.</p>
+
+<h2>3. Navigating the Menu</h2>
+
+<table>
+  <tr><th>Action</th><th>Button</th></tr>
+  <tr><td>Scroll through mods</td><td>D-Pad <span class="kbd">UP</span> / <span class="kbd">DOWN</span></td></tr>
+  <tr><td>Toggle mod ON or OFF</td><td>D-Pad <span class="kbd">LEFT</span> / <span class="kbd">RIGHT</span></td></tr>
+  <tr><td>Enter value editor</td><td>Press <span class="kbd">A</span></td></tr>
+  <tr><td>Go back (from editor to mod list)</td><td>Press <span class="kbd">B</span></td></tr>
+  <tr><td>Save settings and exit</td><td>Press <span class="kbd">B</span> from the mod list</td></tr>
+</table>
+
+<p>Settings are saved to the Zen automatically when you exit with <span class="kbd">B</span>. The menu also auto-saves and closes after <strong>30 seconds</strong> of no input.</p>
+
+<p>While the menu is open, inputs are blocked from reaching the game so you won't accidentally shoot or open the Xbox guide.</p>
+
+<h2 class="page-break">4. All Mods — What They Do &amp; Default Values</h2>
+
+<table>
+  <tr>
+    <th>#</th>
+    <th>Mod Name</th>
+    <th>Default</th>
+    <th>What It Does</th>
+    <th>Editable Values</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Anti-Recoil</td>
+    <td>ON</td>
+    <td>Pulls aim down while firing to reduce weapon kick</td>
+    <td>AR Vertical, AR Horizontal</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Polar AA</td>
+    <td>ON</td>
+    <td>Always-on orbital aim assist enhancement</td>
+    <td>AA Radius, AA Speed</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Hold Breath</td>
+    <td>ON</td>
+    <td>Auto-holds sprint while ADS (helps sniper stability)</td>
+    <td>Toggle only</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Auto Run</td>
+    <td>ON</td>
+    <td>Automatically sprints when pushing the left stick forward</td>
+    <td>Toggle only</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Slide Cancel</td>
+    <td>OFF</td>
+    <td>Auto slide-cancel when releasing crouch while moving</td>
+    <td>Slide Delay (ms)</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Hair Trigger</td>
+    <td>ON</td>
+    <td>Instant full ADS response on LB (no trigger deadzone)</td>
+    <td>Toggle only</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>VM Speed</td>
+    <td>3</td>
+    <td>Script loop speed — higher = snappier mods (0–5)</td>
+    <td>Use LEFT/RIGHT to change 0–5</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Move Boost</td>
+    <td>OFF</td>
+    <td>Extra forward stick speed while sprinting</td>
+    <td>Move Boost %</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>Hipfire AA</td>
+    <td>ON</td>
+    <td>Extra aim assist when not ADS</td>
+    <td>Toggle only</td>
+  </tr>
+</table>
+
+<h2>5. Editing Values (Step by Step)</h2>
+
+<p><span class="step-num">1</span> Hold <span class="kbd">LT</span> + press <span class="kbd">VIEW</span> to open the menu.</p>
+<p><span class="step-num">2</span> Use D-Pad <span class="kbd">UP</span>/<span class="kbd">DOWN</span> to highlight the mod you want (e.g. <strong>Anti-Recoil</strong>).</p>
+<p><span class="step-num">3</span> Press <span class="kbd">A</span> to enter the value editor.</p>
+<p><span class="step-num">4</span> Use D-Pad to adjust:</p>
+<ul>
+  <li><span class="kbd">LEFT</span> / <span class="kbd">RIGHT</span> = change by <strong>1</strong></li>
+  <li><span class="kbd">UP</span> / <span class="kbd">DOWN</span> = change by <strong>10</strong></li>
+</ul>
+<p><span class="step-num">5</span> If the mod has multiple values (e.g. Anti-Recoil has Vertical and Horizontal), use D-Pad <span class="kbd">UP</span>/<span class="kbd">DOWN</span> to switch between them.</p>
+<p><span class="step-num">6</span> Press <span class="kbd">B</span> to go back to the mod list.</p>
+<p><span class="step-num">7</span> Press <span class="kbd">B</span> again to save and exit. The OLED will show <strong>SETTINGS SAVED</strong>.</p>
+
+<h3>Value ranges</h3>
+<table>
+  <tr><th>Setting</th><th>Range</th><th>Recommended Starting Point</th></tr>
+  <tr><td>AR Vertical</td><td>0 – 99</td><td>15 – 22 (raise if gun still climbs)</td></tr>
+  <tr><td>AR Horizontal</td><td>-50 – 50</td><td>0 – 5 (use negative if gun drifts right)</td></tr>
+  <tr><td>AA Radius</td><td>1 – 50</td><td>10 – 15 subtle, 20+ stronger</td></tr>
+  <tr><td>AA Speed</td><td>1 – 50</td><td>15 – 20</td></tr>
+  <tr><td>Slide Delay</td><td>40 – 120 ms</td><td>75 ms default</td></tr>
+  <tr><td>Move Boost %</td><td>5 – 30</td><td>15</td></tr>
+  <tr><td>VM Speed</td><td>0 – 5</td><td>3 balanced, 4–5 snappier</td></tr>
+</table>
+
+<h2 class="page-break">6. Quick In-Game Adjust (No Menu)</h2>
+
+<p>You can fine-tune anti-recoil during a match without opening the full menu:</p>
+
+<table>
+  <tr><th>Action</th><th>Input</th></tr>
+  <tr><td>AR Vertical +1 / -1</td><td>Hold <span class="kbd">RS</span> + D-Pad <span class="kbd">UP</span> / <span class="kbd">DOWN</span></td></tr>
+  <tr><td>AR Horizontal +1 / -1</td><td>Hold <span class="kbd">RS</span> + D-Pad <span class="kbd">RIGHT</span> / <span class="kbd">LEFT</span></td></tr>
+  <tr><td>Save AR values to Zen memory</td><td>Hold <span class="kbd">RS</span> + press <span class="kbd">VIEW</span></td></tr>
+</table>
+
+<h2>7. Toggling Mods ON / OFF</h2>
+
+<ol>
+  <li>Open the menu (<span class="kbd">LT</span> + <span class="kbd">VIEW</span>).</li>
+  <li>Scroll to the mod with D-Pad <span class="kbd">UP</span>/<span class="kbd">DOWN</span>.</li>
+  <li>Press D-Pad <span class="kbd">LEFT</span> or <span class="kbd">RIGHT</span> to toggle.</li>
+  <li>The Zen OLED shows <strong>ON</strong> or <strong>OFF</strong>. The LED blinks green (on) or red (off).</li>
+  <li>Press <span class="kbd">B</span> to save and exit.</li>
+</ol>
+
+<p><strong>VM Speed</strong> is special: instead of ON/OFF, LEFT/RIGHT cycles through numbers 0–5.</p>
+
+<h2>8. Recommended Profiles</h2>
+
+<h3>Low profile (subtle)</h3>
+<ul>
+  <li>Anti-Recoil: ON — Vertical <strong>12–16</strong></li>
+  <li>Polar AA: OFF or ON with Radius <strong>8–10</strong></li>
+  <li>Hipfire AA: OFF</li>
+  <li>Hold Breath: ON</li>
+  <li>Auto Run: ON</li>
+  <li>Slide Cancel: OFF</li>
+  <li>Move Boost: OFF</li>
+</ul>
+
+<h3>Balanced (default script settings)</h3>
+<ul>
+  <li>Anti-Recoil: ON — Vertical <strong>18</strong>, Horizontal <strong>2</strong></li>
+  <li>Polar AA: ON — Radius <strong>12</strong>, Speed <strong>18</strong></li>
+  <li>Hipfire AA: ON</li>
+  <li>VM Speed: <strong>3</strong></li>
+  <li>Slide Cancel: OFF</li>
+</ul>
+
+<h3>Sniping focus</h3>
+<ul>
+  <li>Hold Breath: ON</li>
+  <li>Anti-Recoil: ON — Vertical <strong>10–14</strong> (lower for snipers)</li>
+  <li>Polar AA: ON — Radius <strong>8–12</strong></li>
+  <li>Auto Run: OFF (for positioning)</li>
+  <li>Slide Cancel: OFF</li>
+</ul>
+
+<h2>9. Troubleshooting</h2>
+
+<table>
+  <tr><th>Problem</th><th>Fix</th></tr>
+  <tr>
+    <td>Menu won't open</td>
+    <td>Hold <span class="kbd">LT</span> first, then tap <span class="kbd">VIEW</span> (don't release LT too early). Make sure the correct script slot is selected on the Zen OLED.</td>
+  </tr>
+  <tr>
+    <td>RB won't shoot / LB won't ADS</td>
+    <td>Re-compile and re-program the latest script. Confirm in-game layout is <strong>Tactical</strong>.</td>
+  </tr>
+  <tr>
+    <td>Settings don't save</td>
+    <td>Always exit the menu with <span class="kbd">B</span> — wait for <strong>SETTINGS SAVED</strong> on the OLED.</td>
+  </tr>
+  <tr>
+    <td>Anti-recoil too strong / pulls to floor</td>
+    <td>Lower AR Vertical in the menu or with RS + D-Pad DOWN in-game.</td>
+  </tr>
+  <tr>
+    <td>All mods stopped working</td>
+    <td>You may have hit the kill switch. Hold <span class="kbd">LT</span> + <span class="kbd">SHARE</span> to turn the script back ON.</td>
+  </tr>
+  <tr>
+    <td>Zen not detected on PC</td>
+    <td>Use the PROG port (right side), try a different data USB cable, update firmware in Zen Studio.</td>
+  </tr>
+</table>
+
+<h2>10. Controller Layout Reference</h2>
+
+<table>
+  <tr><th>Your Physical Button</th><th>What the Game Receives</th></tr>
+  <tr><td>RB (right bumper)</td><td>Fire (RT)</td></tr>
+  <tr><td>LB (left bumper)</td><td>ADS (LT)</td></tr>
+  <tr><td>RT (broken trigger)</td><td>Ignored — does nothing</td></tr>
+  <tr><td>LT (left trigger)</td><td>Opens mod menu when held + VIEW pressed</td></tr>
+  <tr><td>D-Pad Right</td><td>Grenade / Lethal</td></tr>
+</table>
+
+<div class="footer">
+  Claw Xbox Premium Settings Guide &bull; Script: claw-xbox-premium.gpc &bull; Generated for Cronus Zen on Xbox
+</div>
+
+</body>
+</html>
