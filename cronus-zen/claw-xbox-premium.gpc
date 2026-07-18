@@ -12,12 +12,13 @@
   • Fire in-game    : RT (script converts RB press → RT for the console)
   • ADS in-game     : LT (script converts LB press → LT for the console)
 
-  ── MOD MENU (Zen OLED) ─────────────────────────────────────────────────────
-  Open Menu     : Hold LT (ADS) + press VIEW
+  ── MOD MENU (Zen OLED) — use anytime Cronus is plugged in ─────────────────
+  Open Menu     : Hold LT (left trigger) + press VIEW (Menu button)
   Scroll Mods   : D-Pad UP / DOWN
-  Toggle ON/OFF : D-Pad LEFT / RIGHT
+  Toggle ON/OFF : D-Pad LEFT / RIGHT  (VM Speed: adjusts 0-5)
   Edit Values   : Press A on selected mod
   Exit + Save   : Press B
+  Auto-save     : Menu closes after 30 sec idle
 
   In Edit Menu  : D-Pad UP/DOWN = ±10 | LEFT/RIGHT = ±1
   Kill Switch   : Hold LT + press SHARE to disable entire script
@@ -37,6 +38,7 @@
 define FIRE_BTN     = XB1_RB;    // Claw: right bumper shoots
 define ADS_BTN      = XB1_LB;    // Claw: left bumper aims (outputs LT)
 define ADS_OUT      = XB1_LT;    // Console ADS button
+define MENU_HOLD     = XB1_LT;    // Hold LT + VIEW to open mod menu
 define GRENADE_BTN  = XB1_RIGHT; // D-Pad Right = grenade (press directly)
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
@@ -111,6 +113,7 @@ const string ON_TXT       = "ON";
 const string OFF_TXT      = "OFF";
 const string SAVED1       = "SETTINGS";
 const string SAVED2       = "SAVED";
+const string MENU_HINT    = "LT+VIEW";
 const string NO_EDIT1     = "No values to";
 const string NO_EDIT2     = "edit for mod";
 const string LBL_AR_VERT  = "AR Vertical";
@@ -167,7 +170,21 @@ init {
 }
 
 main {
-    if(get_ival(ADS_BTN) && event_press(XB1_SHARE)) {
+    // ── MOD MENU: always accessible via LT + VIEW ─────────────────────────────
+    if(get_ival(MENU_HOLD) && event_press(XB1_VIEW)) {
+        if(!ModMenu && !ModEdit) {
+            ModMenu = TRUE;
+            modName_idx = 0;
+            refresh_OLED = TRUE;
+            display_EDIT = FALSE;
+            display_title = FALSE;
+            display_black = FALSE;
+            MenuTimeOut = menu_time_active;
+            combo_run(MENU_OPEN_RUMBLE);
+        }
+    }
+
+    if(get_ival(MENU_HOLD) && event_press(XB1_SHARE)) {
         EntireScript_On = !EntireScript_On;
         blink_led(EntireScript_On);
         cls_oled(0);
@@ -183,110 +200,108 @@ main {
         if(show_msg_time <= 0) cls_oled(0);
     }
 
-    if(EntireScript_On) {
-        if(ModEdit || ModMenu) set_vm_speed(0);
+    // Menu runs at VM default speed for stable navigation
+    if(ModEdit || ModMenu) set_vm_speed(0);
 
-        if(display_EDIT) {
+    if(display_EDIT) {
+        cls_oled(0);
+        if(EditVal[modName_idx] == 0) {
+            line_oled(1, 45, 127, 45, 1, 0);
+            print(center_x(11, OLED_FONT_SMALL_WIDTH), 20, OLED_FONT_SMALL, 1, NO_EDIT1[0]);
+            print(center_x(12, OLED_FONT_SMALL_WIDTH), 33, OLED_FONT_SMALL, 1, NO_EDIT2[0]);
+        } else {
+            display_edit_screen(adjust_var_idx);
+            adjust_var_idx = edit_value(adjust_var_idx);
+        }
+    }
+
+    if(refresh_OLED) {
+        cls_oled(0);
+        draw_menu_border();
+        display_current_mod();
+        refresh_OLED = FALSE;
+    }
+
+    if(display_title && !ModMenu && !ModEdit) {
+        cls_oled(0);
+        print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 8, OLED_FONT_MEDIUM, 1, TITLE[0]);
+        print(center_x(sizeof(MENU_HINT) - 1, OLED_FONT_SMALL_WIDTH), 30, OLED_FONT_SMALL, 1, MENU_HINT[0]);
+        ModMenu = FALSE;
+        display_title = FALSE;
+        display_black = TRUE;
+    }
+
+    if(display_black && !ModMenu && !ModEdit) {
+        count_black += get_rtime();
+        if(count_black >= TimeToShowTitle) {
             cls_oled(0);
-            if(EditVal[modName_idx] == 0) {
-                line_oled(1, 45, 127, 45, 1, 0);
-                print(center_x(11, OLED_FONT_SMALL_WIDTH), 20, OLED_FONT_SMALL, 1, NO_EDIT1[0]);
-                print(center_x(12, OLED_FONT_SMALL_WIDTH), 33, OLED_FONT_SMALL, 1, NO_EDIT2[0]);
-            } else {
-                display_edit_screen(adjust_var_idx);
-                adjust_var_idx = edit_value(adjust_var_idx);
-            }
-        }
-
-        if(refresh_OLED) {
-            cls_oled(0);
-            draw_menu_border();
-            display_current_mod();
-            refresh_OLED = FALSE;
-        }
-
-        if(display_title) {
-            cls_oled(0);
-            print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 13, OLED_FONT_MEDIUM, 1, TITLE[0]);
-            ModMenu = FALSE;
-            display_title = FALSE;
-            display_black = TRUE;
-        }
-
-        if(display_black) {
-            count_black += get_rtime();
-            if(count_black >= TimeToShowTitle) {
-                cls_oled(0);
-                count_black = 0;
-                display_black = FALSE;
-            }
-        }
-
-        if(get_ival(ADS_BTN) && event_press(XB1_VIEW)) {
-            ModMenu = TRUE;
-            modName_idx = 0;
-            refresh_OLED = TRUE;
-            display_EDIT = FALSE;
-            MenuTimeOut = menu_time_active;
-        }
-
-        if(ModEdit) {
-            block_all_inputs();
-            if(event_release(XB1_B)) {
-                ModEdit = FALSE;
-                display_EDIT = FALSE;
-                ModMenu = TRUE;
-                refresh_OLED = TRUE;
-            }
-            if(!get_ival(ADS_BTN) && event_press(XB1_DOWN)) {
-                adjust_var_idx++;
-                if(adjust_var_idx > OptRange[modName_idx][1]) adjust_var_idx = OptRange[modName_idx][1];
-                refresh_OLED = FALSE;
-                display_EDIT = TRUE;
-            }
-            if(!get_ival(ADS_BTN) && event_press(XB1_UP)) {
-                adjust_var_idx--;
-                if(adjust_var_idx < OptRange[modName_idx][0]) adjust_var_idx = OptRange[modName_idx][0];
-                refresh_OLED = FALSE;
-                display_EDIT = TRUE;
-            }
-            check_menu_timeout();
-        }
-
-        if(ModMenu) {
-            block_all_inputs();
-            if(event_press(XB1_B)) combo_run(SAVE_EXIT);
-            if(event_press(XB1_A)) {
-                ModMenu = FALSE;
-                adjust_var_idx = OptRange[modName_idx][0];
-                ModEdit = TRUE;
-                display_EDIT = TRUE;
-            }
-            if(!get_ival(ADS_BTN) && event_press(XB1_DOWN)) {
-                modName_idx++;
-                if(modName_idx > MAX_MODS_COUNT) modName_idx = 0;
-                blink_led(get_mod_toggle(modName_idx));
-            }
-            if(!get_ival(ADS_BTN) && event_press(XB1_UP)) {
-                modName_idx--;
-                if(modName_idx < 0) modName_idx = MAX_MODS_COUNT;
-                blink_led(get_mod_toggle(modName_idx));
-            }
-            if(!get_ival(ADS_BTN)) {
-                if(event_press(XB1_RIGHT)) adjust_mod_value(modName_idx, -1);
-                if(event_press(XB1_LEFT))  adjust_mod_value(modName_idx,  1);
-            }
+            count_black = 0;
             display_black = FALSE;
-            display_title = FALSE;
-            refresh_OLED = TRUE;
-            set_val(XB1_RIGHT, 0);
-            set_val(XB1_LEFT, 0);
-            set_val(XB1_UP, 0);
-            set_val(XB1_DOWN, 0);
-            check_menu_timeout();
         }
+    }
 
-        if(!ModEdit && !ModMenu) {
+    if(ModEdit) {
+        block_all_inputs();
+        block_menu_outputs();
+        reset_menu_timeout();
+        if(event_release(XB1_B)) {
+            ModEdit = FALSE;
+            display_EDIT = FALSE;
+            ModMenu = TRUE;
+            refresh_OLED = TRUE;
+        }
+        if(event_press(XB1_DOWN)) {
+            adjust_var_idx++;
+            if(adjust_var_idx > OptRange[modName_idx][1]) adjust_var_idx = OptRange[modName_idx][1];
+            refresh_OLED = FALSE;
+            display_EDIT = TRUE;
+        }
+        if(event_press(XB1_UP)) {
+            adjust_var_idx--;
+            if(adjust_var_idx < OptRange[modName_idx][0]) adjust_var_idx = OptRange[modName_idx][0];
+            refresh_OLED = FALSE;
+            display_EDIT = TRUE;
+        }
+        check_menu_timeout();
+    }
+
+    if(ModMenu) {
+        block_all_inputs();
+        block_menu_outputs();
+        reset_menu_timeout();
+        if(event_press(XB1_B)) combo_run(SAVE_EXIT);
+        if(event_press(XB1_A)) {
+            ModMenu = FALSE;
+            adjust_var_idx = OptRange[modName_idx][0];
+            ModEdit = TRUE;
+            display_EDIT = TRUE;
+        }
+        if(event_press(XB1_DOWN)) {
+            modName_idx++;
+            if(modName_idx > MAX_MODS_COUNT) modName_idx = 0;
+            blink_led(get_mod_toggle(modName_idx));
+            refresh_OLED = TRUE;
+        }
+        if(event_press(XB1_UP)) {
+            modName_idx--;
+            if(modName_idx < 0) modName_idx = MAX_MODS_COUNT;
+            blink_led(get_mod_toggle(modName_idx));
+            refresh_OLED = TRUE;
+        }
+        if(event_press(XB1_RIGHT)) adjust_mod_value(modName_idx, -1);
+        if(event_press(XB1_LEFT))  adjust_mod_value(modName_idx,  1);
+        display_black = FALSE;
+        display_title = FALSE;
+        set_val(XB1_RIGHT, 0);
+        set_val(XB1_LEFT, 0);
+        set_val(XB1_UP, 0);
+        set_val(XB1_DOWN, 0);
+        set_val(XB1_A, 0);
+        set_val(XB1_B, 0);
+        check_menu_timeout();
+    }
+
+    if(EntireScript_On && !ModEdit && !ModMenu) {
             set_vm_speed(mod_vm_speed);
 
             if(mod_hair_trigger && get_ival(ADS_BTN)) set_val(ADS_OUT, 100);
@@ -375,6 +390,26 @@ combo LED_BLINK_OFF {
     wait(200);
     set_rgb(0, 0, 0);
     wait(100);
+}
+
+combo MENU_OPEN_RUMBLE {
+    set_rumble(RUMBLE_A, 80);
+    wait(150);
+    reset_rumble();
+}
+
+function block_menu_outputs() {
+    // Prevent menu combo from reaching the console/game
+    set_val(MENU_HOLD, 0);
+    set_val(XB1_VIEW, 0);
+    set_val(XB1_RT, 0);
+    set_val(XB1_LT, 0);
+    set_val(XB1_RB, 0);
+    set_val(XB1_LB, 0);
+}
+
+function reset_menu_timeout() {
+    MenuTimeOut = menu_time_active;
 }
 
 function apply_claw_layout() {
@@ -483,6 +518,7 @@ function adjust_mod_value(idx, dir) {
     if(idx == 7) mod_move_boost    = clamp_toggle(mod_move_boost,    dir);
     if(idx == 8) mod_hipfire_aa   = clamp_toggle(mod_hipfire_aa,    dir);
     blink_led(get_mod_toggle(idx));
+    refresh_OLED = TRUE;
 }
 
 function clamp_toggle(val, dir) {
@@ -530,6 +566,7 @@ function change_var(idx, delta) {
     if(idx == 4) Slide_delay    = clamp(Slide_delay    + delta, ValRange[4][0], ValRange[4][1]);
     if(idx == 5) Move_boost_val = clamp(Move_boost_val + delta, ValRange[5][0], ValRange[5][1]);
     blink_led(TRUE);
+    display_EDIT = TRUE;
 }
 
 function find_digits(f_num) {
