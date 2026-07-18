@@ -3,17 +3,15 @@
   CLAW XBOX PREMIUM — Cronus Zen GPC Script for Xbox (Turtle Beach / Claw)
 ================================================================================
   Platform : Xbox Series X|S / Xbox One
-  Layout   : Claw — RB = Fire | LB = ADS | Grenade = D-Pad Right | Broken RT bypassed
-  Game     : Call of Duty (MW / Warzone / BO6) — set in-game to TACTICAL preset
+  Layout   : Default Xbox — no button remapping (LB/RB pass through untouched)
+  Game     : Call of Duty (MW / Warzone / BO6 / BO7)
 
-  ── IN-GAME SETTINGS (required) ─────────────────────────────────────────────
-  • Button Layout : Tactical (or Tactical Flip)
-  • Lethal          : D-Pad Right (press D-Pad Right to throw grenade)
-  • Fire in-game    : RT (script converts RB press → RT for the console)
-  • ADS in-game     : LT (script converts LB press → LT for the console)
+  ── IN-GAME SETTINGS ────────────────────────────────────────────────────────
+  • Set your button layout in-game to match however you play (Tactical, Default, etc.)
+  • This script does NOT remap bumpers or triggers — your layout stays native
 
   ── MOD MENU (Zen OLED) — use anytime Cronus is plugged in ─────────────────
-  Open Menu     : Hold LT (left trigger) + press VIEW (Menu button)
+  Open Menu     : Hold LT (left trigger) + press START
   Scroll Mods   : D-Pad UP / DOWN
   Toggle ON/OFF : D-Pad LEFT / RIGHT  (VM Speed: adjusts 0-5)
   Edit Values   : Press A on selected mod
@@ -34,20 +32,17 @@
 ================================================================================
 */
 
-// ── CLAW BUTTON DEFINES ──────────────────────────────────────────────────────
-define FIRE_BTN     = XB1_RB;    // Claw: right bumper shoots
-define ADS_BTN      = XB1_LB;    // Claw: left bumper aims (outputs LT)
-define ADS_OUT      = XB1_LT;    // Console ADS button
-define MENU_HOLD     = XB1_LT;    // Hold LT + VIEW to open mod menu
-define GRENADE_BTN  = XB1_RIGHT; // D-Pad Right = grenade (press directly)
+// ── BUTTON DEFINES (standard Xbox — no remapping) ───────────────────────────
+define FIRE_BTN     = XB1_RT;
+define ADS_BTN      = XB1_LT;
+define MENU_HOLD    = XB1_LT;
+define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
 define RX           = XB1_RX;
 define RY           = XB1_RY;
 define LX           = XB1_LX;
 define LY           = XB1_LY;
-
-unmap XB1_RT;
 
 define MAX_MODS_COUNT = 8;
 
@@ -113,7 +108,7 @@ const string ON_TXT       = "ON";
 const string OFF_TXT      = "OFF";
 const string SAVED1       = "SETTINGS";
 const string SAVED2       = "SAVED";
-const string MENU_HINT    = "LT+VIEW";
+const string MENU_HINT    = "LT+START";
 const string NO_EDIT1     = "No values to";
 const string NO_EDIT2     = "edit for mod";
 const string LBL_AR_VERT  = "AR Vertical";
@@ -170,8 +165,8 @@ init {
 }
 
 main {
-    // ── MOD MENU: always accessible via LT + VIEW ─────────────────────────────
-    if(get_ival(MENU_HOLD) && event_press(XB1_VIEW)) {
+    // ── MOD MENU: always accessible via LT + START ────────────────────────────
+    if(get_ival(MENU_HOLD) && event_press(MENU_BTN)) {
         if(!ModMenu && !ModEdit) {
             ModMenu = TRUE;
             modName_idx = 0;
@@ -298,13 +293,14 @@ main {
         set_val(XB1_DOWN, 0);
         set_val(XB1_A, 0);
         set_val(XB1_B, 0);
+        set_val(MENU_BTN, 0);
         check_menu_timeout();
     }
 
     if(EntireScript_On && !ModEdit && !ModMenu) {
             set_vm_speed(mod_vm_speed);
 
-            if(mod_hair_trigger && get_ival(ADS_BTN)) set_val(ADS_OUT, 100);
+            if(mod_hair_trigger && get_ival(ADS_BTN) > 20) set_val(ADS_BTN, 100);
 
             if(mod_auto_run && get_val(LY) < -25 && !get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
 
@@ -341,9 +337,6 @@ main {
                     }
                 }
             }
-
-            // Claw remaps run LAST so mods read raw input, console gets remapped output
-            apply_claw_layout();
         }
     }
 }
@@ -399,32 +392,13 @@ combo MENU_OPEN_RUMBLE {
 }
 
 function block_menu_outputs() {
-    // Prevent menu combo from reaching the console/game
+    // Prevent menu combo from reaching the console/game (do not touch bumpers)
     set_val(MENU_HOLD, 0);
-    set_val(XB1_VIEW, 0);
-    set_val(XB1_RT, 0);
-    set_val(XB1_LT, 0);
-    set_val(XB1_RB, 0);
-    set_val(XB1_LB, 0);
+    set_val(MENU_BTN, 0);
 }
 
 function reset_menu_timeout() {
     MenuTimeOut = menu_time_active;
-}
-
-function apply_claw_layout() {
-    // Always block broken physical RT from reaching the console
-    set_val(XB1_RT, 0);
-
-    // Claw fire: physical RB → console RT (must use get_ival = raw controller input)
-    if(get_ival(FIRE_BTN)) set_val(XB1_RT, 100);
-
-    // Claw ADS: physical LB → console LT
-    if(get_ival(ADS_BTN)) set_val(ADS_OUT, 100);
-
-    // Stop remapped bumpers from also sending their default console actions
-    set_val(FIRE_BTN, 0);
-    set_val(ADS_BTN, 0);
 }
 
 function run_polar_aa() {

@@ -107,17 +107,16 @@
 
 <div class="callout">
   <strong>Script file:</strong> <code>claw-xbox-premium.gpc</code><br>
-  <strong>Claw layout:</strong> RB = Fire &bull; LB = ADS &bull; D-Pad Right = Grenade &bull; Broken RT bypassed
+  <strong>Layout:</strong> Default Xbox — no bumper or trigger remapping
 </div>
 
 <h2>1. Before You Start</h2>
 
 <h3>Required in-game settings (Call of Duty)</h3>
 <ul>
-  <li><strong>Button Layout:</strong> Tactical (or Tactical Flip)</li>
-  <li><strong>Fire:</strong> RT (the script converts your RB press to RT)</li>
-  <li><strong>ADS:</strong> LT (the script converts your LB press to LT)</li>
-  <li><strong>Lethal / Grenade:</strong> D-Pad Right (press D-Pad Right directly)</li>
+  <li>Set your in-game button layout to whatever you normally use — the script does not remap buttons</li>
+  <li><strong>Fire:</strong> RT (default)</li>
+  <li><strong>ADS:</strong> LT (default)</li>
 </ul>
 
 <h3>Loading the script (first time only)</h3>
@@ -141,12 +140,12 @@
 
 <table>
   <tr><th>Action</th><th>Controller Input</th></tr>
-  <tr><td><strong>Open Mod Menu</strong></td><td>Hold <span class="kbd">LT</span> (left trigger) + press <span class="kbd">VIEW</span> (Menu button, two lines)</td></tr>
+  <tr><td><strong>Open Mod Menu</strong></td><td>Hold <span class="kbd">LT</span> (left trigger) + press <span class="kbd">START</span></td></tr>
   <tr><td>Confirmation</td><td>Controller rumbles + mod list appears on Zen OLED screen</td></tr>
   <tr><td>Kill Switch (disable all mods)</td><td>Hold <span class="kbd">LT</span> + press <span class="kbd">SHARE</span></td></tr>
 </table>
 
-<p>When the Zen first loads, the OLED briefly shows <strong>CLAW XBOX</strong> and <strong>LT+VIEW</strong> as a reminder.</p>
+<p>When the Zen first loads, the OLED briefly shows <strong>CLAW XBOX</strong> and <strong>LT+START</strong> as a reminder.</p>
 
 <h2>3. Navigating the Menu</h2>
 
@@ -212,7 +211,7 @@
     <td>6</td>
     <td>Hair Trigger</td>
     <td>ON</td>
-    <td>Instant full ADS response on LB (no trigger deadzone)</td>
+    <td>Instant full ADS response on LT (no trigger deadzone)</td>
     <td>Toggle only</td>
   </tr>
   <tr>
@@ -240,7 +239,7 @@
 
 <h2>5. Editing Values (Step by Step)</h2>
 
-<p><span class="step-num">1</span> Hold <span class="kbd">LT</span> + press <span class="kbd">VIEW</span> to open the menu.</p>
+<p><span class="step-num">1</span> Hold <span class="kbd">LT</span> + press <span class="kbd">START</span> to open the menu.</p>
 <p><span class="step-num">2</span> Use D-Pad <span class="kbd">UP</span>/<span class="kbd">DOWN</span> to highlight the mod you want (e.g. <strong>Anti-Recoil</strong>).</p>
 <p><span class="step-num">3</span> Press <span class="kbd">A</span> to enter the value editor.</p>
 <p><span class="step-num">4</span> Use D-Pad to adjust:</p>
@@ -278,7 +277,7 @@
 <h2>7. Toggling Mods ON / OFF</h2>
 
 <ol>
-  <li>Open the menu (<span class="kbd">LT</span> + <span class="kbd">VIEW</span>).</li>
+  <li>Open the menu (<span class="kbd">LT</span> + <span class="kbd">START</span>).</li>
   <li>Scroll to the mod with D-Pad <span class="kbd">UP</span>/<span class="kbd">DOWN</span>.</li>
   <li>Press D-Pad <span class="kbd">LEFT</span> or <span class="kbd">RIGHT</span> to toggle.</li>
   <li>The Zen OLED shows <strong>ON</strong> or <strong>OFF</strong>. The LED blinks green (on) or red (off).</li>
@@ -324,11 +323,11 @@
   <tr><th>Problem</th><th>Fix</th></tr>
   <tr>
     <td>Menu won't open</td>
-    <td>Hold <span class="kbd">LT</span> first, then tap <span class="kbd">VIEW</span> (don't release LT too early). Make sure the correct script slot is selected on the Zen OLED.</td>
+    <td>Hold <span class="kbd">LT</span> first, then tap <span class="kbd">START</span> (don't release LT too early). Make sure the correct script slot is selected on the Zen OLED.</td>
   </tr>
   <tr>
-    <td>RB won't shoot / LB won't ADS</td>
-    <td>Re-compile and re-program the latest script. Confirm in-game layout is <strong>Tactical</strong>.</td>
+    <td>Bumpers not working</td>
+    <td>Re-compile the latest script — older builds remapped LB/RB. This version leaves bumpers untouched.</td>
   </tr>
   <tr>
     <td>Settings don't save</td>
@@ -348,15 +347,16 @@
   </tr>
 </table>
 
-<h2>10. Controller Layout Reference</h2>
+<h2>10. Controller Reference</h2>
+
+<p>This script uses <strong>standard Xbox buttons</strong> with no remapping. LB, RB, LT, and RT all pass through to the game exactly as your controller sends them.</p>
 
 <table>
-  <tr><th>Your Physical Button</th><th>What the Game Receives</th></tr>
-  <tr><td>RB (right bumper)</td><td>Fire (RT)</td></tr>
-  <tr><td>LB (left bumper)</td><td>ADS (LT)</td></tr>
-  <tr><td>RT (broken trigger)</td><td>Ignored — does nothing</td></tr>
-  <tr><td>LT (left trigger)</td><td>Opens mod menu when held + VIEW pressed</td></tr>
-  <tr><td>D-Pad Right</td><td>Grenade / Lethal</td></tr>
+  <tr><th>Button</th><th>Script behavior</th></tr>
+  <tr><td>LT (left trigger)</td><td>ADS in-game; hold + START opens mod menu</td></tr>
+  <tr><td>START</td><td>Opens mod menu when LT is held</td></tr>
+  <tr><td>LB / RB</td><td>Not modified — work normally</td></tr>
+  <tr><td>RT</td><td>Not modified — fire as normal</td></tr>
 </table>
 
 <div class="footer">
