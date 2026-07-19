@@ -21,7 +21,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Fresh stingers cause welts — always wear gloves when harvesting.',
       'Avoid during pregnancy unless guided by a qualified herbalist.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Urtica_dioica.jpg/960px-Urtica_dioica.jpg',
+    imageUrl: '/oregon-plant-medicine/stinging-nettle.jpg',
     imageCredit: 'Wikimedia Commons — Urtica dioica',
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/URDI' },
@@ -49,7 +49,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Berberine-containing plants may interact with medications — consult a practitioner.',
       'Never strip roots from wild populations.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/%28MHNT%29_Berberis_aquifolium_inflorecences_and_buds.jpg/960px-%28MHNT%29_Berberis_aquifolium_inflorecences_and_buds.jpg',
+    imageUrl: '/oregon-plant-medicine/oregon-grape.jpg',
     imageCredit: 'Wikimedia Commons — Mahonia aquifolium',
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/MAAQ' },
@@ -71,7 +71,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Eat fresh, jam, or dry. Young peeled shoots in spring.',
     harvestSeason: 'Berries: May–July depending on elevation.',
     safetyWarnings: ['Identify carefully vs. other Rubus species.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/93/Salmonberry_Blossom.jpg',
+    imageUrl: '/oregon-plant-medicine/salmonberry.jpg',
     imageCredit: 'Wikimedia Commons — Rubus spectabilis',
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/RUSP' },
@@ -93,7 +93,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Berries fresh or dried. Leaf tea for topical or gargle use.',
     harvestSeason: 'Berries: late summer–fall.',
     safetyWarnings: ['Leaves very astringent — don’t overconsume as tea.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Gaultheria_shallon_6206.JPG/960px-Gaultheria_shallon_6206.JPG',
+    imageUrl: '/oregon-plant-medicine/salal.jpg',
     imageCredit: 'Wikimedia Commons — Gaultheria shallon',
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/GASH' },
@@ -116,7 +116,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Raw in salads or lightly wilted.',
     harvestSeason: 'Feb–May peak; fades in heat.',
     safetyWarnings: ['Avoid areas sprayed with herbicides (roadsides).'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Claytonia_perfoliata_6641.JPG/960px-Claytonia_perfoliata_6641.JPG',
+    imageUrl: '/oregon-plant-medicine/miners-lettuce.jpg',
     imageCredit: 'Wikimedia Commons — Claytonia perfoliata',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Claytonia_perfoliata' },
@@ -140,7 +140,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Avoid internal use in pregnancy.',
       'Can potentiate sedatives in large doses.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Achillea_millefolium_2.jpg/960px-Achillea_millefolium_2.jpg',
+    imageUrl: '/oregon-plant-medicine/yarrow.jpg',
     imageCredit: 'Wikimedia Commons — Achillea millefolium',
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/ACMI2' },
@@ -161,7 +161,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Chew fresh leaf for poultice or dry for tea.',
     harvestSeason: 'Spring through fall; best before seed stalk hardens.',
     safetyWarnings: ['Ensure correct ID — not lily or other lookalikes.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Grote_weegbree_bloeiwijze_Plantago_major_subsp._major.jpg/960px-Grote_weegbree_bloeiwijze_Plantago_major_subsp._major.jpg',
+    imageUrl: '/oregon-plant-medicine/plantain.jpg',
     imageCredit: 'Wikimedia Commons — Plantago major',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Plantago_major' },
@@ -182,7 +182,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Salad greens, root decoction, flower wine.',
     harvestSeason: 'Leaves: early spring. Roots: fall.',
     safetyWarnings: ['Only harvest from unsprayed areas.', 'Latex may irritate skin.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Taraxacum_officinale_flower.jpg/960px-Taraxacum_officinale_flower.jpg',
+    imageUrl: '/oregon-plant-medicine/dandelion.jpg',
     imageCredit: 'Wikimedia Commons — Taraxacum officinale',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Taraxacum_officinale' },
@@ -203,7 +203,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Dried blossom tea or fresh in salads.',
     harvestSeason: 'Late spring–summer flowers.',
     safetyWarnings: ['May affect hormone-sensitive conditions — consult practitioner.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Trifolium_pratense_flower.jpg/960px-Trifolium_pratense_flower.jpg',
+    imageUrl: '/oregon-plant-medicine/red-clover.jpg',
     imageCredit: 'Wikimedia Commons — Trifolium pratense',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Trifolium_pratense' },
@@ -229,7 +229,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Red elderberry (S. racemosa) on coast is toxic — learn the difference.',
       'Leaves, bark, and seeds are toxic.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3b/Sambucus_cerulea.jpg',
+    imageUrl: '/oregon-plant-medicine/elderberry.jpg',
     imageCredit: 'Wikimedia Commons — Sambucus cerulea',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Sambucus_cerulea' },
@@ -251,7 +251,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Peel young shoots; leaf tea; flower blossom garnish.',
     harvestSeason: 'Shoots: spring. Flowers: Jul–Aug.',
     safetyWarnings: ['Positive ID vs. other tall magenta spikes.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Maitohorsma_%28Epilobium_angustifolium%29.JPG/960px-Maitohorsma_%28Epilobium_angustifolium%29.JPG',
+    imageUrl: '/oregon-plant-medicine/fireweed.jpg',
     imageCredit: 'Wikimedia Commons — Chamerion angustifolium',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Chamerion_angustifolium' },
@@ -271,7 +271,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Fresh or dried rhizome tea; chew small piece for throat.',
     harvestSeason: 'Year-round rhizome; take only small portions sustainably.',
     safetyWarnings: ['Overharvest damages host ecosystem — take sparingly.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Polypodium_glycyrrhiza.jpg/960px-Polypodium_glycyrrhiza.jpg',
+    imageUrl: '/oregon-plant-medicine/licorice-fern.jpg',
     imageCredit: 'Wikimedia Commons — Polypodium glycyrrhiza',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Polypodium_glycyrrhiza' },
@@ -294,7 +294,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'High oxalates — avoid large amounts; kidney stone risk.',
       'Do not confuse with clover.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/Oxalis_oregana.jpg',
+    imageUrl: '/oregon-plant-medicine/redwood-sorrel.jpg',
     imageCredit: 'Wikimedia Commons — Oxalis oregana',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Oxalis_oregana' },
@@ -314,7 +314,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Fresh or cooked; freeze well.',
     harvestSeason: 'Late summer–fall.',
     safetyWarnings: ['Positive berry ID essential.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Vaccinium_ovatum_2.jpg/960px-Vaccinium_ovatum_2.jpg',
+    imageUrl: '/oregon-plant-medicine/huckleberry.jpg',
     imageCredit: 'Wikimedia Commons — Vaccinium ovatum',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Vaccinium_ovatum' },
@@ -334,7 +334,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Collect fuzzy buds before leaf-out. Infuse in olive oil 4–6 weeks. Strain for salve.',
     harvestSeason: 'Buds: Feb–Mar before leaves open.',
     safetyWarnings: ['Tree identification only — do not girdle trees.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Populus_trichocarpa_05897.JPG/960px-Populus_trichocarpa_05897.JPG',
+    imageUrl: '/oregon-plant-medicine/cottonwood.jpg',
     imageCredit: 'Wikimedia Commons — Populus trichocarpa',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Populus_trichocarpa' },
@@ -359,7 +359,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Not for children with viral illness (Reye syndrome risk with salicylates).',
       'Can interact with blood thinners.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Salix_lucida%2801%29.jpg/960px-Salix_lucida%2801%29.jpg',
+    imageUrl: '/oregon-plant-medicine/willow.jpg',
     imageCredit: 'Wikimedia Commons — Salix lucida',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Salix_lucida' },
@@ -379,7 +379,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Tea from flowering tops; poultice.',
     harvestSeason: 'Summer flowering tops.',
     safetyWarnings: ['Generally mild — verify ID.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Common_self-heal_%28Prunella_vulgaris%29_--_flower_head_closeup.JPG/960px-Common_self-heal_%28Prunella_vulgaris%29_--_flower_head_closeup.JPG',
+    imageUrl: '/oregon-plant-medicine/self-heal.jpg',
     imageCredit: 'Wikimedia Commons — Prunella vulgaris',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Prunella_vulgaris' },
@@ -400,7 +400,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Cold infusion of fresh plant or juiced tops.',
     harvestSeason: 'Before flowering: Mar–May.',
     safetyWarnings: ['Diuretic — hydrate well. Avoid if pregnant.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Galium_aparine_110121407.jpg/960px-Galium_aparine_110121407.jpg',
+    imageUrl: '/oregon-plant-medicine/cleavers.jpg',
     imageCredit: 'Wikimedia Commons — Galium aparine',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Galium_aparine' },
@@ -424,7 +424,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Liver toxicity possible with prolonged high-dose usnic acid — short-term use only.',
       'Never harvest from polluted areas.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Usnea.jpg/960px-Usnea.jpg',
+    imageUrl: '/oregon-plant-medicine/usnea.jpg',
     imageCredit: 'Wikimedia Commons — Usnea',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Usnea' },
@@ -447,7 +447,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Must be pore surface — not gilled mushrooms.',
       'Wild mushroom ID confidence required.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Gewoon_elfenbankje_%28Trametes_versicolor%29._Locatie%2C_Paddenstoelenreservaat._31-10-2022._%28actm.%29_01.jpg/960px-Gewoon_elfenbankje_%28Trametes_versicolor%29._Locatie%2C_Paddenstoelenreservaat._31-10-2022._%28actm.%29_01.jpg',
+    imageUrl: '/oregon-plant-medicine/turkey-tail.jpg',
     imageCredit: 'Wikimedia Commons — Trametes versicolor',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Trametes_versicolor' },
@@ -470,7 +470,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'DEADLY lookalike: Jack-o-lantern (Omphalotus) — learn false gills vs. true gills.',
       'Always confirm with experienced forager first season.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Cantharellus_formosus_%2831054404564%29.jpg/960px-Cantharellus_formosus_%2831054404564%29.jpg',
+    imageUrl: '/oregon-plant-medicine/chanterelle.jpg',
     imageCredit: 'Wikimedia Commons — Cantharellus formosus',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Cantharellus_formosus' },
@@ -491,7 +491,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Eat fresh.',
     harvestSeason: 'Late spring–summer.',
     safetyWarnings: ['Stay on trails in dune habitat — fragile ecosystem.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Fragaria_chiloensis_kz04.jpg/960px-Fragaria_chiloensis_kz04.jpg',
+    imageUrl: '/oregon-plant-medicine/beach-strawberry.jpg',
     imageCredit: 'Wikimedia Commons — Fragaria chiloensis',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Fragaria_chiloensis' },
@@ -512,7 +512,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Tea, infused honey, or dried for winter.',
     harvestSeason: 'Soft tips: Apr–May only.',
     safetyWarnings: ['Avoid yew (toxic) — flat needles, red cup on berry.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/3/39/Pseudotsuga_01.jpg',
+    imageUrl: '/oregon-plant-medicine/douglas-fir-tip.jpg',
     imageCredit: 'Wikimedia Commons — Pseudotsuga menziesii',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Pseudotsuga_menziesii' },
@@ -533,7 +533,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Remove seeds/hairs from hips before eating. Tea or syrup.',
     harvestSeason: 'Flowers: May–Jun. Hips: after first frost.',
     safetyWarnings: ['Irritating hairs inside hips — strain well.'],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Rosa_nutkana_07513.JPG/960px-Rosa_nutkana_07513.JPG',
+    imageUrl: '/oregon-plant-medicine/nootka-rose.jpg',
     imageCredit: 'Wikimedia Commons — Rosa nutkana',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rosa_nutkana' },
@@ -557,7 +557,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Avoid in pregnancy and with alcoholism.',
       'Contains nicotine — not for children.',
     ],
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Equisetum_arvense.jpg/960px-Equisetum_arvense.jpg',
+    imageUrl: '/oregon-plant-medicine/horsetail.jpg',
     imageCredit: 'Wikimedia Commons — Equisetum arvense',
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Equisetum_arvense' },
