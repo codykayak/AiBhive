@@ -216,6 +216,30 @@ function cursorAuthHeader() {
   return `Bearer ${key}`;
 }
 
+/** Live check against Cursor Cloud Agents API — validates the server key, not just env presence. */
+export async function probeCursorApiKey() {
+  const auth = cursorAuthHeader();
+  if (!auth) return { ok: false, reason: 'not_configured' };
+
+  try {
+    const res = await fetch('https://api.cursor.com/v1/me', {
+      headers: { Authorization: auth },
+    });
+    if (!res.ok) {
+      const detail = (await res.text()).slice(0, 200);
+      return { ok: false, reason: 'auth_failed', httpStatus: res.status, detail };
+    }
+    const data = await res.json();
+    return {
+      ok: true,
+      apiKeyName: data.apiKeyName || null,
+      userEmail: data.userEmail || null,
+    };
+  } catch (err) {
+    return { ok: false, reason: 'network_error', message: err.message };
+  }
+}
+
 function buildAgentPrompt(buildPrompt, taskId, ctx) {
   const target = ctx?.target || 'host_screen';
   const slug = ctx?.slug || `hive-${taskId}`;
