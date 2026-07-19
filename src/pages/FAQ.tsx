@@ -1,18 +1,10 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { ChevronDown, MessageCircleQuestion } from 'lucide-react';
+import { MessageCircleQuestion } from 'lucide-react';
 import { SEO } from '../components/SEO';
 import DirectAnswer from '../components/DirectAnswer';
 import { faqs } from '../components/FAQData';
 import { SITE_TAGLINE } from '../constants/site';
 
 export default function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   return (
     <div className="min-h-screen bg-bee-black pt-24 pb-20 relative overflow-hidden">
       <SEO
@@ -34,41 +26,28 @@ export default function FAQ() {
           </h1>
           <DirectAnswer>{SITE_TAGLINE}</DirectAnswer>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
-            Bhive Builder, Hive Apps, SWARM transcription, pricing, and enterprise automation—answers stay in
-            this page for search engines and AI assistants.
+            Bhive Builder, Hive Apps, SWARM transcription, pricing, and enterprise automation—answers stay
+            visible on this page for search engines and AI assistants.
           </p>
         </div>
 
         <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <motion.div
+          {faqs.map((faq) => (
+            <details
               key={faq.question}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm"
+              open
+              className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm group"
             >
-              <button
-                type="button"
-                onClick={() => toggleFAQ(index)}
-                aria-expanded={openIndex === index}
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors"
-              >
+              <summary className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-white/5 transition-colors cursor-pointer list-none">
                 <h2 className="text-lg font-bold text-white pr-8">{faq.question}</h2>
-                <div
-                  className={`p-2 rounded-full bg-bee-amber/10 text-bee-amber transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`}
-                >
-                  <ChevronDown className="w-5 h-5" />
-                </div>
-              </button>
-
-              {/* Always in DOM for crawlers; visually collapsed when closed */}
-              <div
-                className={`px-6 pb-5 text-slate-300 leading-relaxed border-t border-white/5 pt-4 ${openIndex === index ? 'block' : 'hidden'}`}
-              >
+                <span className="p-2 rounded-full bg-bee-amber/10 text-bee-amber group-open:rotate-45 transition-transform text-xl leading-none">
+                  +
+                </span>
+              </summary>
+              <div className="px-6 pb-5 text-slate-300 leading-relaxed border-t border-white/5 pt-4">
                 {faq.answer}
               </div>
-            </motion.div>
+            </details>
           ))}
         </div>
       </div>
