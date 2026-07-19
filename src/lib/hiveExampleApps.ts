@@ -16,6 +16,7 @@ export const EXAMPLE_APP_IDS = {
   focusReactor: 'example-focus-reactor',
   houseFlip: 'example-house-flip',
   oldTartarResearch: 'example-old-tartar-research',
+  oregonPlantMedicine: 'example-oregon-plant-medicine',
 } as const;
 
 export function listLocalExampleApps(): HiveAppSpec[] {
@@ -91,5 +92,10 @@ export const EXAMPLE_TOOLS = [
     id: EXAMPLE_APP_IDS.oldTartarResearch,
     title: 'Old Tartar Research',
     sub: 'Historical archives · anomaly detection',
+  },
+  {
+    id: EXAMPLE_APP_IDS.oregonPlantMedicine,
+    title: 'Oregon Plant Medicine',
+    sub: 'Eugene & Florence edible & medicinal plants',
   },
 ] as const;

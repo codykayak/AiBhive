@@ -10,6 +10,7 @@ export const ENHANCED_HIVE_RUNNERS: Record<string, string> = {
   'example-focus-reactor': `${EMBED_BASE}/example-focus-reactor?mobile=1`,
   'example-job-hunter': `${EMBED_BASE}/example-job-hunter?mobile=1`,
   'example-mock-realestate': `${EMBED_BASE}/example-mock-realestate?mobile=1`,
+  'example-oregon-plant-medicine': `${EMBED_BASE}/example-oregon-plant-medicine?mobile=1`,
 };
 
 export function enhancedRunnerUrl(exampleId: string): string | null {

@@ -413,5 +413,35 @@
         }
       }
     ]
+  },
+  {
+    "id": "example-oregon-plant-medicine",
+    "title": "Oregon Plant Medicine",
+    "tagline": "Eugene & Florence foraging library",
+    "summary": "Private holistic reference for edible and medicinal plants of the Willamette Valley and Oregon Coast — searchable library, field guide, and curated external resources with photos.",
+    "theme": "green",
+    "icon": "leaf",
+    "category": "guides",
+    "installCount": 0,
+    "isExample": true,
+    "pages": [
+      {
+        "id": "about",
+        "title": "Oregon Plant Medicine",
+        "type": "info",
+        "config": {
+          "body": "Open the full interactive plant library with search, regional filters, favorites, and links to identification guides.",
+          "bullets": [
+            "24+ PNW plants common near Eugene and Florence",
+            "Edible, medicinal, and holistic preparation notes",
+            "Wikimedia photos and external article links",
+            "Field guide for valley vs. coast foraging"
+          ],
+          "links": [
+            { "label": "Run Oregon Plant Medicine", "url": "https://aibhive.com/hive-apps/run/example-oregon-plant-medicine" }
+          ]
+        }
+      }
+    ]
   }
 ]
