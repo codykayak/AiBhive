@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   BookOpen,
   ExternalLink,
+  FileText,
   Leaf,
   MapPin,
   Search,
@@ -18,10 +19,11 @@ import {
   regionLabel,
 } from '../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
+import { OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
 
 type Props = { expanded?: boolean };
 
-type Tab = 'plants' | 'resources' | 'guide';
+type Tab = 'plants' | 'resources' | 'guide' | 'pdfs';
 type RegionFilter = 'all' | 'eugene' | 'florence';
 type UseFilter = 'all' | PlantUse;
 
@@ -267,6 +269,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           {(
             [
               ['plants', 'Plant library', Sprout],
+              ['pdfs', 'PDF guides', FileText],
               ['resources', 'Resources', BookOpen],
               ['guide', 'Field guide', MapPin],
             ] as const
@@ -387,6 +390,64 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               ))}
             </div>
           </>
+        ) : null}
+
+        {tab === 'pdfs' ? (
+          <div className="space-y-5">
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-100/90 leading-relaxed">
+              <p className="text-xs font-black uppercase tracking-widest text-violet-300 mb-2">What these PDFs cover</p>
+              <p>
+                Downloadable references for <strong className="text-white">Oregon law</strong>,{' '}
+                <strong className="text-white">wild mushroom identification</strong>, and{' '}
+                <strong className="text-white">PNW plant botany</strong>. They intentionally{' '}
+                <strong className="text-white">do not</strong> include psilocybin cultivation steps or DMT
+                extraction/concentration procedures — those are illegal to manufacture and unsafe without laboratory
+                controls.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {OREGON_PLANT_PDF_GUIDES.map((g) => (
+                <article
+                  key={g.id}
+                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 flex flex-col hover:border-violet-500/40 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="p-2.5 rounded-lg bg-violet-500/15 shrink-0">
+                      <FileText className="w-6 h-6 text-violet-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400">{g.pages}</p>
+                      <h2 className="font-bold text-white mt-0.5 leading-snug">{g.title}</h2>
+                      <p className="text-xs text-slate-400 mt-1">{g.subtitle}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-300 mt-4 leading-relaxed flex-1">{g.description}</p>
+                  <ul className="flex flex-wrap gap-1.5 mt-3">
+                    {g.topics.map((t) => (
+                      <li
+                        key={t}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400"
+                      >
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-amber-200/80 mt-3 border-t border-slate-800 pt-3">{g.scopeNote}</p>
+                  <a
+                    href={g.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-3 text-sm transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Open PDF
+                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </a>
+                </article>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         {tab === 'resources' ? (
