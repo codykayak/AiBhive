@@ -85,13 +85,20 @@ export default function ProsLanding() {
               AiBhive Pros is HQ for trade companies — dispatch, team roster, periodic GPS, and a knowledge base
               pulled from the techs actually turning wrenches. Diagnose in the truck; wisdom compounds in the cloud.
             </p>
-            <div className="mt-10 flex flex-wrap gap-3">
+            <motion.div className="mt-10 flex flex-wrap gap-3">
               <Link
                 to="/pros/app"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#F5A623] hover:bg-[#e09510] text-slate-900 font-bold px-6 py-3.5"
               >
                 <Wrench className="w-5 h-5" />
                 Launch company HQ
+              </Link>
+              <Link
+                to="/solutions/field-service-ai"
+                className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 hover:bg-white/15 backdrop-blur font-bold px-6 py-3.5 text-white"
+              >
+                Enterprise overview
+                <ArrowRight className="w-5 h-5" />
               </Link>
               <a
                 href="#how-it-grows"
@@ -100,7 +107,7 @@ export default function ProsLanding() {
                 <BookOpen className="w-5 h-5" />
                 See how it grows
               </a>
-            </div>
+            </motion.div>
             <p className="mt-5 text-sm text-slate-400">
               Field app: <strong className="text-slate-200">AiBhive Diagnose</strong> · Admin: aibhive.com/pros/app
             </p>

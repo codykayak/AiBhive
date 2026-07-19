@@ -67,6 +67,7 @@ const entries = [
   { loc: '/solutions/medical-legal-multi-agent-compliance', priority: '0.95', changefreq: 'monthly' },
   { loc: '/solutions/real-estate-ai-automation', priority: '0.95', changefreq: 'monthly' },
   { loc: '/solutions/phone-systems-ai-integration', priority: '0.95', changefreq: 'monthly' },
+  { loc: '/solutions/field-service-ai', priority: '0.95', changefreq: 'monthly' },
   { loc: '/transcription', priority: '0.9', changefreq: 'weekly' },
   { loc: '/voice-clone', priority: '0.9', changefreq: 'weekly' },
   { loc: '/grow', priority: '0.9', changefreq: 'weekly' },

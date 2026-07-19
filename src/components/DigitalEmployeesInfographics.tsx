@@ -59,6 +59,7 @@ const SOLUTION_LINKS = [
   { label: 'Customer operations', href: '/solutions/ai-customer-operations-automation' },
   { label: 'Document & ERP sync', href: '/solutions/intelligent-document-processing-erp' },
   { label: 'Real estate automation', href: '/solutions/real-estate-ai-automation' },
+  { label: 'Field service AI (Pros + Diagnose)', href: '/solutions/field-service-ai' },
 ] as const;
 
 const tooltipStyle = {
