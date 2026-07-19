@@ -1,6 +1,12 @@
 export type PlantRegion = 'eugene' | 'florence' | 'both';
 
-export type PlantUse = 'edible' | 'medicinal' | 'both';
+export type PlantUse = 'edible' | 'medicinal' | 'both' | 'hallucinogenic';
+
+export type PlantImage = {
+  url: string;
+  credit: string;
+  caption?: string;
+};
 
 export type PlantCategory =
   | 'herb'
@@ -36,6 +42,8 @@ export type PlantEntry = {
   safetyWarnings: string[];
   imageUrl: string;
   imageCredit: string;
+  /** At least two extra ID photos (habitat, fruit, detail, etc.) */
+  additionalImages: PlantImage[];
   externalLinks: ExternalLink[];
 };
 
