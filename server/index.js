@@ -11,6 +11,7 @@ import {
   spawnCursorAgent,
   startCursorRunPoller,
   findPreviousTaskForIteration,
+  probeCursorApiKey,
 } from './hiveOrchestrator.js';
 import { isAutoMergeConfigured } from './hiveAutoMerge.js';
 import { registerDeviceToken, sendBuildReadyPush } from './hivePush.js';
@@ -1959,6 +1960,12 @@ app.get('/api/hive/status', async (_req, res) => {
           : 'Hive + Cursor ready (set HIVE_GITHUB_TOKEN to auto-merge)'
         : 'Hive ready; set CURSOR_API_KEY to enable builds',
   });
+});
+
+/** Validates CURSOR_API_KEY against Cursor's /v1/me (auth only — does not spawn agents). */
+app.get('/api/hive/cursor-health', async (_req, res) => {
+  const result = await probeCursorApiKey();
+  return res.status(result.ok ? 200 : 503).json(result);
 });
 
 app.get('/api/hive/mission', (_req, res) => {
