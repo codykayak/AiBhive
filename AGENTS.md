@@ -13,15 +13,17 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 
 ## Pull requests
 
-**Auto-publish (default):** After local tests pass, open the PR as ready for review (`draft: false`), base `main-fixed`, then **wait for user approval before squash-merge** — do not merge automatically unless the user explicitly asks.
+**Auto-publish + auto-merge (default):** After local tests pass, commit, push, open the PR as ready for review (`draft: false`) to `main-fixed`, then **always squash-merge immediately** — do not wait for manual approval.
 
 1. **Commit and push** to `cursor/<descriptive-name>-c7f3`.
-2. **Open PR** — triggers run on merge via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
-3. **Merge** with squash + delete branch as soon as CI is green (or immediately if checks are still pending and the change is low-risk workflow/config).
+2. **Open PR** — `.github/workflows/auto-merge-cursor-prs.yml` squash-merges `cursor/*` PRs automatically; agents should also merge if the workflow has not run yet.
+3. **Merge command** (run right after opening the PR if it is still open):
 
 ```bash
 gh pr merge <number> --squash --delete-branch
 ```
+
+Merge triggers deploy via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
 
 **Live Research Lab:** https://aibhive.com/research-lab (legacy `/old-world-research` redirects).
 

@@ -98,9 +98,9 @@ Without GCP credentials the **frontend still loads**, but admin/homework APIs an
 2. Run `npm run dev:start` and verify in the browser
 3. Run `npm run build`
 4. Commit and push when you’re happy
-5. Open a PR to `main-fixed` — **do not auto-merge** until you’ve reviewed it in the sandbox or on the deployed preview
+5. Open a PR to `main-fixed` — `cursor/*` agent PRs are **auto squash-merged** by GitHub Actions (see `.github/workflows/auto-merge-cursor-prs.yml`)
 
-Cloud agents follow the same rule: local smoke test → build → PR → you merge when ready.
+Cloud agents: local smoke test → build → push → open PR → auto-merge (no manual approval step).
 
 ## Troubleshooting
 
