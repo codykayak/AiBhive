@@ -37,6 +37,11 @@ export const faqs = [
     "answer": "Yes. Our real estate agents monitor distress signals, sync with CRMs like Follow Up Boss and GoHighLevel, respond to missed calls with intelligent SMS, and book showings or seller appointments automatically. Learn more at /solutions/real-estate-ai-automation."
   },
   {
+    question: 'What is AiBhive Field Service AI (Pros + Diagnose)?',
+    answer:
+      'Field Service AI is our enterprise stack for HVAC, plumbing, electrical, pool, property, and fiber shops: AiBhive Pros is company HQ (dispatch, roster, living knowledge base) and AiBhive Diagnose is the field app (Grok chat, photo vision, 100+ fault playbooks). Every fix can flow back to shop memory so the next truck roll starts smarter. Overview at /solutions/field-service-ai — try Diagnose at /diagnose or Pros at /pros.',
+  },
+  {
     "question": "How do I book a strategy call for custom automation?",
     "answer": "Use the Book a call link in the navigation or visit /book-consultation. The form captures your company, goals, tech stack, timeline, and budget so our team can schedule a live automation audit."
   },
