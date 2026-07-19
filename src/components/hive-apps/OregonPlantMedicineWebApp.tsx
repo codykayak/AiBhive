@@ -72,6 +72,7 @@ function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => voi
             alt={plant.commonName}
             className="w-full h-48 sm:h-56 object-cover"
             loading="lazy"
+            referrerPolicy="no-referrer"
           />
           <button
             type="button"
@@ -304,6 +305,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                       alt={plant.commonName}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
+                      referrerPolicy="no-referrer"
                     />
                     <button
                       type="button"
