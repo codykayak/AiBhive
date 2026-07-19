@@ -15,10 +15,11 @@ const faqs = [
 export default function AboutContact() {
   return (
     <main className="py-24">
-      <SEO 
+      <SEO
         title="About AiBhive - AI App Factory & Multi-Agent Automation | Contact Us"
         description="About AiBhive: the team behind Bhive Builder, Hive Apps, Research Lab, and multi-agent Hive architecture for transcription, real estate AI, and enterprise automation. Contact us."
         keywords="about AiBhive, Bhive Builder, AI app factory, multi-agent AI, AiBhive contact, Research Lab"
+        faqs={faqs.map((f) => ({ question: f.q, answer: f.a }))}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 mb-32 items-center">

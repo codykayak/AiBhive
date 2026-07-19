@@ -13,7 +13,7 @@ export const DEFAULT_SEO = {
   title: 'AiBhive — AI App Factory, Community Apps & Enterprise Agentic AI',
   description: SITE_TAGLINE,
   keywords:
-    'AiBhive, Bhive Builder, AI app builder, real estate AI automation, no-code apps, agentic AI, Hive Apps, Research Lab, Fable Scrape, community app pool, enterprise AI workflows',
+    'AiBhive, Bhive Builder, AI app builder, Hive Apps, Research Lab, Fable Scrape, OCR Lab, real estate AI automation, agentic AI, no-code apps, AiBhive Pros, AiBhive Diagnose, field service AI, transcription, voice cloning, enterprise AI workflows',
 } as const;
 
 export const ORGANIZATION_SCHEMA = {
@@ -22,5 +22,5 @@ export const ORGANIZATION_SCHEMA = {
   url: SITE_URL,
   description: SITE_TAGLINE,
   logo: `${SITE_URL}/favicon.svg`,
-  sameAs: [] as string[],
+  sameAs: ['https://github.com/codykayak/AiBhive'] as string[],
 } as const;

@@ -12,6 +12,10 @@ AiBhive helps individuals and businesses ship software and automation without tr
 2. **Hive Apps** (`/hive-apps`) — a community pool of installable tools. Try demos, install free apps, tweak existing ones, or commission custom builds from a few dollars.
 3. **Research Lab** (`/research-lab`) — multi-agent community-sourced research: Fable Scrape, OCR Lab, translation (including historical scripts), Grok synthesis, and a shared discovery library. Category hubs: Historical & Ancient, Medical & Holistic, Legal Findings, Academia & Scholarly. Metered with Hive credits; monthly Pro/Unlimited plans renew research allowances.
 
+4. **AiBhive Pros** (`/pros`, `/pros/{trade}`) — field-service platform for HVAC, pool, electrical, plumbing, fiber, and property management: living shop knowledge, dispatch context, and integration with AiBhive Diagnose.
+
+5. **AiBhive Diagnose** (`/diagnose`) — web landing for the trade diagnosis app: AI chat, photo vision, guided fault flows, code/safety references, and trade-specific packs (Android app at `/diagnose/app` — private, not for indexing).
+
 Enterprise customers also deploy **agentic workflows** for real estate (listings, missed-call text-back, CRM), lead generation, customer ops, document/ERP processing, phone/SMS, and regulated medical/legal transcription.
 
 ## Home — https://aibhive.com/
@@ -28,7 +32,19 @@ Guided flow: describe the app in plain English, review a quote, approve, and Bhi
 
 ## Hive Apps store — https://aibhive.com/hive-apps
 
-Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, and a mock real estate dashboard.
+Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, Oregon Plant Medicine (regional foraging library), and a mock real estate dashboard.
+
+## Oregon Plant Medicine (Hive App demo) — https://aibhive.com/hive-apps/run/example-oregon-plant-medicine
+
+Private-reference style guide for edible and medicinal plants near Eugene and Florence, Oregon: searchable library, regional filters, Wikimedia-linked resources, field guide tab, and favorites stored locally in the browser.
+
+## AiBhive Pros — https://aibhive.com/pros
+
+Trade-company HQ for field service: grow a living knowledge base from every truck, coordinate jobs, and pair with AiBhive Diagnose. Trade landing pages: HVAC, property management, pool, electrical, plumbing, fiber.
+
+## AiBhive Diagnose — https://aibhive.com/diagnose
+
+AI-assisted diagnosis for field technicians — photo vision, guided flows, fault trees, NEC/pool/HVAC references. Web landing for the Android Pros companion; authenticated app routes are not indexed.
 
 ## Research Lab — https://aibhive.com/research-lab
 
@@ -100,4 +116,4 @@ Neural voice cloning for creators and businesses. Preserve tone and emotion acro
 
 ## Crawl policy notes
 
-Public marketing and product guide pages allow major search and AI crawlers (see robots.txt). Disallowed: `/homework`, `/admin`, `/test`, `/hive-apps/embed`, `/app/settings`, `/research-lab/workspace`.
+Public marketing and product guide pages allow major search and AI crawlers (see robots.txt). Disallowed: `/homework`, `/admin`, `/test`, `/hive-apps/embed`, `/app/settings`, `/research-lab/workspace`, `/pros/app`, `/diagnose/app`.

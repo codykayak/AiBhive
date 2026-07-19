@@ -19,6 +19,7 @@
     "preview": "vite preview --port 8080 --host 0.0.0.0",
     "start": "node server/index.js",
     "sync:mission": "node scripts/sync-hive-mission.mjs",
+    "sitemap": "node scripts/generate-sitemap.mjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test:homework-ocr": "node scripts/test-homework-ocr-upload.mjs"

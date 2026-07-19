@@ -14,7 +14,7 @@ interface SEOProps {
   title?: string;
   description?: string;
   keywords?: string;
-  type?: 'WebSite' | 'SoftwareApplication';
+  type?: 'WebSite' | 'SoftwareApplication' | 'WebPage';
   /** Absolute or site-root path for social preview image */
   image?: string;
   /** Extra JSON-LD nodes merged into @graph */
@@ -35,7 +35,7 @@ export const SEO = ({
   title = DEFAULT_SEO.title,
   description = DEFAULT_SEO.description,
   keywords = DEFAULT_SEO.keywords,
-  type = 'SoftwareApplication',
+  type = 'WebPage',
   image,
   jsonLd = [],
   faqs,
@@ -104,12 +104,16 @@ export const SEO = ({
       <meta name="author" content={SITE_NAME} />
       <link rel="canonical" href={currentUrl} />
       <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms.txt`} title="LLM index" />
+      <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms-full.txt`} title="LLM full corpus" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
       <meta property="og:url" content={currentUrl} />
       <meta property="og:site_name" content={SITE_NAME} />
+      <meta property="og:locale" content="en_US" />
       <meta property="og:image" content={imageUrl} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content={title} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={title} />

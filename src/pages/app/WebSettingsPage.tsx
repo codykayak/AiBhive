@@ -19,7 +19,7 @@ export default function WebSettingsPage() {
 
   return (
     <>
-      <SEO title="Settings — AiBhive Web" description="Hive credits, plans, and account on aibhive.com." />
+      <SEO title="Settings — AiBhive Web" description="Hive credits, plans, and account on aibhive.com." noIndex />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-bee-amber/15 flex items-center justify-center">
