@@ -17,7 +17,7 @@ import {
   matchesRegion,
   regionLabel,
 } from '../../lib/oregonPlantMedicine/plantLibrary';
-import type { PlantEntry, PlantUse } from '../../lib/oregonPlantMedicine/types';
+import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
 
 type Props = { expanded?: boolean };
 
@@ -44,13 +44,22 @@ function saveFavorites(ids: Set<string>) {
 function useLabel(u: PlantUse): string {
   if (u === 'both') return 'Edible & Medicinal';
   if (u === 'edible') return 'Edible';
-  return 'Medicinal';
+  if (u === 'medicinal') return 'Medicinal';
+  return 'Hallucinogenic';
 }
 
 function useBadgeClass(u: PlantUse): string {
   if (u === 'both') return 'bg-emerald-500/20 text-emerald-300';
   if (u === 'edible') return 'bg-lime-500/20 text-lime-300';
-  return 'bg-teal-500/20 text-teal-300';
+  if (u === 'medicinal') return 'bg-teal-500/20 text-teal-300';
+  return 'bg-violet-500/20 text-violet-300';
+}
+
+function allImages(plant: PlantEntry): PlantImage[] {
+  return [
+    { url: plant.imageUrl, credit: plant.imageCredit, caption: 'Primary ID photo' },
+    ...plant.additionalImages,
+  ];
 }
 
 function DetailSection({ title, text }: { title: string; text: string }) {
@@ -62,18 +71,58 @@ function DetailSection({ title, text }: { title: string; text: string }) {
   );
 }
 
+function ImageGallery({ images, name }: { images: PlantImage[]; name: string }) {
+  const [active, setActive] = useState(0);
+  const current = images[active] ?? images[0];
+  if (!current) return null;
+
+  return (
+    <>
+      <img
+        src={current.url}
+        alt={`${name} — ${current.caption ?? 'identification photo'}`}
+        className="w-full h-48 sm:h-56 object-cover"
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
+      <p className="absolute bottom-2 left-3 right-3 text-[10px] text-white/80 bg-black/50 px-2 py-1 rounded">
+        {current.caption ? `${current.caption} · ` : ''}
+        {current.credit}
+      </p>
+      {images.length > 1 ? (
+        <div className="flex gap-2 p-3 bg-slate-900/80 overflow-x-auto border-t border-white/5">
+          {images.map((img, i) => (
+            <button
+              key={img.url}
+              type="button"
+              onClick={() => setActive(i)}
+              className={`shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
+                i === active ? 'border-emerald-400' : 'border-transparent opacity-70 hover:opacity-100'
+              }`}
+            >
+              <img
+                src={img.url}
+                alt=""
+                className="w-20 h-14 object-cover"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => void }) {
+  const images = allImages(plant);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-slate-950 border border-emerald-500/30 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
         <div className="relative">
-          <img
-            src={plant.imageUrl}
-            alt={plant.commonName}
-            className="w-full h-48 sm:h-56 object-cover"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-          />
+          <ImageGallery images={images} name={plant.commonName} />
           <button
             type="button"
             onClick={onClose}
@@ -82,9 +131,6 @@ function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => voi
           >
             <X className="w-5 h-5" />
           </button>
-          <p className="absolute bottom-2 left-3 text-[10px] text-white/70 bg-black/50 px-2 py-0.5 rounded">
-            {plant.imageCredit}
-          </p>
         </div>
         <div className="p-5 space-y-4">
           <div>
@@ -169,6 +215,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
       if (!matchesRegion(p, region)) return false;
       if (useFilter === 'edible' && p.uses === 'medicinal') return false;
       if (useFilter === 'medicinal' && p.uses === 'edible') return false;
+      if (useFilter === 'hallucinogenic' && p.uses !== 'hallucinogenic') return false;
       if (useFilter === 'both' && p.uses !== 'both') return false;
       if (favoritesOnly && !favorites.has(p.id)) return false;
       if (!q) return true;
@@ -210,7 +257,8 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Private library</p>
             <h1 className="text-xl sm:text-2xl font-black text-white">Oregon Plant Medicine</h1>
             <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-              Edible &amp; medicinal plants of Eugene and Florence, Oregon — holistic reference with external guides.
+              Edible, medicinal &amp; hallucinogenic plants of Eugene and Florence, Oregon — holistic reference with
+              external guides and multi-photo ID.
             </p>
           </div>
         </div>
@@ -271,7 +319,8 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 <option value="all">All uses</option>
                 <option value="edible">Edible</option>
                 <option value="medicinal">Medicinal</option>
-                <option value="both">Both</option>
+                <option value="both">Edible &amp; medicinal</option>
+                <option value="hallucinogenic">Hallucinogenic</option>
               </select>
               <button
                 type="button"
@@ -406,6 +455,33 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 strawberry, licorice fern on mossy maples, and chanterelles in fall. Coastal plants tolerate salt spray
                 and sand — very different from valley species 60 miles inland.
               </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-black text-white mb-2">Hallucinogenics — legal &amp; safety</h2>
+              <p className="mb-3">
+                The library includes a separate <strong className="text-violet-300">Hallucinogenic</strong> filter for
+                psilocybin mushrooms, muscimol Amanita species, and deliriant plants documented in western Oregon. This
+                is <strong className="text-slate-200">educational reference only</strong> — not encouragement to harvest
+                or consume.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-slate-400">
+                <li>
+                  <strong className="text-slate-200">Oregon law</strong> — psilocybin is legal only in licensed service
+                  centers, not for casual wild foraging possession.
+                </li>
+                <li>
+                  <strong className="text-slate-200">Mushroom ID</strong> — wood-chip psilocybes have deadly Galerina
+                  lookalikes. Use spore prints and expert confirmation.
+                </li>
+                <li>
+                  <strong className="text-slate-200">Amanita</strong> — fly agaric and panther cap are not psilocybin;
+                  raw consumption causes severe poisoning.
+                </li>
+                <li>
+                  <strong className="text-slate-200">Jimsonweed</strong> — extremely dangerous deliriant; never ingest.
+                </li>
+              </ul>
             </section>
 
             <section>

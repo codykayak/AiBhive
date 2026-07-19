@@ -1,4 +1,19 @@
-import type { PlantEntry, ResourceCategory } from './types';
+import type { PlantEntry, PlantImage, ResourceCategory } from './types';
+
+function gallery(
+  id: string,
+  credit: string,
+  captions: [string, string] = ['Habitat & growth habit', 'Flowers, fruit, or ID detail'],
+): Pick<PlantEntry, 'imageUrl' | 'imageCredit' | 'additionalImages'> {
+  return {
+    imageUrl: `/oregon-plant-medicine/${id}.jpg`,
+    imageCredit: credit,
+    additionalImages: [
+      { url: `/oregon-plant-medicine/${id}-2.jpg`, credit, caption: captions[0] },
+      { url: `/oregon-plant-medicine/${id}-3.jpg`, credit, caption: captions[1] },
+    ],
+  };
+}
 
 /** Curated Pacific Northwest plants — Eugene (Willamette Valley) & Florence (Oregon Coast). Private reference library. */
 export const PLANT_LIBRARY: PlantEntry[] = [
@@ -21,8 +36,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Fresh stingers cause welts — always wear gloves when harvesting.',
       'Avoid during pregnancy unless guided by a qualified herbalist.',
     ],
-    imageUrl: '/oregon-plant-medicine/stinging-nettle.jpg',
-    imageCredit: 'Wikimedia Commons — Urtica dioica',
+    ...gallery('stinging-nettle', 'Wikimedia Commons — Urtica dioica'),
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/URDI' },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Urtica_dioica' },
@@ -49,8 +63,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Berberine-containing plants may interact with medications — consult a practitioner.',
       'Never strip roots from wild populations.',
     ],
-    imageUrl: '/oregon-plant-medicine/oregon-grape.jpg',
-    imageCredit: 'Wikimedia Commons — Mahonia aquifolium',
+    ...gallery('oregon-grape', 'Wikimedia Commons — Mahonia aquifolium'),
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/MAAQ' },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Mahonia_aquifolium' },
@@ -71,8 +84,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Eat fresh, jam, or dry. Young peeled shoots in spring.',
     harvestSeason: 'Berries: May–July depending on elevation.',
     safetyWarnings: ['Identify carefully vs. other Rubus species.'],
-    imageUrl: '/oregon-plant-medicine/salmonberry.jpg',
-    imageCredit: 'Wikimedia Commons — Rubus spectabilis',
+    ...gallery('salmonberry', 'Wikimedia Commons — Rubus spectabilis'),
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/RUSP' },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rubus_spectabilis' },
@@ -93,8 +105,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Berries fresh or dried. Leaf tea for topical or gargle use.',
     harvestSeason: 'Berries: late summer–fall.',
     safetyWarnings: ['Leaves very astringent — don’t overconsume as tea.'],
-    imageUrl: '/oregon-plant-medicine/salal.jpg',
-    imageCredit: 'Wikimedia Commons — Gaultheria shallon',
+    ...gallery('salal', 'Wikimedia Commons — Gaultheria shallon'),
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/GASH' },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Gaultheria_shallon' },
@@ -116,8 +127,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Raw in salads or lightly wilted.',
     harvestSeason: 'Feb–May peak; fades in heat.',
     safetyWarnings: ['Avoid areas sprayed with herbicides (roadsides).'],
-    imageUrl: '/oregon-plant-medicine/miners-lettuce.jpg',
-    imageCredit: 'Wikimedia Commons — Claytonia perfoliata',
+    ...gallery('miners-lettuce', 'Wikimedia Commons — Claytonia perfoliata'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Claytonia_perfoliata' },
     ],
@@ -140,8 +150,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Avoid internal use in pregnancy.',
       'Can potentiate sedatives in large doses.',
     ],
-    imageUrl: '/oregon-plant-medicine/yarrow.jpg',
-    imageCredit: 'Wikimedia Commons — Achillea millefolium',
+    ...gallery('yarrow', 'Wikimedia Commons — Achillea millefolium'),
     externalLinks: [
       { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/ACMI2' },
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Achillea_millefolium' },
@@ -161,8 +170,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Chew fresh leaf for poultice or dry for tea.',
     harvestSeason: 'Spring through fall; best before seed stalk hardens.',
     safetyWarnings: ['Ensure correct ID — not lily or other lookalikes.'],
-    imageUrl: '/oregon-plant-medicine/plantain.jpg',
-    imageCredit: 'Wikimedia Commons — Plantago major',
+    ...gallery('plantain', 'Wikimedia Commons — Plantago major'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Plantago_major' },
     ],
@@ -182,8 +190,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Salad greens, root decoction, flower wine.',
     harvestSeason: 'Leaves: early spring. Roots: fall.',
     safetyWarnings: ['Only harvest from unsprayed areas.', 'Latex may irritate skin.'],
-    imageUrl: '/oregon-plant-medicine/dandelion.jpg',
-    imageCredit: 'Wikimedia Commons — Taraxacum officinale',
+    ...gallery('dandelion', 'Wikimedia Commons — Taraxacum officinale'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Taraxacum_officinale' },
     ],
@@ -203,8 +210,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Dried blossom tea or fresh in salads.',
     harvestSeason: 'Late spring–summer flowers.',
     safetyWarnings: ['May affect hormone-sensitive conditions — consult practitioner.'],
-    imageUrl: '/oregon-plant-medicine/red-clover.jpg',
-    imageCredit: 'Wikimedia Commons — Trifolium pratense',
+    ...gallery('red-clover', 'Wikimedia Commons — Trifolium pratense'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Trifolium_pratense' },
     ],
@@ -229,8 +235,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Red elderberry (S. racemosa) on coast is toxic — learn the difference.',
       'Leaves, bark, and seeds are toxic.',
     ],
-    imageUrl: '/oregon-plant-medicine/elderberry.jpg',
-    imageCredit: 'Wikimedia Commons — Sambucus cerulea',
+    ...gallery('elderberry', 'Wikimedia Commons — Sambucus cerulea'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Sambucus_cerulea' },
     ],
@@ -251,8 +256,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Peel young shoots; leaf tea; flower blossom garnish.',
     harvestSeason: 'Shoots: spring. Flowers: Jul–Aug.',
     safetyWarnings: ['Positive ID vs. other tall magenta spikes.'],
-    imageUrl: '/oregon-plant-medicine/fireweed.jpg',
-    imageCredit: 'Wikimedia Commons — Chamerion angustifolium',
+    ...gallery('fireweed', 'Wikimedia Commons — Chamerion angustifolium'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Chamerion_angustifolium' },
     ],
@@ -271,8 +275,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Fresh or dried rhizome tea; chew small piece for throat.',
     harvestSeason: 'Year-round rhizome; take only small portions sustainably.',
     safetyWarnings: ['Overharvest damages host ecosystem — take sparingly.'],
-    imageUrl: '/oregon-plant-medicine/licorice-fern.jpg',
-    imageCredit: 'Wikimedia Commons — Polypodium glycyrrhiza',
+    ...gallery('licorice-fern', 'Wikimedia Commons — Polypodium glycyrrhiza'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Polypodium_glycyrrhiza' },
     ],
@@ -294,8 +297,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'High oxalates — avoid large amounts; kidney stone risk.',
       'Do not confuse with clover.',
     ],
-    imageUrl: '/oregon-plant-medicine/redwood-sorrel.jpg',
-    imageCredit: 'Wikimedia Commons — Oxalis oregana',
+    ...gallery('redwood-sorrel', 'Wikimedia Commons — Oxalis oregana'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Oxalis_oregana' },
     ],
@@ -314,8 +316,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Fresh or cooked; freeze well.',
     harvestSeason: 'Late summer–fall.',
     safetyWarnings: ['Positive berry ID essential.'],
-    imageUrl: '/oregon-plant-medicine/huckleberry.jpg',
-    imageCredit: 'Wikimedia Commons — Vaccinium ovatum',
+    ...gallery('huckleberry', 'Wikimedia Commons — Vaccinium ovatum'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Vaccinium_ovatum' },
     ],
@@ -334,8 +335,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Collect fuzzy buds before leaf-out. Infuse in olive oil 4–6 weeks. Strain for salve.',
     harvestSeason: 'Buds: Feb–Mar before leaves open.',
     safetyWarnings: ['Tree identification only — do not girdle trees.'],
-    imageUrl: '/oregon-plant-medicine/cottonwood.jpg',
-    imageCredit: 'Wikimedia Commons — Populus trichocarpa',
+    ...gallery('cottonwood', 'Wikimedia Commons — Populus trichocarpa'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Populus_trichocarpa' },
     ],
@@ -359,8 +359,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Not for children with viral illness (Reye syndrome risk with salicylates).',
       'Can interact with blood thinners.',
     ],
-    imageUrl: '/oregon-plant-medicine/willow.jpg',
-    imageCredit: 'Wikimedia Commons — Salix lucida',
+    ...gallery('willow', 'Wikimedia Commons — Salix lucida'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Salix_lucida' },
     ],
@@ -379,8 +378,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Tea from flowering tops; poultice.',
     harvestSeason: 'Summer flowering tops.',
     safetyWarnings: ['Generally mild — verify ID.'],
-    imageUrl: '/oregon-plant-medicine/self-heal.jpg',
-    imageCredit: 'Wikimedia Commons — Prunella vulgaris',
+    ...gallery('self-heal', 'Wikimedia Commons — Prunella vulgaris'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Prunella_vulgaris' },
     ],
@@ -400,8 +398,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Cold infusion of fresh plant or juiced tops.',
     harvestSeason: 'Before flowering: Mar–May.',
     safetyWarnings: ['Diuretic — hydrate well. Avoid if pregnant.'],
-    imageUrl: '/oregon-plant-medicine/cleavers.jpg',
-    imageCredit: 'Wikimedia Commons — Galium aparine',
+    ...gallery('cleavers', 'Wikimedia Commons — Galium aparine'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Galium_aparine' },
     ],
@@ -424,8 +421,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Liver toxicity possible with prolonged high-dose usnic acid — short-term use only.',
       'Never harvest from polluted areas.',
     ],
-    imageUrl: '/oregon-plant-medicine/usnea.jpg',
-    imageCredit: 'Wikimedia Commons — Usnea',
+    ...gallery('usnea', 'Wikimedia Commons — Usnea'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Usnea' },
     ],
@@ -447,8 +443,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Must be pore surface — not gilled mushrooms.',
       'Wild mushroom ID confidence required.',
     ],
-    imageUrl: '/oregon-plant-medicine/turkey-tail.jpg',
-    imageCredit: 'Wikimedia Commons — Trametes versicolor',
+    ...gallery('turkey-tail', 'Wikimedia Commons — Trametes versicolor'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Trametes_versicolor' },
     ],
@@ -470,8 +465,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'DEADLY lookalike: Jack-o-lantern (Omphalotus) — learn false gills vs. true gills.',
       'Always confirm with experienced forager first season.',
     ],
-    imageUrl: '/oregon-plant-medicine/chanterelle.jpg',
-    imageCredit: 'Wikimedia Commons — Cantharellus formosus',
+    ...gallery('chanterelle', 'Wikimedia Commons — Cantharellus formosus'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Cantharellus_formosus' },
       { label: 'Oregon State Mushroom', url: 'https://en.wikipedia.org/wiki/Cantharellus_formosus' },
@@ -491,8 +485,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Eat fresh.',
     harvestSeason: 'Late spring–summer.',
     safetyWarnings: ['Stay on trails in dune habitat — fragile ecosystem.'],
-    imageUrl: '/oregon-plant-medicine/beach-strawberry.jpg',
-    imageCredit: 'Wikimedia Commons — Fragaria chiloensis',
+    ...gallery('beach-strawberry', 'Wikimedia Commons — Fragaria chiloensis'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Fragaria_chiloensis' },
     ],
@@ -512,8 +505,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Tea, infused honey, or dried for winter.',
     harvestSeason: 'Soft tips: Apr–May only.',
     safetyWarnings: ['Avoid yew (toxic) — flat needles, red cup on berry.'],
-    imageUrl: '/oregon-plant-medicine/douglas-fir-tip.jpg',
-    imageCredit: 'Wikimedia Commons — Pseudotsuga menziesii',
+    ...gallery('douglas-fir-tip', 'Wikimedia Commons — Pseudotsuga menziesii'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Pseudotsuga_menziesii' },
     ],
@@ -533,8 +525,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     preparation: 'Remove seeds/hairs from hips before eating. Tea or syrup.',
     harvestSeason: 'Flowers: May–Jun. Hips: after first frost.',
     safetyWarnings: ['Irritating hairs inside hips — strain well.'],
-    imageUrl: '/oregon-plant-medicine/nootka-rose.jpg',
-    imageCredit: 'Wikimedia Commons — Rosa nutkana',
+    ...gallery('nootka-rose', 'Wikimedia Commons — Rosa nutkana'),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rosa_nutkana' },
     ],
@@ -557,10 +548,235 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Avoid in pregnancy and with alcoholism.',
       'Contains nicotine — not for children.',
     ],
-    imageUrl: '/oregon-plant-medicine/horsetail.jpg',
-    imageCredit: 'Wikimedia Commons — Equisetum arvense',
+    ...gallery('horsetail', 'Wikimedia Commons — Equisetum arvense', [
+      'Sterile green stems',
+      'Fertile brown cone stage',
+    ]),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Equisetum_arvense' },
+    ],
+  },
+  // ——— Hallucinogenics (educational reference — Oregon / PNW) ———
+  {
+    id: 'psilocybe-cyanescens',
+    commonName: 'Wavy Cap',
+    scientificName: 'Psilocybe cyanescens',
+    alsoKnownAs: ['Wavy caps'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat:
+      'Wood-chip mulch, landscaped beds, trail edges, and decaying hardwood debris — extremely common in urban Eugene and coastal towns like Florence after fall rains.',
+    identification:
+      'Caramel to chestnut cap with wavy margin when mature. White stem bruises blue-green. Purple-brown spore print. Grows in clusters on wood chips — not on open pasture.',
+    holisticNotes:
+      'One of the most frequently encountered psilocybin mushrooms in the Pacific Northwest. Documented on iNaturalist throughout Lane County.',
+    preparation: 'Reference only — not consumption guidance.',
+    harvestSeason: 'Late fall through winter after first heavy rains (Oct–Jan).',
+    safetyWarnings: [
+      'ILLEGAL to possess in Oregon except within approved psilocybin service contexts — know state and federal law.',
+      'Deadly lookalikes exist — Galerina marginata grows on wood and contains amatoxins.',
+      'Misidentification can be fatal. Never eat wild mushrooms without expert confirmation.',
+      'Educational reference only — not medical or legal advice.',
+    ],
+    ...gallery('psilocybe-cyanescens', 'Wikimedia Commons — Psilocybe cyanescens', [
+      'Cluster on wood chips',
+      'Cap margin & bruising',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_cyanescens' },
+      { label: 'Mushroom Observer', url: 'https://mushroomobserver.org/' },
+    ],
+  },
+  {
+    id: 'psilocybe-azurescens',
+    commonName: 'Flying Saucer',
+    scientificName: 'Psilocybe azurescens',
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['florence', 'both'],
+    habitat:
+      'Coastal Oregon wood chips, dune grasses, and sandy soils with woody debris — first described near the Oregon coast. Reported from Florence north toward Astoria.',
+    identification:
+      'Large caramel cap (can exceed 10 cm). Robust stem with blue bruising. Often grows in coastal wood-chip piles and edge habitats.',
+    holisticNotes: 'Oregon coast endemic species — a signature mushroom of Pacific Northwest mycology.',
+    preparation: 'Reference only — not consumption guidance.',
+    harvestSeason: 'Late fall (Nov–Dec) on the coast after rains.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed Oregon psilocybin services.',
+      'Potent — dosage errors are dangerous even with correct ID.',
+      'Wood-chip patches may contain toxic Galerina species.',
+      'Educational reference only.',
+    ],
+    ...gallery('psilocybe-azurescens', 'Wikimedia Commons — Psilocybe azurescens', [
+      'Coastal wood-chip habitat',
+      'Cap and stem detail',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_azurescens' },
+    ],
+  },
+  {
+    id: 'psilocybe-semilanceata',
+    commonName: 'Liberty Cap',
+    scientificName: 'Psilocybe semilanceata',
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Sheep and cattle pastures, lawns, and fertilized grass in cool wet weather — reported in Willamette Valley pastures.',
+    identification:
+      'Small conical bell-shaped cap with pointed papilla. Thin wavy stem. Purple-brown spore print. Grows from grass, not wood.',
+    holisticNotes: 'Classic European pasture species also found in Pacific Northwest grasslands.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Fall through early winter during cool wet spells.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed contexts.',
+      'Easily confused with toxic lawn mushrooms.',
+      'Never harvest on grazed pastures without landowner permission.',
+    ],
+    ...gallery('psilocybe-semilanceata', 'Wikimedia Commons — Psilocybe semilanceata', [
+      'Pasture habitat',
+      'Cap shape detail',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_semilanceata' },
+    ],
+  },
+  {
+    id: 'gymnopilus-spectabilis',
+    commonName: 'Big Laughing Gym',
+    scientificName: 'Gymnopilus spectabilis',
+    alsoKnownAs: ['Gymnopilus junonius'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat:
+      'Large clusters on conifer stumps and logs throughout Oregon forests — valley foothills and coast range near Florence.',
+    identification:
+      'Big orange-brown caps in dense clusters on wood. Rusty orange spore print (not purple-brown). Often 10–20 cm caps.',
+    holisticNotes: 'Contains psilocybin but often causes nausea; not a preferred species.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Fall on rotting conifer wood.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed contexts.',
+      'Extremely bitter — gastric distress common.',
+      'Confirm wood-growing habit vs. gilled lookalikes.',
+    ],
+    ...gallery('gymnopilus-spectabilis', 'Wikimedia Commons — Gymnopilus spectabilis', [
+      'Cluster on conifer log',
+      'Cap color & size',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Gymnopilus_spectabilis' },
+    ],
+  },
+  {
+    id: 'amanita-muscaria',
+    commonName: 'Fly Agaric',
+    scientificName: 'Amanita muscaria',
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat:
+      'Mycorrhizal with Douglas fir and pine — common in Eugene foothill forests and coastal woods near Florence.',
+    identification:
+      'Iconic red cap with white warts. White gills, ring on stem, bulbous base. Contains muscimol & ibotenic acid — NOT psilocybin.',
+    holisticNotes: 'One of the most recognizable mushrooms worldwide.',
+    preparation: 'Reference only — raw consumption is dangerous.',
+    harvestSeason: 'Late summer through fall.',
+    safetyWarnings: [
+      'TOXIC if eaten raw — vomiting, confusion, hospitalization possible.',
+      'Amanita genus contains deadly species — expert ID essential.',
+      'Educational reference only.',
+    ],
+    ...gallery('amanita-muscaria', 'Wikimedia Commons — Amanita muscaria', [
+      'Under Douglas fir',
+      'Cap & volva detail',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Amanita_muscaria' },
+    ],
+  },
+  {
+    id: 'amanita-pantherina',
+    commonName: 'Panther Cap',
+    scientificName: 'Amanita pantherina',
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat: 'Conifer and hardwood forests in the PNW — valley to coast.',
+    identification:
+      'Brown cap with white warts. White gills and ring. Bulbous stem base in volva cup. Resembles fly agaric but cap is brown.',
+    holisticNotes: 'More potent muscimol content than A. muscaria.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Summer through fall.',
+    safetyWarnings: [
+      'HIGH RISK of severe poisoning — delirium, hospitalization.',
+      'Never consume. Document for ID education only.',
+    ],
+    ...gallery('amanita-pantherina', 'Wikimedia Commons — Amanita pantherina', [
+      'Forest floor context',
+      'Cap & warts detail',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Amanita_pantherina' },
+    ],
+  },
+  {
+    id: 'panaeolus-cinctulus',
+    commonName: 'Banded Mottlegill',
+    scientificName: 'Panaeolus cinctulus',
+    alsoKnownAs: ['Psilocybe subbalteatus'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat:
+      'Compost, manure-enriched soil, mulched gardens, and lawns — occasional in Eugene valley gardens.',
+    identification:
+      'Small brown cap with darker band at margin when moist. Black gills mottled with spores. Grows from soil not wood.',
+    holisticNotes: 'Weak to moderate psilocybin content — documented in Oregon.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Spring through fall in enriched soils.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed contexts.',
+      'Toxic lookalikes in Panaeolus genus — expert ID required.',
+    ],
+    ...gallery('panaeolus-cinctulus', 'Wikimedia Commons — Panaeolus cinctulus', [
+      'Cap banding',
+      'Gills & stem',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Panaeolus_cinctulus' },
+    ],
+  },
+  {
+    id: 'datura-stramonium',
+    commonName: 'Jimsonweed',
+    scientificName: 'Datura stramonium',
+    alsoKnownAs: ["Devil's snare", 'Thorn apple'],
+    uses: 'hallucinogenic',
+    category: 'herb',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Disturbed soil, vacant lots, roadsides, and gardens — occasional naturalized plant in the Willamette Valley.',
+    identification:
+      'Large trumpet-shaped white or purple flowers. Spiky seed pods. Strong unpleasant odor. Large irregular toothed leaves.',
+    holisticNotes:
+      'Deliriant tropane alkaloids — NOT a classic psychedelic. Historically associated with poisonings.',
+    preparation: 'Reference only — all parts toxic.',
+    harvestSeason: 'Summer–fall flowers and pods.',
+    safetyWarnings: [
+      'EXTREMELY DANGEROUS — overdose causes hospitalization, psychosis, death.',
+      'Educational reference only — avoid all ingestion.',
+    ],
+    ...gallery('datura-stramonium', 'Wikimedia Commons — Datura stramonium', [
+      'Trumpet flower',
+      'Spiny seed pod',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Datura_stramonium' },
+      { label: 'OSU — Poisonous plants', url: 'https://extension.oregonstate.edu/gardening/techniques/poisonous-plants' },
     ],
   },
 ];
@@ -676,6 +892,34 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
         label: 'Dr. Duke’s Phytochemical Database',
         url: 'https://phytochem.nal.usda.gov/phytochem/search',
         description: 'USDA phytochemical and ethnobotanical search.',
+      },
+    ],
+  },
+  {
+    id: 'hallucinogenics-reference',
+    title: 'Hallucinogenics — ID & Safety (Educational)',
+    description:
+      'Pacific Northwest psychoactive fungi and plants — identification references and poison control. Private study only.',
+    links: [
+      {
+        label: 'Oregon Psilocybin Services (OLCC)',
+        url: 'https://www.oregon.gov/olcc/psilocybin',
+        description: 'Oregon’s licensed psilocybin framework — not a wild-foraging permit.',
+      },
+      {
+        label: 'Mushroom Observer — Oregon',
+        url: 'https://mushroomobserver.org/',
+        description: 'Community mushroom ID with photos and range notes.',
+      },
+      {
+        label: 'PSMS — Puget Sound Mycological Society',
+        url: 'https://www.psms.org/',
+        description: 'PNW mushroom identification resources applicable to Oregon.',
+      },
+      {
+        label: 'Oregon Poison Center',
+        url: 'https://www.ohsu.edu/oregon-poison-center',
+        description: '1-800-222-1222 — mushroom or plant exposure emergencies.',
       },
     ],
   },
