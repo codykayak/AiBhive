@@ -46,6 +46,10 @@ Trade-company HQ for field service: grow a living knowledge base from every truc
 
 AI-assisted diagnosis for field technicians — photo vision, guided flows, fault trees, NEC/pool/HVAC references. Web landing for the Android Pros companion; authenticated app routes are not indexed.
 
+## Field Service AI (enterprise) — https://aibhive.com/solutions/field-service-ai
+
+Enterprise solution page tying AiBhive Pros (company HQ, dispatch, roster, periodic GPS, living knowledge base) with AiBhive Diagnose (Grok chat, photo vision, 100+ fault playbooks, six trade packs: HVAC, plumbing, electrical, pool, property, fiber). Covers the diagnose → document → compound knowledge loop, FSM integrations, and pairing with phone/SMS automation.
+
 ## Research Lab — https://aibhive.com/research-lab
 
 Landing for AiBhive’s multi-agent research suite (Research tools). Users scrape archives (including sites that block naive bots via Fable Scrape), run OCR, translate texts (modern and historical scripts), ask Grok-powered questions over a RAG library, and publish findings to a community-sourced library so other researchers can build on shared sources. Hive credits meter usage; Pro ($20/mo) and Unlimited ($50/mo) renew monthly allowances. Workspace tools require sign-in (`/research-lab/workspace` — not for indexing of private sessions).
@@ -104,6 +108,7 @@ Neural voice cloning for creators and businesses. Preserve tone and emotion acro
 | /solutions/enterprise-workflow-orchestration | Event-driven multi-step agent pipelines |
 | /solutions/medical-legal-multi-agent-compliance | Regulated dual-pass transcription + audit |
 | /solutions/phone-systems-ai-integration | Telephony webhooks, SMS dialogue, calendar book |
+| /solutions/field-service-ai | Pros HQ + Diagnose — field diagnosis, dispatch, shop knowledge loop |
 | /solutions/real-estate-ai-automation | End-to-end listing-to-appointment agentic stack |
 
 ## Getting help

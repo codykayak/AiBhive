@@ -35,6 +35,7 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 
 ## Trade & field service (Pros + Diagnose)
 
+- [Field service AI (enterprise)](https://aibhive.com/solutions/field-service-ai): Pros HQ + Diagnose — HVAC/plumbing AI diagnosis, dispatch, living knowledge
 - [AiBhive Pros](https://aibhive.com/pros): Field-service knowledge base, dispatch, and shop memory for trades
 - [Pros for HVAC](https://aibhive.com/pros/hvac): Cooling, heating, airflow, controls
 - [Pros for property management](https://aibhive.com/pros/property): Multi-site maintenance and vendor coordination
@@ -73,6 +74,7 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Enterprise workflow orchestration](https://aibhive.com/solutions/enterprise-workflow-orchestration): Event-driven multi-agent business workflows
 - [Medical & legal multi-agent compliance](https://aibhive.com/solutions/medical-legal-multi-agent-compliance): Cross-verified regulated transcription
 - [Phone systems AI integration](https://aibhive.com/solutions/phone-systems-ai-integration): Missed-call text-back and appointment booking
+- [Field service AI (Pros + Diagnose)](https://aibhive.com/solutions/field-service-ai): HVAC/plumbing diagnosis, dispatch, and compounding shop knowledge
 
 ## Public demos & getting started
 

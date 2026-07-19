@@ -85,6 +85,13 @@ function DiagnoseLandingInner() {
                   <Building2 className="w-5 h-5" />
                   Company accounts
                 </Link>
+                <Link
+                  to="/solutions/field-service-ai"
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold px-6 py-4 text-slate-800"
+                >
+                  Enterprise overview
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
                 <a
                   href="/api/download/diagnose-apk"
                   className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 font-bold px-6 py-4 text-slate-800"

@@ -37,6 +37,7 @@ const WorkflowOrchestration = lazy(() => import('./pages/solutions/WorkflowOrche
 const MedicalLegalMultiAgent = lazy(() => import('./pages/solutions/MedicalLegalMultiAgent'));
 const RealEstateSolutions = lazy(() => import('./pages/solutions/RealEstateSolutions'));
 const PhoneSystemsIntegration = lazy(() => import('./pages/solutions/PhoneSystemsIntegration'));
+const FieldServiceAi = lazy(() => import('./pages/solutions/FieldServiceAi'));
 const BookConsultation = lazy(() => import('./pages/BookConsultation'));
 const ResearchPage = lazy(() => import('./pages/app/ResearchPage'));
 const AppHub = lazy(() => import('./pages/app/AppHub'));
@@ -127,6 +128,7 @@ function AnimatedRoutes() {
             <Route path="/solutions/medical-legal-multi-agent-compliance" element={<MedicalLegalMultiAgent />} />
             <Route path="/solutions/real-estate-ai-automation" element={<RealEstateSolutions />} />
             <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
+            <Route path="/solutions/field-service-ai" element={<FieldServiceAi />} />
             <Route path="/book-consultation" element={<BookConsultation />} />
             <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
             <Route path="/research" element={<AppRedirect to="/app/research" />} />

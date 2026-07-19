@@ -4,6 +4,7 @@ import heroImg from '../../ai_voice_translation_clone_lab.png';
 import sectionImg from '../../1775556316513.png';
 
 const RELATED = [
+  { label: 'Field Service AI', href: '/solutions/field-service-ai' },
   { label: 'Real Estate AI', href: '/solutions/real-estate-ai-automation' },
   { label: 'Lead Generation', href: '/solutions/ai-lead-generation-automation' },
   { label: 'Customer Operations', href: '/solutions/ai-customer-operations-automation' },

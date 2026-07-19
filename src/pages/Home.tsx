@@ -13,6 +13,7 @@ import {
   Scale,
   Building2,
   Smartphone,
+  Wrench,
 } from 'lucide-react';
 import { SITE_TAGLINE } from '../constants/site';
 import backgroundLogo from '../aibhive_background.png';
@@ -64,6 +65,12 @@ const CATEGORIES = [
     href: '/solutions/phone-systems-ai-integration',
     title: 'Phone Systems',
     excerpt: 'Twilio, RingCentral, and OpenPhone—RAG-trained text-back on every missed call.',
+  },
+  {
+    icon: Wrench,
+    href: '/solutions/field-service-ai',
+    title: 'Field Service AI',
+    excerpt: 'AiBhive Pros + Diagnose — HVAC/plumbing diagnosis, dispatch, and living shop knowledge.',
   },
 ] as const;
 

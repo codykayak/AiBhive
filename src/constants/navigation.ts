@@ -34,6 +34,10 @@ export const SOLUTION_CATEGORIES = [
     path: '/solutions/phone-systems-ai-integration',
   },
   {
+    name: 'Field Service AI',
+    path: '/solutions/field-service-ai',
+  },
+  {
     name: 'Auto Social',
     path: '/admin?tab=auto-social',
   },
