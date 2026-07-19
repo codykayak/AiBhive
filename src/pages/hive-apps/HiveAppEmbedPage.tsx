@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { SEO } from '../../components/SEO';
 import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
 import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
@@ -71,6 +72,7 @@ export default function HiveAppEmbedPage() {
 
   return (
     <div className={`min-h-screen min-h-[100dvh] flex flex-col ${isTartarApp ? 'bg-[#0a0e14]' : 'bg-[#070a0f]'}`}>
+      <SEO title={`${app.title} — Embed`} description="AiBhive Hive App embed" noIndex />
       <main className="flex-1 w-full min-h-0 overflow-auto p-0">
         {Enhanced ? <Enhanced expanded /> : <DynamicAppRunner app={app} expanded />}
       </main>

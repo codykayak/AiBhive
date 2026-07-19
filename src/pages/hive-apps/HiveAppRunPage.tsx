@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChevronLeft, Maximize2, RefreshCw } from 'lucide-react';
+import { SEO } from '../../components/SEO';
 import DynamicAppRunner from '../../components/hive-apps/DynamicAppRunner';
 import { getEnhancedExampleApp } from '../../components/hive-apps/enhancedExampleApps';
 import { fetchToolkitApp } from '../../lib/hiveStoreApi';
@@ -79,6 +80,12 @@ export default function HiveAppRunPage() {
 
   return (
     <div className={`min-h-screen flex flex-col ${isTartarApp ? 'bg-[#0a0e14]' : 'bg-[#070a0f]'}`}>
+      <SEO
+        title={`${app.title} — Hive App | AiBhive`}
+        description={app.summary || app.tagline || `Run ${app.title} in your browser — AiBhive Hive Apps.`}
+        type="SoftwareApplication"
+        keywords={`${app.title}, Hive Apps, AiBhive, ${app.category || 'productivity'}`}
+      />
       <AssistantTopSpacer />
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#070a0f]/95 backdrop-blur">
         <Link

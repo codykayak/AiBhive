@@ -13,7 +13,6 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Build a Hive App](https://aibhive.com/hive-apps/build): Describe an app; Bhive Builder ships it in the browser
 - [Hive Apps store](https://aibhive.com/hive-apps): Browse, install, try, and share community apps
 - [Research Lab](https://aibhive.com/research-lab): Multi-agent research tools — scrape, OCR, translate, Grok synthesis, community library
-- [Research tools workspace](https://aibhive.com/research-lab/workspace): Signed-in Research Lab workbench
 - [Communal Library](https://aibhive.com/research-lab/communal-library): Shared 3D knowledge map and community-sourced corpora
 - [Nag Hammadi & Gnostic](https://aibhive.com/research-lab/communal-library/nag-hammadi): Complete NHL tractate catalog for harvest and word indexing
 - [Research Lab · Historical & Ancient](https://aibhive.com/research-lab/historical-ancient): Archive harvest, ancient scripts, Nag Hammadi / Gnostic texts, community corpus
@@ -25,6 +24,25 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [OCR Lab](https://aibhive.com/ocr-lab): Batch image-to-text with vision models (Markdown/PDF export)
 - [FAQ](https://aibhive.com/faq): Bhive Builder, Hive Apps, BYOK pricing, real estate AI, transcription
 - [About](https://aibhive.com/about): Company story, multi-agent Hive architecture, contact
+
+## Bhive Builder topic hubs
+
+- [Automated AI social media](https://aibhive.com/app/automated-social-media): Plan, draft, schedule, and learn across channels
+- [AI phone system intelligence](https://aibhive.com/app/phone-intelligence): Missed-call text-back, RAG replies, call routing
+- [AI lead generation pipelines](https://aibhive.com/app/lead-generation): Prospecting, enrichment, nurture, booking
+- [100× productivity with AI](https://aibhive.com/app/productivity): Custom apps and admin tools from plain English
+- [Research & OSINT hub](https://aibhive.com/app/research): Company and domain intelligence from the App hub
+
+## Trade & field service (Pros + Diagnose)
+
+- [AiBhive Pros](https://aibhive.com/pros): Field-service knowledge base, dispatch, and shop memory for trades
+- [Pros for HVAC](https://aibhive.com/pros/hvac): Cooling, heating, airflow, controls
+- [Pros for property management](https://aibhive.com/pros/property): Multi-site maintenance and vendor coordination
+- [Pros for pool service](https://aibhive.com/pros/pool): Chemistry, equipment, seasonal openings
+- [Pros for electrical](https://aibhive.com/pros/electrical): Panels, circuits, code-aware diagnosis
+- [Pros for plumbing](https://aibhive.com/pros/plumbing): Supply, drain, water heaters, leak isolation
+- [Pros for fiber / low voltage](https://aibhive.com/pros/fiber): Drops, splicing, OTDR-style troubleshooting
+- [AiBhive Diagnose](https://aibhive.com/diagnose): AI field diagnosis for techs — chat, vision, guided flows, trade packs
 
 ## Real estate AI
 
@@ -63,10 +81,17 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Mock real estate dashboard](https://aibhive.com/hive-apps/run/example-mock-realestate): Static property ops dashboard demo
 - [Job Hunter demo](https://aibhive.com/hive-apps/run/example-job-hunter): Automated job search assistant
 - [Social Post Hunter demo](https://aibhive.com/hive-apps/run/example-social-post-hunter): Find and act on social opportunities
+- [Homework Bot demo](https://aibhive.com/hive-apps/run/example-homework-bot): OCR pages → private RAG → Grok answers
+- [Meeting Burn demo](https://aibhive.com/hive-apps/run/example-meeting-burn): Live meeting cost clock
+- [Focus Reactor demo](https://aibhive.com/hive-apps/run/example-focus-reactor): Deep-work particle focus timer
+- [House Flip Calculator demo](https://aibhive.com/hive-apps/run/example-house-flip): ARV, rehab, profit charts
+- [Oregon Plant Medicine demo](https://aibhive.com/hive-apps/run/example-oregon-plant-medicine): Eugene & Florence edible/medicinal plant library
 - [Get started / pricing quote](https://aibhive.com/get-started): Instant quotes for transcription, translation, voice cloning
 - [Book consultation](https://aibhive.com/book-consultation): Strategy call for custom agentic workflows
 
 ## Optional
 
 - [Sitemap](https://aibhive.com/sitemap.xml): Full crawlable URL index for search engines
+- [LLM full corpus](https://aibhive.com/llms-full.txt): Extended page summaries for AI agents
 - [Privacy policy](https://aibhive.com/privacy-policy.html): Privacy and data practices
+- [Terms of service](https://aibhive.com/terms-of-service.html): Terms of use

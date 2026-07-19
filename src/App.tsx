@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AnimatePresence, motion } from 'motion/react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import { SEO } from './components/SEO';
 import HomeAssistantWeb from './components/HomeAssistantWeb';
 import SiteAnalyticsBeacon from './components/SiteAnalyticsBeacon';
 import SiteGuideTour from './components/SiteGuideTour';
@@ -209,7 +208,6 @@ function AppShell() {
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        {!isPrivateRoute && !isEmbedRoute && <SEO />}
         {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />

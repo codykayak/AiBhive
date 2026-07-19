@@ -13,6 +13,8 @@ Disallow: /test
 Disallow: /hive-apps/embed
 Disallow: /app/settings
 Disallow: /research-lab/workspace
+Disallow: /pros/app
+Disallow: /diagnose/app
 
 # --- Search engines ---
 User-agent: Googlebot
