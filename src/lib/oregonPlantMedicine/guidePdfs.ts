@@ -10,6 +10,24 @@ export type OregonPlantPdfGuide = {
   scopeNote: string;
 };
 
+/** Plant library IDs that map to each PDF (educational cross-links only). */
+export const PLANT_PDF_GUIDE_IDS: Record<string, string[]> = {
+  'oregon-psilocybin-law-id-safety': [
+    'psilocybe-cyanescens',
+    'psilocybe-azurescens',
+    'psilocybe-semilanceata',
+    'gymnopilus-spectabilis',
+    'panaeolus-cinctulus',
+    'amanita-muscaria',
+    'amanita-pantherina',
+  ],
+  'oregon-entheogen-botany-dmt-plants': [],
+};
+
+export function getPdfGuidesForPlant(plantId: string): OregonPlantPdfGuide[] {
+  return OREGON_PLANT_PDF_GUIDES.filter((g) => PLANT_PDF_GUIDE_IDS[g.id]?.includes(plantId));
+}
+
 export const OREGON_PLANT_PDF_GUIDES: OregonPlantPdfGuide[] = [
   {
     id: 'oregon-psilocybin-law-id-safety',

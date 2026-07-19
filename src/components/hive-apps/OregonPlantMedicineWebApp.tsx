@@ -19,7 +19,7 @@ import {
   regionLabel,
 } from '../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
-import { OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
+import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
 
 type Props = { expanded?: boolean };
 
@@ -174,6 +174,26 @@ function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => voi
                   <li key={w}>{w}</li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+
+          {getPdfGuidesForPlant(plant.id).length > 0 ? (
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-violet-400 mb-2">PDF guides</p>
+              <div className="space-y-2">
+                {getPdfGuidesForPlant(plant.id).map((g) => (
+                  <a
+                    key={g.id}
+                    href={g.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-violet-300 hover:text-violet-200 hover:underline"
+                  >
+                    <FileText className="w-3.5 h-3.5 shrink-0" />
+                    {g.title} (PDF)
+                  </a>
+                ))}
+              </div>
             </div>
           ) : null}
 
@@ -543,6 +563,21 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                   <strong className="text-slate-200">Jimsonweed</strong> — extremely dangerous deliriant; never ingest.
                 </li>
               </ul>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                {OREGON_PLANT_PDF_GUIDES.map((g) => (
+                  <a
+                    key={g.id}
+                    href={g.pdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-200 hover:bg-violet-500/20 transition-colors"
+                  >
+                    <FileText className="w-4 h-4 shrink-0" />
+                    {g.title}
+                    <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                  </a>
+                ))}
+              </div>
             </section>
 
             <section>
