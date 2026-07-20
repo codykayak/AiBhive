@@ -184,6 +184,66 @@ const MANIFEST = {
     'Amanita pantherina cap.jpg',
     'Amanita pantherina stem.jpg',
   ],
+  thimbleberry: [
+    'Rubus parviflorus 2.jpg',
+    'Rubus parviflorus flower.jpg',
+    'Rubus parviflorus fruit.jpg',
+  ],
+  'trailing-blackberry': [
+    'Rubus ursinus 1.jpg',
+    'Rubus ursinus flower.jpg',
+    'Rubus ursinus fruit.jpg',
+  ],
+  'red-huckleberry': [
+    'Vaccinium parvifolium 2.jpg',
+    'Vaccinium parvifolium fruit.jpg',
+    'Vaccinium parvifolium flowers.jpg',
+  ],
+  serviceberry: [
+    'Amelanchier alnifolia 2.jpg',
+    'Amelanchier alnifolia fruit.jpg',
+    'Amelanchier alnifolia flowers.jpg',
+  ],
+  chickweed: [
+    'Stellaria media 001.JPG',
+    'Stellaria media flower.jpg',
+    'Stellaria media kz01.jpg',
+  ],
+  'lambs-quarters': [
+    'Chenopodium album 001.JPG',
+    'Chenopodium album flower.jpg',
+    'Chenopodium album kz01.jpg',
+  ],
+  'wild-mint': [
+    'Mentha arvensis 001.JPG',
+    'Mentha arvensis flower.jpg',
+    'Mentha arvensis kz01.jpg',
+  ],
+  cattail: [
+    'Typha latifolia 001.JPG',
+    'Typha latifolia flower.jpg',
+    'Typha latifolia kz01.jpg',
+  ],
+  'pacific-crabapple': [
+    'Malus fusca fruit.jpg',
+    'Malus fusca 2.jpg',
+    'Malus fusca flowers.jpg',
+  ],
+  morel: [
+    'Morchella esculenta 1.jpg',
+    'Morchella elata 83497.jpg',
+    'Morchella conica 1 beentree.jpg',
+  ],
+  purslane: [
+    'Portulaca oleracea 001.JPG',
+    'Portulaca oleracea flower.jpg',
+    'Portulaca oleracea kz01.jpg',
+  ],
+  burdock: [
+    'Arctium minus 001.JPG',
+    'Arctium minus flower.jpg',
+    'Arctium minus kz01.jpg',
+  ],
 };
 
 function sleep(ms) {

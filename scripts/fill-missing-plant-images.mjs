@@ -43,6 +43,18 @@ const SPECIES = [
   { id: 'datura-stramonium', search: 'Datura stramonium' },
   { id: 'psilocybe-semilanceata', search: 'Psilocybe semilanceata' },
   { id: 'amanita-pantherina', search: 'Amanita pantherina' },
+  { id: 'thimbleberry', search: 'Rubus parviflorus' },
+  { id: 'trailing-blackberry', search: 'Rubus ursinus' },
+  { id: 'red-huckleberry', search: 'Vaccinium parvifolium' },
+  { id: 'serviceberry', search: 'Amelanchier alnifolia' },
+  { id: 'chickweed', search: 'Stellaria media' },
+  { id: 'lambs-quarters', search: 'Chenopodium album' },
+  { id: 'wild-mint', search: 'Mentha arvensis' },
+  { id: 'cattail', search: 'Typha latifolia' },
+  { id: 'pacific-crabapple', search: 'Malus fusca' },
+  { id: 'morel', search: 'Morchella esculenta' },
+  { id: 'purslane', search: 'Portulaca oleracea' },
+  { id: 'burdock', search: 'Arctium minus' },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
