@@ -39,6 +39,7 @@ import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicine
 import ContributeModal from './oregon-plant-medicine/ContributeModal';
 import LocationOnboardingModal from './oregon-plant-medicine/LocationOnboardingModal';
 import ProfileModal from './oregon-plant-medicine/ProfileModal';
+import PlantPhoto from './oregon-plant-medicine/PlantImage';
 import { LIVING_KNOWLEDGE_APP_NAME, LIVING_KNOWLEDGE_TAGLINE, STATE_CONTRIBUTION_USD } from '../../lib/oregonPlantMedicine/branding';
 import {
   isSupportedLocation,
@@ -99,19 +100,26 @@ function DetailSection({ title, text }: { title: string; text: string }) {
   );
 }
 
-function ImageGallery({ images, name }: { images: PlantImage[]; name: string }) {
+function ImageGallery({
+  images,
+  name,
+  scientificName,
+}: {
+  images: PlantImage[];
+  name: string;
+  scientificName: string;
+}) {
   const [active, setActive] = useState(0);
   const current = images[active] ?? images[0];
   if (!current) return null;
 
   return (
     <>
-      <img
+      <PlantPhoto
         src={current.url}
+        scientificName={scientificName}
         alt={`${name} — ${current.caption ?? 'identification photo'}`}
         className="w-full h-48 sm:h-56 object-cover"
-        loading="lazy"
-        referrerPolicy="no-referrer"
       />
       <p className="absolute bottom-2 left-3 right-3 text-[10px] text-white/80 bg-black/50 px-2 py-1 rounded">
         {current.caption ? `${current.caption} · ` : ''}
@@ -128,12 +136,11 @@ function ImageGallery({ images, name }: { images: PlantImage[]; name: string }) 
                 i === active ? 'border-emerald-400' : 'border-transparent opacity-70 hover:opacity-100'
               }`}
             >
-              <img
+              <PlantPhoto
                 src={img.url}
+                scientificName={scientificName}
                 alt=""
                 className="w-20 h-14 object-cover"
-                loading="lazy"
-                referrerPolicy="no-referrer"
               />
             </button>
           ))}
@@ -160,7 +167,7 @@ function PlantDetail({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-slate-950 border border-emerald-500/30 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl">
         <div className="relative">
-          <ImageGallery images={images} name={plant.commonName} />
+          <ImageGallery images={images} name={plant.commonName} scientificName={plant.scientificName} />
           <button
             type="button"
             onClick={onClose}
@@ -441,7 +448,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
         className="flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-black/35 backdrop-blur-sm px-2.5 py-1.5 text-xs font-bold text-emerald-100 hover:bg-black/50"
       >
         {profile?.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+          <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover object-center" />
         ) : (
           <UserIcon className="w-4 h-4" />
         )}
@@ -666,12 +673,11 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                   tabIndex={0}
                 >
                   <div className="relative h-36 overflow-hidden">
-                    <img
+                    <PlantPhoto
                       src={plant.imageUrl}
+                      scientificName={plant.scientificName}
                       alt={plant.commonName}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
                     />
                     <button
                       type="button"

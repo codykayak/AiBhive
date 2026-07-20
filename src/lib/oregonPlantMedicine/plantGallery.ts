@@ -1,4 +1,5 @@
 import type { PlantEntry, PlantImage } from './types';
+import { PLANT_IMAGE_MANIFEST } from './plantImageManifest';
 
 /** Local public folder images (downloaded via fetch-oregon-plant-images.mjs). */
 export function gallery(
@@ -40,4 +41,16 @@ export function mergeImages(
 ): Pick<PlantEntry, 'imageUrl' | 'imageCredit' | 'additionalImages'> {
   if (!extra?.length) return base;
   return { ...base, additionalImages: [...base.additionalImages, ...extra] };
+}
+
+/** Apply verified manifest URLs when available (from resolve-plant-wiki-images.mjs). */
+export function applyManifestImages(entry: PlantEntry): PlantEntry {
+  const hit = PLANT_IMAGE_MANIFEST[entry.id];
+  if (!hit) return entry;
+  return {
+    ...entry,
+    imageUrl: hit.imageUrl,
+    imageCredit: hit.imageCredit,
+    additionalImages: hit.additionalImages,
+  };
 }

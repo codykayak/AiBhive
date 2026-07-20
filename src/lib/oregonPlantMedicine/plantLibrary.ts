@@ -1,6 +1,7 @@
 import type { PlantEntry, PlantImage, ResourceCategory } from './types';
 import { EDIBLE_MUSHROOM_LIBRARY } from './plantLibraryEdibleMushrooms';
 import { EDIBLE_PLANT_LIBRARY } from './plantLibraryEdiblePlants';
+import { applyManifestImages } from './plantGallery';
 export { matchesRegion, regionFilterLabel, regionLabel, REGION_FILTER_OPTIONS } from './regionCatalog';
 export type { RegionFilter } from './regionCatalog';
 
@@ -1486,8 +1487,8 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       { label: 'OSU — Poisonous plants', url: 'https://extension.oregonstate.edu/gardening/techniques/poisonous-plants' },
     ],
   },
-  ...EDIBLE_PLANT_LIBRARY,
-  ...EDIBLE_MUSHROOM_LIBRARY,
+  ...EDIBLE_PLANT_LIBRARY.map(applyManifestImages),
+  ...EDIBLE_MUSHROOM_LIBRARY.map(applyManifestImages),
 ];
 
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
