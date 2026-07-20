@@ -1,6 +1,7 @@
 import type { HypnosisEnergyCategory, HypnosisEnergyTopic } from './hypnosisEnergyTypes';
+import { applyHypnosisExpanded } from './hypnosisEnergyExpanded';
 
-export const HYPNOSIS_ENERGY_LIBRARY: HypnosisEnergyTopic[] = [
+const HYPNOSIS_ENERGY_LIBRARY_BASE = [
   {
     id: 'past-life-regression',
     title: 'Past life regression therapy — overview',
@@ -434,6 +435,8 @@ export const HYPNOSIS_ENERGY_LIBRARY: HypnosisEnergyTopic[] = [
     ],
   },
 ];
+
+export const HYPNOSIS_ENERGY_LIBRARY = applyHypnosisExpanded(HYPNOSIS_ENERGY_LIBRARY_BASE);
 
 export const HYPNOSIS_ENERGY_CATEGORY_ORDER: HypnosisEnergyCategory[] = [
   'hypnotherapy',

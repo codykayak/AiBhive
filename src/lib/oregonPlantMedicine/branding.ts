@@ -24,6 +24,9 @@ export const HOLISTIC_CONTRIBUTION_USD = 3;
 /** Flat rate to publish hypnosis & energy research for the community. */
 export const HYPNOSIS_ENERGY_CONTRIBUTION_USD = 3;
 
+/** Flat rate to publish animal health research for the community. */
+export const ANIMAL_HEALTH_CONTRIBUTION_USD = 3;
+
 /** Minimum Hive credit top-up (recharge from $3). */
 export const MIN_RECHARGE_USD = 3;
 
@@ -44,3 +47,12 @@ export const HYPNOSIS_ENERGY_PATH = `${PLANTS_PUBLIC_PATH}/${HYPNOSIS_ENERGY_SLU
 export const HYPNOSIS_ENERGY_TAB_LABEL = 'Hypnosis & Energy';
 
 export const HYPNOSIS_ENERGY_TAB_SHORT_LABEL = 'Hypnosis & Energy';
+
+/** Canonical URL segment for animal health (full path below). */
+export const ANIMAL_HEALTH_SLUG = 'animal-health';
+
+export const ANIMAL_HEALTH_PATH = `${PLANTS_PUBLIC_PATH}/${ANIMAL_HEALTH_SLUG}`;
+
+export const ANIMAL_HEALTH_TAB_LABEL = 'Animal Health';
+
+export const ANIMAL_HEALTH_TAB_SHORT_LABEL = 'Animal Health';

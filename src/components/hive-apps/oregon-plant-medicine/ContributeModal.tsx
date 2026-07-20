@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, HeartPulse, Leaf, Loader2, MapPin, Sparkles, X } from 'lucide-react';
+import { ExternalLink, HeartPulse, Leaf, Loader2, MapPin, PawPrint, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   LIVING_KNOWLEDGE_APP_NAME,
@@ -10,11 +10,14 @@ import {
   HOLISTIC_TAB_LABEL,
   HYPNOSIS_ENERGY_CONTRIBUTION_USD,
   HYPNOSIS_ENERGY_TAB_LABEL,
+  ANIMAL_HEALTH_CONTRIBUTION_USD,
+  ANIMAL_HEALTH_TAB_LABEL,
 } from '../../../lib/oregonPlantMedicine/branding';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import { builderUrlForState } from '../../../lib/oregonPlantMedicine/stateContribution';
 import { builderUrlForHolisticTopic } from '../../../lib/oregonPlantMedicine/holisticContribution';
 import { builderUrlForHypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyContribution';
+import { builderUrlForAnimalHealthTopic } from '../../../lib/oregonPlantMedicine/animalHealthContribution';
 
 type Props = {
   onClose: () => void;
@@ -116,6 +119,17 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             </div>
           </div>
 
+          <div className="flex gap-3 rounded-xl border border-rose-500/25 bg-rose-500/10 p-4">
+            <PawPrint className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-200">Add animal health research for ${ANIMAL_HEALTH_CONTRIBUTION_USD}</p>
+              <p className="mt-1 text-slate-300">
+                Publish a new topic to <strong className="text-white">{ANIMAL_HEALTH_TAB_LABEL}</strong> — dogs, cats,
+                horses, livestock, and holistic vet education for everyone.
+              </p>
+            </div>
+          </div>
+
           <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
             <Sparkles className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
             <div>
@@ -173,6 +187,23 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             >
               {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Add hypnosis &amp; energy — ${HYPNOSIS_ENERGY_CONTRIBUTION_USD}
+            </button>
+            <Link
+              to={builderUrlForAnimalHealthTopic()}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/40 text-rose-200 font-bold px-4 py-3 text-sm hover:bg-rose-500/10"
+            >
+              Open Builder — animal health
+              <ExternalLink className="w-4 h-4 opacity-90" />
+            </Link>
+            <button
+              type="button"
+              disabled={checkoutBusy}
+              onClick={() => void buyCredits(ANIMAL_HEALTH_CONTRIBUTION_USD)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 text-rose-100 font-bold px-4 py-3 text-sm hover:bg-rose-500/10 disabled:opacity-60"
+            >
+              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Add animal health — ${ANIMAL_HEALTH_CONTRIBUTION_USD}
             </button>
             <Link
               to={builderHref}

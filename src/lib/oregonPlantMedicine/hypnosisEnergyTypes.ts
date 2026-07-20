@@ -1,4 +1,4 @@
-import type { ExternalLink } from './types';
+import type { ResearchTopicBase } from './topicLibraryTypes';
 
 export type HypnosisEnergyCategory =
   | 'hypnotherapy'
@@ -8,17 +8,8 @@ export type HypnosisEnergyCategory =
   | 'sound-frequency'
   | 'legal-safety';
 
-export type HypnosisEnergyTopic = {
-  id: string;
-  title: string;
+export type HypnosisEnergyTopic = ResearchTopicBase & {
   category: HypnosisEnergyCategory;
-  summary: string;
-  /** Educational framing — not a diagnosis or treatment plan */
-  whenPeopleExplore: string;
-  approaches: string[];
-  relatedPlantIds: string[];
-  safetyWarnings: string[];
-  sources: ExternalLink[];
 };
 
 export const HYPNOSIS_ENERGY_CATEGORY_LABELS: Record<HypnosisEnergyCategory, string> = {

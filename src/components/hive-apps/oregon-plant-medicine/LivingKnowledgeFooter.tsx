@@ -8,6 +8,7 @@ type Props = {
   onNavigate: (view: FooterView) => void;
   onShowHolisticDisclaimer: () => void;
   onShowHypnosisDisclaimer: () => void;
+  onShowAnimalDisclaimer: () => void;
 };
 
 export default function LivingKnowledgeFooter({
@@ -15,6 +16,7 @@ export default function LivingKnowledgeFooter({
   onNavigate,
   onShowHolisticDisclaimer,
   onShowHypnosisDisclaimer,
+  onShowAnimalDisclaimer,
 }: Props) {
   const linkClass = (view: FooterView) =>
     `text-xs font-bold transition-colors ${
@@ -53,6 +55,13 @@ export default function LivingKnowledgeFooter({
             >
               Hypnosis &amp; energy disclaimer
             </button>
+            <button
+              type="button"
+              onClick={onShowAnimalDisclaimer}
+              className="text-xs font-bold text-slate-400 hover:text-rose-300 transition-colors"
+            >
+              Animal health disclaimer
+            </button>
           </nav>
         </div>
 
@@ -69,7 +78,7 @@ export default function LivingKnowledgeFooter({
           </p>
           <p className="flex items-center gap-1.5 text-slate-500">
             <FileText className="w-3 h-3" />
-            Holistic and hypnosis sections require a one-time hold-document acceptance per device.
+            Holistic, hypnosis, and animal health sections require a one-time hold-document acceptance per device.
           </p>
         </div>
       </div>
