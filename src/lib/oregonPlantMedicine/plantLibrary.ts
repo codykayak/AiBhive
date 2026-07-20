@@ -1,5 +1,6 @@
 import type { PlantEntry, PlantImage, ResourceCategory } from './types';
 import { EDIBLE_MUSHROOM_LIBRARY } from './plantLibraryEdibleMushrooms';
+import { EDIBLE_PLANT_LIBRARY } from './plantLibraryEdiblePlants';
 export { matchesRegion, regionFilterLabel, regionLabel, REGION_FILTER_OPTIONS } from './regionCatalog';
 export type { RegionFilter } from './regionCatalog';
 
@@ -540,7 +541,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Fragaria chiloensis',
     uses: 'edible',
     category: 'herb',
-    regions: ['florence'],
+    regions: ['florence', 'or-coast', 'ca-north-coast', 'both'],
     habitat: 'Coastal sand dunes and bluffs — Florence to Oregon Dunes National Recreation Area.',
     identification: 'Three toothed leaflets, runners on sand. Small sweet white-flowered berries close to ground.',
     lookalikes: [
@@ -1485,14 +1486,15 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       { label: 'OSU — Poisonous plants', url: 'https://extension.oregonstate.edu/gardening/techniques/poisonous-plants' },
     ],
   },
+  ...EDIBLE_PLANT_LIBRARY,
   ...EDIBLE_MUSHROOM_LIBRARY,
 ];
 
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
   {
     id: 'edible-wild-foods',
-    title: 'Edible Wild Foods — Willamette & Coast',
-    description: 'Fruit, greens, mushrooms, and preparation references for Oregon foragers.',
+    title: 'Edible Wild Foods — Oregon & Northern California',
+    description: 'Fruit, greens, mushrooms, seaweed, and preparation references for PNW foragers.',
     links: [
       {
         label: 'OSU Extension — Wild harvesting',
@@ -1604,6 +1606,38 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
         label: 'Seaweed foraging — Oregon (reference)',
         url: 'https://en.wikipedia.org/wiki/Edible_seaweed',
         description: 'Overview of edible seaweeds — tidepool ethics and species basics.',
+      },
+    ],
+  },
+  {
+    id: 'norcal-foraging',
+    title: 'Northern California Foraging',
+    description: 'Sierra foothills, north coast, and Sacramento Valley wild food references.',
+    links: [
+      {
+        label: 'Jepson eFlora (UC Berkeley)',
+        url: 'https://ucjeps.berkeley.edu/eflora/',
+        description: 'Authoritative California flora with keys and range maps.',
+      },
+      {
+        label: 'iNaturalist — Placerville area',
+        url: 'https://www.inaturalist.org/places/el-dorado-county',
+        description: 'Community observations in Sierra foothills gold country.',
+      },
+      {
+        label: 'iNaturalist — North Coast CA',
+        url: 'https://www.inaturalist.org/places/humboldt-county',
+        description: 'Coastal redwood zone plant and mushroom observations.',
+      },
+      {
+        label: 'California Poison Control',
+        url: 'https://www.calpoison.org/',
+        description: '1-800-222-1222 — plant and mushroom exposure emergencies.',
+      },
+      {
+        label: 'Mushrooms of the Redwood Coast',
+        url: 'https://www.mendocinomushrooms.org/',
+        description: 'NorCal coast mushroom identification resources.',
       },
     ],
   },

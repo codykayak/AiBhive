@@ -67,6 +67,7 @@ export default function Footer() {
               <li><a href="/api/download/diagnose-apk" className="text-slate-400 hover:text-bee-amber transition-colors">Diagnose Android APK</a></li>
               <li><Link to="/app" className="text-slate-400 hover:text-bee-amber transition-colors">App hub</Link></li>
               <li><Link to="/hive-apps" className="text-slate-400 hover:text-bee-amber transition-colors">Hive Apps</Link></li>
+              <li><Link to="/plants" className="text-slate-400 hover:text-bee-amber transition-colors">Plants &amp; Medicine</Link></li>
               <li><Link to="/research-lab" className="text-slate-400 hover:text-bee-amber transition-colors">Research Lab</Link></li>
               <li><Link to="/tools" className="text-slate-400 hover:text-bee-amber transition-colors">AI tools guides</Link></li>
               <li><Link to="/about" className="text-slate-400 hover:text-bee-amber transition-colors">About</Link></li>

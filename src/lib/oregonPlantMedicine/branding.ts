@@ -12,6 +12,9 @@ export const LIVING_KNOWLEDGE_HERO_LEAD =
 export const BUILDER_PATH = '/hive-apps/build';
 export const CREDITS_PATH = '/app/settings';
 
+/** Canonical public URL for the living knowledge plant library. */
+export const PLANTS_PUBLIC_PATH = '/plants';
+
 /** Flat rate to open a new state in the living knowledge base. */
 export const STATE_CONTRIBUTION_USD = 3;
 

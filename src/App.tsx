@@ -53,6 +53,7 @@ const HiveAppRunPage = lazy(() => import('./pages/hive-apps/HiveAppRunPage'));
 const HiveAppEmbedPage = lazy(() => import('./pages/hive-apps/HiveAppEmbedPage'));
 const HiveAppsBuildPage = lazy(() => import('./pages/hive-apps/HiveAppsBuildPage'));
 const OldWorldResearchRedirect = lazy(() => import('./pages/research-lab/OldWorldResearchRedirect'));
+const PlantsPage = lazy(() => import('./pages/plants/PlantsPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
@@ -173,7 +174,12 @@ function AnimatedRoutes() {
             />
             <Route path="/old-world-research" element={<OldWorldResearchRedirect />} />
             <Route path="/old-world-research/*" element={<OldWorldResearchRedirect />} />
+            <Route path="/plants" element={<PlantsPage />} />
             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />
+            <Route
+              path="/hive-apps/run/example-oregon-plant-medicine"
+              element={<AppRedirect to="/plants" />}
+            />
             <Route path="/hive-apps" element={<HiveAppsLayout />}>
               <Route index element={<HiveAppsBrowse />} />
               <Route path="app/:appId" element={<HiveAppDetailPage />} />
@@ -202,6 +208,7 @@ function AppShell() {
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/research-lab/workspace') ||
+    pathname.startsWith('/plants') ||
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build') ||
