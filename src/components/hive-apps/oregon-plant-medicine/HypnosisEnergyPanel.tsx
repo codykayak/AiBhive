@@ -24,6 +24,8 @@ const HYPNOSIS_THEME = {
   contributeText: 'text-cyan-200',
   communityAccent: 'text-cyan-300',
   searchFocus: 'focus:border-cyan-500/50',
+  videoAccent: 'text-cyan-300',
+  videoBorder: 'border-cyan-500/35 hover:border-cyan-500/50',
 };
 
 type Props = {
@@ -55,7 +57,7 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
       onSignIn={onSignIn}
       onOpenPlant={onOpenPlant}
       onContribute={onContribute}
-      introVideo={SECTION_VIDEOS.hypnosis}
+      gridVideo={SECTION_VIDEOS.hypnosis}
     />
   );
 }

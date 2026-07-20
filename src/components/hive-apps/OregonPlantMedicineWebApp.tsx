@@ -56,7 +56,7 @@ import AnimalHealthContributeModal from './oregon-plant-medicine/AnimalHealthCon
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
-import SectionIntroVideo from './oregon-plant-medicine/SectionIntroVideo';
+import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import {
   HOLISTIC_REMEDIES_PATH,
@@ -691,20 +691,15 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
           <>
             {tab === 'edibles' ? (
               <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
-                <div className="flex flex-col-reverse sm:flex-row gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
-                      Wild edible foods &amp; mushrooms
-                    </p>
-                    <p>
-                      Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
-                      <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
-                      preparation ideas.{' '}
-                      <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
-                    </p>
-                  </div>
-                  <SectionIntroVideo video={SECTION_VIDEOS.edibles} className="sm:ml-auto" />
-                </div>
+                <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
+                  Wild edible foods &amp; mushrooms
+                </p>
+                <p>
+                  Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
+                  <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
+                  preparation ideas.{' '}
+                  <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
+                </p>
               </div>
             ) : null}
 
@@ -799,6 +794,13 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tab === 'edibles' ? (
+                <GridSectionVideo
+                  video={SECTION_VIDEOS.edibles}
+                  accentClass="text-lime-300"
+                  borderClass="border-lime-500/35 hover:border-lime-500/50"
+                />
+              ) : null}
               {plantsToShow.map((plant) => (
                 <article
                   key={plant.id}

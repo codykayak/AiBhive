@@ -1,5 +1,6 @@
 import type { PlantEntry, PlantImage } from './types';
 import { PLANT_IMAGE_MANIFEST } from './plantImageManifest';
+import { LOCAL_PLANT_IMAGE_IDS } from './localPlantImageIds';
 
 /** Local public folder images (downloaded via fetch-oregon-plant-images.mjs). */
 export function gallery(
@@ -45,6 +46,10 @@ export function mergeImages(
 
 /** Apply verified manifest URLs when available (from resolve-plant-wiki-images.mjs). */
 export function applyManifestImages(entry: PlantEntry): PlantEntry {
+  const credit = entry.imageCredit ?? 'Wikimedia Commons';
+  if (LOCAL_PLANT_IMAGE_IDS.has(entry.id)) {
+    return { ...entry, ...gallery(entry.id, credit) };
+  }
   const hit = PLANT_IMAGE_MANIFEST[entry.id];
   if (!hit) return entry;
   return {
