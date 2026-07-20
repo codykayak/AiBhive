@@ -19,10 +19,12 @@ import {
   type HolisticCategory,
   type HolisticTopic,
 } from '../../../lib/oregonPlantMedicine/holisticTypes';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import { HOLISTIC_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import FeaturedEssayPanel from './FeaturedEssayPanel';
 import GridSectionVideo from './GridSectionVideo';
 
 type CategoryFilter = HolisticCategory | 'all';
@@ -187,6 +189,7 @@ export default function HolisticRemediesPanel({ onOpenPlant, onContribute }: Pro
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [selected, setSelected] = useState<HolisticTopic | null>(null);
+  const featuredEssay = getFeaturedEssay('holistic');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -212,6 +215,8 @@ export default function HolisticRemediesPanel({ onOpenPlant, onContribute }: Pro
             plant library where relevant.
           </p>
         </div>
+
+        {featuredEssay ? <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} /> : null}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">

@@ -16,6 +16,7 @@ import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import { HOLISTIC_LIBRARY } from '../../../lib/oregonPlantMedicine/holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import { EARTH_PLANT_MEDICINE_NAME } from '../../../lib/oregonPlantMedicine/branding';
@@ -23,6 +24,7 @@ import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { HolisticTopic } from '../../../lib/oregonPlantMedicine/holisticTypes';
 import type { HypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
 import type { AnimalHealthTopic } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
+import FeaturedEssayPanel from './FeaturedEssayPanel';
 import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
@@ -429,10 +431,17 @@ export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpe
 
   const hypnosisTopics = HYPNOSIS_ENERGY_LIBRARY.slice(0, 3) as HypnosisEnergyTopic[];
   const animalTopics = ANIMAL_HEALTH_LIBRARY.slice(0, 3) as AnimalHealthTopic[];
+  const featuredEssay = getFeaturedEssay('plants-home');
 
   return (
     <div className="pb-8">
       <HomeHero />
+
+      {featuredEssay ? (
+        <section className="px-0 sm:px-0 mb-8">
+          <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
+        </section>
+      ) : null}
 
       <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
 

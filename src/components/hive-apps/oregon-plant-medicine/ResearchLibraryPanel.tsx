@@ -1,11 +1,13 @@
 import type { User } from 'firebase/auth';
 import { useMemo, useState, type ReactNode } from 'react';
 import { AlertTriangle, ExternalLink, PlusCircle, Search, Sprout, X } from 'lucide-react';
+import type { FeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import type { ResearchTopicBase } from '../../../lib/oregonPlantMedicine/topicLibraryTypes';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
+import FeaturedEssayPanel from './FeaturedEssayPanel';
 import GridSectionVideo from './GridSectionVideo';
 import ResearchTopicImage from './ResearchTopicImage';
 import TopicCommunityPanel from './TopicCommunityPanel';
@@ -43,6 +45,8 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onOpenPlant: (plant: PlantEntry) => void;
   onContribute: (topicTitle?: string) => void;
   gridVideo?: SectionVideo;
+  /** Large featured essay shown above the topic grid */
+  featuredEssay?: FeaturedEssay;
 };
 
 function TopicDetail<T extends ResearchTopicBase & { category: string }>({
@@ -230,6 +234,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onOpenPlant,
   onContribute,
   gridVideo,
+  featuredEssay,
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
@@ -252,6 +257,10 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
           {introText}
         </div>
+
+        {featuredEssay ? (
+          <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
+        ) : null}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
