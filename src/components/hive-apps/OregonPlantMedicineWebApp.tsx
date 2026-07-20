@@ -12,7 +12,6 @@ import {
   BookOpen,
   ExternalLink,
   FileText,
-  Leaf,
   LogOut,
   MapPin,
   Search,
@@ -22,7 +21,6 @@ import {
   X,
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
-import { brandFor } from '../../lib/hiveAppBranding';
 import {
   EXTERNAL_RESOURCE_LIBRARY,
   PLANT_LIBRARY,
@@ -33,6 +31,7 @@ import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedi
 import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
 import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
+import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicineHero';
 import ProfileModal from './oregon-plant-medicine/ProfileModal';
 
 type Props = { expanded?: boolean };
@@ -262,7 +261,6 @@ function PlantDetail({
 
 /** Oregon Plant Medicine — private regional foraging & holistic herbal library. */
 export default function OregonPlantMedicineWebApp({ expanded }: Props) {
-  const brand = brandFor('green');
   const [tab, setTab] = useState<Tab>('plants');
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
@@ -374,58 +372,46 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
     ? 'min-h-screen bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950 text-white'
     : 'rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-slate-950 to-slate-900 text-white overflow-hidden';
 
+  const authActions = user ? (
+    <div className="flex flex-col items-end gap-2">
+      <button
+        type="button"
+        onClick={() => setShowProfile(true)}
+        className="flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-black/35 backdrop-blur-sm px-2.5 py-1.5 text-xs font-bold text-emerald-100 hover:bg-black/50"
+      >
+        {profile?.avatarUrl ? (
+          <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+        ) : (
+          <UserIcon className="w-4 h-4" />
+        )}
+        {profile?.displayName || 'Profile'}
+      </button>
+      <button
+        type="button"
+        onClick={() => void handleSignOut()}
+        className="flex items-center gap-1 text-[10px] text-slate-300 hover:text-white"
+      >
+        <LogOut className="w-3 h-3" /> Sign out
+      </button>
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => void handleSignIn()}
+      className="rounded-lg bg-emerald-600/90 hover:bg-emerald-500 backdrop-blur-sm px-3 py-2 text-xs font-bold text-white shadow-lg"
+    >
+      Sign in
+    </button>
+  );
+
   return (
     <div className={shellClass}>
-      <header className={`border-b border-emerald-500/20 ${expanded ? 'px-4 sm:px-8 py-6' : 'p-4'}`}>
-        <div className="flex items-start gap-3">
-          <div className={`p-2.5 rounded-xl ${brand.bg} shrink-0`}>
-            <Leaf className={`w-6 h-6 ${brand.text}`} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Private library</p>
-            <h1 className="text-xl sm:text-2xl font-black text-white">Oregon Plant Medicine</h1>
-            <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-              Edible, medicinal &amp; hallucinogenic plants of Eugene and Florence, Oregon — holistic reference with
-              external guides and multi-photo ID.
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            {user ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowProfile(true)}
-                  className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-500/20"
-                >
-                  {profile?.avatarUrl ? (
-                    <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-4 h-4" />
-                  )}
-                  {profile?.displayName || 'Profile'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSignOut()}
-                  className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300"
-                >
-                  <LogOut className="w-3 h-3" /> Sign out
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void handleSignIn()}
-                className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-bold text-white"
-              >
-                Sign in
-              </button>
-            )}
-          </div>
-        </div>
-        {authError ? <p className="text-xs text-red-300 mt-2">{authError}</p> : null}
+      <OregonPlantMedicineHero compact={!expanded} actions={authActions} />
 
-        <nav className="flex gap-2 mt-4 flex-wrap">
+      <header className={`border-b border-emerald-500/20 ${expanded ? 'px-4 sm:px-8 py-4' : 'px-4 py-3'}`}>
+        {authError ? <p className="text-xs text-red-300 mb-3">{authError}</p> : null}
+
+        <nav className="flex gap-2 flex-wrap">
           {(
             [
               ['plants', 'Plant library', Sprout],
