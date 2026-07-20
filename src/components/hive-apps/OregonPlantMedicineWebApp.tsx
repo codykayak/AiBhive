@@ -22,6 +22,7 @@ import {
   X,
   PlusCircle,
   Layers,
+  PawPrint,
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
 import {
@@ -50,6 +51,9 @@ import HolisticContributeModal from './oregon-plant-medicine/HolisticContributeM
 import HypnosisEnergyPanel from './oregon-plant-medicine/HypnosisEnergyPanel';
 import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnergyDisclaimerModal';
 import HypnosisEnergyContributeModal from './oregon-plant-medicine/HypnosisEnergyContributeModal';
+import AnimalHealthPanel from './oregon-plant-medicine/AnimalHealthPanel';
+import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDisclaimerModal';
+import AnimalHealthContributeModal from './oregon-plant-medicine/AnimalHealthContributeModal';
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
@@ -58,11 +62,14 @@ import {
   HOLISTIC_TAB_SHORT_LABEL,
   HYPNOSIS_ENERGY_PATH,
   HYPNOSIS_ENERGY_TAB_SHORT_LABEL,
+  ANIMAL_HEALTH_PATH,
+  ANIMAL_HEALTH_TAB_SHORT_LABEL,
   LIVING_KNOWLEDGE_TAGLINE,
   STATE_CONTRIBUTION_USD,
 } from '../../lib/oregonPlantMedicine/branding';
 import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
 import { hasAcceptedHypnosisEnergyDisclaimer } from '../../lib/oregonPlantMedicine/hypnosisEnergyDisclaimer';
+import { hasAcceptedAnimalHealthDisclaimer } from '../../lib/oregonPlantMedicine/animalHealthDisclaimer';
 import {
   isSupportedLocation,
   locationLabel,
@@ -73,7 +80,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'plants' | 'edibles' | 'mushrooms' | 'holistic' | 'hypnosis' | 'guide' | 'resources';
+type Tab = 'plants' | 'edibles' | 'mushrooms' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -356,6 +363,11 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
   const [hypnosisDisclaimerOpen, setHypnosisDisclaimerOpen] = useState(false);
   const [hypnosisAccepted, setHypnosisAccepted] = useState(() => hasAcceptedHypnosisEnergyDisclaimer());
   const [pendingHypnosisTab, setPendingHypnosisTab] = useState(false);
+  const [showAnimalContribute, setShowAnimalContribute] = useState(false);
+  const [animalContributeTopic, setAnimalContributeTopic] = useState<string | undefined>();
+  const [animalDisclaimerOpen, setAnimalDisclaimerOpen] = useState(false);
+  const [animalAccepted, setAnimalAccepted] = useState(() => hasAcceptedAnimalHealthDisclaimer());
+  const [pendingAnimalTab, setPendingAnimalTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
   const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
@@ -372,6 +384,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
     if (initialTab === 'hypnosis' && !hasAcceptedHypnosisEnergyDisclaimer()) {
       setHypnosisDisclaimerOpen(true);
       setPendingHypnosisTab(true);
+    }
+    if (initialTab === 'animal-health' && !hasAcceptedAnimalHealthDisclaimer()) {
+      setAnimalDisclaimerOpen(true);
+      setPendingAnimalTab(true);
     }
   }, [initialTab]);
 
@@ -399,6 +415,18 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
     }
   }, [expanded, hypnosisAccepted]);
 
+  const openAnimalHealthTab = useCallback(() => {
+    if (!animalAccepted) {
+      setPendingAnimalTab(true);
+      setAnimalDisclaimerOpen(true);
+      return;
+    }
+    setTab('animal-health');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', ANIMAL_HEALTH_PATH);
+    }
+  }, [expanded, animalAccepted]);
+
   const selectTab = useCallback(
     (id: Tab) => {
       if (id === 'holistic') {
@@ -409,12 +437,16 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
         openHypnosisTab();
         return;
       }
+      if (id === 'animal-health') {
+        openAnimalHealthTab();
+        return;
+      }
       setTab(id);
       if (expanded && typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/plants');
       }
     },
-    [expanded, openHolisticTab, openHypnosisTab],
+    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab],
   );
 
   const footerView: FooterView =
@@ -660,6 +692,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
               ['mushrooms', 'Edible mushrooms', Layers],
               ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
               ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
+              ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -874,10 +907,24 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
 
         {tab === 'hypnosis' && hypnosisAccepted ? (
           <HypnosisEnergyPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
             onContribute={(topicTitle) => {
               setHypnosisContributeTopic(topicTitle);
               setShowHypnosisContribute(true);
+            }}
+          />
+        ) : null}
+
+        {tab === 'animal-health' && animalAccepted ? (
+          <AnimalHealthPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onOpenPlant={(plant) => setSelected(plant)}
+            onContribute={(topicTitle) => {
+              setAnimalContributeTopic(topicTitle);
+              setShowAnimalContribute(true);
             }}
           />
         ) : null}
@@ -895,6 +942,9 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
         }}
         onShowHypnosisDisclaimer={() => {
           setHypnosisDisclaimerOpen(true);
+        }}
+        onShowAnimalDisclaimer={() => {
+          setAnimalDisclaimerOpen(true);
         }}
       />
 
@@ -947,6 +997,15 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
           }}
         />
       ) : null}
+      {showAnimalContribute ? (
+        <AnimalHealthContributeModal
+          topicTitle={animalContributeTopic}
+          onClose={() => {
+            setShowAnimalContribute(false);
+            setAnimalContributeTopic(undefined);
+          }}
+        />
+      ) : null}
       {holisticDisclaimerOpen ? (
         <HolisticDisclaimerModal
           onCancel={() => {
@@ -992,6 +1051,31 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
               setTab('hypnosis');
               if (expanded && typeof window !== 'undefined') {
                 window.history.replaceState(null, '', HYPNOSIS_ENERGY_PATH);
+              }
+            }
+          }}
+        />
+      ) : null}
+      {animalDisclaimerOpen ? (
+        <AnimalHealthDisclaimerModal
+          onCancel={() => {
+            setAnimalDisclaimerOpen(false);
+            setPendingAnimalTab(false);
+            if (tab === 'animal-health' && !animalAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            setAnimalAccepted(true);
+            setAnimalDisclaimerOpen(false);
+            if (pendingAnimalTab) {
+              setPendingAnimalTab(false);
+              setTab('animal-health');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', ANIMAL_HEALTH_PATH);
               }
             }
           }}

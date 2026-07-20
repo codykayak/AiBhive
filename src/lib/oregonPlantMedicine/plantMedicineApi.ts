@@ -12,7 +12,9 @@ export type PlantMedicineProfile = {
 
 export type PlantMedicinePost = {
   id: string;
-  plantId: string;
+  plantId: string | null;
+  library: 'hypnosis' | 'holistic' | 'animal-health' | null;
+  topicId: string | null;
   authorUid: string;
   authorDisplayName: string;
   authorAvatarUrl: string | null;
@@ -104,6 +106,41 @@ export function deletePlantPost(user: User, postId: string): Promise<void> {
   return adminFetch(`/api/plant-medicine/posts/${postId}`, user, { method: 'DELETE' }).then((res) => {
     if (!res.ok) throw new Error('Delete failed');
   });
+}
+
+export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health';
+
+export async function fetchTopicPosts(
+  library: TopicLibraryId,
+  topicId: string,
+  user: User | null,
+  type?: 'comment' | 'photo',
+): Promise<PlantMedicinePost[]> {
+  const params = type ? `?type=${type}` : '';
+  const headers: HeadersInit = {};
+  if (user) {
+    headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  }
+  const res = await fetch(
+    `/api/plant-medicine/libraries/${encodeURIComponent(library)}/topics/${encodeURIComponent(topicId)}/posts${params}`,
+    { headers },
+  );
+  if (!res.ok) throw new Error('Failed to load topic posts');
+  const data = (await res.json()) as { posts: PlantMedicinePost[] };
+  return data.posts;
+}
+
+export function createTopicPost(
+  user: User,
+  library: TopicLibraryId,
+  topicId: string,
+  body: { type: 'comment' | 'photo'; text?: string; imageUrl?: string },
+): Promise<PlantMedicinePost> {
+  return adminJson(
+    `/api/plant-medicine/libraries/${encodeURIComponent(library)}/topics/${encodeURIComponent(topicId)}/posts`,
+    user,
+    { method: 'POST', body: JSON.stringify(body) },
+  ).then((d) => (d as { post: PlantMedicinePost }).post);
 }
 
 export type PlantChatMessage = {

@@ -4,10 +4,12 @@ import { verifyHiveAuth } from './hiveAuth.js';
 import { runPlantMedicineChat, resolvePlantHiveUserId } from './plantMedicineChat.js';
 import {
   createPost,
+  createTopicPost,
   deletePost,
   getProfile,
   listPendingPosts,
   listPostsForPlant,
+  listPostsForTopic,
   moderatePost,
   toggleUpvote,
   uploadPlantMedicineImage,
@@ -15,6 +17,8 @@ import {
 } from './plantMedicine.js';
 
 const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
+const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health)$/;
+const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
 
 function requireAuth(req, res) {
   return verifyHiveAuth(req).then((user) => {
@@ -118,6 +122,61 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       return res.status(201).json({ post });
     } catch (err) {
       console.error('[plant-medicine/posts POST]', err);
+      return res.status(500).json({ error: err.message || 'Failed to create post' });
+    }
+  });
+
+  app.get('/api/plant-medicine/libraries/:library/topics/:topicId/posts', async (req, res) => {
+    try {
+      const library = String(req.params.library || '');
+      const topicId = String(req.params.topicId || '');
+      if (!TOPIC_LIBRARY_RE.test(library)) {
+        return res.status(400).json({ error: 'Invalid library' });
+      }
+      if (!TOPIC_ID_RE.test(topicId)) {
+        return res.status(400).json({ error: 'Invalid topic id' });
+      }
+      const type = req.query.type === 'comment' || req.query.type === 'photo' ? req.query.type : undefined;
+      const viewer = await verifyHiveAuth(req);
+      const posts = await listPostsForTopic(db, library, topicId, { type, viewerUid: viewer?.uid, gcsBucket });
+      return res.json({ posts });
+    } catch (err) {
+      console.error('[plant-medicine/topic-posts GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load posts' });
+    }
+  });
+
+  app.post('/api/plant-medicine/libraries/:library/topics/:topicId/posts', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const library = String(req.params.library || '');
+      const topicId = String(req.params.topicId || '');
+      if (!TOPIC_LIBRARY_RE.test(library)) {
+        return res.status(400).json({ error: 'Invalid library' });
+      }
+      if (!TOPIC_ID_RE.test(topicId)) {
+        return res.status(400).json({ error: 'Invalid topic id' });
+      }
+      const { type, text, imageUrl } = req.body || {};
+      if (type !== 'comment' && type !== 'photo') {
+        return res.status(400).json({ error: 'type must be comment or photo' });
+      }
+      if (type === 'comment' && !String(text || '').trim()) {
+        return res.status(400).json({ error: 'Comment text required' });
+      }
+      if (type === 'photo' && !imageUrl) {
+        return res.status(400).json({ error: 'imageUrl required for photo posts' });
+      }
+      const post = await createTopicPost(
+        db,
+        FieldValue,
+        { library, topicId, author: user, type, text, imageUrl },
+        gcsBucket,
+      );
+      return res.status(201).json({ post });
+    } catch (err) {
+      console.error('[plant-medicine/topic-posts POST]', err);
       return res.status(500).json({ error: err.message || 'Failed to create post' });
     }
   });

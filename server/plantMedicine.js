@@ -7,6 +7,9 @@ import { randomUUID } from 'crypto';
 const PROFILES = 'plant_medicine_profiles';
 const POSTS = 'plant_medicine_posts';
 
+const TOPIC_LIBRARIES = new Set(['hypnosis', 'holistic', 'animal-health']);
+const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
+
 function clip(s, max) {
   return String(s ?? '')
     .trim()
@@ -89,7 +92,9 @@ async function resolveProfile(db, uid, gcsBucket) {
 function serializePost(id, d) {
   return {
     id,
-    plantId: d.plantId,
+    plantId: d.plantId || null,
+    library: d.library || null,
+    topicId: d.topicId || null,
     authorUid: d.authorUid,
     authorDisplayName: d.authorDisplayName || 'Forager',
     authorAvatarUrl: d.authorAvatarUrl || null,
@@ -160,6 +165,45 @@ export async function listPostsForPlant(db, plantId, { type, viewerUid, gcsBucke
   return posts;
 }
 
+export async function listPostsForTopic(db, library, topicId, { type, viewerUid, gcsBucket = null } = {}) {
+  if (!TOPIC_LIBRARIES.has(library)) throw new Error('Invalid library');
+  if (!TOPIC_ID_RE.test(topicId)) throw new Error('Invalid topic id');
+
+  let q = db
+    .collection(POSTS)
+    .where('library', '==', library)
+    .where('topicId', '==', topicId)
+    .where('status', '==', 'approved');
+  if (type) q = q.where('type', '==', type);
+  const snap = await q.limit(100).get();
+
+  const posts = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    let viewerHasUpvoted = false;
+    if (viewerUid) {
+      const vote = await doc.ref.collection('votes').doc(viewerUid).get();
+      viewerHasUpvoted = vote.exists;
+    }
+    posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
+  }
+  if (gcsBucket) {
+    for (const post of posts) {
+      if (post.authorAvatarUrl) {
+        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+      }
+      if (post.imageUrl) {
+        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
+      }
+    }
+  }
+  posts.sort((a, b) => {
+    if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount;
+    return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+  });
+  return posts;
+}
+
 export async function createPost(db, FieldValue, { plantId, author, type, text, imageUrl }, gcsBucket = null) {
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const status = type === 'comment' ? 'approved' : 'pending';
@@ -169,6 +213,37 @@ export async function createPost(db, FieldValue, { plantId, author, type, text, 
     plantId,
     authorUid: author.uid,
     authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Forager',
+    authorAvatarUrl: profile.avatarUrl || null,
+    type,
+    text: clip(text, type === 'comment' ? 2000 : 500),
+    imageUrl: imageUrl || null,
+    status,
+    upvoteCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ref.set(payload);
+  return serializePost(ref.id, { ...payload, viewerHasUpvoted: false });
+}
+
+export async function createTopicPost(
+  db,
+  FieldValue,
+  { library, topicId, author, type, text, imageUrl },
+  gcsBucket = null,
+) {
+  if (!TOPIC_LIBRARIES.has(library)) throw new Error('Invalid library');
+  if (!TOPIC_ID_RE.test(topicId)) throw new Error('Invalid topic id');
+
+  const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
+  const status = type === 'comment' ? 'approved' : 'pending';
+  const ref = db.collection(POSTS).doc();
+  const now = new Date();
+  const payload = {
+    library,
+    topicId,
+    authorUid: author.uid,
+    authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Researcher',
     authorAvatarUrl: profile.avatarUrl || null,
     type,
     text: clip(text, type === 'comment' ? 2000 : 500),
