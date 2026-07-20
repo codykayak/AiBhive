@@ -1,7 +1,7 @@
 import type { PlantEntry, PlantImage } from './types';
 import { PLANT_IMAGE_MANIFEST } from './plantImageManifest';
 import { LOCAL_PLANT_IMAGE_IDS } from './localPlantImageIds';
-import { commonsImage } from './commonsImage';
+import { commonsImage, normalizeWikiImageUrl } from './commonsImage';
 
 /** Local public folder images (downloaded via fetch-oregon-plant-images.mjs). */
 export function gallery(
@@ -54,8 +54,11 @@ export function applyManifestImages(entry: PlantEntry): PlantEntry {
   if (!hit) return entry;
   return {
     ...entry,
-    imageUrl: hit.imageUrl,
+    imageUrl: normalizeWikiImageUrl(hit.imageUrl),
     imageCredit: hit.imageCredit,
-    additionalImages: hit.additionalImages,
+    additionalImages: hit.additionalImages.map((img) => ({
+      ...img,
+      url: normalizeWikiImageUrl(img.url),
+    })),
   };
 }

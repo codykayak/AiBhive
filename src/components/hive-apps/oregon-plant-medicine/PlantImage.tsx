@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Sprout } from 'lucide-react';
+import { normalizeWikiImageUrl } from '../../../lib/oregonPlantMedicine/commonsImage';
 
 const thumbCache = new Map<string, string>();
 
@@ -29,11 +30,11 @@ type Props = {
 
 /** Plant photo with local-file and Wikipedia fallbacks when remote URLs fail. */
 export default function PlantImage({ src, scientificName, alt, className, plantId }: Props) {
-  const [current, setCurrent] = useState(src);
+  const [current, setCurrent] = useState(() => normalizeWikiImageUrl(src));
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setCurrent(src);
+    setCurrent(normalizeWikiImageUrl(src));
     setFailed(false);
   }, [src]);
 

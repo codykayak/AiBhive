@@ -9,7 +9,7 @@ export type PlantImageSet = {
 
 export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
   "blackcap-raspberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Rubusleucodermis.jpg/960px-Rubusleucodermis.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rubusleucodermis.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Rubus leucodermis",
     "additionalImages": [
       {
@@ -25,7 +25,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "evergreen-blackberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Rubus_laciniatus.jpg/960px-Rubus_laciniatus.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rubus_laciniatus.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Rubus laciniatus",
     "additionalImages": [
       {
@@ -34,14 +34,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Rubus_laciniatus_07.jpg/960px-Rubus_laciniatus_07.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Rubus_laciniatus_07.jpg?width=960",
         "credit": "Wikimedia Commons — Rubus laciniatus",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "red-flowering-currant-berry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Pink_Flowering_Currant_closeup%2C_Ribes_sanguineum.jpg/960px-Pink_Flowering_Currant_closeup%2C_Ribes_sanguineum.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pink_Flowering_Currant_closeup%2C_Ribes_sanguineum.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Ribes sanguineum",
     "additionalImages": [
       {
@@ -57,7 +57,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "stink-currant": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Ribes_bracteosum_9295.JPG/960px-Ribes_bracteosum_9295.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ribes_bracteosum_9295.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Ribes bracteosum",
     "additionalImages": [
       {
@@ -73,7 +73,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "sierra-gooseberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Ribes_roezlii.jpg/960px-Ribes_roezlii.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Ribes_roezlii.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Ribes roezlii",
     "additionalImages": [
       {
@@ -89,7 +89,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "chokecherry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Prunus_virginiana_flowers.jpg/960px-Prunus_virginiana_flowers.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Prunus_virginiana_flowers.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Prunus virginiana",
     "additionalImages": [
       {
@@ -105,7 +105,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bitter-cherry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Prunus_emarginata_15419.JPG/960px-Prunus_emarginata_15419.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Prunus_emarginata_15419.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Prunus emarginata",
     "additionalImages": [
       {
@@ -121,7 +121,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "madrone-berry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Arbutus_menziesii_5822.JPG/960px-Arbutus_menziesii_5822.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Arbutus_menziesii_5822.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Arbutus menziesii",
     "additionalImages": [
       {
@@ -137,7 +137,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "manzanita-berry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Arctostaphylos_patula_08399.JPG/960px-Arctostaphylos_patula_08399.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctostaphylos_patula_08399.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Arctostaphylos patula",
     "additionalImages": [
       {
@@ -153,11 +153,11 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "toyon": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Heteromeles_arbutifolia_1.jpg/960px-Heteromeles_arbutifolia_1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Heteromeles_arbutifolia_1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Heteromeles arbutifolia",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Heteromeles_arbutifolia_03.jpg/960px-Heteromeles_arbutifolia_03.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Heteromeles_arbutifolia_03.jpg?width=960",
         "credit": "Wikimedia Commons — Heteromeles arbutifolia",
         "caption": "Habitat & growth habit"
       },
@@ -169,7 +169,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wild-grape": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Vitis_californica_with_grapes.jpg/960px-Vitis_californica_with_grapes.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vitis_californica_with_grapes.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Vitis californica",
     "additionalImages": [
       {
@@ -185,7 +185,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "woodland-strawberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Illustration_Fragaria_vesca0.jpg/960px-Illustration_Fragaria_vesca0.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Illustration_Fragaria_vesca0.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Fragaria vesca",
     "additionalImages": [
       {
@@ -201,7 +201,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "cascade-huckleberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Vaccinium_deliciosum_Full_Plant.jpg/960px-Vaccinium_deliciosum_Full_Plant.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vaccinium_deliciosum_Full_Plant.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Vaccinium deliciosum",
     "additionalImages": [
       {
@@ -217,23 +217,23 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "dwarf-huckleberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Vaccinium_cespitosum_0806025.jpg/960px-Vaccinium_cespitosum_0806025.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Vaccinium_cespitosum_0806025.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Vaccinium caespitosum",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Sierra_bilberry_Vaccinium_caespitosum.jpg/960px-Sierra_bilberry_Vaccinium_caespitosum.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Sierra_bilberry_Vaccinium_caespitosum.jpg?width=960",
         "credit": "Wikimedia Commons — Vaccinium caespitosum",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Vaccinium_caespitosum_3-eheep_%285097507665%29.jpg/960px-Vaccinium_caespitosum_3-eheep_%285097507665%29.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Vaccinium_caespitosum_3-eheep_(5097507665).jpg?width=960",
         "credit": "Wikimedia Commons — Vaccinium caespitosum",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "osoberry": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Oemleria_cerasiformis_07.jpg/960px-Oemleria_cerasiformis_07.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Oemleria_cerasiformis_07.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Oemleria cerasiformis",
     "additionalImages": [
       {
@@ -249,7 +249,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "western-dock": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Rumexoccidentalis.jpg/960px-Rumexoccidentalis.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rumexoccidentalis.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Rumex occidentalis",
     "additionalImages": [
       {
@@ -265,7 +265,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "common-mallow": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Malva_neglecta-flower.jpg/960px-Malva_neglecta-flower.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Malva_neglecta-flower.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Malva neglecta",
     "additionalImages": [
       {
@@ -281,7 +281,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "sow-thistle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Sonchus_February_2008-1.jpg/960px-Sonchus_February_2008-1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sonchus_February_2008-1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Sonchus oleraceus",
     "additionalImages": [
       {
@@ -297,7 +297,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "prickly-lettuce": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Lactucaserriola2web.jpg/960px-Lactucaserriola2web.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lactucaserriola2web.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lactuca serriola",
     "additionalImages": [
       {
@@ -313,23 +313,23 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "watercress": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Watercress_%282%29.JPG/960px-Watercress_%282%29.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Watercress_(2).JPG?width=960",
     "imageCredit": "Wikimedia Commons — Nasturtium officinale",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Illustration_Nasturtium_officinale0.jpg/960px-Illustration_Nasturtium_officinale0.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Illustration_Nasturtium_officinale0.jpg?width=960",
         "credit": "Wikimedia Commons — Nasturtium officinale",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Nasturtium_officinale_154629037.jpg/960px-Nasturtium_officinale_154629037.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Nasturtium_officinale_154629037.jpg?width=960",
         "credit": "Wikimedia Commons — Nasturtium officinale",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "spring-beauty": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Claytonia_lanceolata_at_Leavenworth_Ski_Hill_2.jpg/960px-Claytonia_lanceolata_at_Leavenworth_Ski_Hill_2.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Claytonia_lanceolata_at_Leavenworth_Ski_Hill_2.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Claytonia lanceolata",
     "additionalImages": [
       {
@@ -345,7 +345,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "nodding-onion": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Allium_cernuum_1.jpg/960px-Allium_cernuum_1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Allium_cernuum_1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Allium cernuum",
     "additionalImages": [
       {
@@ -361,7 +361,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wild-onion": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Alliumacuminatum.JPG/960px-Alliumacuminatum.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Alliumacuminatum.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Allium acuminatum",
     "additionalImages": [
       {
@@ -377,7 +377,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "fat-hen": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Melganzenvoet_bloeiwijze_Chenopodium_album.jpg/960px-Melganzenvoet_bloeiwijze_Chenopodium_album.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Melganzenvoet_bloeiwijze_Chenopodium_album.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Chenopodium album",
     "additionalImages": [
       {
@@ -393,7 +393,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wild-amaranth": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Amaranthus_retroflexus_flower1.jpg/960px-Amaranthus_retroflexus_flower1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Amaranthus_retroflexus_flower1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Amaranthus retroflexus",
     "additionalImages": [
       {
@@ -409,7 +409,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "orache": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Atriplex_hortensis_MHNT.BOT.2013.22.60.jpg/960px-Atriplex_hortensis_MHNT.BOT.2013.22.60.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Atriplex_hortensis_MHNT.BOT.2013.22.60.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Atriplex hortensis",
     "additionalImages": [
       {
@@ -425,7 +425,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "winter-cress": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/%28MHNT%29_Barbarea_vulgaris_-_Habit.jpg/960px-%28MHNT%29_Barbarea_vulgaris_-_Habit.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/(MHNT)_Barbarea_vulgaris_-_Habit.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Barbarea vulgaris",
     "additionalImages": [
       {
@@ -441,7 +441,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bittercress": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Cardamine_oligosperma_6649.JPG/960px-Cardamine_oligosperma_6649.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cardamine_oligosperma_6649.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Cardamine oligosperma",
     "additionalImages": [
       {
@@ -457,7 +457,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wild-radish-greens": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Raphanus_raphanistrum_-_Deutschlands_flora_in_abbildungen_nach_der_natur_-_vol._6_-_t._40_-_clean.jpg/960px-Raphanus_raphanistrum_-_Deutschlands_flora_in_abbildungen_nach_der_natur_-_vol._6_-_t._40_-_clean.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Raphanus_raphanistrum_-_Deutschlands_flora_in_abbildungen_nach_der_natur_-_vol._6_-_t._40_-_clean.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Raphanus raphanistrum",
     "additionalImages": [
       {
@@ -473,7 +473,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "camas": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Camassia_quamash_%28Pursh%29_Greene.jpg/960px-Camassia_quamash_%28Pursh%29_Greene.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Camassia_quamash_(Pursh)_Greene.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Camassia quamash",
     "additionalImages": [
       {
@@ -489,7 +489,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wapato": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Sagittaria_latifolia_%28flowers%29.jpg/960px-Sagittaria_latifolia_%28flowers%29.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sagittaria_latifolia_(flowers).jpg?width=960",
     "imageCredit": "Wikimedia Commons — Sagittaria latifolia",
     "additionalImages": [
       {
@@ -505,7 +505,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "balsamroot": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Balsamorhiza_sagittata_10.jpg/960px-Balsamorhiza_sagittata_10.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Balsamorhiza_sagittata_10.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Balsamorhiza sagittata",
     "additionalImages": [
       {
@@ -521,7 +521,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "biscuitroot": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Lomatium_californicum.jpeg/960px-Lomatium_californicum.jpeg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lomatium_californicum.jpeg?width=960",
     "imageCredit": "Wikimedia Commons — Lomatium californicum",
     "additionalImages": [
       {
@@ -537,7 +537,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "cow-parsnip": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/Heracleum_lanatum_from_High_Trail.jpg/960px-Heracleum_lanatum_from_High_Trail.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Heracleum_lanatum_from_High_Trail.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Heracleum maximum",
     "additionalImages": [
       {
@@ -553,7 +553,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "silverweed": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Argentina_egedii_2818.JPG/960px-Argentina_egedii_2818.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Argentina_egedii_2818.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Argentina pacifica",
     "additionalImages": [
       {
@@ -569,7 +569,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "lady-fern-fiddleheads": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Athyrium_filix-femina0.jpg/960px-Athyrium_filix-femina0.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Athyrium_filix-femina0.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Athyrium filix-femina",
     "additionalImages": [
       {
@@ -585,11 +585,11 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "deer-fern": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Blechnum_spicant_%28fertile_and_sterile_fronts%29.jpg/960px-Blechnum_spicant_%28fertile_and_sterile_fronts%29.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Blechnum_spicant_(fertile_and_sterile_fronts).jpg?width=960",
     "imageCredit": "Wikimedia Commons — Blechnum spicant",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Blechnum_spicant.jpg/960px-Blechnum_spicant.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Blechnum_spicant.jpg?width=960",
         "credit": "Wikimedia Commons — Blechnum spicant",
         "caption": "Habitat & growth habit"
       },
@@ -601,7 +601,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bracken-fiddleheads": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Adelaarsvaren_planten_Pteridium_aquilinum.jpg/960px-Adelaarsvaren_planten_Pteridium_aquilinum.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Adelaarsvaren_planten_Pteridium_aquilinum.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Pteridium aquilinum",
     "additionalImages": [
       {
@@ -617,7 +617,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wild-hazelnut": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Corylus_cornuta.jpg/960px-Corylus_cornuta.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Corylus_cornuta.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Corylus cornuta",
     "additionalImages": [
       {
@@ -649,7 +649,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "golden-chinquapin": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Chrysolepis_chrysophylla_foliage_and_fruit_Big_Basin_State_Park.jpg/960px-Chrysolepis_chrysophylla_foliage_and_fruit_Big_Basin_State_Park.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chrysolepis_chrysophylla_foliage_and_fruit_Big_Basin_State_Park.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Chrysolepis chrysophylla",
     "additionalImages": [
       {
@@ -658,14 +658,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Chrysolepis_chrysophylla_Huckleberry_BRP_1.jpg/960px-Chrysolepis_chrysophylla_Huckleberry_BRP_1.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Chrysolepis_chrysophylla_Huckleberry_BRP_1.jpg?width=960",
         "credit": "Wikimedia Commons — Chrysolepis chrysophylla",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "gray-pine-nut": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Pinus_sabiniana.jpg/960px-Pinus_sabiniana.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pinus_sabiniana.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Pinus sabiniana",
     "additionalImages": [
       {
@@ -681,7 +681,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "chia": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Salvia_columbariae_7922.JPG/960px-Salvia_columbariae_7922.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Salvia_columbariae_7922.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Salvia columbariae",
     "additionalImages": [
       {
@@ -697,7 +697,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "spruce-tips": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Sitka_01.JPG/960px-Sitka_01.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sitka_01.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Picea sitchensis",
     "additionalImages": [
       {
@@ -713,7 +713,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "grand-fir-tips": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Abies_grandis_Rog%C3%B3w_6.jpg/960px-Abies_grandis_Rog%C3%B3w_6.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Abies_grandis_Rog%C3%B3w_6.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Abies grandis",
     "additionalImages": [
       {
@@ -729,7 +729,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bigleaf-maple-sap": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Acer_macrophyllum_1199.jpg/960px-Acer_macrophyllum_1199.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Acer_macrophyllum_1199.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Acer macrophyllum",
     "additionalImages": [
       {
@@ -745,7 +745,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "yerba-buena": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Yerba_Buena_-_Clinopodium_douglasii.jpg/960px-Yerba_Buena_-_Clinopodium_douglasii.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Yerba_Buena_-_Clinopodium_douglasii.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Clinopodium douglasii",
     "additionalImages": [
       {
@@ -761,7 +761,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "mugwort": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Artemisia_douglasiana_1.jpg/960px-Artemisia_douglasiana_1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Artemisia_douglasiana_1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Artemisia douglasiana",
     "additionalImages": [
       {
@@ -777,7 +777,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "sweet-cicely": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Osmorhiza_occidentalis_15382.JPG/960px-Osmorhiza_occidentalis_15382.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Osmorhiza_occidentalis_15382.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Osmorhiza occidentalis",
     "additionalImages": [
       {
@@ -786,14 +786,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Osmorhiza_occidentalis_15380.JPG/960px-Osmorhiza_occidentalis_15380.JPG",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Osmorhiza_occidentalis_15380.JPG?width=960",
         "credit": "Wikimedia Commons — Osmorhiza occidentalis",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "california-bay-laurel": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Umbellularia_californica_02.jpg/960px-Umbellularia_californica_02.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Umbellularia_californica_02.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Umbellularia californica",
     "additionalImages": [
       {
@@ -802,46 +802,46 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Umbellularia_californica_03.jpg/960px-Umbellularia_californica_03.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Umbellularia_californica_03.jpg?width=960",
         "credit": "Wikimedia Commons — Umbellularia californica",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "bull-kelp": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Nereocystis_luetkeana1.jpg/960px-Nereocystis_luetkeana1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Nereocystis_luetkeana1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Nereocystis luetkeana",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Algae_bladder_4290.jpg/960px-Algae_bladder_4290.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Algae_bladder_4290.jpg?width=960",
         "credit": "Wikimedia Commons — Nereocystis luetkeana",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/CAS_Nereocystis_1.JPG/960px-CAS_Nereocystis_1.JPG",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/CAS_Nereocystis_1.JPG?width=960",
         "credit": "Wikimedia Commons — Nereocystis luetkeana",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "sea-palm": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Postelsia_palmaeformis_Salt_Point.jpg/960px-Postelsia_palmaeformis_Salt_Point.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Postelsia_palmaeformis_Salt_Point.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Postelsia palmaeformis",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Postelsia_palmaeformis-1.jpg/960px-Postelsia_palmaeformis-1.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Postelsia_palmaeformis-1.jpg?width=960",
         "credit": "Wikimedia Commons — Postelsia palmaeformis",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Postelsia_palmaeformis_2.jpg/960px-Postelsia_palmaeformis_2.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Postelsia_palmaeformis_2.jpg?width=960",
         "credit": "Wikimedia Commons — Postelsia palmaeformis",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "sea-lettuce": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Sea_lettuce_in_Brofjorden_1_-_cropped.jpg/960px-Sea_lettuce_in_Brofjorden_1_-_cropped.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sea_lettuce_in_Brofjorden_1_-_cropped.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Ulva lactuca",
     "additionalImages": [
       {
@@ -857,7 +857,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bladderwrack": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/Fucus_gardneri_rockweed.jpg/960px-Fucus_gardneri_rockweed.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Fucus_gardneri_rockweed.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Fucus gardneri",
     "additionalImages": [
       {
@@ -873,23 +873,23 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "rockweed": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Pelvetiopsislimitata.jpg/960px-Pelvetiopsislimitata.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pelvetiopsislimitata.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Pelvetiopsis limitata",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Dwarf_rockweed%2C_north_Moonstone.jpg/960px-Dwarf_rockweed%2C_north_Moonstone.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dwarf_rockweed%2C_north_Moonstone.jpg?width=960",
         "credit": "Wikimedia Commons — Pelvetiopsis limitata",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Dwarf_rockweed%2C_north_Moonstone.jpg/960px-Dwarf_rockweed%2C_north_Moonstone.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Dwarf_rockweed%2C_north_Moonstone.jpg?width=960",
         "credit": "Wikimedia Commons — Pelvetiopsis limitata",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "pickleweed": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Sarcocorniapacifica.jpg/960px-Sarcocorniapacifica.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sarcocorniapacifica.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Salicornia pacifica",
     "additionalImages": [
       {
@@ -905,7 +905,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "sea-rocket": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/C_edentula.jpg/960px-C_edentula.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/C_edentula.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Cakile edentula",
     "additionalImages": [
       {
@@ -921,7 +921,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "elderflower": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Sambucus_caerulea_8012.jpg/960px-Sambucus_caerulea_8012.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sambucus_caerulea_8012.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Sambucus cerulea",
     "additionalImages": [
       {
@@ -937,7 +937,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "nootka-rose-hips": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Rosa_nutkana_07513.JPG/960px-Rosa_nutkana_07513.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rosa_nutkana_07513.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Rosa nutkana",
     "additionalImages": [
       {
@@ -953,7 +953,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "white-chanterelle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Cantharellus_subalbidus_130252.jpg/960px-Cantharellus_subalbidus_130252.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cantharellus_subalbidus_130252.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Cantharellus subalbidus",
     "additionalImages": [
       {
@@ -969,7 +969,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "yellowfoot-chanterelle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Craterellus_tubaeformis_1345904803_69350246bb_o.jpg/960px-Craterellus_tubaeformis_1345904803_69350246bb_o.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Craterellus_tubaeformis_1345904803_69350246bb_o.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Craterellus tubaeformis",
     "additionalImages": [
       {
@@ -985,7 +985,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "black-trumpet": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Craterellus_cornucopioides_JPG1.jpg/960px-Craterellus_cornucopioides_JPG1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Craterellus_cornucopioides_JPG1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Craterellus cornucopioides",
     "additionalImages": [
       {
@@ -1001,7 +1001,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "king-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Boletus_edulis_IT.jpg/960px-Boletus_edulis_IT.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Boletus_edulis_IT.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Boletus edulis",
     "additionalImages": [
       {
@@ -1017,7 +1017,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "spring-king-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Rexveris.jpg/960px-Rexveris.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Rexveris.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Boletus rex-veris",
     "additionalImages": [
       {
@@ -1033,7 +1033,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "admirable-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Aureoboletus_mirabilis_%28Murrill%29_Halling_681855.jpg/960px-Aureoboletus_mirabilis_%28Murrill%29_Halling_681855.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aureoboletus_mirabilis_(Murrill)_Halling_681855.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Aureoboletus mirabilis",
     "additionalImages": [
       {
@@ -1049,7 +1049,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "zellers-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Xerocomellus_zelleri_10114_crop.jpg/960px-Xerocomellus_zelleri_10114_crop.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Xerocomellus_zelleri_10114_crop.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Xerocomellus zelleri",
     "additionalImages": [
       {
@@ -1065,7 +1065,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "chicken-of-the-woods": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Laetiporus_gilbertsonii_19346.jpg/960px-Laetiporus_gilbertsonii_19346.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Laetiporus_gilbertsonii_19346.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Laetiporus gilbertsonii",
     "additionalImages": [
       {
@@ -1081,7 +1081,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "lobster-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Hypomyces_lactifluorum.JPG/960px-Hypomyces_lactifluorum.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hypomyces_lactifluorum.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Hypomyces lactifluorum",
     "additionalImages": [
       {
@@ -1097,7 +1097,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "hedgehog-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Hedgehog_fungi2.jpg/960px-Hedgehog_fungi2.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hedgehog_fungi2.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hydnum repandum",
     "additionalImages": [
       {
@@ -1113,7 +1113,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "lions-mane": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Lion%27s-mane_mushroom_imported_from_iNaturalist_photo_29576097_on_21_March_2024.jpg/960px-Lion%27s-mane_mushroom_imported_from_iNaturalist_photo_29576097_on_21_March_2024.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lion's-mane_mushroom_imported_from_iNaturalist_photo_29576097_on_21_March_2024.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hericium erinaceus",
     "additionalImages": [
       {
@@ -1129,7 +1129,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bears-head-hericium": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Hericium_abietis_109093.jpg/960px-Hericium_abietis_109093.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hericium_abietis_109093.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hericium abietis",
     "additionalImages": [
       {
@@ -1145,7 +1145,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "oyster-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Pleurotus_pulmonarius_LC0228.jpg/960px-Pleurotus_pulmonarius_LC0228.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pleurotus_pulmonarius_LC0228.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Pleurotus pulmonarius",
     "additionalImages": [
       {
@@ -1161,7 +1161,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "western-giant-puffball": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Calvatia_booniana.jpg/960px-Calvatia_booniana.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Calvatia_booniana.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Calvatia booniana",
     "additionalImages": [
       {
@@ -1177,23 +1177,23 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "gem-studded-puffball": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Single_lycoperdon_perlatum.jpg/960px-Single_lycoperdon_perlatum.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Single_lycoperdon_perlatum.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lycoperdon perlatum",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Flaschen-St%C3%A4ubling_%28Lycoperdon_perlatum%2C_syn._L._gemmatum%29-RM-20191014-01.jpg/960px-Flaschen-St%C3%A4ubling_%28Lycoperdon_perlatum%2C_syn._L._gemmatum%29-RM-20191014-01.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Flaschen-St%C3%A4ubling_(Lycoperdon_perlatum%2C_syn._L._gemmatum)-RM-20191014-01.jpg?width=960",
         "credit": "Wikimedia Commons — Lycoperdon perlatum",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Lycoperdon_perlatum_97777217.jpg/960px-Lycoperdon_perlatum_97777217.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lycoperdon_perlatum_97777217.jpg?width=960",
         "credit": "Wikimedia Commons — Lycoperdon perlatum",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "shaggy-mane": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Coprinus_comatus%2C_the_shaggy_ink_cap%2C_lawyer%27s_wig%2C_or_shaggy_mane_mushroom.jpg/960px-Coprinus_comatus%2C_the_shaggy_ink_cap%2C_lawyer%27s_wig%2C_or_shaggy_mane_mushroom.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Coprinus_comatus%2C_the_shaggy_ink_cap%2C_lawyer's_wig%2C_or_shaggy_mane_mushroom.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Coprinus comatus",
     "additionalImages": [
       {
@@ -1209,7 +1209,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "matsutake": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg/960px-2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Tricholoma murrillianum",
     "additionalImages": [
       {
@@ -1225,11 +1225,11 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "cauliflower-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Sparassis_crispa_JPG1.jpg/960px-Sparassis_crispa_JPG1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Sparassis_crispa_JPG1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Sparassis radicata",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Penicilum_Spongia_Forma_Curalium1.jpg/960px-Penicilum_Spongia_Forma_Curalium1.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Penicilum_Spongia_Forma_Curalium1.jpg?width=960",
         "credit": "Wikimedia Commons — Sparassis radicata",
         "caption": "Habitat & growth habit"
       },
@@ -1241,11 +1241,11 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "candy-cap": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Lactarius_camphoratus_-_Lindsey.jpg/960px-Lactarius_camphoratus_-_Lindsey.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lactarius_camphoratus_-_Lindsey.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lactarius rubidus",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Lactarius_rubidus.jpg/960px-Lactarius_rubidus.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Lactarius_rubidus.jpg?width=960",
         "credit": "Wikimedia Commons — Lactarius rubidus",
         "caption": "Habitat & growth habit"
       },
@@ -1257,7 +1257,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "saffron-milk-cap": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Lactarius_deliciosus.jpg/960px-Lactarius_deliciosus.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lactarius_deliciosus.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lactarius deliciosus",
     "additionalImages": [
       {
@@ -1273,7 +1273,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "shrimp-russula": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/2011-11-08_Russula_xerampelina_%28Schaeff.%29_Fr_180998_mod.jpg/960px-2011-11-08_Russula_xerampelina_%28Schaeff.%29_Fr_180998_mod.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2011-11-08_Russula_xerampelina_(Schaeff.)_Fr_180998_mod.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Russula xerampelina",
     "additionalImages": [
       {
@@ -1289,7 +1289,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "prince-agaricus": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Agaricus_augustus_2011_G1.jpg/960px-Agaricus_augustus_2011_G1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Agaricus_augustus_2011_G1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Agaricus augustus",
     "additionalImages": [
       {
@@ -1305,7 +1305,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "meadow-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Agaricus_campestris.jpg/960px-Agaricus_campestris.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Agaricus_campestris.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Agaricus campestris",
     "additionalImages": [
       {
@@ -1321,7 +1321,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "pheasants-back": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Polyporus_squamosus_Molter.jpg/960px-Polyporus_squamosus_Molter.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Polyporus_squamosus_Molter.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Cerioporus squamosus",
     "additionalImages": [
       {
@@ -1337,7 +1337,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "honey-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Armillaria_ostoyae.jpg/960px-Armillaria_ostoyae.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Armillaria_ostoyae.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Armillaria ostoyae",
     "additionalImages": [
       {
@@ -1353,7 +1353,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "blewit": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Clitocybe_nuda_%28Fr.%29_H.E._Bigelow_%26_A.H._Sm_267650.jpg/960px-Clitocybe_nuda_%28Fr.%29_H.E._Bigelow_%26_A.H._Sm_267650.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Clitocybe_nuda_(Fr.)_H.E._Bigelow_%26_A.H._Sm_267650.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lepista nuda",
     "additionalImages": [
       {
@@ -1369,7 +1369,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wood-ear": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_633121.jpg/960px-Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_633121.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_633121.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Auricularia americana",
     "additionalImages": [
       {
@@ -1378,14 +1378,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_207208.jpg/960px-Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_207208.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Auricularia_americana_Parmasto_%26_I._Parmasto_ex_Audet%2C_Boulet_%26_Sirard_207208.jpg?width=960",
         "credit": "Wikimedia Commons — Auricularia americana",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "enoki": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/2009-11-19_Flammulina_velutipes_agg_biolib.cz_crop.jpg/960px-2009-11-19_Flammulina_velutipes_agg_biolib.cz_crop.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2009-11-19_Flammulina_velutipes_agg_biolib.cz_crop.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Flammulina velutipes",
     "additionalImages": [
       {
@@ -1401,7 +1401,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "slippery-jack": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Suillus_luteus_475376.jpg/960px-Suillus_luteus_475376.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Suillus_luteus_475376.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Suillus luteus",
     "additionalImages": [
       {
@@ -1417,7 +1417,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "wine-cap": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/2011-05-19_Stropharia_rugosoannulata_Farl._ex_Murrill_183478.jpg/960px-2011-05-19_Stropharia_rugosoannulata_Farl._ex_Murrill_183478.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2011-05-19_Stropharia_rugosoannulata_Farl._ex_Murrill_183478.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Stropharia rugosoannulata",
     "additionalImages": [
       {
@@ -1433,7 +1433,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "pig-ear-gomphus": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Gomphus_clavatus_II_Totes_Gebirge.jpg/960px-Gomphus_clavatus_II_Totes_Gebirge.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Gomphus_clavatus_II_Totes_Gebirge.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Gomphus clavatus",
     "additionalImages": [
       {
@@ -1449,7 +1449,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "pine-spike": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Chroogomphus_vinicolor_116581.jpg/960px-Chroogomphus_vinicolor_116581.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Chroogomphus_vinicolor_116581.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Chroogomphus vinicolor",
     "additionalImages": [
       {
@@ -1465,7 +1465,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "combtooth": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Hericium_americanum_59312.jpg/960px-Hericium_americanum_59312.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hericium_americanum_59312.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hericium americanum",
     "additionalImages": [
       {
@@ -1481,7 +1481,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "charcoal-burner": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Russula_cyanoxantha.JPG/960px-Russula_cyanoxantha.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Russula_cyanoxantha.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Russula cyanoxantha",
     "additionalImages": [
       {
@@ -1497,7 +1497,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "black-morel": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Morchella_elata_Spitzmorchel_Morchella_conica.jpg/960px-Morchella_elata_Spitzmorchel_Morchella_conica.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Morchella_elata_Spitzmorchel_Morchella_conica.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Morchella elata",
     "additionalImages": [
       {
@@ -1513,7 +1513,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "california-chanterelle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Cantharellus_californicus_81770.jpg/960px-Cantharellus_californicus_81770.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Cantharellus_californicus_81770.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Cantharellus californicus",
     "additionalImages": [
       {
@@ -1529,7 +1529,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "blue-chanterelle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Polyozellus_multiplex_-Haida_Guaii.jpg/960px-Polyozellus_multiplex_-Haida_Guaii.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Polyozellus_multiplex_-Haida_Guaii.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Polyozellus multiplex",
     "additionalImages": [
       {
@@ -1545,7 +1545,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "butter-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Butyriboletus_persolidus_69469.jpg/960px-Butyriboletus_persolidus_69469.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Butyriboletus_persolidus_69469.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Butyriboletus persolidus",
     "additionalImages": [
       {
@@ -1561,7 +1561,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "bay-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Boletus_badius_JPG1.jpg/960px-Boletus_badius_JPG1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Boletus_badius_JPG1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Imleria badia",
     "additionalImages": [
       {
@@ -1577,7 +1577,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "cracked-cap-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Xerocomellus_chrysenteron28.jpg/960px-Xerocomellus_chrysenteron28.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Xerocomellus_chrysenteron28.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Xerocomellus chrysenteron",
     "additionalImages": [
       {
@@ -1593,7 +1593,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "aspen-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Leccinum_insigne_98865.jpg/960px-Leccinum_insigne_98865.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Leccinum_insigne_98865.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Leccinum insigne",
     "additionalImages": [
       {
@@ -1609,7 +1609,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "manzanita-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Leccinum_manzanitae_29496_crop.jpg/960px-Leccinum_manzanitae_29496_crop.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Leccinum_manzanitae_29496_crop.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Leccinum manzanitae",
     "additionalImages": [
       {
@@ -1625,7 +1625,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "conifer-chicken": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Laetiporus_conifericola_306.jpg/960px-Laetiporus_conifericola_306.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Laetiporus_conifericola_306.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Laetiporus conifericola",
     "additionalImages": [
       {
@@ -1634,14 +1634,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Laetiporus_conifericola_6037.JPG/960px-Laetiporus_conifericola_6037.JPG",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Laetiporus_conifericola_6037.JPG?width=960",
         "credit": "Wikimedia Commons — Laetiporus conifericola",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "early-morel": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Morchella_rufobrunnea_154543.jpg/960px-Morchella_rufobrunnea_154543.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Morchella_rufobrunnea_154543.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Morchella rufobrunnea",
     "additionalImages": [
       {
@@ -1657,7 +1657,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "half-free-morel": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Morchella_punctipes_205457.jpg/960px-Morchella_punctipes_205457.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Morchella_punctipes_205457.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Morchella punctipes",
     "additionalImages": [
       {
@@ -1673,7 +1673,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "yellow-morel": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Morchella_americana_closer.JPG/960px-Morchella_americana_closer.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Morchella_americana_closer.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Morchella americana",
     "additionalImages": [
       {
@@ -1682,14 +1682,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Morchella_americana_76797711.jpg/960px-Morchella_americana_76797711.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Morchella_americana_76797711.jpg?width=960",
         "credit": "Wikimedia Commons — Morchella americana",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "crown-coral": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Artomyces_pyxidatus.jpg/960px-Artomyces_pyxidatus.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Artomyces_pyxidatus.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Artomyces pyxidatus",
     "additionalImages": [
       {
@@ -1705,7 +1705,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "golden-coral": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/2012-09-03_Ramaria_aurea_crop.jpg/960px-2012-09-03_Ramaria_aurea_crop.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2012-09-03_Ramaria_aurea_crop.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Ramaria aurea",
     "additionalImages": [
       {
@@ -1721,7 +1721,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "orange-peel-fungus": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Aleuria_aurantia_%28Orange_Peel_Fungus%29.JPG/960px-Aleuria_aurantia_%28Orange_Peel_Fungus%29.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Aleuria_aurantia_(Orange_Peel_Fungus).JPG?width=960",
     "imageCredit": "Wikimedia Commons — Aleuria aurantia",
     "additionalImages": [
       {
@@ -1737,7 +1737,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "fried-chicken-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Lyophyllum_decastes_071012.jpg/960px-Lyophyllum_decastes_071012.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lyophyllum_decastes_071012.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Lyophyllum decastes",
     "additionalImages": [
       {
@@ -1753,7 +1753,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "brick-cap": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/HypholomaSublateritium.jpg/960px-HypholomaSublateritium.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/HypholomaSublateritium.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hypholoma lateritium",
     "additionalImages": [
       {
@@ -1769,7 +1769,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "shingled-hedgehog": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Habichtspilz-Sarcodon-imbricatus.jpg/960px-Habichtspilz-Sarcodon-imbricatus.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Habichtspilz-Sarcodon-imbricatus.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Sarcodon imbricatus",
     "additionalImages": [
       {
@@ -1785,39 +1785,39 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "terracotta-hedgehog": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Hydnum_rufescens_20070927w.JPG/960px-Hydnum_rufescens_20070927w.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hydnum_rufescens_20070927w.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Hydnum rufescens",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Hydnum_rufescens.jpg/960px-Hydnum_rufescens.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hydnum_rufescens.jpg?width=960",
         "credit": "Wikimedia Commons — Hydnum rufescens",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Hydnum_rufescens_2.jpg/960px-Hydnum_rufescens_2.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Hydnum_rufescens_2.jpg?width=960",
         "credit": "Wikimedia Commons — Hydnum rufescens",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "pear-shaped-puffball": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Lycoperdon_pyriforme_Sasata_scale.jpg/960px-Lycoperdon_pyriforme_Sasata_scale.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lycoperdon_pyriforme_Sasata_scale.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Apioperdon pyriforme",
     "additionalImages": [
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Apioperdon_pyriforme_103323376.jpg/960px-Apioperdon_pyriforme_103323376.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Apioperdon_pyriforme_103323376.jpg?width=960",
         "credit": "Wikimedia Commons — Apioperdon pyriforme",
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Apioperdon_pyriforme_103323405.jpg/960px-Apioperdon_pyriforme_103323405.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Apioperdon_pyriforme_103323405.jpg?width=960",
         "credit": "Wikimedia Commons — Apioperdon pyriforme",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "horse-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Pieczarka_polowa_vongrzanka.JPG/960px-Pieczarka_polowa_vongrzanka.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Pieczarka_polowa_vongrzanka.JPG?width=960",
     "imageCredit": "Wikimedia Commons — Agaricus arvensis",
     "additionalImages": [
       {
@@ -1833,7 +1833,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "poplar-mushroom": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Agrocybe_aegerita.jpg/960px-Agrocybe_aegerita.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Agrocybe_aegerita.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Cyclocybe aegerita",
     "additionalImages": [
       {
@@ -1849,7 +1849,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "elm-oyster": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Hypsizygus_ulmarius_%28Bull.%29_Redhead_383230.jpg/960px-Hypsizygus_ulmarius_%28Bull.%29_Redhead_383230.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hypsizygus_ulmarius_(Bull.)_Redhead_383230.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hypsizygus ulmarius",
     "additionalImages": [
       {
@@ -1865,7 +1865,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "man-on-horseback": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg/960px-2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/2018-11-10_Tricholoma_murrillianum_Singer_959693.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Tricholoma murrillianum",
     "additionalImages": [
       {
@@ -1881,7 +1881,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "painted-suillus": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Suillus_lakei_50606.jpg/960px-Suillus_lakei_50606.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Suillus_lakei_50606.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Suillus lakei",
     "additionalImages": [
       {
@@ -1897,7 +1897,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "larch-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Suill.grev.jpg/960px-Suill.grev.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Suill.grev.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Suillus grevillei",
     "additionalImages": [
       {
@@ -1906,14 +1906,14 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
         "caption": "Habitat & growth habit"
       },
       {
-        "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Suillus_grevillei.jpg/960px-Suillus_grevillei.jpg",
+        "url": "https://commons.wikimedia.org/wiki/Special:FilePath/Suillus_grevillei.jpg?width=960",
         "credit": "Wikimedia Commons — Suillus grevillei",
         "caption": "Flowers, fruit, or ID detail"
       }
     ]
   },
   "amethyst-deceiver": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Laccaria_amethysteo-occidentalis_%2832942930552%29.jpg/960px-Laccaria_amethysteo-occidentalis_%2832942930552%29.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Laccaria_amethysteo-occidentalis_(32942930552).jpg?width=960",
     "imageCredit": "Wikimedia Commons — Laccaria amethysteo-occidentalis",
     "additionalImages": [
       {
@@ -1929,7 +1929,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "common-deceiver": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Lacc.lacc.jpg/960px-Lacc.lacc.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Lacc.lacc.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Laccaria laccata",
     "additionalImages": [
       {
@@ -1945,7 +1945,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "white-elfin-saddle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/0_Helvella_crispa_-_Havr%C3%A9_%281%29.JPG/960px-0_Helvella_crispa_-_Havr%C3%A9_%281%29.JPG",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/0_Helvella_crispa_-_Havr%C3%A9_(1).JPG?width=960",
     "imageCredit": "Wikimedia Commons — Helvella crispa",
     "additionalImages": [
       {
@@ -1961,7 +1961,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "western-elfin-saddle": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Helvella_vespertina_316605.jpg/960px-Helvella_vespertina_316605.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Helvella_vespertina_316605.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Helvella vespertina",
     "additionalImages": [
       {
@@ -1977,7 +1977,7 @@ export const PLANT_IMAGE_MANIFEST: Record<string, PlantImageSet> = {
     ]
   },
   "ruby-bolete": {
-    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Hortiboletus_rubellus_2016_G1.jpg/960px-Hortiboletus_rubellus_2016_G1.jpg",
+    "imageUrl": "https://commons.wikimedia.org/wiki/Special:FilePath/Hortiboletus_rubellus_2016_G1.jpg?width=960",
     "imageCredit": "Wikimedia Commons — Hortiboletus rubellus",
     "additionalImages": [
       {

@@ -14,6 +14,7 @@ const ROOT = path.join(__dirname, '..');
 const UA = 'AiBhive-PlantLibrary/1.0 (educational; contact: aibhive.com)';
 
 const SOURCE_FILES = [
+  'src/lib/oregonPlantMedicine/plantLibrary.ts',
   'src/lib/oregonPlantMedicine/plantLibraryEdiblePlants.ts',
   'src/lib/oregonPlantMedicine/plantLibraryEdibleMushrooms.ts',
 ];
@@ -41,6 +42,14 @@ function toLargeThumb(url) {
 function commonsFileUrl(fileTitle) {
   const name = fileTitle.replace(/^File:/, '');
   return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(name)}?width=960`;
+}
+
+function normalizeResolvedUrl(url) {
+  if (!url) return null;
+  if (url.includes('commons.wikimedia.org/wiki/Special:FilePath')) return url;
+  const thumb = url.match(/\/commons\/thumb\/(?:[^/]+\/){2}([^/]+)\/\d+px-/i);
+  if (thumb?.[1]) return commonsFileUrl(decodeURIComponent(thumb[1]));
+  return url;
 }
 
 async function fetchJson(url, retries = 4) {
@@ -140,11 +149,11 @@ async function resolveEntry({ id, scientificName }) {
 
   return {
     id,
-    imageUrl: pool[0],
+    imageUrl: normalizeResolvedUrl(pool[0]),
     imageCredit: `Wikimedia Commons — ${scientificName}`,
     additionalImages: [
-      { url: pool[1], credit: `Wikimedia Commons — ${scientificName}`, caption: 'Habitat & growth habit' },
-      { url: pool[2], credit: `Wikimedia Commons — ${scientificName}`, caption: 'Flowers, fruit, or ID detail' },
+      { url: normalizeResolvedUrl(pool[1]), credit: `Wikimedia Commons — ${scientificName}`, caption: 'Habitat & growth habit' },
+      { url: normalizeResolvedUrl(pool[2]), credit: `Wikimedia Commons — ${scientificName}`, caption: 'Flowers, fruit, or ID detail' },
     ],
   };
 }

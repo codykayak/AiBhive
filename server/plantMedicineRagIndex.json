@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T05:37:31.395Z",
+  "generatedAt": "2026-07-20T11:49:18.633Z",
   "count": 178,
   "plants": {
     "stinging-nettle": {
@@ -9,7 +9,12 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Rich moist soil along streams, ditches, forest edges, and disturbed ground. Very common near Eugene waterways and coast range valleys toward Florence.",
       "identification": "Opposite serrated leaves with stinging hairs on stems and undersides. Square stems. Can reach 3–6 ft when flowering. Crushing or drying removes the sting.",
@@ -35,8 +40,12 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Dry to moist woodland understory throughout the Willamette Valley and coast range foothills.",
       "identification": "Spiny holly-like evergreen leaflets in groups. Bright yellow flower clusters in early spring. Blue berries with whitish bloom in summer.",
@@ -63,7 +72,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Stream banks, wetlands, and shady forest edges — abundant on the coast near Florence and in wet Willamette Valley corridors.",
       "identification": "Magenta flowers in spring. Compound leaves with three leaflets. Orange to red raspberry-like fruit.",
@@ -88,8 +102,12 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Coastal conifer forest understory — dominant groundcover from Florence dunes inland and common in coast-range woods toward Eugene.",
       "identification": "Leathery evergreen oval leaves. Urn-shaped pink-white flowers. Dark blue-purple mealy berries.",
@@ -114,8 +132,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Cool moist shady spots, woodland edges, and spring gardens throughout the valley.",
       "identification": "Succulent leaves with a cup-like leaf bracketing the flower stem. Small white or pink flowers.",
@@ -140,7 +162,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Meadows, roadsides, dry fields, and disturbed sunny ground valley-wide and along the coast highway corridor.",
       "identification": "Feathery aromatic leaves. Flat-topped clusters of tiny white (sometimes pink) flowers. Distinct sage-like scent when crushed.",
@@ -163,7 +190,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Lawns, trails, compacted soil — everywhere in Eugene and Florence.",
       "identification": "Low rosette of ribbed oval leaves with parallel veins. Slender seed spikes rise from center.",
@@ -184,7 +216,12 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Lawns, fields, roadsides — ubiquitous.",
       "identification": "Toothed basal leaves, hollow stem, yellow composite flower, white puffball seed head.",
@@ -210,8 +247,12 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Meadows, pastures, and sunny fields in the Willamette Valley.",
       "identification": "Three leaflets with pale chevron. Round pink-purple flower heads.",
@@ -236,8 +277,12 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Stream banks, open woods, and disturbed sunny edges in the valley.",
       "identification": "Opposite compound leaves. Large flat cream flower clusters. Powdery blue berries on reddish stems.",
@@ -264,7 +309,12 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Burn sites, roadsides, clearcuts, and open meadows — common coast to cascades.",
       "identification": "Tall spikes of magenta four-petaled flowers. Long narrow leaves. Fluffy seed parachutes.",
@@ -289,8 +339,12 @@
       "uses": "medicinal",
       "category": "fern",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mossy tree trunks, rocks, and wet forest — very common in coast range and valley forests.",
       "identification": "Fronds from creeping rhizome on mossy maples and logs. Sweet licorice-scented rhizome when chewed.",
@@ -311,8 +365,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Shady moist conifer forest floor — coast range and old growth near Florence.",
       "identification": "Three heart-shaped leaflets often folded. White to pink five-petaled flowers. Sour lemon taste.",
@@ -338,8 +396,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Coastal and low-elevation forest understory — Florence dunes forest and coast range.",
       "identification": "Leathery serrated evergreen leaves. Pink urn flowers. Dark purple-black sweet berries.",
@@ -364,8 +426,12 @@
       "uses": "medicinal",
       "category": "tree",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "River bottoms and wet lowland — Willamette River corridor and coastal river valleys.",
       "identification": "Large cottonwood with balsam-scented sticky buds in late winter. Heart-shaped toothed leaves.",
@@ -386,7 +452,12 @@
       "uses": "medicinal",
       "category": "tree",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wetlands, stream banks, and lakeshores — common in Eugene wetlands and coastal estuaries near Florence.",
       "identification": "Flexible branches. Long narrow leaves often with silky undersides. Catkins in early spring.",
@@ -409,7 +480,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Lawns, meadows, and trail edges.",
       "identification": "Low plant with square stem. Purple tubular flowers in dense head. Lance-shaped leaves.",
@@ -430,7 +506,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist shady edges, gardens, and stream banks.",
       "identification": "Square stem with whorled narrow leaves that cling (hooked hairs). Tiny white flowers.",
@@ -451,8 +532,12 @@
       "uses": "medicinal",
       "category": "lichen",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Hanging from tree branches in moist clean air — coast range and valley forests after rain.",
       "identification": "Gray-green branched lichen with white elastic cord inside main stem when pulled apart.",
@@ -474,7 +559,12 @@
       "uses": "medicinal",
       "category": "mushroom",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Dead hardwood and conifer logs — everywhere in Oregon forests.",
       "identification": "Bracket fungus with concentric color bands. Underside white with tiny pores (not gills).",
@@ -496,13 +586,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "florence",
-        "both",
-        "or-coast",
-        "or-cascades",
-        "or-rogue",
         "ca-north-coast",
-        "ca-shasta"
+        "ca-shasta",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mossy conifer forest floor — coast range and valley foothills after fall rains.",
       "identification": "Golden funnel-shaped cap with false gills (forked ridges). Fruity apricot smell. No true gills.",
@@ -528,10 +619,13 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "florence",
-        "or-coast",
         "ca-north-coast",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Coastal sand dunes and bluffs — Florence to Oregon Dunes National Recreation Area.",
       "identification": "Three toothed leaflets, runners on sand. Small sweet white-flowered berries close to ground.",
@@ -556,7 +650,12 @@
       "uses": "both",
       "category": "tree",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Dominant conifer from valley floor to coast — everywhere.",
       "identification": "Soft bright green new growth tips in spring. Distinct bracts on cones (“mouse tail and legs”).",
@@ -581,7 +680,12 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Stream banks, roadsides, and open sunny areas valley and coast.",
       "identification": "Pink five-petaled flowers. Thorns on stems. Large red rose hips in fall.",
@@ -606,7 +710,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Sandy wet soils, roadsides, and disturbed ground.",
       "identification": "Jointed hollow stems with whorled branches. Silica-rich. Two stages: fertile brown cone stage and green vegetative.",
@@ -629,7 +738,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Openings, stream banks, and forest edges from Willamette Valley foothills to coast range near Florence. Large soft maple-like leaves on thornless stems.",
       "identification": "Huge velvety 5-lobed maple-shaped leaves. White flowers in spring. Bright red soft berries that pull off like a thimble. No thorns.",
@@ -654,7 +768,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Sunny roadsides, clearings, and dry edges throughout Lane County and coastal scrub toward Florence. Low trailing vines, not tall canes.",
       "identification": "Thin trailing stems with small hooked prickles. White to pink flowers. Small intense black berries with excellent flavor — parent of many cultivated varieties.",
@@ -680,7 +799,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Often on decaying logs and stumps in moist conifer forest — common in coast range hikes near Florence and foothill forests around Eugene.",
       "identification": "Tiny bright green leaves on angular green stems. Small red translucent berries. Grows on wood, not in soil (key ID clue).",
@@ -705,8 +829,12 @@
       "uses": "edible",
       "category": "shrub",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Open slopes, oak savanna edges, and sunny forest margins in the eastern Willamette Valley and foothills — less common on immediate coast but present inland.",
       "identification": "Shrub or small tree. White spring flowers in clusters. Blue-purple berries with crown scar on bottom (like tiny apples). Oval finely toothed leaves.",
@@ -731,7 +859,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Cool moist gardens, farm edges, and disturbed soil — abundant in Eugene valley winter and spring; mild coast winters near Florence.",
       "identification": "Low tangled mat. Opposite oval leaves. Tiny white star flowers with five deeply split petals (looks like ten). Single line of hairs on stem that switches sides at each node.",
@@ -757,7 +890,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed soil, gardens, and farm fields throughout Eugene and coastal towns — classic “weed” superfood.",
       "identification": "Gray-green leaves often with mealy white coating on undersides. Diamond toothed shape. Tall spikes of tiny green flowers in summer.",
@@ -783,7 +921,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wet meadows, ditches, and stream margins — Willamette valley waterways and coastal creek bottoms near Florence.",
       "identification": "Square stems. Opposite toothed leaves. Strong mint smell when crushed. Whorls of small lavender flowers.",
@@ -809,7 +952,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Shallow freshwater marshes, ponds, and slow sloughs — West Eugene wetlands, Fern Ridge area, and Siuslaw estuary margins.",
       "identification": "Tall sword-like leaves. Brown hot-dog seed heads in late summer. Grows in standing water or saturated mud.",
@@ -835,8 +983,12 @@
       "uses": "edible",
       "category": "tree",
       "regions": [
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wet coastal forest and stream banks — native from Florence estuary north; occasional in valley riparian plantings.",
       "identification": "Small tree with thorny twigs. White to pink spring blossoms. Yellow to reddish crabapples under 1 inch — very tart raw.",
@@ -862,14 +1014,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "eugene",
-        "both",
-        "or-willamette",
-        "or-cascades",
-        "or-klamath",
-        "or-rogue",
+        "ca-shasta",
         "ca-sierra-foothills",
-        "ca-shasta"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Burn scars, disturbed soil, cottonwood bottoms, and old orchards in the Willamette Valley — spring specialty after warm rains.",
       "identification": "Honeycombed pitted cap attached to stem. Hollow inside entire mushroom (cut lengthwise to verify). No gills — pits and ridges.",
@@ -896,7 +1048,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Hot dry disturbed soil — garden paths, farm rows, and sandy lots in Eugene summer and Florence coastal gardens.",
       "identification": "Succulent red stems sprawling on ground. Small fleshy oval leaves. Tiny yellow flowers. Leaves feel juicy when pinched.",
@@ -922,7 +1079,12 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed ground, trailsides, and vacant lots — ubiquitous weed with Velcro-like seed heads.",
       "identification": "Large heart-shaped leaves with woolly undersides. Purple thistle-like flowers. Round bur seed heads that stick to clothing.",
@@ -948,7 +1110,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Roadsides, vacant lots, farm edges, and disturbed soil throughout Eugene and the Willamette Valley — also along I-5 corridor toward Florence. Tall weed with milky sap.",
       "identification": "L. serriola: prickly spines on midrib underside, blue-green leaves, tall flowering stalk with small yellow dandelion-like flowers. L. virosa: larger, more robust cousin with similar milky latex. Both bleed white sap when stem is broken.",
@@ -972,8 +1139,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed ground, fence lines, and garden edges — naturalized in parts of western Oregon including Willamette Valley towns. Less common on immediate coast but reported inland from Florence.",
       "identification": "Large herbaceous perennial with red-purple stems. Alternate oval leaves. Long drooping racemes of white flowers followed by dark purple-black berries on hot pink pedicels.",
@@ -997,7 +1168,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Garden escape and riparian edges — widely planted in Eugene valley herb gardens and naturalized near streams. Large hairy leaves in basal rosette.",
       "identification": "Coarse hairy lance-shaped leaves with decurrent wings on stem. Clusters of drooping bell-shaped purple to cream flowers. Thick black taproot.",
@@ -1021,7 +1197,12 @@
       "uses": "medicinal",
       "category": "herb",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Lawns, pastures, roadsides, and disturbed acidic soils — one of the most common weeds in Oregon. Often grows alongside burdock in the same disturbed patches.",
       "identification": "Arrowhead-shaped leaves with basal lobes pointing backward (sheep’s head silhouette). Red-tinged stems. Small reddish flower spikes on wire-like stalks. Sour lemon taste from oxalic acid.",
@@ -1044,11 +1225,19 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Wood-chip mulch, landscaped beds, trail edges, and decaying hardwood debris — extremely common in urban Eugene and coastal towns like Florence after fall rains.",
       "identification": "Caramel to chestnut cap with wavy margin when mature. White stem bruises blue-green. Purple-brown spore print. Grows in clusters on wood chips — not on open pasture.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata (deadly galerina) — grows on the same wood chips; brown cap, ring on stem, rusty-brown spore print (not purple-brown). Contains amatoxins — misidentification is fatal.",
+        "Galerina autumnalis — same deadly amatoxin risk on decaying wood; always take a spore print.",
+        "Pholiotina rugosa / Conocybe filaris — small brown mushrooms on wood chips with rusty spores; also deadly.",
+        "Hypholoma fascicare (sulfur tuft) — greenish-yellow gills, purple-brown to dark spores; grows in clusters on wood but causes severe GI illness."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "One of the most frequently encountered psilocybin mushrooms in the Pacific Northwest. Documented on iNaturalist throughout Lane County.",
@@ -1068,12 +1257,17 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "florence",
-        "both"
+        "ca-north-coast",
+        "or-coast",
+        "or-portland"
       ],
       "habitat": "Coastal Oregon wood chips, dune grasses, and sandy soils with woody debris — first described near the Oregon coast. Reported from Florence north toward Astoria.",
       "identification": "Large caramel cap (can exceed 10 cm). Robust stem with blue bruising. Often grows in coastal wood-chip piles and edge habitats.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata — same coastal wood-chip habitat; deadly amatoxins. Confirm purple-brown spore print on Psilocybe vs. rusty-brown on Galerina.",
+        "Galerina autumnalis — wood-inhabiting deadly lookalike; ring on stem and brown spore print.",
+        "Pholiotina rugosa — small brown wood-chip species with deadly amatoxins."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Oregon coast endemic species — a signature mushroom of Pacific Northwest mycology.",
@@ -1093,12 +1287,20 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Sheep and cattle pastures, lawns, and fertilized grass in cool wet weather — reported in Willamette Valley pastures.",
       "identification": "Small conical bell-shaped cap with pointed papilla. Thin wavy stem. Purple-brown spore print. Grows from grass, not wood.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Panaeolus foenisecii (haymaker / lawn mottlegill) — common in lawns; dark brown to black gills, no blue bruising; causes GI upset.",
+        "Panaeolus papilionaceus — similar lawn habitat; black spore print, no psilocybin.",
+        "Conocybe filaris — small brown lawn mushrooms; deadly amatoxins.",
+        "Galerina marginata — rare in pasture but possible near woody debris; deadly."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Classic European pasture species also found in Pacific Northwest grasslands.",
@@ -1117,12 +1319,17 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "florence",
-        "both"
+        "ca-north-coast",
+        "or-coast",
+        "or-portland"
       ],
       "habitat": "Wood-chip mulch and landscaped beds along the Oregon coast and I-5 corridor — first described from the San Francisco Bay Area and documented north into coastal Oregon towns including the Florence area.",
       "identification": "Caramel to chestnut cap, often wavy when mature. White stem with strong blue bruising. Purple-brown spore print. Grows on wood chips — member of the Pacific wood-lover complex related to P. cyanescens.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata — the primary deadly lookalike in the same mulch beds; rusty spore print and ring on stem.",
+        "Galerina autumnalis — amatoxin-containing wood species; spore print is rusty brown, not purple-brown.",
+        "Psilocybe cyanescens — closely related; expert macro features needed to separate species in the field."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Often found alongside P. cyanescens in the same mulch beds — cap size and subtle macro features help separate species.",
@@ -1142,12 +1349,18 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Lawns, grassy areas near conifers, and mulched beds in the Willamette Valley — named for UW mycologist Daniel Stuntz. Common in Eugene-area campus lawns and park edges after fall rains.",
       "identification": "Small to medium brown cap. Stem bruises blue-green distinctly (“blue legs”). Purple-brown spore print. Often grows in grass or near wood chips — not a large wood-cluster species.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata — can appear near mulched lawn edges; deadly amatoxins — always verify spore print color.",
+        "Panaeolus foenisecii — common lawn mushroom with dark gills; no reliable blue bruising.",
+        "Psilocybe pelliculosa — similar size and blue bruising; expert ID needed.",
+        "Toxic Cortinarius species — rusty spore print, cobweb veil remnants on cap margin."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "One of the classic PNW lawn-and-mulch psilocybes — smaller than cyanescens but similarly potent.",
@@ -1167,11 +1380,18 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Mulched garden beds, bark chips, and rich soil under conifers — reported throughout western Oregon from valley cities to coast range towns near Florence.",
       "identification": "Dark olive-brown conical cap (“bottle cap” shape). Stem often banded and bruises blue. Distinctive baeocystin content in chemistry literature. Purple-brown spore print.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata — grows on the same mulched beds; deadly amatoxins; rusty-brown spore print.",
+        "Galerina autumnalis — wood-inhabiting deadly species in the same habitat.",
+        "Pholiotina rugosa — small brown wood species with amatoxins."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Named for the bottle-cap silhouette of young specimens — another cyanescens-complex wood-lover.",
@@ -1190,11 +1410,19 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "ca-shasta",
+        "or-cascades",
+        "or-coast",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Large clusters on conifer stumps and logs throughout Oregon forests — valley foothills and coast range near Florence.",
       "identification": "Big orange-brown caps in dense clusters on wood. Rusty orange spore print (not purple-brown). Often 10–20 cm caps.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Galerina marginata — can grow on the same conifer logs; much smaller, brown cap, deadly amatoxins.",
+        "Omphalotus olivascens (jack-o-lantern) — orange clusters on wood but gills glow faintly green; causes severe GI illness.",
+        "Phaeolepiota aurea — large golden clusters; causes illness."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Contains psilocybin but often causes nausea; not a preferred species.",
@@ -1213,11 +1441,21 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "ca-north-coast",
+        "ca-shasta",
+        "or-cascades",
+        "or-coast",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mycorrhizal with Douglas fir and pine — common in Eugene foothill forests and coastal woods near Florence.",
       "identification": "Iconic red cap with white warts. White gills, ring on stem, bulbous base. Contains muscimol & ibotenic acid — NOT psilocybin.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Amanita pantherina — brown cap with white warts; more potent muscimol; same genus, similar volva and ring.",
+        "Amanita aprica / A. gemmata group — pale yellow caps; toxic muscarine-group species.",
+        "Amanita ocreata (destroying angel) — white cap, no warts; DEADLY amatoxins — always check for volva at stem base.",
+        "Amanita phalloides (death cap) — greenish cap; DEADLY — rare in Oregon but reported; white gills and sac-like volva."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "One of the most recognizable mushrooms worldwide.",
@@ -1236,11 +1474,20 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "ca-shasta",
+        "or-cascades",
+        "or-coast",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Conifer and hardwood forests in the PNW — valley to coast.",
       "identification": "Brown cap with white warts. White gills and ring. Bulbous stem base in volva cup. Resembles fly agaric but cap is brown.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Amanita muscaria — red cap with white warts; also contains muscimol but generally less potent.",
+        "Amanita ocreata (destroying angel) — all-white deadly Amanita; no warts but same volva — NEVER eat any Amanita without expert ID.",
+        "Amanita phalloides (death cap) — greenish cap, deadly amatoxins.",
+        "Amanita bisporigera — eastern destroying angel lookalike; deadly amatoxins."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "More potent muscimol content than A. muscaria.",
@@ -1258,11 +1505,18 @@
       "uses": "hallucinogenic",
       "category": "mushroom",
       "regions": [
-        "both"
+        "or-coast",
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Compost, manure-enriched soil, mulched gardens, and lawns — occasional in Eugene valley gardens.",
       "identification": "Small brown cap with darker band at margin when moist. Black gills mottled with spores. Grows from soil not wood.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Panaeolus foenisecii — extremely common in lawns; similar size; causes GI illness.",
+        "Panaeolus papilionaceus — black spores, no psilocybin.",
+        "Galerina marginata — deadly; usually on wood but verify all small brown mushrooms.",
+        "Psathyrella species — fragile brown mushrooms in enriched soil; not reliably toxic but confounding for beginners."
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Weak to moderate psilocybin content — documented in Oregon.",
@@ -1280,12 +1534,18 @@
       "uses": "hallucinogenic",
       "category": "herb",
       "regions": [
-        "eugene",
-        "both"
+        "ca-sacramento",
+        "ca-sierra-foothills",
+        "or-east",
+        "or-willamette"
       ],
       "habitat": "Disturbed soil, vacant lots, roadsides, and gardens — occasional naturalized plant in the Willamette Valley.",
       "identification": "Large trumpet-shaped white or purple flowers. Spiky seed pods. Strong unpleasant odor. Large irregular toothed leaves.",
-      "lookalikes": [],
+      "lookalikes": [
+        "Datura wrightii (sacred datura) — southwestern relative; same tropane alkaloid danger.",
+        "Atropa belladonna (deadly nightshade) — related Solanaceae; berries and foliage toxic.",
+        "s trumpet) — ornamental tree; same deliriant alkaloid class.\",\n      "
+      ],
       "edibleNotes": "",
       "medicinalNotes": "",
       "holisticNotes": "Deliriant tropane alkaloids — NOT a classic psychedelic. Historically associated with poisonings.",
@@ -1303,12 +1563,12 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "or-rogue",
-        "or-klamath",
-        "or-east",
+        "ca-north-coast",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-north-coast"
+        "or-east",
+        "or-klamath",
+        "or-rogue"
       ],
       "habitat": "Dry open slopes, forest edges, and disturbed ground from eastern Oregon through Klamath-Siskiyou and Sierra foothills.",
       "identification": "Arching canes with whitish bloom (glaucous) when young, turning dark purple-black. Compound leaves with 3–5 leaflets. Berries hollow when picked like black raspberry — not solid like blackberry.",
@@ -1334,13 +1594,14 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "or-willamette",
-        "or-portland",
-        "or-coast",
-        "ca-sacramento",
         "ca-north-coast",
-        "both",
-        "eugene"
+        "ca-sacramento",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed roadsides, fencerows, and open woods — widespread invasive in Willamette Valley and north-coast California.",
       "identification": "Deeply incised (laciniate) leaflets on vigorous thorny canes. White to pink flowers. Large aggregate black berries that stay solid when picked.",
@@ -1366,12 +1627,13 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "or-coast",
-        "or-willamette",
-        "or-portland",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Open woods, bluffs, and forest edges — signature early-spring shrub of the coast and western valleys.",
       "identification": "Drooping clusters of pink to red tubular flowers in early spring. Maple-like lobed leaves with sticky glands. Dark blue-black berries with whitish bloom in summer.",
@@ -1397,12 +1659,14 @@
       "uses": "edible",
       "category": "shrub",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist shady forest — coast range and Cascades understory.",
       "identification": "Large sticky-glandular greenish-white flower clusters. Strong skunky odor when leaves bruised. Dark purple-black berries.",
@@ -1428,11 +1692,11 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "or-rogue",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-klamath",
+        "or-rogue"
       ],
       "habitat": "Dry open pine and oak woodland — Klamath-Siskiyou and Sierra foothills.",
       "identification": "Spiny stems. Small lobed leaves. Purple-black berries covered in sharp spines — handle with care. Small greenish flowers.",
@@ -1457,11 +1721,11 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "or-east",
-        "or-klamath",
-        "ca-silver-lake",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "ca-silver-lake",
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Stream banks, canyon edges, and open slopes in eastern Oregon and Modoc/Sierra country.",
       "identification": "Oval serrated leaves. White fragrant flower racemes in spring. Dark purple-black cherries in hanging clusters. Bark often marked with lenticels.",
@@ -1488,12 +1752,14 @@
       "uses": "edible",
       "category": "tree",
       "regions": [
-        "or-cascades",
-        "or-rogue",
-        "or-coast",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Forest edges and moist slopes from coast range through Cascades and into northern California.",
       "identification": "Small tree or large shrub. Oval leaves with rounded tips. White spring flowers. Bright red to dark red cherries — very bitter raw.",
@@ -1519,10 +1785,10 @@
       "uses": "both",
       "category": "tree",
       "regions": [
-        "or-coast",
-        "or-rogue",
         "ca-north-coast",
-        "ca-shasta"
+        "ca-shasta",
+        "or-coast",
+        "or-rogue"
       ],
       "habitat": "Dry open conifer and oak woodland — iconic peeling orange-red bark on coast and southwest Oregon.",
       "identification": "Leathery evergreen leaves. Smooth peeling cinnamon bark. Clusters of small white urn-shaped flowers. Orange-red warty berries in fall.",
@@ -1547,11 +1813,11 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "or-east",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Dry open pine and oak forest — eastern Cascades, Klamath, and Sierra foothills.",
       "identification": "Smooth red or brown bark on twisted stems. Leathery oval leaves. Pink-white urn flowers. Small red-brown apple-like berries.",
@@ -1578,8 +1844,8 @@
       "category": "shrub",
       "regions": [
         "ca-north-coast",
-        "ca-sierra-foothills",
-        "ca-sacramento"
+        "ca-sacramento",
+        "ca-sierra-foothills"
       ],
       "habitat": "Chaparral, oak woodland, and coastal scrub in northern California — Sacramento Valley foothills to north coast.",
       "identification": "Evergreen shrub to small tree. Serrated holly-like leaf edges (not spiny). Clusters of small white flowers. Bright red berries in winter.",
@@ -1634,13 +1900,14 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
+        "ca-north-coast",
+        "ca-shasta",
         "or-cascades",
         "or-coast",
-        "ca-shasta",
-        "ca-north-coast",
-        "both",
-        "eugene"
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Partial shade in forests, meadows, and trail edges — distinct from coastal beach strawberry.",
       "identification": "Trifoliate toothed leaflets on thin runners. White five-petaled flowers. Small elongated red berries with seeds on surface — intense flavor.",
@@ -1665,10 +1932,10 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Subalpine meadows and open conifer forest — high Cascades and Mt. Shasta country.",
       "identification": "Deciduous shrub with bright green oval leaves turning red in fall. Pink-tinged bell flowers. Dark blue-purple berries with bloom.",
@@ -1694,10 +1961,10 @@
       "uses": "edible",
       "category": "berry",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Alpine and subalpine meadows, rocky slopes — low mat-forming shrub.",
       "identification": "Low mat-forming shrub only a few inches to a foot tall. Small oval leaves. Tiny blue-black berries with intense flavor.",
@@ -1722,13 +1989,13 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "or-willamette",
-        "or-portland",
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Earliest-blooming native shrub — moist forest edges and riparian zones valley to coast.",
       "identification": "First white flower clusters in late winter. Slender leaves. Pea-sized peach-colored berries turning dark blue-black. Bitter almond scent when twigs scratched.",
@@ -1753,13 +2020,15 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
+        "ca-shasta",
+        "ca-silver-lake",
+        "or-cascades",
+        "or-coast",
         "or-east",
         "or-klamath",
-        "ca-silver-lake",
-        "ca-shasta",
-        "both",
-        "eugene"
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist meadows, stream banks, and spring wetlands — valley and eastern Oregon.",
       "identification": "Basal rosette of large lance-shaped leaves. Tall seed stalks with rust-brown triangular seeds (tumbling). Sour taste from oxalic acid.",
@@ -1785,12 +2054,14 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-portland",
-        "or-east",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed soil, gardens, and roadsides — cosmopolitan weed in valley and California lowlands.",
       "identification": "Roundish lobed leaves on long petioles. Pink to white striped flowers. Disc-shaped \"cheese\" seed pods.",
@@ -1814,13 +2085,14 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-portland",
-        "or-coast",
-        "ca-sacramento",
         "ca-north-coast",
-        "both",
-        "eugene"
+        "ca-sacramento",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed ground, gardens, and field edges everywhere.",
       "identification": "Milky sap when stem broken. Dandelion-like yellow flowers. Prickly-edged clasping stem leaves. Not a true thistle (no spines on stem).",
@@ -1845,12 +2117,15 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-east",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Dry disturbed roadsides, fields, and waste ground.",
       "identification": "Tall upright plant with spiny midrib on underside of leaves. Milky white latex. Yellow dandelion-like flowers. Leaves often twist to orient vertically.",
@@ -1876,13 +2151,14 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-portland",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Clean cold spring-fed streams and slow-moving water — must verify water quality.",
       "identification": "Low growing in water. Pinnately compound leaves with oval leaflets. White four-petaled flowers. Peppery taste when chewed.",
@@ -1909,11 +2185,11 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Moist open forest and meadows — spring ephemerals in mountains and foothills.",
       "identification": "Pair of narrow lance-shaped leaves. Delicate pink-striped white flowers. Small round corm (Indian potato) underground.",
@@ -1938,11 +2214,11 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-east",
-        "or-klamath",
         "ca-shasta",
+        "ca-sierra-foothills",
         "ca-silver-lake",
-        "ca-sierra-foothills"
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Dry open slopes and rocky outcrops — eastern Oregon and northern California.",
       "identification": "Grass-like onion smell when crushed. Nodding pink flower umbels. Bulbs small and clustered.",
@@ -1968,11 +2244,11 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-east",
-        "or-klamath",
         "ca-shasta",
+        "ca-sierra-foothills",
         "ca-silver-lake",
-        "ca-sierra-foothills"
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Dry open grassland and sagebrush — east-side Oregon and Modoc/Sierra.",
       "identification": "Strong onion odor. Pink to purple flower umbel on short stem. Bulb with fibrous coat.",
@@ -1997,12 +2273,15 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-east",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed soil, gardens, and agricultural edges worldwide.",
       "identification": "Mealy white powder on young growing tips. Diamond-shaped toothed leaves with goosefoot shape. No red sap (unlike amaranth).",
@@ -2028,12 +2307,15 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-east",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed ground, gardens, and agricultural fields.",
       "identification": "Red taproot. Rough hairy stems. Large simple oval leaves. Tall green flower spikes maturing to black seeds.",
@@ -2059,10 +2341,10 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-east",
-        "ca-silver-lake",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "ca-silver-lake",
+        "or-east"
       ],
       "habitat": "Disturbed alkaline soils and dry open ground — east-side and Great Basin fringe.",
       "identification": "Arrowhead to diamond-shaped leaves, often gray-green or reddish. Mealy texture on some species. Insignificant green flowers.",
@@ -2086,11 +2368,13 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed moist ground, ditches, and field margins.",
       "identification": "Basal rosette of lobed dark green leaves. Tall spikes of bright yellow four-petaled mustard flowers. Peppery mustard family taste.",
@@ -2115,13 +2399,13 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist shady forest and stream edges — early spring groundcover.",
       "identification": "Small pinnate leaves. Tiny white four-petaled flowers. Slender exploding seed pods when mature. Mild peppery taste.",
@@ -2145,12 +2429,14 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed coastal and valley ground — fields, roadsides, and dunes.",
       "identification": "Hairy leaves with lobed margins. Yellow or white four-petaled flowers (sometimes veined lavender). Jointed seed pods that do not split.",
@@ -2174,12 +2460,13 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-rogue",
-        "or-klamath",
         "ca-north-coast",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wet meadows and prairies — historically managed by Indigenous fire ecology in Willamette Valley.",
       "identification": "Grass-like leaves from bulb. Tall spike of blue-violet six-petaled star flowers in spring. Bulb white and onion-shaped but NO onion smell.",
@@ -2208,12 +2495,14 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-willamette",
-        "or-coast",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Shallow freshwater marshes, ponds, and slow sloughs — wade to harvest.",
       "identification": "Arrowhead-shaped emergent leaves. Three-petaled white flowers. Round starchy tubers on underwater roots — pull or feel with toes.",
@@ -2239,11 +2528,11 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-east",
-        "or-klamath",
-        "ca-silver-lake",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "ca-silver-lake",
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Dry open east-side hills and sagebrush — golden sunflower displays in spring.",
       "identification": "Large arrow-shaped fuzzy basal leaves. Big yellow sunflower-like blooms on short stems. Deep taproot and large fleshy root crown.",
@@ -2268,10 +2557,10 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-rogue",
-        "or-klamath",
         "ca-north-coast",
-        "ca-shasta"
+        "ca-shasta",
+        "or-klamath",
+        "or-rogue"
       ],
       "habitat": "Dry open woodland and rocky slopes — Klamath-Siskiyou and coast range.",
       "identification": "Finely divided fern-like leaves. Yellow umbel flowers. Thick aromatic root smelling of celery/parsley when cut.",
@@ -2297,12 +2586,14 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
+        "ca-north-coast",
+        "ca-shasta",
         "or-cascades",
         "or-coast",
         "or-klamath",
-        "ca-north-coast",
-        "ca-shasta",
-        "both"
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist meadows, stream banks, and forest openings — large leafy presence.",
       "identification": "Huge maple-like compound leaves. Thick hollow stem with purple mottling. Flat white umbel flowers — can reach 6+ feet tall.",
@@ -2330,12 +2621,13 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
-        "both",
-        "florence",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Coastal estuaries, tidal flats, and moist meadows — silver-backed pinnate leaves.",
       "identification": "Pinnate leaves with silvery white undersides. Yellow five-petaled buttercup-family flowers. Creeping red runners. Small edible roots.",
@@ -2360,12 +2652,14 @@
       "uses": "edible",
       "category": "fern",
       "regions": [
-        "or-coast",
-        "or-cascades",
-        "or-willamette",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist shady forest and stream banks — one of the most common ferns in the PNW.",
       "identification": "Bright green lacy fronds. Fiddleheads emerge in spring as tightly coiled green crosiers with brown papery scales (not black like bracken).",
@@ -2391,11 +2685,13 @@
       "uses": "both",
       "category": "fern",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist conifer forest floor — two distinct frond types (fertile brownish upright, sterile flat green).",
       "identification": "Sterile fronds flat rosette near ground. Fertile fronds taller, narrow, with rolled-under pinnae bearing spores. Leathery texture.",
@@ -2420,12 +2716,15 @@
       "uses": "edible",
       "category": "fern",
       "regions": [
-        "or-coast",
-        "or-cascades",
-        "or-east",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed sunny slopes, roadsides, and forest openings — aggressive colonizer.",
       "identification": "Triangular fronds on tall stems. Fiddleheads with black/brown stem base and woolly coating. Single type of frond (not deer fern's dual form).",
@@ -2452,13 +2751,14 @@
       "uses": "edible",
       "category": "shrub",
       "regions": [
-        "or-coast",
-        "or-cascades",
-        "or-willamette",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Understory of moist forest — coast range and Cascades.",
       "identification": "Double-toothed oval leaves. Long beaked husk enclosing small nut. Catkins in winter. Often multi-stemmed shrub.",
@@ -2483,12 +2783,14 @@
       "uses": "edible",
       "category": "tree",
       "regions": [
-        "or-willamette",
-        "or-rogue",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Open oak savanna and woodland — Willamette Valley and Rogue oak country.",
       "identification": "Deeply lobed oak leaves. Acorns short-stalked with shallow scaly cap. Large spreading oak of valley floors.",
@@ -2514,11 +2816,11 @@
       "uses": "edible",
       "category": "shrub",
       "regions": [
-        "or-coast",
-        "or-cascades",
-        "or-rogue",
         "ca-north-coast",
-        "ca-shasta"
+        "ca-shasta",
+        "or-cascades",
+        "or-coast",
+        "or-rogue"
       ],
       "habitat": "Dry open conifer forest — understory shrub to small tree on coast and Cascades.",
       "identification": "Evergreen serrated leaves with golden fuzzy undersides. Spiny bur enclosing single sweet nut.",
@@ -2543,9 +2845,9 @@
       "uses": "edible",
       "category": "tree",
       "regions": [
-        "ca-sierra-foothills",
         "ca-sacramento",
-        "ca-shasta"
+        "ca-shasta",
+        "ca-sierra-foothills"
       ],
       "habitat": "Hot dry foothill woodland — Sacramento Valley edges and Sierra west slope.",
       "identification": "Large heavy cones with hooked spines. Long gray-green needles in bundles of three. Irregular open crown.",
@@ -2570,8 +2872,8 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "ca-sierra-foothills",
         "ca-sacramento",
+        "ca-sierra-foothills",
         "ca-silver-lake",
         "or-east"
       ],
@@ -2597,11 +2899,13 @@
       "uses": "both",
       "category": "tree",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Coastal and montane conifer forest — harvest from Sitka spruce on coast, Engelmann/blue spruce east-side.",
       "identification": "Soft bright green new growth at branch tips in spring. Single sharp needles. Hanging cones. Citrus-resin scent when crushed.",
@@ -2627,12 +2931,13 @@
       "uses": "both",
       "category": "tree",
       "regions": [
-        "or-coast",
-        "or-willamette",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Low to mid-elevation moist forest — west-side valleys and coast range.",
       "identification": "Flat needles with two white stomatal bands underneath — no prickles (friendly fir). Upright cones on branches. Balsam-scented blister resin on bark.",
@@ -2657,12 +2962,13 @@
       "uses": "edible",
       "category": "tree",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
-        "both",
-        "florence",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist lowland forest — dominant maple of west-side riparian zones.",
       "identification": "Largest leaves of any maple — up to 12 inches across. Five lobes. Winged samaras in pairs. Moss-covered branches common.",
@@ -2687,12 +2993,13 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
-        "both",
-        "florence",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Shady forest floor trailing vine — coast range and lowland forest.",
       "identification": "Trailing square-stemmed mint with tiny rounded leaves. Strong mint aroma when crushed. Small white flowers.",
@@ -2716,12 +3023,14 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Stream banks, open woodland, and disturbed moist ground.",
       "identification": "Tall aromatic silvery-green leaves, white-woolly underneath. Pungent sage-camphor smell. Small greenish flower spikes.",
@@ -2746,11 +3055,14 @@
       "uses": "both",
       "category": "herb",
       "regions": [
-        "or-cascades",
-        "or-coast",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Moist shady forest — understory of conifer and mixed woods.",
       "identification": "Fern-like divided leaves with anise-licorice smell when crushed. Small white umbel flowers. Long slender aromatic roots.",
@@ -2776,10 +3088,10 @@
       "uses": "both",
       "category": "tree",
       "regions": [
-        "or-coast",
-        "or-rogue",
         "ca-north-coast",
-        "ca-shasta"
+        "ca-shasta",
+        "or-coast",
+        "or-rogue"
       ],
       "habitat": "Moist canyon woodland — southwest Oregon and northern California.",
       "identification": "Evergreen lance leaves with peppery bay aroma when crushed. Yellow-green four-petaled flowers. Green oval drupes.",
@@ -2805,10 +3117,13 @@
       "uses": "edible",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Pacific sub-tidal and low intertidal — floating canopy with bulb and long stipe from rocky coast.",
       "identification": "Large floating bulb at surface connected to long stipe. Broad blade fronds. Grows in kelp forests visible from shore.",
@@ -2834,9 +3149,8 @@
       "uses": "edible",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "florence"
+        "or-coast"
       ],
       "habitat": "Surf-swept rocky headlands — only where waves crash. Iconic tufted kelp looks like tiny palm trees.",
       "identification": "Short stipe with dense cluster of finger-like fronds. Only on exposed surf zones. Distinctive palm-tree silhouette.",
@@ -2861,10 +3175,13 @@
       "uses": "edible",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Intertidal rocks, tide pools, and sheltered bays — bright green sheets.",
       "identification": "Bright green thin ruffled sheets resembling lettuce. No midrib. Soft texture when fresh.",
@@ -2889,9 +3206,8 @@
       "uses": "both",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "florence"
+        "or-coast"
       ],
       "habitat": "Mid intertidal rocky shore — branched fronds with paired float bladders.",
       "identification": "Olive-brown branched fronds with midrib and paired air bladders that pop when squeezed. Forked tips.",
@@ -2916,9 +3232,8 @@
       "uses": "edible",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "florence"
+        "or-coast"
       ],
       "habitat": "High intertidal rocks — thin purple-red film to ruffled sheets.",
       "identification": "Purple-red to greenish thin sheet algae on rocks. Nearly translucent when fresh. Same genus as sushi nori.",
@@ -2943,9 +3258,8 @@
       "uses": "edible",
       "category": "seaweed",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "florence"
+        "or-coast"
       ],
       "habitat": "High intertidal splash zone on rocks — small olive fronds with pointed tips, no bladders.",
       "identification": "Small forked olive-brown fronds with distinctive pointed tips. No air bladders (unlike Fucus). Grows above barnacle zone.",
@@ -2970,10 +3284,9 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-coast",
         "ca-north-coast",
         "ca-sacramento",
-        "florence"
+        "or-coast"
       ],
       "habitat": "Salt marshes and tidal flats — jointed succulent stems in saline wetlands.",
       "identification": "Jointed succulent green-to-red stems resembling tiny cactus without spines. No true leaves visible. Grows in salt marsh.",
@@ -2998,9 +3311,8 @@
       "uses": "edible",
       "category": "herb",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "florence"
+        "or-coast"
       ],
       "habitat": "Sandy beaches and dunes above high tide line.",
       "identification": "Fleshy succulent leaves on sand. Four-petaled white to lavender flowers. Peppery mustard-family taste. Pod splits into two corky segments.",
@@ -3025,13 +3337,14 @@
       "uses": "both",
       "category": "shrub",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Same as blue elderberry — stream banks, open woods, sunny edges. Flower harvest is separate focus from berry entry in main library.",
       "identification": "Large flat cream-white flower clusters (corymbs) in late spring. Compound opposite leaves. Reddish stems. Must confirm blue elder, NOT red elder.",
@@ -3058,13 +3371,13 @@
       "uses": "both",
       "category": "berry",
       "regions": [
-        "or-coast",
-        "or-willamette",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Focus on fall hip harvest from stream banks and sunny openings — complements the main library Nootka rose entry with hip-specific foraging detail.",
       "identification": "Large red-orange rose hips with persistent sepals at tip. Thorny stems. Hips round to pear-shaped, 1–2 cm. Seeds and hairs inside.",
@@ -3089,11 +3402,11 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-rogue",
+        "ca-north-coast",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-north-coast"
+        "or-cascades",
+        "or-rogue"
       ],
       "habitat": "Mature conifer forests — Douglas-fir and hemlock from Oregon Cascades through the Klamath-Siskiyou and north-coast California.",
       "identification": "Pale cream to buff funnel cap with false forked ridges (not true gills). Fruity apricot scent. Stems often stocky and off-center.",
@@ -3119,14 +3432,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-willamette",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mossy conifer logs and wet needle litter — late-season coast and valley forests.",
       "identification": "Small brownish funnel cap with yellow-orange hollow stem. False gills on cap underside. Often in large troops on rotting wood.",
@@ -3150,10 +3463,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
         "ca-north-coast",
-        "or-willamette",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "or-coast",
+        "or-willamette"
       ],
       "habitat": "Mossy hardwood and mixed forest floors — often near oak and madrone in northerly California foothills.",
       "identification": "Thin blackish-gray vase- or trumpet-shaped cap with smooth underside (no gills). Fragile, papery flesh.",
@@ -3177,12 +3490,12 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-rogue",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath",
+        "or-rogue"
       ],
       "habitat": "Under pine and fir — eastern Oregon Cascades, Klamath-Silver Lake country, Mt. Shasta, and Sierra pine belts near Placerville.",
       "identification": "Large brown bun cap, thick white stem with fine reticulation (net pattern). Pores under cap white then yellow-green — NOT red/blue staining badly.",
@@ -3208,11 +3521,11 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-rogue",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-klamath",
+        "or-rogue"
       ],
       "habitat": "Ponderosa pine and mixed conifer — spring snowmelt zones from Rogue Valley to Modoc and Sierra foothills.",
       "identification": "Large brown cap, stout stem with reticulation. Spring fruiting. Pores yellow. Similar to king bolete but earlier season.",
@@ -3236,12 +3549,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On rotting conifer logs and stumps — classic Pacific Northwest log bolete.",
       "identification": "Velvety brown cap. Yellow pores bruise blue. Grows directly from wood (not soil). Stem often curved.",
@@ -3265,13 +3580,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mixed conifer-hardwood forest floor — common in Douglas-fir and hemlock woods.",
       "identification": "Dark brown cracked cap, yellow pores that bruise blue, red-stained base of stem. Medium-sized bolete.",
@@ -3294,13 +3609,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
-        "or-rogue",
-        "ca-sierra-foothills",
         "ca-north-coast",
-        "both"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On living or dead hardwoods and conifers — oak, eucalyptus, and fir stumps.",
       "identification": "Bright orange-yellow overlapping shelf brackets. Soft suede-like surface when young. No gills — porous yellow underside.",
@@ -3325,13 +3641,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Parasite on russulas and lactarius — forest floor and trails in mixed woods.",
       "identification": "Bright orange-red bumpy crust completely covering host mushroom. No visible gills — looks like sculpted seafood.",
@@ -3356,13 +3673,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
-        "or-rogue",
         "ca-north-coast",
         "ca-shasta",
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mossy conifer and mixed woods — often near chanterelle habitat.",
       "identification": "Pale orange-tan cap with TEETH (spines) underneath instead of gills or pores. Fruity smell when fresh.",
@@ -3386,12 +3704,14 @@
       "uses": "both",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-sierra-foothills",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On hardwood logs and wounds — bigleaf maple, oak, and beech in northerly California.",
       "identification": "White cascading icicle-like teeth hanging from a single attachment point. No cap. Looks like a frozen waterfall.",
@@ -3415,11 +3735,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "florence"
+        "or-cascades",
+        "or-coast"
       ],
       "habitat": "On conifer logs and stumps — fir and hemlock in coastal and montane forests.",
       "identification": "Branching white coral-like teeth — more branched than lion’s mane. Grows on conifers.",
@@ -3442,13 +3761,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-rogue",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On dead hardwood and cottonwood — logs, stumps, and standing snags.",
       "identification": "Shelf-like caps growing in overlapping clusters. White gills running down short stem. Lilac-gray spore print.",
@@ -3473,11 +3793,11 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-east",
-        "or-klamath",
-        "ca-silver-lake",
+        "ca-sacramento",
         "ca-shasta",
-        "ca-sacramento"
+        "ca-silver-lake",
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Open sagebrush-steppe and dry grassland — eastern Oregon, Modoc, and Great Basin fringes of northerly California.",
       "identification": "Huge white ball on ground — soccer-ball size possible. Interior solid white when young. No stem or gills.",
@@ -3502,13 +3822,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
-        "or-rogue",
         "ca-north-coast",
         "ca-sierra-foothills",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wood chip trails, forest edges, and disturbed soil — very common.",
       "identification": "Small white pear-shaped puffball with conical spines that rub off. Interior white when young. Grows on ground.",
@@ -3532,12 +3853,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Disturbed ground — gravel roads, lawns, compost, and trail edges after rain.",
       "identification": "Tall cylindrical white cap with shaggy scales. Deliquesces to black ink when old. Free white gills. Bulbous base.",
@@ -3562,11 +3885,11 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Under ponderosa pine and Douglas-fir — duff buried under needle litter. Eastern Oregon to Sierra.",
       "identification": "White to brown cap with cottony veil remnants. Spicy cinnamon-cedar aroma when fresh. White gills. Stains brown when handled.",
@@ -3592,12 +3915,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "florence",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Base of conifers — pine and fir roots. Often partially buried.",
       "identification": "Large brain-like or noodle-like white-yellow mass of flattened branches. No cap. Grows from ground at tree base.",
@@ -3622,9 +3947,8 @@
       "category": "mushroom",
       "regions": [
         "ca-north-coast",
-        "or-coast",
         "ca-sierra-foothills",
-        "florence"
+        "or-coast"
       ],
       "habitat": "Coastal oak-madrone and mixed hardwood duff — northern California specialty extending to Oregon coast.",
       "identification": "Small orange-brown lactarius with brittle flesh. Milky latex when cut. Dries to maple-syrup scent.",
@@ -3648,9 +3972,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-rogue",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "or-rogue"
       ],
       "habitat": "Under pine — especially Monterey and ponderosa pine belts in southern Oregon and California mountains.",
       "identification": "Orange cap with darker concentric zones. Orange latex when cut. Brittle flesh. Green staining after handling.",
@@ -3674,12 +3998,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Conifer and mixed woods — often with hemlock and fir.",
       "identification": "Purple to wine-red cap fading with age. White gills. Stem bruises brown. Distinctive fish/shrimp odor when cooked.",
@@ -3704,12 +4030,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "ca-sierra-foothills",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wood chip beds, roadsides, and forest edges — often near cedar and fir.",
       "identification": "Large brown-scaled cap, thick stem with skirt ring. Almond or anise scent. Gills pink then brown. Not yellow-staining.",
@@ -3734,12 +4062,15 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-east",
         "ca-sacramento",
         "ca-silver-lake",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-east",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Pastures, lawns, and grasslands after rain — not on wood.",
       "identification": "White to brown cap, pink gills turning brown. Ring on stem. No yellow staining. Found in grass.",
@@ -3764,12 +4095,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On dead hardwood logs and stumps — elm, maple, and cottonwood.",
       "identification": "Large brown scaly cap resembling pheasant feathers. White porous underside. Grows on wood in spring.",
@@ -3793,12 +4126,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-cascades",
-        "or-rogue",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On wood and clustered at tree bases — pathogenic root rot fungus. Very common.",
       "identification": "Honey-brown cap in dense clusters on wood. Stem with black rhizomorphs. White spore print. Partial ring on stem.",
@@ -3824,12 +4159,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Compost piles, leaf litter, and woody debris — often in rings.",
       "identification": "Lilac-purple cap and gills fading to tan. Spore print pinkish-buff. No ring on stem. Fruity floral smell.",
@@ -3853,12 +4189,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-rogue",
         "ca-north-coast",
         "ca-sierra-foothills",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On dead hardwood branches and logs — especially elder and maple.",
       "identification": "Rubbery ear-shaped brown translucent fruiting bodies. No gills. Cartilage texture.",
@@ -3881,12 +4219,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-cascades",
-        "ca-sierra-foothills",
         "ca-shasta",
-        "both",
-        "eugene"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "On hardwood logs and stumps — especially elm and cottonwood in cool weather.",
       "identification": "Small orange caps with dark velvety stem base. Grows in cold weather on wood. Gilled.",
@@ -3910,12 +4250,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Under planted and wild pine — especially Scots and ponderosa pine plantations.",
       "identification": "Brown cap with sticky slimy coating when wet. Yellow pores. Ring on stem. Grows with pines.",
@@ -3939,12 +4281,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Wood chip mulch, garden paths, and compost — urban and rural.",
       "identification": "Large burgundy wine-red cap fading to tan. Purple-gray gills. Thick ring on stem. Chips and compost habitat.",
@@ -3968,10 +4312,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-rogue",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-rogue"
       ],
       "habitat": "Old-growth conifer duff — mountain hemlock and fir zones.",
       "identification": "Clustered vase-shaped purple-brown caps with wrinkled undersurface (not gills). Fleshy.",
@@ -3995,10 +4339,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Under pine — often near slippery jacks and boletes. Sandy pine duff.",
       "identification": "Orange-brown slimy cap, long slender stem. Grows with pines. Gilled (unusual for suillus associates).",
@@ -4021,11 +4365,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-cascades",
-        "ca-sierra-foothills",
         "ca-north-coast",
-        "both"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Hardwood logs — maple and oak wounds in valley and foothill forests.",
       "identification": "Branched white icicle teeth — more coral-like than single lion’s mane. On hardwood.",
@@ -4048,11 +4395,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mixed conifer-hardwood forest floor.",
       "identification": "Green to purple cap. White gills that do not shatter when rolled between fingers (flexible gills — key trait).",
@@ -4076,13 +4425,15 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
         "ca-sierra-foothills",
         "ca-silver-lake",
-        "eugene",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Burn scars, riparian cottonwoods, and disturbed ground in mountains — spring.",
       "identification": "Dark brown elongated honeycombed cap. Completely hollow stem and cap. Pits and ridges (not wrinkled brain-like).",
@@ -4106,9 +4457,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "ca-sierra-foothills",
-        "ca-sacramento",
         "ca-north-coast",
+        "ca-sacramento",
+        "ca-sierra-foothills",
         "or-rogue"
       ],
       "habitat": "Under oaks in Sierra foothills and interior valleys — large golden clusters in leaf litter.",
@@ -4133,10 +4484,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-coast",
         "ca-north-coast",
         "ca-shasta",
+        "or-cascades",
+        "or-coast",
         "or-klamath"
       ],
       "habitat": "Old-growth conifer forests — mossy ground under spruce and fir at higher elevation.",
@@ -4161,9 +4512,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "ca-sierra-foothills",
-        "ca-sacramento",
         "ca-north-coast",
+        "ca-sacramento",
+        "ca-sierra-foothills",
         "or-rogue",
         "or-willamette"
       ],
@@ -4189,10 +4540,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-rogue",
         "ca-shasta",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-rogue"
       ],
       "habitat": "Under ponderosa pine and mixed conifers in mountains and east-side forests.",
       "identification": "Red-brown cap, yellow pores, stout yellow stem often with red mesh. Buttery aroma when young.",
@@ -4215,11 +4566,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Conifer and mixed woods — often with spruce and fir on coast.",
       "identification": "Bay-brown cap, yellow pores that bruise blue-green, yellow stem with brown reticulation. Flesh may blue slightly.",
@@ -4243,12 +4596,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Urban parks, lawns, and mixed woods — very common small bolete.",
       "identification": "Small brown cap cracking to show red flesh underneath. Yellow pores age reddish. Stem often reddish at base.",
@@ -4271,10 +4625,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-east",
-        "or-klamath",
+        "ca-shasta",
         "ca-silver-lake",
-        "ca-shasta"
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Under aspen and cottonwood in eastern Oregon and Modoc Plateau.",
       "identification": "Brown cap with dark scabers (dots) on white to gray stem. White flesh. Grows with poplar relatives.",
@@ -4298,8 +4652,8 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "ca-sierra-foothills",
         "ca-north-coast",
+        "ca-sierra-foothills",
         "or-rogue"
       ],
       "habitat": "Under manzanita and madrone in chaparral-woodland edges.",
@@ -4323,12 +4677,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Parasitic on living and dead conifers — shelf clusters on trunks.",
       "identification": "Bright orange to salmon shelving brackets with yellow pore underside. Soft when young. On conifers (not hardwood).",
@@ -4353,11 +4709,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "eugene"
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Mulched landscaping, disturbed soil, wood chips — urban and suburban spring flushes.",
       "identification": "Small tan to brown conical morel. Bruises reddish-brown. Honeycombed cap fully attached to stem. Hollow inside.",
@@ -4381,12 +4736,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Hardwood edges, riparian zones, and disturbed ground in spring.",
       "identification": "Cap attached only at apex of stem (half-free). Honeycombed brown cap. Completely hollow stem and cap.",
@@ -4410,12 +4766,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-rogue",
-        "ca-sierra-foothills",
         "ca-sacramento",
-        "both",
-        "eugene"
+        "ca-sierra-foothills",
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Cottonwood riparian zones, old orchards, ash and elm associations in valleys.",
       "identification": "Tan to yellow honeycombed cap fully attached to white hollow stem. Entire mushroom hollow when cut.",
@@ -4438,11 +4796,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-cascades",
         "ca-sierra-foothills",
-        "both",
-        "eugene"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Dead hardwood logs and stumps — common on alder and maple.",
       "identification": "White to cream branching coral with crown-like depressed tips. Grows on wood. No gelatinous base.",
@@ -4466,10 +4826,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-coast",
+        "ca-north-coast",
         "ca-shasta",
-        "ca-north-coast"
+        "or-cascades",
+        "or-coast"
       ],
       "habitat": "Conifer forest floor — often near spruce and fir.",
       "identification": "Bright golden-yellow branching coral, tips often pointed. White spore print. Grows from soil not wood.",
@@ -4493,11 +4853,11 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-east",
-        "or-klamath",
-        "ca-silver-lake",
         "ca-sacramento",
-        "ca-sierra-foothills"
+        "ca-sierra-foothills",
+        "ca-silver-lake",
+        "or-east",
+        "or-klamath"
       ],
       "habitat": "Compacted soil, gravel roadsides, trail edges — often in groups.",
       "identification": "Bright orange cup-shaped fungus that looks like scattered orange peels. No stem. Smooth outer surface.",
@@ -4521,10 +4881,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-portland",
-        "or-willamette",
         "ca-sacramento",
-        "eugene"
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Grass, mulch, and compacted soil — urban parks and landscaped areas.",
       "identification": "Tan-brown caps in tight clusters, white gills, white spore print. Smooth cap without scales.",
@@ -4548,11 +4907,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Clusters on dead hardwood logs and stumps — especially maple and alder.",
       "identification": "Brick-red cap with yellowish margin when young. Grows in overlapping clusters on wood. Purple-brown spore print.",
@@ -4576,10 +4937,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
-        "or-klamath",
         "ca-shasta",
-        "ca-silver-lake"
+        "ca-silver-lake",
+        "or-cascades",
+        "or-klamath"
       ],
       "habitat": "Under conifers — especially pine and spruce in mountains.",
       "identification": "Large brown cap with dark scaly shingles. Underside has teeth (spines) not gills. Often bitter when old.",
@@ -4603,10 +4964,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Conifer and mixed forest floor — often near moss and spruce.",
       "identification": "Small orange-tan cap with white to pale spines underneath. Compact stature. Spines descend stem slightly.",
@@ -4629,12 +4993,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-coast",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Clusters on rotting logs and stumps — extremely common.",
       "identification": "Small pear-shaped brownish puffballs growing in dense clusters on wood. White interior when young.",
@@ -4658,11 +5023,10 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-east",
-        "or-willamette",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "eugene"
+        "or-east",
+        "or-willamette"
       ],
       "habitat": "Pastures, meadows, and grassy areas — often in fairy rings.",
       "identification": "Large white cap staining yellow. Ring on stem. Pink gills aging brown. Anise or almond scent.",
@@ -4686,10 +5050,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
         "ca-sacramento",
         "ca-sierra-foothills",
-        "eugene"
+        "or-willamette"
       ],
       "habitat": "Cottonwood and poplar stumps and buried wood in riparian zones.",
       "identification": "Brown cap, white stem with ring, gills aging brown. Grows in clusters on poplar wood.",
@@ -4712,10 +5075,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
-        "eugene"
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Wounds on living hardwoods — elm, cottonwood, and maple in riparian areas.",
       "identification": "Tan cap, white gills, stem attached to wood. Often high on tree trunks. White spore print.",
@@ -4738,12 +5100,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Under pine and fir — sandy duff in coastal and montane forests.",
       "identification": "White to brown cap, white gills, thick white stem with cottony ring. Strong cinnamon-spice aroma.",
@@ -4767,11 +5131,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
         "ca-shasta",
-        "both"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Under Douglas-fir — common PNW associate.",
       "identification": "Brown cap with reddish pattern, yellow pores, ring on stem. Slimy cap when wet.",
@@ -4794,8 +5161,8 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-cascades",
         "ca-shasta",
+        "or-cascades",
         "or-klamath"
       ],
       "habitat": "Exclusively under larch (tamarack) in subalpine zones.",
@@ -4819,11 +5186,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Mossy conifer forest floor — common and widespread.",
       "identification": "Small purple to amethyst cap fading with age. Thick purple gills. White spore print. Fibrous stem.",
@@ -4847,13 +5216,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-willamette",
-        "or-cascades",
         "ca-north-coast",
-        "both",
-        "eugene",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Virtually all forest types — one of the most common forest floor mushrooms.",
       "identification": "Small tawny to orange-brown cap, thick widely spaced gills, fibrous stem. White spore print.",
@@ -4876,11 +5245,13 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
-        "or-willamette",
         "ca-north-coast",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Hardwood and mixed forest edges — often near paths in sandy soil.",
       "identification": "White convoluted saddle-shaped cap on white ribbed stem. No gills — cap is folded and brain-like.",
@@ -4904,11 +5275,14 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-coast",
         "ca-north-coast",
         "ca-sierra-foothills",
-        "both",
-        "florence"
+        "or-cascades",
+        "or-coast",
+        "or-klamath",
+        "or-portland",
+        "or-rogue",
+        "or-willamette"
       ],
       "habitat": "Under conifers — especially pine and fir on NorCal coast.",
       "identification": "Dark gray-brown convoluted saddle cap on pale ribbed stem. Larger than white elfin saddle.",
@@ -4931,10 +5305,9 @@
       "uses": "edible",
       "category": "mushroom",
       "regions": [
-        "or-willamette",
-        "or-portland",
         "ca-sacramento",
-        "eugene"
+        "or-portland",
+        "or-willamette"
       ],
       "habitat": "Urban parks, lawns, and oak woodlands — often in groups.",
       "identification": "Small red cap, yellow pores, slender red stem. Blue stains quickly when cut. Mild taste.",
