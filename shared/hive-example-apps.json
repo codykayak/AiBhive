@@ -416,9 +416,9 @@
   },
   {
     "id": "example-oregon-plant-medicine",
-    "title": "Oregon Plant Medicine",
-    "tagline": "Eugene & Florence foraging library",
-    "summary": "Private holistic reference for edible, medicinal, and hallucinogenic plants of the Willamette Valley and Oregon Coast — searchable library with 3+ ID photos per species, field guide, and curated external resources.",
+    "title": "Living Knowledge Plants and Medicine",
+    "tagline": "Living knowledge base for wild plants",
+    "summary": "A community living knowledge base for edible, medicinal, and homeopathic plants — searchable library with 3+ ID photos per species, PDF guides, and contributor-driven state expansions starting in Oregon.",
     "theme": "green",
     "icon": "leaf",
     "category": "guides",
@@ -427,18 +427,18 @@
     "pages": [
       {
         "id": "about",
-        "title": "Oregon Plant Medicine",
+        "title": "Living Knowledge Plants and Medicine",
         "type": "info",
         "config": {
-          "body": "Open the full interactive plant library with search, regional filters, favorites, and links to identification guides.",
+          "body": "Open the full interactive living knowledge base with search, regional filters, favorites, community photos, and contributor tools.",
           "bullets": [
-            "24+ PNW plants common near Eugene and Florence",
-            "Edible, medicinal, and holistic preparation notes",
-            "Wikimedia photos and external article links",
-            "Field guide for valley vs. coast foraging"
+            "50+ plants in the Oregon seed library — edibles, medicinals, and more",
+            "Living knowledge base: contribute photos, plants, and new states",
+            "Multi-photo ID, PDF guides, and community field notes",
+            "Expand to Washington and beyond via AiBhive Builder"
           ],
           "links": [
-            { "label": "Run Oregon Plant Medicine", "url": "https://aibhive.com/hive-apps/run/example-oregon-plant-medicine" }
+            { "label": "Run Living Knowledge Plants and Medicine", "url": "https://aibhive.com/hive-apps/run/example-oregon-plant-medicine" }
           ]
         }
       }
