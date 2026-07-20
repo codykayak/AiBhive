@@ -66,6 +66,17 @@ export async function uploadPlantImage(
   return data.url;
 }
 
+export async function fetchCommunityFeed(user: User | null): Promise<PlantMedicinePost[]> {
+  const headers: HeadersInit = {};
+  if (user) {
+    headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  }
+  const res = await fetch('/api/plant-medicine/feed', { headers });
+  if (!res.ok) throw new Error('Failed to load community feed');
+  const data = (await res.json()) as { posts: PlantMedicinePost[] };
+  return data.posts;
+}
+
 export async function fetchPlantPosts(
   plantId: string,
   user: User | null,

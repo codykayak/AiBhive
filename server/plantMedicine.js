@@ -204,6 +204,36 @@ export async function listPostsForTopic(db, library, topicId, { type, viewerUid,
   return posts;
 }
 
+export async function listCommunityFeed(db, { viewerUid, gcsBucket, limit = 50 } = {}) {
+  const snap = await db.collection(POSTS).where('status', '==', 'approved').limit(150).get();
+
+  const posts = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    let viewerHasUpvoted = false;
+    if (viewerUid) {
+      const vote = await doc.ref.collection('votes').doc(viewerUid).get();
+      viewerHasUpvoted = vote.exists;
+    }
+    posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
+  }
+  if (gcsBucket) {
+    for (const post of posts) {
+      if (post.authorAvatarUrl) {
+        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+      }
+      if (post.imageUrl) {
+        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
+      }
+    }
+  }
+  posts.sort((a, b) => {
+    if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount;
+    return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+  });
+  return posts.slice(0, limit);
+}
+
 export async function createPost(db, FieldValue, { plantId, author, type, text, imageUrl }, gcsBucket = null) {
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const status = type === 'comment' ? 'approved' : 'pending';

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Film } from 'lucide-react';
 import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
+import { useAutoplayVideo } from './useAutoplayVideo';
 
 type Props = {
   video: SectionVideo;
@@ -8,7 +9,7 @@ type Props = {
   borderClass?: string;
 };
 
-/** Large in-grid video tile (~four standard cards on lg). */
+/** Large in-grid video tile (~four standard cards on lg). Muted autoplay on scroll. */
 export default function GridSectionVideo({
   video,
   accentClass = 'text-emerald-300',
@@ -17,6 +18,7 @@ export default function GridSectionVideo({
   const [sourceIndex, setSourceIndex] = useState(0);
   const [failed, setFailed] = useState(false);
   const src = video.sources[sourceIndex];
+  const videoRef = useAutoplayVideo([src]);
 
   const tryNextSource = () => {
     if (sourceIndex < video.sources.length - 1) {
@@ -38,15 +40,17 @@ export default function GridSectionVideo({
           </div>
         ) : (
           <video
+            ref={videoRef}
             key={src}
             className="absolute inset-0 w-full h-full object-cover"
             src={src}
             muted
-            loop
             playsInline
-            controls
-            preload="metadata"
+            autoPlay
+            loop
+            preload="auto"
             title={`${video.title} — ${video.page}`}
+            aria-label={`${video.title} — ${video.page}`}
             onError={tryNextSource}
           />
         )}
