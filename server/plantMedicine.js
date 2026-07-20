@@ -2,7 +2,6 @@
  * Oregon Plant Medicine — profiles, community posts, votes.
  * All writes via Admin SDK; public reads return approved content only.
  */
-import { randomUUID } from 'crypto';
 
 const PROFILES = 'plant_medicine_profiles';
 const POSTS = 'plant_medicine_posts';
@@ -33,41 +32,27 @@ function parsePlantMedicineStoragePath(url) {
   return null;
 }
 
-function firebaseDownloadUrl(bucketName, path, token) {
-  const encoded = encodeURIComponent(path);
-  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${token}`;
+function gcsPublicUrl(bucketName, objectPath) {
+  return `https://storage.googleapis.com/${bucketName}/${objectPath}`;
 }
 
-/** Ensure plant-medicine uploads use a browser-loadable Firebase download URL. */
+/** Ensure plant-medicine uploads use a browser-loadable public GCS URL. */
 export async function resolvePlantMedicineMediaUrl(gcsBucket, url) {
   if (!url || !gcsBucket) return url;
-  if (url.includes('firebasestorage.googleapis.com') && url.includes('token=')) return url;
 
   const path = parsePlantMedicineStoragePath(url);
-  if (!path?.startsWith('plant-medicine/')) return url;
-
-  const file = gcsBucket.file(path);
-  let meta;
-  try {
-    [meta] = await file.getMetadata();
-  } catch {
+  if (!path?.startsWith('plant-medicine/')) {
+    if (url.includes(`storage.googleapis.com/${gcsBucket.name}/plant-medicine/`)) return url;
     return url;
   }
 
-  let token = meta?.metadata?.firebaseStorageDownloadTokens;
-  if (!token) {
-    token = randomUUID();
-    await file.setMetadata({
-      metadata: {
-        ...(meta.metadata || {}),
-        firebaseStorageDownloadTokens: token,
-      },
-    });
-  } else {
-    token = String(token).split(',')[0];
+  const file = gcsBucket.file(path);
+  try {
+    await file.makePublic();
+  } catch {
+    // Bucket may use uniform public access or IAM-only policy
   }
-
-  return firebaseDownloadUrl(gcsBucket.name, path, token);
+  return gcsPublicUrl(gcsBucket.name, path);
 }
 
 async function resolveProfile(db, uid, gcsBucket) {
@@ -347,17 +332,15 @@ export async function uploadPlantMedicineImage(gcsBucket, { uid, kind, buffer, m
   const safeKind = kind === 'avatar' ? 'avatars' : 'photos';
   const path = `plant-medicine/${safeKind}/${uid}-${Date.now()}.${ext}`;
   const file = gcsBucket.file(path);
-  const downloadToken = randomUUID();
   await file.save(buffer, {
     contentType: mimeType || 'image/jpeg',
     resumable: false,
-    metadata: {
-      cacheControl: 'public, max-age=31536000',
-      metadata: {
-        firebaseStorageDownloadTokens: downloadToken,
-      },
-    },
+    metadata: { cacheControl: 'public, max-age=31536000' },
   });
-  const encoded = encodeURIComponent(path);
-  return `https://firebasestorage.googleapis.com/v0/b/${gcsBucket.name}/o/${encoded}?alt=media&token=${downloadToken}`;
+  try {
+    await file.makePublic();
+  } catch {
+    // Bucket may already use uniform public access
+  }
+  return gcsPublicUrl(gcsBucket.name, path);
 }

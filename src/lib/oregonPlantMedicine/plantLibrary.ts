@@ -2,7 +2,14 @@ import type { PlantEntry, PlantImage, ResourceCategory } from './types';
 import { EDIBLE_MUSHROOM_LIBRARY } from './plantLibraryEdibleMushrooms';
 import { EDIBLE_PLANT_LIBRARY } from './plantLibraryEdiblePlants';
 import { applyManifestImages } from './plantGallery';
-export { matchesRegion, regionFilterLabel, regionLabel, REGION_FILTER_OPTIONS } from './regionCatalog';
+import { normalizePlantRegions } from './regionCatalog';
+export {
+  matchesRegion,
+  normalizePlantRegions,
+  regionFilterLabel,
+  regionLabel,
+  REGION_FILTER_OPTIONS,
+} from './regionCatalog';
 export type { RegionFilter } from './regionCatalog';
 
 function gallery(
@@ -29,7 +36,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Common nettle'],
     uses: 'both',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Rich moist soil along streams, ditches, forest edges, and disturbed ground. Very common near Eugene waterways and coast range valleys toward Florence.',
     identification: 'Opposite serrated leaves with stinging hairs on stems and undersides. Square stems. Can reach 3–6 ft when flowering. Crushing or drying removes the sting.',
     lookalikes: [
@@ -60,7 +67,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Tall Oregon grape'],
     uses: 'both',
     category: 'shrub',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Dry to moist woodland understory throughout the Willamette Valley and coast range foothills.',
     identification: 'Spiny holly-like evergreen leaflets in groups. Bright yellow flower clusters in early spring. Blue berries with whitish bloom in summer.',
     lookalikes: [
@@ -90,7 +97,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Rubus spectabilis',
     uses: 'edible',
     category: 'berry',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Stream banks, wetlands, and shady forest edges — abundant on the coast near Florence and in wet Willamette Valley corridors.',
     identification: 'Magenta flowers in spring. Compound leaves with three leaflets. Orange to red raspberry-like fruit.',
     lookalikes: [
@@ -116,7 +123,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Gaultheria shallon',
     uses: 'both',
     category: 'shrub',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Coastal conifer forest understory — dominant groundcover from Florence dunes inland and common in coast-range woods toward Eugene.',
     identification: 'Leathery evergreen oval leaves. Urn-shaped pink-white flowers. Dark blue-purple mealy berries.',
     lookalikes: [
@@ -143,7 +150,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Winter purslane'],
     uses: 'edible',
     category: 'herb',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Cool moist shady spots, woodland edges, and spring gardens throughout the valley.',
     identification: 'Succulent leaves with a cup-like leaf bracketing the flower stem. Small white or pink flowers.',
     lookalikes: [
@@ -168,7 +175,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Achillea millefolium',
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Meadows, roadsides, dry fields, and disturbed sunny ground valley-wide and along the coast highway corridor.',
     identification: 'Feathery aromatic leaves. Flat-topped clusters of tiny white (sometimes pink) flowers. Distinct sage-like scent when crushed.',
     medicinalNotes: 'Classic first-aid herb — styptic powder from dried leaves for minor cuts. Tea for fever support and digestion.',
@@ -192,7 +199,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Plantago major',
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Lawns, trails, compacted soil — everywhere in Eugene and Florence.',
     identification: 'Low rosette of ribbed oval leaves with parallel veins. Slender seed spikes rise from center.',
     medicinalNotes: 'Fresh leaf poultice for bee stings, bites, and splinters. Mucilage soothes skin and mucous membranes.',
@@ -211,7 +218,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Taraxacum officinale',
     uses: 'both',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Lawns, fields, roadsides — ubiquitous.',
     identification: 'Toothed basal leaves, hollow stem, yellow composite flower, white puffball seed head.',
     lookalikes: [
@@ -236,7 +243,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Trifolium pratense',
     uses: 'both',
     category: 'herb',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Meadows, pastures, and sunny fields in the Willamette Valley.',
     identification: 'Three leaflets with pale chevron. Round pink-purple flower heads.',
     lookalikes: [
@@ -262,7 +269,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Mexican elderberry'],
     uses: 'both',
     category: 'shrub',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Stream banks, open woods, and disturbed sunny edges in the valley.',
     identification: 'Opposite compound leaves. Large flat cream flower clusters. Powdery blue berries on reddish stems.',
     lookalikes: [
@@ -292,7 +299,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Willowherb'],
     uses: 'both',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Burn sites, roadsides, clearcuts, and open meadows — common coast to cascades.',
     identification: 'Tall spikes of magenta four-petaled flowers. Long narrow leaves. Fluffy seed parachutes.',
     lookalikes: [
@@ -317,7 +324,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Polypodium glycyrrhiza',
     uses: 'medicinal',
     category: 'fern',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mossy tree trunks, rocks, and wet forest — very common in coast range and valley forests.',
     identification: 'Fronds from creeping rhizome on mossy maples and logs. Sweet licorice-scented rhizome when chewed.',
     medicinalNotes: 'Rhizome traditionally chewed for sore throat and cough — demulcent and sweet.',
@@ -336,7 +343,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Oxalis oregana',
     uses: 'edible',
     category: 'herb',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Shady moist conifer forest floor — coast range and old growth near Florence.',
     identification: 'Three heart-shaped leaflets often folded. White to pink five-petaled flowers. Sour lemon taste.',
     lookalikes: [
@@ -363,7 +370,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Vaccinium ovatum',
     uses: 'edible',
     category: 'berry',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Coastal and low-elevation forest understory — Florence dunes forest and coast range.',
     identification: 'Leathery serrated evergreen leaves. Pink urn flowers. Dark purple-black sweet berries.',
     lookalikes: [
@@ -387,7 +394,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Populus trichocarpa',
     uses: 'medicinal',
     category: 'tree',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'River bottoms and wet lowland — Willamette River corridor and coastal river valleys.',
     identification: 'Large cottonwood with balsam-scented sticky buds in late winter. Heart-shaped toothed leaves.',
     medicinalNotes: 'Balm of Gilead — cottonwood buds infused in oil for salves on sore muscles and skin irritation.',
@@ -407,7 +414,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Shining willow'],
     uses: 'medicinal',
     category: 'tree',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Wetlands, stream banks, and lakeshores — common in Eugene wetlands and coastal estuaries near Florence.',
     identification: 'Flexible branches. Long narrow leaves often with silky undersides. Catkins in early spring.',
     medicinalNotes: 'Bark contains salicin (aspirin precursor). Traditional tea for pain and fever — bitter.',
@@ -430,7 +437,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Prunella vulgaris',
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Lawns, meadows, and trail edges.',
     identification: 'Low plant with square stem. Purple tubular flowers in dense head. Lance-shaped leaves.',
     medicinalNotes: 'Traditional wound herb and throat-soothing tea. Mild antimicrobial reputation.',
@@ -450,7 +457,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Bedstraw', 'Goosegrass'],
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist shady edges, gardens, and stream banks.',
     identification: 'Square stem with whorled narrow leaves that cling (hooked hairs). Tiny white flowers.',
     medicinalNotes: 'Spring lymphatic tonic — fresh juice or tea. Traditional diuretic and skin support.',
@@ -470,7 +477,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Old man’s beard'],
     uses: 'medicinal',
     category: 'lichen',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Hanging from tree branches in moist clean air — coast range and valley forests after rain.',
     identification: 'Gray-green branched lichen with white elastic cord inside main stem when pulled apart.',
     medicinalNotes: 'Traditional antimicrobial for respiratory and urinary support. Usnic acid content.',
@@ -492,7 +499,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Trametes versicolor',
     uses: 'medicinal',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Dead hardwood and conifer logs — everywhere in Oregon forests.',
     identification: 'Bracket fungus with concentric color bands. Underside white with tiny pores (not gills).',
     medicinalNotes: 'Immune-modulating polysaccharides (PSK/PSP) — studied extensively in Asia. Long decoction.',
@@ -514,7 +521,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Cantharellus formosus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['florence', 'both', 'or-coast', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-shasta'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mossy conifer forest floor — coast range and valley foothills after fall rains.',
     identification: 'Golden funnel-shaped cap with false gills (forked ridges). Fruity apricot smell. No true gills.',
     lookalikes: [
@@ -542,7 +549,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Fragaria chiloensis',
     uses: 'edible',
     category: 'herb',
-    regions: ['florence', 'or-coast', 'ca-north-coast', 'both'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Coastal sand dunes and bluffs — Florence to Oregon Dunes National Recreation Area.',
     identification: 'Three toothed leaflets, runners on sand. Small sweet white-flowered berries close to ground.',
     lookalikes: [
@@ -566,7 +573,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Pseudotsuga menziesii',
     uses: 'both',
     category: 'tree',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Dominant conifer from valley floor to coast — everywhere.',
     identification: 'Soft bright green new growth tips in spring. Distinct bracts on cones (“mouse tail and legs”).',
     lookalikes: [
@@ -591,7 +598,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Rosa nutkana',
     uses: 'both',
     category: 'shrub',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Stream banks, roadsides, and open sunny areas valley and coast.',
     identification: 'Pink five-petaled flowers. Thorns on stems. Large red rose hips in fall.',
     lookalikes: [
@@ -616,7 +623,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Equisetum arvense',
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Sandy wet soils, roadsides, and disturbed ground.',
     identification: 'Jointed hollow stems with whorled branches. Silica-rich. Two stages: fertile brown cone stage and green vegetative.',
     medicinalNotes: 'High silica — traditional use for hair, skin, nails, and connective tissue support.',
@@ -644,7 +651,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Rubus parviflorus',
     uses: 'edible',
     category: 'berry',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Openings, stream banks, and forest edges from Willamette Valley foothills to coast range near Florence. Large soft maple-like leaves on thornless stems.',
     identification:
@@ -676,7 +683,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pacific blackberry', 'California blackberry'],
     uses: 'edible',
     category: 'berry',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Sunny roadsides, clearings, and dry edges throughout Lane County and coastal scrub toward Florence. Low trailing vines, not tall canes.',
     identification:
@@ -710,7 +717,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Vaccinium parvifolium',
     uses: 'edible',
     category: 'berry',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Often on decaying logs and stumps in moist conifer forest — common in coast range hikes near Florence and foothill forests around Eugene.',
     identification:
@@ -742,7 +749,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Saskatoon', 'Juneberry'],
     uses: 'edible',
     category: 'shrub',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Open slopes, oak savanna edges, and sunny forest margins in the eastern Willamette Valley and foothills — less common on immediate coast but present inland.',
     identification:
@@ -773,7 +780,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Stellaria media',
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Cool moist gardens, farm edges, and disturbed soil — abundant in Eugene valley winter and spring; mild coast winters near Florence.',
     identification:
@@ -807,7 +814,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Goosefoot', 'Wild spinach'],
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Disturbed soil, gardens, and farm fields throughout Eugene and coastal towns — classic “weed” superfood.',
     identification:
@@ -841,7 +848,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Field mint', 'Corn mint'],
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Wet meadows, ditches, and stream margins — Willamette valley waterways and coastal creek bottoms near Florence.',
     identification:
@@ -874,7 +881,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Typha latifolia',
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Shallow freshwater marshes, ponds, and slow sloughs — West Eugene wetlands, Fern Ridge area, and Siuslaw estuary margins.',
     identification:
@@ -910,7 +917,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Oregon crabapple'],
     uses: 'edible',
     category: 'tree',
-    regions: ['florence', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Wet coastal forest and stream banks — native from Florence estuary north; occasional in valley riparian plantings.',
     identification:
@@ -945,7 +952,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Yellow morel', 'Black morel'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['eugene', 'both', 'or-willamette', 'or-cascades', 'or-klamath', 'or-rogue', 'ca-sierra-foothills', 'ca-shasta'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Burn scars, disturbed soil, cottonwood bottoms, and old orchards in the Willamette Valley — spring specialty after warm rains.',
     identification:
@@ -980,7 +987,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Portulaca oleracea',
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Hot dry disturbed soil — garden paths, farm rows, and sandy lots in Eugene summer and Florence coastal gardens.',
     identification:
@@ -1014,7 +1021,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Lesser burdock', 'Gobo'],
     uses: 'edible',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Disturbed ground, trailsides, and vacant lots — ubiquitous weed with Velcro-like seed heads.',
     identification:
@@ -1048,7 +1055,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Prickly lettuce', 'Opium lettuce', 'Great lettuce'],
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Roadsides, vacant lots, farm edges, and disturbed soil throughout Eugene and the Willamette Valley — also along I-5 corridor toward Florence. Tall weed with milky sap.',
     identification:
@@ -1082,7 +1089,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['American pokeweed', 'Poke sallet'],
     uses: 'medicinal',
     category: 'herb',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Disturbed ground, fence lines, and garden edges — naturalized in parts of western Oregon including Willamette Valley towns. Less common on immediate coast but reported inland from Florence.',
     identification:
@@ -1116,7 +1123,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Knitbone', 'Boneset'],
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Garden escape and riparian edges — widely planted in Eugene valley herb gardens and naturalized near streams. Large hairy leaves in basal rosette.',
     identification:
@@ -1150,7 +1157,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Red sorrel', 'Field sorrel'],
     uses: 'medicinal',
     category: 'herb',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Lawns, pastures, roadsides, and disturbed acidic soils — one of the most common weeds in Oregon. Often grows alongside burdock in the same disturbed patches.',
     identification:
@@ -1184,11 +1191,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Wavy caps'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-portland', 'or-willamette'],
     habitat:
       'Wood-chip mulch, landscaped beds, trail edges, and decaying hardwood debris — extremely common in urban Eugene and coastal towns like Florence after fall rains.',
     identification:
       'Caramel to chestnut cap with wavy margin when mature. White stem bruises blue-green. Purple-brown spore print. Grows in clusters on wood chips — not on open pasture.',
+    lookalikes: [
+      'Galerina marginata (deadly galerina) — grows on the same wood chips; brown cap, ring on stem, rusty-brown spore print (not purple-brown). Contains amatoxins — misidentification is fatal.',
+      'Galerina autumnalis — same deadly amatoxin risk on decaying wood; always take a spore print.',
+      'Pholiotina rugosa / Conocybe filaris — small brown mushrooms on wood chips with rusty spores; also deadly.',
+      'Hypholoma fascicare (sulfur tuft) — greenish-yellow gills, purple-brown to dark spores; grows in clusters on wood but causes severe GI illness.',
+    ],
     holisticNotes:
       'One of the most frequently encountered psilocybin mushrooms in the Pacific Northwest. Documented on iNaturalist throughout Lane County.',
     preparation: 'Reference only — not consumption guidance.',
@@ -1214,11 +1227,16 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Psilocybe azurescens',
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['florence', 'both'],
+    regions: ['ca-north-coast', 'or-coast', 'or-portland'],
     habitat:
       'Coastal Oregon wood chips, dune grasses, and sandy soils with woody debris — first described near the Oregon coast. Reported from Florence north toward Astoria.',
     identification:
       'Large caramel cap (can exceed 10 cm). Robust stem with blue bruising. Often grows in coastal wood-chip piles and edge habitats.',
+    lookalikes: [
+      'Galerina marginata — same coastal wood-chip habitat; deadly amatoxins. Confirm purple-brown spore print on Psilocybe vs. rusty-brown on Galerina.',
+      'Galerina autumnalis — wood-inhabiting deadly lookalike; ring on stem and brown spore print.',
+      'Pholiotina rugosa — small brown wood-chip species with deadly amatoxins.',
+    ],
     holisticNotes: 'Oregon coast endemic species — a signature mushroom of Pacific Northwest mycology.',
     preparation: 'Reference only — not consumption guidance.',
     harvestSeason: 'Late fall (Nov–Dec) on the coast after rains.',
@@ -1242,11 +1260,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Psilocybe semilanceata',
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-coast', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Sheep and cattle pastures, lawns, and fertilized grass in cool wet weather — reported in Willamette Valley pastures.',
     identification:
       'Small conical bell-shaped cap with pointed papilla. Thin wavy stem. Purple-brown spore print. Grows from grass, not wood.',
+    lookalikes: [
+      'Panaeolus foenisecii (haymaker / lawn mottlegill) — common in lawns; dark brown to black gills, no blue bruising; causes GI upset.',
+      'Panaeolus papilionaceus — similar lawn habitat; black spore print, no psilocybin.',
+      'Conocybe filaris — small brown lawn mushrooms; deadly amatoxins.',
+      'Galerina marginata — rare in pasture but possible near woody debris; deadly.',
+    ],
     holisticNotes: 'Classic European pasture species also found in Pacific Northwest grasslands.',
     preparation: 'Reference only.',
     harvestSeason: 'Fall through early winter during cool wet spells.',
@@ -1270,11 +1294,16 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Psilocybe cyanofriscosa'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['florence', 'both'],
+    regions: ['ca-north-coast', 'or-coast', 'or-portland'],
     habitat:
       'Wood-chip mulch and landscaped beds along the Oregon coast and I-5 corridor — first described from the San Francisco Bay Area and documented north into coastal Oregon towns including the Florence area.',
     identification:
       'Caramel to chestnut cap, often wavy when mature. White stem with strong blue bruising. Purple-brown spore print. Grows on wood chips — member of the Pacific wood-lover complex related to P. cyanescens.',
+    lookalikes: [
+      'Galerina marginata — the primary deadly lookalike in the same mulch beds; rusty spore print and ring on stem.',
+      'Galerina autumnalis — amatoxin-containing wood species; spore print is rusty brown, not purple-brown.',
+      'Psilocybe cyanescens — closely related; expert macro features needed to separate species in the field.',
+    ],
     holisticNotes:
       'Often found alongside P. cyanescens in the same mulch beds — cap size and subtle macro features help separate species.',
     preparation: 'Reference only — not consumption guidance.',
@@ -1301,11 +1330,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Blue ringer', 'Stuntz’s psilocybe'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['eugene', 'both'],
+    regions: ['or-cascades', 'or-portland', 'or-willamette'],
     habitat:
       'Lawns, grassy areas near conifers, and mulched beds in the Willamette Valley — named for UW mycologist Daniel Stuntz. Common in Eugene-area campus lawns and park edges after fall rains.',
     identification:
       'Small to medium brown cap. Stem bruises blue-green distinctly (“blue legs”). Purple-brown spore print. Often grows in grass or near wood chips — not a large wood-cluster species.',
+    lookalikes: [
+      'Galerina marginata — can appear near mulched lawn edges; deadly amatoxins — always verify spore print color.',
+      'Panaeolus foenisecii — common lawn mushroom with dark gills; no reliable blue bruising.',
+      'Psilocybe pelliculosa — similar size and blue bruising; expert ID needed.',
+      'Toxic Cortinarius species — rusty spore print, cobweb veil remnants on cap margin.',
+    ],
     holisticNotes: 'One of the classic PNW lawn-and-mulch psilocybes — smaller than cyanescens but similarly potent.',
     preparation: 'Reference only.',
     harvestSeason: 'Fall (Oct–Dec) during cool wet weather.',
@@ -1330,11 +1365,16 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Knobby tops', 'Blue bell'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['or-cascades', 'or-coast', 'or-portland', 'or-willamette'],
     habitat:
       'Mulched garden beds, bark chips, and rich soil under conifers — reported throughout western Oregon from valley cities to coast range towns near Florence.',
     identification:
       'Dark olive-brown conical cap (“bottle cap” shape). Stem often banded and bruises blue. Distinctive baeocystin content in chemistry literature. Purple-brown spore print.',
+    lookalikes: [
+      'Galerina marginata — grows on the same mulched beds; deadly amatoxins; rusty-brown spore print.',
+      'Galerina autumnalis — wood-inhabiting deadly species in the same habitat.',
+      'Pholiotina rugosa — small brown wood species with amatoxins.',
+    ],
     holisticNotes: 'Named for the bottle-cap silhouette of young specimens — another cyanescens-complex wood-lover.',
     preparation: 'Reference only.',
     harvestSeason: 'Late fall through winter on mulched beds.',
@@ -1358,11 +1398,16 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Gymnopilus junonius'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['ca-shasta', 'or-cascades', 'or-coast', 'or-rogue', 'or-willamette'],
     habitat:
       'Large clusters on conifer stumps and logs throughout Oregon forests — valley foothills and coast range near Florence.',
     identification:
       'Big orange-brown caps in dense clusters on wood. Rusty orange spore print (not purple-brown). Often 10–20 cm caps.',
+    lookalikes: [
+      'Galerina marginata — can grow on the same conifer logs; much smaller, brown cap, deadly amatoxins.',
+      'Omphalotus olivascens (jack-o-lantern) — orange clusters on wood but gills glow faintly green; causes severe GI illness.',
+      'Phaeolepiota aurea — large golden clusters; causes illness.',
+    ],
     holisticNotes: 'Contains psilocybin but often causes nausea; not a preferred species.',
     preparation: 'Reference only.',
     harvestSeason: 'Fall on rotting conifer wood.',
@@ -1385,11 +1430,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Amanita muscaria',
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-rogue', 'or-willamette'],
     habitat:
       'Mycorrhizal with Douglas fir and pine — common in Eugene foothill forests and coastal woods near Florence.',
     identification:
       'Iconic red cap with white warts. White gills, ring on stem, bulbous base. Contains muscimol & ibotenic acid — NOT psilocybin.',
+    lookalikes: [
+      'Amanita pantherina — brown cap with white warts; more potent muscimol; same genus, similar volva and ring.',
+      'Amanita aprica / A. gemmata group — pale yellow caps; toxic muscarine-group species.',
+      'Amanita ocreata (destroying angel) — white cap, no warts; DEADLY amatoxins — always check for volva at stem base.',
+      'Amanita phalloides (death cap) — greenish cap; DEADLY — rare in Oregon but reported; white gills and sac-like volva.',
+    ],
     holisticNotes: 'One of the most recognizable mushrooms worldwide.',
     preparation: 'Reference only — raw consumption is dangerous.',
     harvestSeason: 'Late summer through fall.',
@@ -1412,10 +1463,16 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Amanita pantherina',
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['ca-shasta', 'or-cascades', 'or-coast', 'or-rogue', 'or-willamette'],
     habitat: 'Conifer and hardwood forests in the PNW — valley to coast.',
     identification:
       'Brown cap with white warts. White gills and ring. Bulbous stem base in volva cup. Resembles fly agaric but cap is brown.',
+    lookalikes: [
+      'Amanita muscaria — red cap with white warts; also contains muscimol but generally less potent.',
+      'Amanita ocreata (destroying angel) — all-white deadly Amanita; no warts but same volva — NEVER eat any Amanita without expert ID.',
+      'Amanita phalloides (death cap) — greenish cap, deadly amatoxins.',
+      'Amanita bisporigera — eastern destroying angel lookalike; deadly amatoxins.',
+    ],
     holisticNotes: 'More potent muscimol content than A. muscaria.',
     preparation: 'Reference only.',
     harvestSeason: 'Summer through fall.',
@@ -1438,11 +1495,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Psilocybe subbalteatus'],
     uses: 'hallucinogenic',
     category: 'mushroom',
-    regions: ['both'],
+    regions: ['or-coast', 'or-portland', 'or-willamette'],
     habitat:
       'Compost, manure-enriched soil, mulched gardens, and lawns — occasional in Eugene valley gardens.',
     identification:
       'Small brown cap with darker band at margin when moist. Black gills mottled with spores. Grows from soil not wood.',
+    lookalikes: [
+      'Panaeolus foenisecii — extremely common in lawns; similar size; causes GI illness.',
+      'Panaeolus papilionaceus — black spores, no psilocybin.',
+      'Galerina marginata — deadly; usually on wood but verify all small brown mushrooms.',
+      'Psathyrella species — fragile brown mushrooms in enriched soil; not reliably toxic but confounding for beginners.',
+    ],
     holisticNotes: 'Weak to moderate psilocybin content — documented in Oregon.',
     preparation: 'Reference only.',
     harvestSeason: 'Spring through fall in enriched soils.',
@@ -1465,11 +1528,17 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ["Devil's snare", 'Thorn apple'],
     uses: 'hallucinogenic',
     category: 'herb',
-    regions: ['eugene', 'both'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-east', 'or-willamette'],
     habitat:
       'Disturbed soil, vacant lots, roadsides, and gardens — occasional naturalized plant in the Willamette Valley.',
     identification:
       'Large trumpet-shaped white or purple flowers. Spiky seed pods. Strong unpleasant odor. Large irregular toothed leaves.',
+    lookalikes: [
+      'Datura wrightii (sacred datura) — southwestern relative; same tropane alkaloid danger.',
+      'Atropa belladonna (deadly nightshade) — related Solanaceae; berries and foliage toxic.',
+      "Brugmansia (angel's trumpet) — ornamental tree; same deliriant alkaloid class.",
+      'Nicotiana glauca (tree tobacco) — different family but similar trumpet flowers; also toxic.',
+    ],
     holisticNotes:
       'Deliriant tropane alkaloids — NOT a classic psychedelic. Historically associated with poisonings.',
     preparation: 'Reference only — all parts toxic.',
@@ -1489,7 +1558,12 @@ export const PLANT_LIBRARY: PlantEntry[] = [
   },
   ...EDIBLE_PLANT_LIBRARY,
   ...EDIBLE_MUSHROOM_LIBRARY,
-].map(applyManifestImages);
+].map((plant) =>
+  applyManifestImages({
+    ...plant,
+    regions: normalizePlantRegions(plant.regions, plant.id),
+  }),
+);
 
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
   {

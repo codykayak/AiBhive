@@ -11,7 +11,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Whitebark raspberry', 'Western black raspberry'],
     uses: 'edible',
     category: 'berry',
-    regions: ['or-rogue', 'or-klamath', 'or-east', 'ca-shasta', 'ca-sierra-foothills', 'ca-north-coast'],
+    regions: ['ca-north-coast', 'ca-shasta', 'ca-sierra-foothills', 'or-east', 'or-klamath', 'or-rogue'],
     habitat:
       'Dry open slopes, forest edges, and disturbed ground from eastern Oregon through Klamath-Siskiyou and Sierra foothills.',
     identification:
@@ -38,7 +38,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Cut-leaf blackberry'],
     uses: 'edible',
     category: 'berry',
-    regions: ['or-willamette', 'or-portland', 'or-coast', 'ca-sacramento', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat:
       'Disturbed roadsides, fencerows, and open woods — widespread invasive in Willamette Valley and north-coast California.',
     identification:
@@ -65,7 +65,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Blood currant'],
     uses: 'both',
     category: 'shrub',
-    regions: ['or-coast', 'or-willamette', 'or-portland', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Open woods, bluffs, and forest edges — signature early-spring shrub of the coast and western valleys.',
     identification:
       'Drooping clusters of pink to red tubular flowers in early spring. Maple-like lobed leaves with sticky glands. Dark blue-black berries with whitish bloom in summer.',
@@ -92,7 +92,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Skunk currant'],
     uses: 'edible',
     category: 'shrub',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist shady forest — coast range and Cascades understory.',
     identification:
       'Large sticky-glandular greenish-white flower clusters. Strong skunky odor when leaves bruised. Dark purple-black berries.',
@@ -118,7 +118,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Roezl\'s gooseberry'],
     uses: 'edible',
     category: 'berry',
-    regions: ['or-rogue', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-klamath', 'or-rogue'],
     habitat: 'Dry open pine and oak woodland — Klamath-Siskiyou and Sierra foothills.',
     identification:
       'Spiny stems. Small lobed leaves. Purple-black berries covered in sharp spines — handle with care. Small greenish flowers.',
@@ -142,7 +142,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Prunus virginiana',
     uses: 'both',
     category: 'shrub',
-    regions: ['or-east', 'or-klamath', 'ca-silver-lake', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Stream banks, canyon edges, and open slopes in eastern Oregon and Modoc/Sierra country.',
     identification:
       'Oval serrated leaves. White fragrant flower racemes in spring. Dark purple-black cherries in hanging clusters. Bark often marked with lenticels.',
@@ -172,7 +172,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Prunus emarginata',
     uses: 'edible',
     category: 'tree',
-    regions: ['or-cascades', 'or-rogue', 'or-coast', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Forest edges and moist slopes from coast range through Cascades and into northern California.',
     identification:
       'Small tree or large shrub. Oval leaves with rounded tips. White spring flowers. Bright red to dark red cherries — very bitter raw.',
@@ -198,7 +198,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pacific madrone'],
     uses: 'both',
     category: 'tree',
-    regions: ['or-coast', 'or-rogue', 'ca-north-coast', 'ca-shasta'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-coast', 'or-rogue'],
     habitat: 'Dry open conifer and oak woodland — iconic peeling orange-red bark on coast and southwest Oregon.',
     identification:
       'Leathery evergreen leaves. Smooth peeling cinnamon bark. Clusters of small white urn-shaped flowers. Orange-red warty berries in fall.',
@@ -224,7 +224,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Greenleaf manzanita', 'Hairy manzanita (A. columbiana in OR)'],
     uses: 'both',
     category: 'shrub',
-    regions: ['or-east', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Dry open pine and oak forest — eastern Cascades, Klamath, and Sierra foothills.',
     identification:
       'Smooth red or brown bark on twisted stems. Leathery oval leaves. Pink-white urn flowers. Small red-brown apple-like berries.',
@@ -251,7 +251,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['California holly', 'Christmas berry'],
     uses: 'both',
     category: 'shrub',
-    regions: ['ca-north-coast', 'ca-sierra-foothills', 'ca-sacramento'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'ca-sierra-foothills'],
     habitat: 'Chaparral, oak woodland, and coastal scrub in northern California — Sacramento Valley foothills to north coast.',
     identification:
       'Evergreen shrub to small tree. Serrated holly-like leaf edges (not spiny). Clusters of small white flowers. Bright red berries in winter.',
@@ -304,7 +304,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Wild strawberry'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-cascades', 'or-coast', 'ca-shasta', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Partial shade in forests, meadows, and trail edges — distinct from coastal beach strawberry.',
     identification:
       'Trifoliate toothed leaflets on thin runners. White five-petaled flowers. Small elongated red berries with seeds on surface — intense flavor.',
@@ -330,7 +330,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Cascade bilberry', 'Blueleaf huckleberry'],
     uses: 'edible',
     category: 'berry',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-silver-lake', 'or-cascades', 'or-klamath'],
     habitat: 'Subalpine meadows and open conifer forest — high Cascades and Mt. Shasta country.',
     identification:
       'Deciduous shrub with bright green oval leaves turning red in fall. Pink-tinged bell flowers. Dark blue-purple berries with bloom.',
@@ -356,7 +356,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Dwarf bilberry', 'Cascade huckleberry (regional name overlap)'],
     uses: 'edible',
     category: 'berry',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-klamath'],
     habitat: 'Alpine and subalpine meadows, rocky slopes — low mat-forming shrub.',
     identification:
       'Low mat-forming shrub only a few inches to a foot tall. Small oval leaves. Tiny blue-black berries with intense flavor.',
@@ -381,7 +381,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Indian plum', 'Oregon plum'],
     uses: 'both',
     category: 'shrub',
-    regions: ['or-willamette', 'or-portland', 'or-coast', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Earliest-blooming native shrub — moist forest edges and riparian zones valley to coast.',
     identification:
       'First white flower clusters in late winter. Slender leaves. Pea-sized peach-colored berries turning dark blue-black. Bitter almond scent when twigs scratched.',
@@ -409,7 +409,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Western sorrel dock'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-east', 'or-klamath', 'ca-silver-lake', 'ca-shasta', 'both', 'eugene'],
+    regions: ['ca-shasta', 'ca-silver-lake', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist meadows, stream banks, and spring wetlands — valley and eastern Oregon.',
     identification:
       'Basal rosette of large lance-shaped leaves. Tall seed stalks with rust-brown triangular seeds (tumbling). Sour taste from oxalic acid.',
@@ -435,7 +435,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Cheeses', 'Buttonweed'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-willamette', 'or-portland', 'or-east', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed soil, gardens, and roadsides — cosmopolitan weed in valley and California lowlands.',
     identification:
       'Roundish lobed leaves on long petioles. Pink to white striped flowers. Disc-shaped "cheese" seed pods.',
@@ -461,7 +461,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Common sow thistle'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-portland', 'or-coast', 'ca-sacramento', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed ground, gardens, and field edges everywhere.',
     identification:
       'Milky sap when stem broken. Dandelion-like yellow flowers. Prickly-edged clasping stem leaves. Not a true thistle (no spines on stem).',
@@ -487,7 +487,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Wild lettuce', 'Compass plant'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-east', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Dry disturbed roadsides, fields, and waste ground.',
     identification:
       'Tall upright plant with spiny midrib on underside of leaves. Milky white latex. Yellow dandelion-like flowers. Leaves often twist to orient vertically.',
@@ -512,7 +512,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Nasturtium officinale',
     uses: 'both',
     category: 'herb',
-    regions: ['or-willamette', 'or-coast', 'or-portland', 'ca-north-coast', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Clean cold spring-fed streams and slow-moving water — must verify water quality.',
     identification:
       'Low growing in water. Pinnately compound leaves with oval leaflets. White four-petaled flowers. Peppery taste when chewed.',
@@ -543,7 +543,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Western spring beauty', 'Indian potato'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-cascades', 'or-klamath'],
     habitat: 'Moist open forest and meadows — spring ephemerals in mountains and foothills.',
     identification:
       'Pair of narrow lance-shaped leaves. Delicate pink-striped white flowers. Small round corm (Indian potato) underground.',
@@ -567,7 +567,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Allium cernuum',
     uses: 'both',
     category: 'herb',
-    regions: ['or-east', 'or-klamath', 'ca-shasta', 'ca-silver-lake', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Dry open slopes and rocky outcrops — eastern Oregon and northern California.',
     identification:
       'Grass-like onion smell when crushed. Nodding pink flower umbels. Bulbs small and clustered.',
@@ -594,7 +594,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Tapertip onion', 'Hooker\'s onion'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-east', 'or-klamath', 'ca-shasta', 'ca-silver-lake', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Dry open grassland and sagebrush — east-side Oregon and Modoc/Sierra.',
     identification:
       'Strong onion odor. Pink to purple flower umbel on short stem. Bulb with fibrous coat.',
@@ -619,7 +619,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Lamb\'s quarters (related)', 'Goosefoot'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-east', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed soil, gardens, and agricultural edges worldwide.',
     identification:
       'Mealy white powder on young growing tips. Diamond-shaped toothed leaves with goosefoot shape. No red sap (unlike amaranth).',
@@ -645,7 +645,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pigweed', 'Redroot amaranth'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-east', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed ground, gardens, and agricultural fields.',
     identification:
       'Red taproot. Rough hairy stems. Large simple oval leaves. Tall green flower spikes maturing to black seeds.',
@@ -671,7 +671,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Garden orache', 'Mountain spinach'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-east', 'ca-silver-lake', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east'],
     habitat: 'Disturbed alkaline soils and dry open ground — east-side and Great Basin fringe.',
     identification:
       'Arrowhead to diamond-shaped leaves, often gray-green or reddish. Mealy texture on some species. Insignificant green flowers.',
@@ -696,7 +696,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Yellow rocket', 'Bittercress (common name overlap)'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed moist ground, ditches, and field margins.',
     identification:
       'Basal rosette of lobed dark green leaves. Tall spikes of bright yellow four-petaled mustard flowers. Peppery mustard family taste.',
@@ -721,7 +721,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Little Western bittercress', 'Small-flowered bittercress'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist shady forest and stream edges — early spring groundcover.',
     identification:
       'Small pinnate leaves. Tiny white four-petaled flowers. Slender exploding seed pods when mature. Mild peppery taste.',
@@ -746,7 +746,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Jointed charlock'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'ca-sacramento', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed coastal and valley ground — fields, roadsides, and dunes.',
     identification:
       'Hairy leaves with lobed margins. Yellow or white four-petaled flowers (sometimes veined lavender). Jointed seed pods that do not split.',
@@ -773,7 +773,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Common camas', 'Blue camas'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-willamette', 'or-rogue', 'or-klamath', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Wet meadows and prairies — historically managed by Indigenous fire ecology in Willamette Valley.',
     identification:
       'Grass-like leaves from bulb. Tall spike of blue-violet six-petaled star flowers in spring. Bulb white and onion-shaped but NO onion smell.',
@@ -806,7 +806,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Broadleaf arrowhead', 'Indian potato', 'Duck potato'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-willamette', 'or-coast', 'ca-north-coast', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Shallow freshwater marshes, ponds, and slow sloughs — wade to harvest.',
     identification:
       'Arrowhead-shaped emergent leaves. Three-petaled white flowers. Round starchy tubers on underwater roots — pull or feel with toes.',
@@ -832,7 +832,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Arrowleaf balsamroot'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-east', 'or-klamath', 'ca-silver-lake', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Dry open east-side hills and sagebrush — golden sunflower displays in spring.',
     identification:
       'Large arrow-shaped fuzzy basal leaves. Big yellow sunflower-like blooms on short stems. Deep taproot and large fleshy root crown.',
@@ -858,7 +858,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['California biscuitroot', 'Pestle parsnip'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-rogue', 'or-klamath', 'ca-north-coast', 'ca-shasta'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-klamath', 'or-rogue'],
     habitat: 'Dry open woodland and rocky slopes — Klamath-Siskiyou and coast range.',
     identification:
       'Finely divided fern-like leaves. Yellow umbel flowers. Thick aromatic root smelling of celery/parsley when cut.',
@@ -885,7 +885,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Indian celery', 'Pushki'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-cascades', 'or-coast', 'or-klamath', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist meadows, stream banks, and forest openings — large leafy presence.',
     identification:
       'Huge maple-like compound leaves. Thick hollow stem with purple mottling. Flat white umbel flowers — can reach 6+ feet tall.',
@@ -916,7 +916,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pacific silverweed', 'Wild strawberry relative'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'both', 'florence', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Coastal estuaries, tidal flats, and moist meadows — silver-backed pinnate leaves.',
     identification:
       'Pinnate leaves with silvery white undersides. Yellow five-petaled buttercup-family flowers. Creeping red runners. Small edible roots.',
@@ -942,7 +942,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Athyrium filix-femina',
     uses: 'edible',
     category: 'fern',
-    regions: ['or-coast', 'or-cascades', 'or-willamette', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist shady forest and stream banks — one of the most common ferns in the PNW.',
     identification:
       'Bright green lacy fronds. Fiddleheads emerge in spring as tightly coiled green crosiers with brown papery scales (not black like bracken).',
@@ -967,7 +967,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Blechnum spicant',
     uses: 'both',
     category: 'fern',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist conifer forest floor — two distinct frond types (fertile brownish upright, sterile flat green).',
     identification:
       'Sterile fronds flat rosette near ground. Fertile fronds taller, narrow, with rolled-under pinnae bearing spores. Leathery texture.',
@@ -993,7 +993,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Eagle fern', 'Bracken fern'],
     uses: 'edible',
     category: 'fern',
-    regions: ['or-coast', 'or-cascades', 'or-east', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed sunny slopes, roadsides, and forest openings — aggressive colonizer.',
     identification:
       'Triangular fronds on tall stems. Fiddleheads with black/brown stem base and woolly coating. Single type of frond (not deer fern\'s dual form).',
@@ -1025,7 +1025,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Beaked hazelnut'],
     uses: 'edible',
     category: 'shrub',
-    regions: ['or-coast', 'or-cascades', 'or-willamette', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Understory of moist forest — coast range and Cascades.',
     identification:
       'Double-toothed oval leaves. Long beaked husk enclosing small nut. Catkins in winter. Often multi-stemmed shrub.',
@@ -1050,7 +1050,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Oregon white oak acorn'],
     uses: 'edible',
     category: 'tree',
-    regions: ['or-willamette', 'or-rogue', 'ca-north-coast', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Open oak savanna and woodland — Willamette Valley and Rogue oak country.',
     identification:
       'Deeply lobed oak leaves. Acorns short-stalked with shallow scaly cap. Large spreading oak of valley floors.',
@@ -1079,7 +1079,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Giant chinquapin', 'Bush chinquapin'],
     uses: 'edible',
     category: 'shrub',
-    regions: ['or-coast', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-shasta'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-rogue'],
     habitat: 'Dry open conifer forest — understory shrub to small tree on coast and Cascades.',
     identification:
       'Evergreen serrated leaves with golden fuzzy undersides. Spiny bur enclosing single sweet nut.',
@@ -1104,7 +1104,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Digger pine', 'Ghost pine'],
     uses: 'edible',
     category: 'tree',
-    regions: ['ca-sierra-foothills', 'ca-sacramento', 'ca-shasta'],
+    regions: ['ca-sacramento', 'ca-shasta', 'ca-sierra-foothills'],
     habitat: 'Hot dry foothill woodland — Sacramento Valley edges and Sierra west slope.',
     identification:
       'Large heavy cones with hooked spines. Long gray-green needles in bundles of three. Irregular open crown.',
@@ -1129,7 +1129,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Golden chia', 'Desert chia'],
     uses: 'both',
     category: 'herb',
-    regions: ['ca-sierra-foothills', 'ca-sacramento', 'ca-silver-lake', 'or-east'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east'],
     habitat: 'Dry open grassland and sagebrush — east-side Oregon fringe and California foothills.',
     identification:
       'Square mint-family stem. Small blue flowers in spiky whorls. Tiny seeds in calyx cups — swell in water.',
@@ -1157,7 +1157,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Sitka spruce tips', 'Blue spruce tips (P. pungens in east)'],
     uses: 'both',
     category: 'tree',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Coastal and montane conifer forest — harvest from Sitka spruce on coast, Engelmann/blue spruce east-side.',
     identification:
       'Soft bright green new growth at branch tips in spring. Single sharp needles. Hanging cones. Citrus-resin scent when crushed.',
@@ -1183,7 +1183,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Abies grandis',
     uses: 'both',
     category: 'tree',
-    regions: ['or-coast', 'or-willamette', 'or-cascades', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Low to mid-elevation moist forest — west-side valleys and coast range.',
     identification:
       'Flat needles with two white stomatal bands underneath — no prickles (friendly fir). Upright cones on branches. Balsam-scented blister resin on bark.',
@@ -1209,7 +1209,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Acer macrophyllum',
     uses: 'edible',
     category: 'tree',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'both', 'florence', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist lowland forest — dominant maple of west-side riparian zones.',
     identification:
       'Largest leaves of any maple — up to 12 inches across. Five lobes. Winged samaras in pairs. Moss-covered branches common.',
@@ -1234,7 +1234,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Oregon tea', 'Indian mint'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'both', 'florence', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Shady forest floor trailing vine — coast range and lowland forest.',
     identification:
       'Trailing square-stemmed mint with tiny rounded leaves. Strong mint aroma when crushed. Small white flowers.',
@@ -1260,7 +1260,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Douglas mugwort', 'Dream plant'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Stream banks, open woodland, and disturbed moist ground.',
     identification:
       'Tall aromatic silvery-green leaves, white-woolly underneath. Pungent sage-camphor smell. Small greenish flower spikes.',
@@ -1286,7 +1286,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Western sweet cicely', 'Western sweetroot'],
     uses: 'both',
     category: 'herb',
-    regions: ['or-cascades', 'or-coast', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Moist shady forest — understory of conifer and mixed woods.',
     identification:
       'Fern-like divided leaves with anise-licorice smell when crushed. Small white umbel flowers. Long slender aromatic roots.',
@@ -1313,7 +1313,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Oregon myrtle', 'Pepperwood'],
     uses: 'both',
     category: 'tree',
-    regions: ['or-coast', 'or-rogue', 'ca-north-coast', 'ca-shasta'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-coast', 'or-rogue'],
     habitat: 'Moist canyon woodland — southwest Oregon and northern California.',
     identification:
       'Evergreen lance leaves with peppery bay aroma when crushed. Yellow-green four-petaled flowers. Green oval drupes.',
@@ -1344,7 +1344,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Nereocystis luetkeana',
     uses: 'edible',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Pacific sub-tidal and low intertidal — floating canopy with bulb and long stipe from rocky coast.',
     identification:
       'Large floating bulb at surface connected to long stipe. Broad blade fronds. Grows in kelp forests visible from shore.',
@@ -1369,7 +1369,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Palm kelp'],
     uses: 'edible',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'florence'],
+    regions: ['ca-north-coast', 'or-coast'],
     habitat: 'Surf-swept rocky headlands — only where waves crash. Iconic tufted kelp looks like tiny palm trees.',
     identification:
       'Short stipe with dense cluster of finger-like fronds. Only on exposed surf zones. Distinctive palm-tree silhouette.',
@@ -1396,7 +1396,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Ulva lactuca',
     uses: 'edible',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Intertidal rocks, tide pools, and sheltered bays — bright green sheets.',
     identification:
       'Bright green thin ruffled sheets resembling lettuce. No midrib. Soft texture when fresh.',
@@ -1421,7 +1421,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Rockweed', 'Popweed (when popping bladders)'],
     uses: 'both',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'florence'],
+    regions: ['ca-north-coast', 'or-coast'],
     habitat: 'Mid intertidal rocky shore — branched fronds with paired float bladders.',
     identification:
       'Olive-brown branched fronds with midrib and paired air bladders that pop when squeezed. Forked tips.',
@@ -1447,7 +1447,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pacific nori', 'Laver seaweed'],
     uses: 'edible',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'florence'],
+    regions: ['ca-north-coast', 'or-coast'],
     habitat: 'High intertidal rocks — thin purple-red film to ruffled sheets.',
     identification:
       'Purple-red to greenish thin sheet algae on rocks. Nearly translucent when fresh. Same genus as sushi nori.',
@@ -1472,7 +1472,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Little rockweed', 'False lily'],
     uses: 'edible',
     category: 'seaweed',
-    regions: ['or-coast', 'ca-north-coast', 'florence'],
+    regions: ['ca-north-coast', 'or-coast'],
     habitat: 'High intertidal splash zone on rocks — small olive fronds with pointed tips, no bladders.',
     identification:
       'Small forked olive-brown fronds with distinctive pointed tips. No air bladders (unlike Fucus). Grows above barnacle zone.',
@@ -1499,7 +1499,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Sea asparagus', 'Glasswort', 'Marsh samphire'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-coast', 'ca-north-coast', 'ca-sacramento', 'florence'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-coast'],
     habitat: 'Salt marshes and tidal flats — jointed succulent stems in saline wetlands.',
     identification:
       'Jointed succulent green-to-red stems resembling tiny cactus without spines. No true leaves visible. Grows in salt marsh.',
@@ -1524,7 +1524,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['American sea rocket'],
     uses: 'edible',
     category: 'herb',
-    regions: ['or-coast', 'ca-north-coast', 'florence'],
+    regions: ['ca-north-coast', 'or-coast'],
     habitat: 'Sandy beaches and dunes above high tide line.',
     identification:
       'Fleshy succulent leaves on sand. Four-petaled white to lavender flowers. Peppery mustard-family taste. Pod splits into two corky segments.',
@@ -1549,7 +1549,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Blue elderflower'],
     uses: 'both',
     category: 'shrub',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Same as blue elderberry — stream banks, open woods, sunny edges. Flower harvest is separate focus from berry entry in main library.',
     identification:
       'Large flat cream-white flower clusters (corymbs) in late spring. Compound opposite leaves. Reddish stems. Must confirm blue elder, NOT red elder.',
@@ -1580,7 +1580,7 @@ export const EDIBLE_PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Wild rose hips'],
     uses: 'both',
     category: 'berry',
-    regions: ['or-coast', 'or-willamette', 'or-cascades', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Focus on fall hip harvest from stream banks and sunny openings — complements the main library Nootka rose entry with hip-specific foraging detail.',
     identification:
       'Large red-orange rose hips with persistent sepals at tip. Thorny stems. Hips round to pear-shaped, 1–2 cm. Seeds and hairs inside.',
