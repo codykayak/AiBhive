@@ -5,7 +5,7 @@ import {
   matchesHypnosisEnergyCategory,
 } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { HYPNOSIS_ENERGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
-import { HYPNOSIS_ENERGY_TAB_LABEL, ADJACENT_RESEARCH_HEADING } from '../../../lib/oregonPlantMedicine/branding';
+import { HYPNOSIS_ENERGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
@@ -39,12 +39,11 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
   return (
     <ResearchLibraryPanel
       library="hypnosis"
-      tabLabel={`${ADJACENT_RESEARCH_HEADING} · ${HYPNOSIS_ENERGY_TAB_LABEL}`}
+      tabLabel={HYPNOSIS_ENERGY_TAB_LABEL}
       introText={
         <p>
           Past life regression, Edgar Cayce, Dolores Cannon&apos;s QHHT, clinical hypnotherapy, Reiki, chakra work, and
-          healing frequencies — an <strong className="text-white">adjacent research library</strong> next to the core
-          Oregon Plant Medicine field guide.{' '}
+          healing frequencies — researched in depth with community contributions.{' '}
           <strong className="text-white">Not therapy or medical care.</strong>
         </p>
       }

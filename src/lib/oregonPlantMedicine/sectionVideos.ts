@@ -12,10 +12,22 @@ function videoPath(fileName: string): string {
   return encodeURI(`${OPM_DIR}/${fileName}`);
 }
 
+function videoSources(baseName: string): string[] {
+  return [videoPath(`${baseName}.webm`), videoPath(`${baseName}.mp4`)];
+}
+
 export const SECTION_VIDEOS = {
+  home: {
+    sources: videoSources('aibhive-holistic-health-wellness-community-and-library'),
+    title: 'Holistic health, wellness & community',
+    caption:
+      'Oregon Plant Medicine brings together Pacific Northwest foraging, holistic protocols, hypnosis & energy research, and animal wellness — one living library for the PNW.',
+    page: 'Home',
+  },
   edibles: {
     sources: [
-      videoPath('Edible and Medicinal Plant Guide Foraging Mushrooms and Herbs.mp4'),
+      ...videoSources('Edible and Medicinal Plant Guide Foraging Mushrooms and Herbs'),
+      '/plant-medicine-foraging-aibhive.webm',
       '/plant-medicine-foraging-aibhive.mp4',
     ],
     title: 'Edible & medicinal foraging',
@@ -24,16 +36,17 @@ export const SECTION_VIDEOS = {
     page: 'Edibles',
   },
   holistic: {
-    sources: [videoPath('animal-holistic-naturopathic-healing-and-remidies.mp4')],
+    sources: videoSources('animal-holistic-naturopathic-healing-and-remidies'),
     title: 'Holistic & naturopathic healing',
     caption:
-      'Animal wellness, gentle remedies, and naturopathic traditions — educational context for people and pets. Not medical or veterinary advice.',
+      'PNW materia medica, gentle remedies, and naturopathic traditions — educational context for people and pets. Not medical or veterinary advice.',
     page: 'Holistic protocols',
   },
   hypnosis: {
     sources: [
-      // Committed filename has a double dot before .mp4
+      videoPath('hipnotheropy-plrt-reiki healing energy work..webm'),
       videoPath('hipnotheropy-plrt-reiki healing energy work..mp4'),
+      videoPath('hipnotheropy-plrt-reiki healing energy work.webm'),
       videoPath('hipnotheropy-plrt-reiki healing energy work.mp4'),
     ],
     title: 'Hypnotherapy, PLRT & Reiki',
@@ -42,3 +55,5 @@ export const SECTION_VIDEOS = {
     page: 'Hypnosis & Energy',
   },
 } as const satisfies Record<string, SectionVideo>;
+
+export type SectionVideoKey = keyof typeof SECTION_VIDEOS;

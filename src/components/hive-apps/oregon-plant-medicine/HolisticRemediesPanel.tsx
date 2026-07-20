@@ -20,7 +20,7 @@ import {
   type HolisticTopic,
 } from '../../../lib/oregonPlantMedicine/holisticTypes';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
-import { HOLISTIC_TAB_LABEL, ADJACENT_RESEARCH_HEADING } from '../../../lib/oregonPlantMedicine/branding';
+import { HOLISTIC_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import GridSectionVideo from './GridSectionVideo';
@@ -204,12 +204,12 @@ export default function HolisticRemediesPanel({ onOpenPlant, onContribute }: Pro
         <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-100/90 leading-relaxed">
           <p className="text-xs font-black uppercase tracking-widest text-violet-300 mb-2 flex items-center gap-2">
             <HeartPulse className="w-4 h-4" />
-            {ADJACENT_RESEARCH_HEADING} · {HOLISTIC_TAB_LABEL}
+            {HOLISTIC_TAB_LABEL}
           </p>
           <p>
             PNW materia medica, detox overviews, and traditional protocols — Edgar Cayce–inspired remedies, gentle
-            cleansing, and safety notes. This is an <strong className="text-white">adjacent research library</strong>{' '}
-            alongside the core plant field guide. <strong className="text-white">Not medical advice.</strong>
+            cleansing, and safety notes. <strong className="text-white">Not medical advice.</strong> Cross-linked to our
+            plant library where relevant.
           </p>
         </div>
 

@@ -18,6 +18,7 @@ import {
   Sparkles,
   Sprout,
   Star,
+  Home,
   User as UserIcon,
   X,
   PlusCircle,
@@ -59,17 +60,15 @@ import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
 import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
+import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import {
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
-  ADJACENT_RESEARCH_DESCRIPTION,
-  ADJACENT_RESEARCH_HEADING,
   HYPNOSIS_ENERGY_PATH,
   HYPNOSIS_ENERGY_TAB_SHORT_LABEL,
   ANIMAL_HEALTH_PATH,
   ANIMAL_HEALTH_TAB_SHORT_LABEL,
-  LIVING_KNOWLEDGE_TAGLINE,
   STATE_CONTRIBUTION_USD,
 } from '../../lib/oregonPlantMedicine/branding';
 import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
@@ -85,7 +84,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'community' | 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
+type Tab = 'home' | 'community' | 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -345,7 +344,7 @@ function PlantDetail({
 }
 
 /** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
-export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'community' }: Props) {
+export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home' }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
@@ -627,101 +626,97 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'comm
         onContribute={() => setShowContribute(true)}
       />
 
-      <header className={`border-b border-emerald-500/20 ${expanded ? 'px-4 sm:px-8 py-4' : 'px-4 py-3'}`}>
-        {authError ? <p className="text-xs text-red-300 mb-3">{authError}</p> : null}
-
-        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 mb-4 text-sm text-emerald-100/90 leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-1">Living knowledge base</p>
-            <p>{LIVING_KNOWLEDGE_TAGLINE}</p>
-            {userLocation ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationModalStep('location');
-                  setShowLocationModal(true);
-                }}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
-              >
-                <MapPin className="w-3.5 h-3.5" />
-                {locationLabel(userLocation)}
-                {regionSupported && userLocation.stateId
-                  ? ` · ${subRegionLabel(userLocation.subRegion)}`
-                  : !regionSupported
-                    ? ' · not in library yet'
-                    : ''}
-              </button>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowContribute(true)}
-            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-sm transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Contribute
-          </button>
-        </div>
-
-        <nav className="space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            {(
-              [
-                ['community', 'Community', Users],
-                ['plants', 'Plant library', Sprout],
-                ['edibles', 'Edibles', Apple],
-              ] as const
-            ).map(([id, label, Icon]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => selectTab(id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                  tab === id
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                    : 'text-slate-400 hover:text-white border border-transparent'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 px-0.5">
-              {ADJACENT_RESEARCH_HEADING}
-            </p>
-            <div className="flex gap-2 flex-wrap">
+      <header className="border-b border-emerald-500/20">
+        <nav
+          className={`sticky top-0 z-30 bg-slate-950/92 backdrop-blur-xl border-b border-emerald-500/15 ${
+            expanded ? 'px-4 sm:px-8' : 'px-4'
+          }`}
+        >
+          <div className="max-w-6xl mx-auto flex items-center gap-3 py-2.5">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1 min-w-0">
               {(
                 [
+                  ['home', 'Home', Home],
+                  ['community', 'Community', Users],
+                  ['plants', 'Plants', Sprout],
+                  ['edibles', 'Edibles', Apple],
                   ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
                   ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
                   ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
                 ] as const
-              ).map(([id, label, Icon]) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => selectTab(id)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                    tab === id
-                      ? 'bg-violet-500/15 text-violet-200 border border-violet-500/35'
-                      : 'text-slate-500 hover:text-slate-300 border border-transparent'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </button>
-              ))}
+              ).map(([id, label, Icon]) => {
+                const active = tab === id;
+                const isResearch = id === 'holistic' || id === 'hypnosis' || id === 'animal-health';
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => selectTab(id)}
+                    className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
+                      active
+                        ? isResearch
+                          ? 'text-violet-200'
+                          : 'text-emerald-300'
+                        : 'text-slate-500 hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden">{id === 'animal-health' ? 'Animals' : label.split(' ')[0]}</span>
+                    {active ? (
+                      <span
+                        className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full ${
+                          isResearch ? 'bg-violet-400' : 'bg-emerald-400'
+                        }`}
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
-            <p className="text-[10px] text-slate-500 mt-1.5 px-0.5 max-w-2xl leading-snug">
-              {ADJACENT_RESEARCH_DESCRIPTION}
-            </p>
+            <button
+              type="button"
+              onClick={() => setShowContribute(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              Contribute
+            </button>
           </div>
         </nav>
+
+        <div className={`${expanded ? 'px-4 sm:px-8 py-3' : 'px-4 py-2'}`}>
+          {authError ? <p className="text-xs text-red-300 mb-2">{authError}</p> : null}
+          {tab !== 'home' && userLocation ? (
+            <button
+              type="button"
+              onClick={() => {
+                setLocationModalStep('location');
+                setShowLocationModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              {locationLabel(userLocation)}
+              {regionSupported && userLocation.stateId
+                ? ` · ${subRegionLabel(userLocation.subRegion)}`
+                : !regionSupported
+                  ? ' · not in library yet'
+                  : ''}
+            </button>
+          ) : null}
+        </div>
       </header>
 
+
       <div className={expanded ? 'px-4 sm:px-8 py-6 max-w-6xl mx-auto' : 'p-4 max-h-[70vh] overflow-y-auto'}>
+        {tab === 'home' ? (
+          <OregonPlantMedicineHome
+            onNavigate={(id) => selectTab(id)}
+            onOpenPlant={(plant) => setSelected(plant)}
+          />
+        ) : null}
+
         {tab === 'community' ? (
           <CommunityFeedPanel
             user={user}

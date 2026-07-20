@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import {
   fetchMyProfile,
@@ -20,11 +20,25 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const previewRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [cropFile, setCropFile] = useState<File | null>(null);
+
+  const clearPreview = () => {
+    if (previewRef.current) {
+      URL.revokeObjectURL(previewRef.current);
+      previewRef.current = null;
+    }
+    setAvatarPreview(null);
+  };
+
+  useEffect(() => {
+    return () => clearPreview();
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -49,10 +63,15 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
     setUploading(true);
     setError('');
     setCropFile(null);
+    clearPreview();
+    const blobUrl = URL.createObjectURL(file);
+    previewRef.current = blobUrl;
+    setAvatarPreview(blobUrl);
     try {
       const url = await uploadPlantImage(user, file, 'avatar');
       setAvatarUrl(url);
     } catch (e) {
+      clearPreview();
       setError(e instanceof Error ? e.message : 'Avatar upload failed');
     } finally {
       setUploading(false);
@@ -72,6 +91,8 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
       setSaving(false);
     }
   };
+
+  const displayAvatarUrl = avatarPreview || avatarUrl;
 
   return (
     <>
@@ -102,10 +123,11 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-500/40">
                     <UserAvatar
-                      url={avatarUrl}
+                      url={displayAvatarUrl}
                       name={displayName || 'Forager'}
                       className="w-full h-full rounded-full text-2xl"
                       iconClassName="w-8 h-8"
+                      preferBlob
                     />
                   </div>
                   <div className="space-y-1">
