@@ -54,6 +54,7 @@ const HiveAppEmbedPage = lazy(() => import('./pages/hive-apps/HiveAppEmbedPage')
 const HiveAppsBuildPage = lazy(() => import('./pages/hive-apps/HiveAppsBuildPage'));
 const OldWorldResearchRedirect = lazy(() => import('./pages/research-lab/OldWorldResearchRedirect'));
 const PlantsPage = lazy(() => import('./pages/plants/PlantsPage'));
+const HolisticRemediesPage = lazy(() => import('./pages/plants/HolisticRemediesPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
@@ -174,6 +175,7 @@ function AnimatedRoutes() {
             />
             <Route path="/old-world-research" element={<OldWorldResearchRedirect />} />
             <Route path="/old-world-research/*" element={<OldWorldResearchRedirect />} />
+            <Route path="/plants/holistic-remedies-and-protocols" element={<HolisticRemediesPage />} />
             <Route path="/plants" element={<PlantsPage />} />
             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />
             <Route

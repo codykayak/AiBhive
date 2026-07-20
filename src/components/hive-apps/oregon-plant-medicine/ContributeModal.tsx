@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { ExternalLink, Leaf, Loader2, MapPin, Sparkles, X } from 'lucide-react';
+import { ExternalLink, HeartPulse, Leaf, Loader2, MapPin, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   LIVING_KNOWLEDGE_APP_NAME,
   LIVING_KNOWLEDGE_SHORT_NAME,
   MIN_RECHARGE_USD,
   STATE_CONTRIBUTION_USD,
+  HOLISTIC_CONTRIBUTION_USD,
+  HOLISTIC_TAB_LABEL,
 } from '../../../lib/oregonPlantMedicine/branding';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import { builderUrlForState } from '../../../lib/oregonPlantMedicine/stateContribution';
+import { builderUrlForHolisticTopic } from '../../../lib/oregonPlantMedicine/holisticContribution';
 
 type Props = {
   onClose: () => void;
@@ -88,6 +91,17 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             </div>
           </div>
 
+          <div className="flex gap-3 rounded-xl border border-violet-500/25 bg-violet-500/10 p-4">
+            <HeartPulse className="w-5 h-5 text-violet-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-violet-200">Add holistic research for ${HOLISTIC_CONTRIBUTION_USD}</p>
+              <p className="mt-1 text-slate-300">
+                Publish a new topic to <strong className="text-white">{HOLISTIC_TAB_LABEL}</strong> — detox overviews,
+                Cayce traditions, protocols, and safety notes for everyone.
+              </p>
+            </div>
+          </div>
+
           <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
             <Sparkles className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
             <div>
@@ -111,6 +125,23 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             >
               {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {stateName ? `Add ${stateName}` : 'Add your state'} — ${STATE_CONTRIBUTION_USD}
+            </button>
+            <Link
+              to={builderUrlForHolisticTopic()}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/40 text-violet-200 font-bold px-4 py-3 text-sm hover:bg-violet-500/10"
+            >
+              Open Builder — holistic topic
+              <ExternalLink className="w-4 h-4 opacity-90" />
+            </Link>
+            <button
+              type="button"
+              disabled={checkoutBusy}
+              onClick={() => void buyCredits(HOLISTIC_CONTRIBUTION_USD)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 text-violet-100 font-bold px-4 py-3 text-sm hover:bg-violet-500/10 disabled:opacity-60"
+            >
+              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Add holistic research — ${HOLISTIC_CONTRIBUTION_USD}
             </button>
             <Link
               to={builderHref}

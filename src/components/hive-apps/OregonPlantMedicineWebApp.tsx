@@ -12,6 +12,7 @@ import {
   BookOpen,
   ExternalLink,
   FileText,
+  HeartPulse,
   LogOut,
   MapPin,
   Search,
@@ -45,7 +46,17 @@ import ProfileModal from './oregon-plant-medicine/ProfileModal';
 import PlantPhoto from './oregon-plant-medicine/PlantImage';
 import FullscreenImageViewer from './oregon-plant-medicine/FullscreenImageViewer';
 import UserAvatar from './oregon-plant-medicine/UserAvatar';
-import { LIVING_KNOWLEDGE_APP_NAME, LIVING_KNOWLEDGE_TAGLINE, STATE_CONTRIBUTION_USD } from '../../lib/oregonPlantMedicine/branding';
+import HolisticRemediesPanel from './oregon-plant-medicine/HolisticRemediesPanel';
+import HolisticDisclaimerModal from './oregon-plant-medicine/HolisticDisclaimerModal';
+import HolisticContributeModal from './oregon-plant-medicine/HolisticContributeModal';
+import {
+  HOLISTIC_REMEDIES_PATH,
+  HOLISTIC_TAB_SHORT_LABEL,
+  LIVING_KNOWLEDGE_APP_NAME,
+  LIVING_KNOWLEDGE_TAGLINE,
+  STATE_CONTRIBUTION_USD,
+} from '../../lib/oregonPlantMedicine/branding';
+import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
 import {
   isSupportedLocation,
   locationLabel,
@@ -54,9 +65,9 @@ import {
 } from '../../lib/oregonPlantMedicine/regions';
 import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicine/userLocation';
 
-type Props = { expanded?: boolean };
+type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'plants' | 'edibles' | 'resources' | 'guide' | 'pdfs' | 'mushrooms';
+type Tab = 'plants' | 'edibles' | 'mushrooms' | 'resources' | 'holistic' | 'guide';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -316,8 +327,8 @@ function PlantDetail({
 }
 
 /** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
-export default function OregonPlantMedicineWebApp({ expanded }: Props) {
-  const [tab, setTab] = useState<Tab>('plants');
+export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plants' }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
   const [useFilter, setUseFilter] = useState<UseFilter>('all');
@@ -329,12 +340,51 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showContribute, setShowContribute] = useState(false);
+  const [showHolisticContribute, setShowHolisticContribute] = useState(false);
+  const [holisticContributeTopic, setHolisticContributeTopic] = useState<string | undefined>();
+  const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
+  const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
+  const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
   const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
   const [authError, setAuthError] = useState('');
 
   const regionSupported = userLocation ? isSupportedLocation(userLocation) : true;
+
+  useEffect(() => {
+    setTab(initialTab);
+    if (initialTab === 'holistic' && !hasAcceptedHolisticDisclaimer()) {
+      setHolisticDisclaimerOpen(true);
+      setPendingHolisticTab(true);
+    }
+  }, [initialTab]);
+
+  const openHolisticTab = useCallback(() => {
+    if (!holisticAccepted) {
+      setPendingHolisticTab(true);
+      setHolisticDisclaimerOpen(true);
+      return;
+    }
+    setTab('holistic');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', HOLISTIC_REMEDIES_PATH);
+    }
+  }, [expanded, holisticAccepted]);
+
+  const selectTab = useCallback(
+    (id: Tab) => {
+      if (id === 'holistic') {
+        openHolisticTab();
+        return;
+      }
+      setTab(id);
+      if (expanded && typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/plants');
+      }
+    },
+    [expanded, openHolisticTab],
+  );
 
   useEffect(() => {
     if (!userLocation?.subRegion || userLocation.subRegion === 'all') return;
@@ -563,15 +613,15 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               ['plants', 'Plant library', Sprout],
               ['edibles', 'Edibles', Apple],
               ['mushrooms', 'Edible mushrooms', Layers],
-              ['pdfs', 'PDF guides', FileText],
               ['resources', 'Resources', BookOpen],
+              ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
               ['guide', 'Field guide', MapPin],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
               key={id}
               type="button"
-              onClick={() => setTab(id)}
+              onClick={() => selectTab(id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
                 tab === id
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
@@ -768,61 +818,14 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           </>
         ) : null}
 
-        {tab === 'pdfs' ? (
-          <div className="space-y-5">
-            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4 text-sm text-violet-100/90 leading-relaxed">
-              <p className="text-xs font-black uppercase tracking-widest text-violet-300 mb-2">What these PDFs cover</p>
-              <p>
-                Downloadable references for <strong className="text-white">Oregon law</strong>,{' '}
-                <strong className="text-white">wild mushroom identification</strong>, and{' '}
-                <strong className="text-white">PNW plant botany</strong>. They intentionally{' '}
-                <strong className="text-white">do not</strong> include psilocybin cultivation steps — educational
-                law and field-ID reference only.
-              </p>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              {OREGON_PLANT_PDF_GUIDES.map((g) => (
-                <article
-                  key={g.id}
-                  className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 flex flex-col hover:border-violet-500/40 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="p-2.5 rounded-lg bg-violet-500/15 shrink-0">
-                      <FileText className="w-6 h-6 text-violet-300" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-violet-400">{g.pages}</p>
-                      <h2 className="font-bold text-white mt-0.5 leading-snug">{g.title}</h2>
-                      <p className="text-xs text-slate-400 mt-1">{g.subtitle}</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-300 mt-4 leading-relaxed flex-1">{g.description}</p>
-                  <ul className="flex flex-wrap gap-1.5 mt-3">
-                    {g.topics.map((t) => (
-                      <li
-                        key={t}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400"
-                      >
-                        {t}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-amber-200/80 mt-3 border-t border-slate-800 pt-3">{g.scopeNote}</p>
-                  <a
-                    href={g.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white font-bold px-4 py-3 text-sm transition-colors"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Open PDF
-                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-                  </a>
-                </article>
-              ))}
-            </div>
-          </div>
+        {tab === 'holistic' && holisticAccepted ? (
+          <HolisticRemediesPanel
+            onOpenPlant={(plant) => setSelected(plant)}
+            onContribute={(topicTitle) => {
+              setHolisticContributeTopic(topicTitle);
+              setShowHolisticContribute(true);
+            }}
+          />
         ) : null}
 
         {tab === 'resources' ? (
@@ -1032,6 +1035,40 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           onClose={() => setShowContribute(false)}
           stateName={userLocation && !regionSupported ? userLocation.state : undefined}
           city={userLocation?.city}
+        />
+      ) : null}
+      {showHolisticContribute ? (
+        <HolisticContributeModal
+          topicTitle={holisticContributeTopic}
+          onClose={() => {
+            setShowHolisticContribute(false);
+            setHolisticContributeTopic(undefined);
+          }}
+        />
+      ) : null}
+      {holisticDisclaimerOpen ? (
+        <HolisticDisclaimerModal
+          onCancel={() => {
+            setHolisticDisclaimerOpen(false);
+            setPendingHolisticTab(false);
+            if (tab === 'holistic' && !holisticAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            setHolisticAccepted(true);
+            setHolisticDisclaimerOpen(false);
+            if (pendingHolisticTab) {
+              setPendingHolisticTab(false);
+              setTab('holistic');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', HOLISTIC_REMEDIES_PATH);
+              }
+            }
+          }}
         />
       ) : null}
       {showLocationModal ? (
