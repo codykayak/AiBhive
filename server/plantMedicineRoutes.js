@@ -4,6 +4,7 @@ import { verifyHiveAuth } from './hiveAuth.js';
 import { runPlantMedicineChat, resolvePlantHiveUserId } from './plantMedicineChat.js';
 import {
   createPost,
+  createFeedPost,
   createTopicPost,
   deletePost,
   getProfile,
@@ -98,6 +99,34 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/feed GET]', err);
       return res.status(500).json({ error: err.message || 'Failed to load feed' });
+    }
+  });
+
+  app.post('/api/plant-medicine/feed/posts', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const { title, text, imageUrl, plantId } = req.body || {};
+      if (plantId && !PLANT_ID_RE.test(String(plantId))) {
+        return res.status(400).json({ error: 'Invalid plant id' });
+      }
+      const post = await createFeedPost(
+        db,
+        FieldValue,
+        {
+          author: user,
+          title,
+          text,
+          imageUrl,
+          plantId: plantId || null,
+        },
+        gcsBucket,
+      );
+      return res.status(201).json({ post });
+    } catch (err) {
+      console.error('[plant-medicine/feed POST]', err);
+      const status = err.message === 'Title is required.' ? 400 : 500;
+      return res.status(status).json({ error: err.message || 'Failed to create post' });
     }
   });
 

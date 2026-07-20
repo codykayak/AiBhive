@@ -12,6 +12,8 @@ import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelReso
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FEATURE_ID = 'plant_medicine_chat';
 const PLANT_CHAT_RAW_COST = 0.006;
+/** Community field guide chat is free — only builder/state map additions use credits. */
+const PLANT_CHAT_FREE = true;
 
 let ragIndex = null;
 
@@ -102,18 +104,20 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
 
   await ensureHiveUser(db, hiveUserId);
 
-  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, PLANT_CHAT_RAW_COST * 1.2, FEATURE_ID, {
-    email: opts.email,
-  });
-  if (!budget.ok) {
-    return {
-      ok: false,
-      needPayment: true,
-      code: 'credits_depleted',
-      error: 'Hive credits depleted — add credits to continue.',
-      amountUsd: budget.amountUsd ?? 0.02,
-      budget: budget.budget,
-    };
+  if (!PLANT_CHAT_FREE) {
+    const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, PLANT_CHAT_RAW_COST * 1.2, FEATURE_ID, {
+      email: opts.email,
+    });
+    if (!budget.ok) {
+      return {
+        ok: false,
+        needPayment: true,
+        code: 'credits_depleted',
+        error: 'Hive credits depleted — add credits to continue.',
+        amountUsd: budget.amountUsd ?? 0.02,
+        budget: budget.budget,
+      };
+    }
   }
 
   await resolveLatestGrokModels();
@@ -145,31 +149,37 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
 
   if (!reply) return { ok: false, error: 'No response from Hive AI.' };
 
-  const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
-    rawCostUsd: PLANT_CHAT_RAW_COST,
-    feature: FEATURE_ID,
-    summary: `Plant guide: ${plant.commonName}`,
-    email: opts.email,
-  });
+  let chargedUsd = 0;
+  let account = await getHiveAccount(db, hiveUserId);
 
-  if (!usage.ok) {
-    return {
-      ok: false,
-      needPayment: !!usage.needUpgrade,
-      code: usage.needUpgrade ? 'credits_depleted' : 'billing_failed',
-      error: usage.needUpgrade ? 'Hive credits depleted' : usage.error || 'Billing failed',
-      budget: usage.budget,
-    };
+  if (!PLANT_CHAT_FREE) {
+    const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
+      rawCostUsd: PLANT_CHAT_RAW_COST,
+      feature: FEATURE_ID,
+      summary: `Plant guide: ${plant.commonName}`,
+      email: opts.email,
+    });
+
+    if (!usage.ok) {
+      return {
+        ok: false,
+        needPayment: !!usage.needUpgrade,
+        code: usage.needUpgrade ? 'credits_depleted' : 'billing_failed',
+        error: usage.needUpgrade ? 'Hive credits depleted' : usage.error || 'Billing failed',
+        budget: usage.budget,
+      };
+    }
+
+    chargedUsd = usage.chargedUsd ?? PLANT_CHAT_RAW_COST;
+    account = await getHiveAccount(db, hiveUserId);
   }
 
-  const account = await getHiveAccount(db, hiveUserId);
   return {
     ok: true,
     reply,
     source: 'grok',
     model,
-    chargedUsd: usage.chargedUsd,
-    budget: usage.budget,
+    chargedUsd,
     account: {
       creditBalanceUsd: account.creditBalanceUsd,
       usage: account.usage,

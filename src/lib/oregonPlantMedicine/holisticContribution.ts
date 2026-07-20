@@ -1,4 +1,4 @@
-import { BUILDER_PATH, HOLISTIC_CONTRIBUTION_USD } from './branding';
+import { BUILDER_PATH } from './branding';
 
 /** Builder prompt for community holistic research contributions. */
 export function buildAddHolisticTopicPrompt(topicTitle?: string): string {
@@ -25,7 +25,7 @@ export function buildAddHolisticTopicPrompt(topicTitle?: string): string {
     'Do NOT provide dangerous dosing, chelation protocols, or parasite pharmaceutical instructions.',
     'Frame everything as educational research. Include strong safety warnings.',
     '',
-    `Contributor fee: $${HOLISTIC_CONTRIBUTION_USD} Hive credits to publish for the whole community.`,
+    `Contributor fee: free — open AiBhive Builder to publish for the whole community.`,
   ].join('\n');
 }
 
@@ -35,7 +35,7 @@ export function builderUrlForHolisticTopic(topicTitle?: string): string {
 
 export function holisticContributionSummary(topicTitle?: string): string {
   if (topicTitle) {
-    return `Add "${topicTitle}" research for $${HOLISTIC_CONTRIBUTION_USD} in Hive credits.`;
+    return `Add "${topicTitle}" research free via AiBhive Builder.`;
   }
-  return `Add holistic research to the living knowledge base for $${HOLISTIC_CONTRIBUTION_USD} in Hive credits.`;
+  return 'Add holistic research to the living knowledge base free via AiBhive Builder.';
 }

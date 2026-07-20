@@ -1,6 +1,7 @@
-import { MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
+import { AlertTriangle, MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadges';
 import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import PlantPhoto from './PlantImage';
@@ -18,6 +19,11 @@ function isSeed(post: CommunityPostView): post is SeedCommunityPost {
   return 'isSeed' in post && post.isSeed === true;
 }
 
+function postTitle(post: CommunityPostView): string | null {
+  if ('title' in post && post.title) return post.title;
+  return null;
+}
+
 function timeAgo(iso: string | null): string {
   if (!iso) return '';
   const diff = Date.now() - new Date(iso).getTime();
@@ -33,6 +39,7 @@ export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props
   const plant = post.plantId ? PLANT_LIBRARY.find((p) => p.id === post.plantId) : undefined;
   const plantLabel = seed ? post.plantCommonName : plant?.commonName;
   const location = seed ? post.locationLabel : null;
+  const title = postTitle(post);
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -61,8 +68,10 @@ export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props
               ) : null}
               <span className="text-[10px] text-slate-500">{timeAgo(post.createdAt)}</span>
             </div>
-            {plantLabel ? (
-              <p className="text-[10px] font-bold uppercase tracking-wider text-sky-400/90 mt-1">{plantLabel}</p>
+            {title ? <h3 className="text-lg font-black text-white mt-2 leading-snug">{title}</h3> : null}
+            {plant && plantLabel ? <PlantCategoryBadges plant={plant} className="mt-2" /> : null}
+            {plantLabel && !title ? (
+              <p className="text-[10px] font-bold uppercase tracking-wider text-sky-400/90 mt-2">{plantLabel}</p>
             ) : null}
           </div>
         </div>
@@ -72,13 +81,28 @@ export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props
             src={post.imageUrl}
             plantId={post.plantId ?? undefined}
             scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
-            alt={plantLabel ?? 'Community foraging photo'}
+            alt={title ?? plantLabel ?? 'Community foraging photo'}
             className="w-full max-h-[min(52vh,420px)] object-cover"
           />
         ) : null}
 
         <div className="p-4 space-y-4">
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{post.text}</p>
+          {post.text ? (
+            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{post.text}</p>
+          ) : null}
+
+          {plant?.lookalikes && plant.lookalikes.length > 0 ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-amber-300 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> Toxic look-alikes
+              </p>
+              <ul className="space-y-2 text-sm text-amber-100/90 list-disc list-inside leading-relaxed">
+                {plant.lookalikes.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 px-2.5 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10">

@@ -31,14 +31,12 @@ export const PLANTS_PUBLIC_PATH = '/plants';
 /** Flat rate to open a new state in the living knowledge base. */
 export const STATE_CONTRIBUTION_USD = 3;
 
-/** Flat rate to publish holistic remedies & protocols research for the community. */
-export const HOLISTIC_CONTRIBUTION_USD = 3;
+/** Holistic, hypnosis, and animal research topics are free via Builder for now. */
+export const HOLISTIC_CONTRIBUTION_USD = 0;
 
-/** Flat rate to publish hypnosis & energy research for the community. */
-export const HYPNOSIS_ENERGY_CONTRIBUTION_USD = 3;
+export const HYPNOSIS_ENERGY_CONTRIBUTION_USD = 0;
 
-/** Flat rate to publish animal health research for the community. */
-export const ANIMAL_HEALTH_CONTRIBUTION_USD = 3;
+export const ANIMAL_HEALTH_CONTRIBUTION_USD = 0;
 
 /** Minimum Hive credit top-up (recharge from $3). */
 export const MIN_RECHARGE_USD = 3;
