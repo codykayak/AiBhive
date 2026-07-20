@@ -467,7 +467,6 @@ function draw_menu_border() {
 }
 
 function draw_splash_screen() {
-  int sx;
   cls_oled(0);
 
   // Outer frame
@@ -496,9 +495,16 @@ function draw_splash_screen() {
   line_oled(97, 28, 85, 16, 1, 1);
 
   // Decorative scan ticks along the divider
-  for(sx = 10; sx <= 118; sx += 12) {
-    line_oled(sx, 22, sx, 24, 1, 1);
-  }
+  line_oled(10, 22, 10, 24, 1, 1);
+  line_oled(22, 22, 22, 24, 1, 1);
+  line_oled(34, 22, 34, 24, 1, 1);
+  line_oled(46, 22, 46, 24, 1, 1);
+  line_oled(58, 22, 58, 24, 1, 1);
+  line_oled(70, 22, 70, 24, 1, 1);
+  line_oled(82, 22, 82, 24, 1, 1);
+  line_oled(94, 22, 94, 24, 1, 1);
+  line_oled(106, 22, 106, 24, 1, 1);
+  line_oled(118, 22, 118, 24, 1, 1);
 
   print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 30, OLED_FONT_MEDIUM, 1, TITLE[0]);
   print(center_x(sizeof(SPLASH_L1) - 1, OLED_FONT_SMALL_WIDTH), 46, OLED_FONT_SMALL, 1, SPLASH_L1[0]);
