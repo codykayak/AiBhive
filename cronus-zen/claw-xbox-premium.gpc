@@ -3,12 +3,12 @@
   CLAW XBOX PREMIUM — Cronus Zen GPC Script for Xbox (Turtle Beach / Claw)
 ================================================================================
   Platform : Xbox Series X|S / Xbox One
-  Layout   : Default Xbox — no button remapping (LB/RB pass through untouched)
+  Layout   : Claw — LB aims (ADS), LT opens mod menu with START
   Game     : Call of Duty (MW / Warzone / BO6 / BO7)
 
   ── IN-GAME SETTINGS ────────────────────────────────────────────────────────
-  • Set your button layout in-game to match however you play (Tactical, Default, etc.)
-  • This script does NOT remap bumpers or triggers — your layout stays native
+  • Match your in-game layout (Tactical Flipped / Bumper Jumper, etc.)
+  • LB must be ADS in-game — this script detects aim on LB, not LT
 
   ── MOD MENU (Zen OLED) — use anytime Cronus is plugged in ─────────────────
   Open Menu     : Hold LT (left trigger) + press START
@@ -29,7 +29,7 @@
 
   ── L3 (LEFT STICK CLICK) ───────────────────────────────────────────────────
   Physical L3 is blocked — a faulty stick cannot randomly toggle sprint/breath.
-  Hold Breath: while ADS (LT), script holds L3 for you (like stick click).
+  Hold Breath: while ADS (LB), script holds L3 for you (like stick click).
   Sprint: Auto Run simulates L3 when pushing the stick forward (hip-fire).
 
   ── WEAPON PROFILES ─────────────────────────────────────────────────────────
@@ -43,9 +43,9 @@
 ================================================================================
 */
 
-// ── BUTTON DEFINES (standard Xbox — no remapping) ───────────────────────────
+// ── BUTTON DEFINES (claw layout — LB ADS) ───────────────────────────────────
 define FIRE_BTN     = XB1_RT;
-define ADS_BTN      = XB1_LT;
+define ADS_BTN      = XB1_LB;
 define MENU_HOLD    = XB1_LT;
 define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
