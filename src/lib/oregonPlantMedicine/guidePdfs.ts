@@ -21,7 +21,6 @@ export const PLANT_PDF_GUIDE_IDS: Record<string, string[]> = {
     'amanita-muscaria',
     'amanita-pantherina',
   ],
-  'oregon-entheogen-botany-dmt-plants': [],
 };
 
 export function getPdfGuidesForPlant(plantId: string): OregonPlantPdfGuide[] {
@@ -40,17 +39,5 @@ export const OREGON_PLANT_PDF_GUIDES: OregonPlantPdfGuide[] = [
     topics: ['Oregon law', 'Wild PNW species', 'Galerina lookalikes', 'Spore prints', 'Harm reduction'],
     scopeNote:
       'Does not include mushroom cultivation instructions — home grows remain federally illegal and are outside Oregon’s licensed service model.',
-  },
-  {
-    id: 'oregon-entheogen-botany-dmt-plants',
-    title: 'PNW Entheogen Botany — DMT-Related Plants',
-    subtitle: 'Botanical & legal reference only · No extraction chemistry',
-    description:
-      'Covers reed canary grass and other plants discussed in entheogen literature as they relate to western Oregon wetlands — identification, variable alkaloid chemistry, legal status, and why extraction guides are excluded.',
-    pdfUrl: '/oregon-plant-medicine/guides/oregon-entheogen-botany-dmt-plants.pdf',
-    pages: '~5 pages',
-    topics: ['Phalaris arundinacea', 'Legal status', 'Ecology', 'Poison control'],
-    scopeNote:
-      'Does not include DMT extraction, concentration, or solvent procedures — manufacturing Schedule I substances is illegal and hazardous.',
   },
 ];
