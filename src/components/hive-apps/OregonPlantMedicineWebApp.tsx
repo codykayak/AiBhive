@@ -15,6 +15,7 @@ import {
   LogOut,
   MapPin,
   Search,
+  Sparkles,
   Sprout,
   Star,
   User as UserIcon,
@@ -35,6 +36,8 @@ import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedi
 import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
 import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
+import PlantAskAiPanel from './oregon-plant-medicine/PlantAskAiPanel';
+import RegionalOfflinePackButton from './oregon-plant-medicine/RegionalOfflinePackButton';
 import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicineHero';
 import ContributeModal from './oregon-plant-medicine/ContributeModal';
 import LocationOnboardingModal from './oregon-plant-medicine/LocationOnboardingModal';
@@ -155,11 +158,13 @@ function PlantDetail({
   onClose,
   user,
   onSignIn,
+  onAskAi,
 }: {
   plant: PlantEntry;
   onClose: () => void;
   user: User | null;
   onSignIn: () => void;
+  onAskAi: () => void;
 }) {
   const images = allImages(plant);
 
@@ -198,6 +203,15 @@ function PlantDetail({
               </span>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={onAskAi}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Ask AI AiBhive
+          </button>
 
           <DetailSection title="Habitat" text={plant.habitat} />
           <DetailSection title="Identification" text={plant.identification} />
@@ -288,6 +302,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const [selected, setSelected] = useState<PlantEntry | null>(null);
+  const [askAiPlant, setAskAiPlant] = useState<PlantEntry | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -651,6 +666,10 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               </p>
             ) : null}
 
+            <div className="mb-4">
+              <RegionalOfflinePackButton region={region} />
+            </div>
+
             <p className="text-xs text-slate-500 mb-4">
               {plantsToShow.length}{' '}
               {tab === 'edibles' ? 'edible wild foods' : tab === 'mushrooms' ? 'edible mushrooms' : 'plants in library'}
@@ -700,10 +719,21 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                       {plant.scientificName}
                     </p>
                     <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${useBadgeClass(plant.uses)}`}>
                         {useLabel(plant.uses)}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAskAiPlant(plant);
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 hover:text-emerald-200"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        Ask AI AiBhive
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -953,6 +983,15 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           onClose={() => setSelected(null)}
           user={user}
           onSignIn={() => void handleSignIn()}
+          onAskAi={() => setAskAiPlant(selected)}
+        />
+      ) : null}
+      {askAiPlant ? (
+        <PlantAskAiPanel
+          plant={askAiPlant}
+          user={user}
+          onSignIn={() => void handleSignIn()}
+          onClose={() => setAskAiPlant(null)}
         />
       ) : null}
       {showProfile && user ? (

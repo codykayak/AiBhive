@@ -105,3 +105,66 @@ export function deletePlantPost(user: User, postId: string): Promise<void> {
     if (!res.ok) throw new Error('Delete failed');
   });
 }
+
+export type PlantChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+export class PlantCreditsError extends Error {
+  amountUsd?: number;
+
+  constructor(message: string, amountUsd?: number) {
+    super(message);
+    this.name = 'PlantCreditsError';
+    this.amountUsd = amountUsd;
+  }
+}
+
+export async function sendPlantChat(
+  user: User,
+  opts: {
+    plantId: string;
+    message: string;
+    history?: PlantChatMessage[];
+  },
+): Promise<{
+  reply: string;
+  chargedUsd?: number;
+  creditBalanceUsd?: number;
+}> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/chat', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      plantId: opts.plantId,
+      message: opts.message,
+      history: opts.history ?? [],
+    }),
+  });
+  const data = (await res.json()) as {
+    ok?: boolean;
+    reply?: string;
+    error?: string;
+    needPayment?: boolean;
+    amountUsd?: number;
+    chargedUsd?: number;
+    account?: { creditBalanceUsd?: number };
+  };
+
+  if (res.status === 401) throw new Error(data.error || 'Sign in to use Ask AI');
+  if (res.status === 402 || data.needPayment) {
+    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+  }
+  if (!res.ok || !data.reply) throw new Error(data.error || 'Ask AI request failed');
+
+  return {
+    reply: data.reply,
+    chargedUsd: data.chargedUsd,
+    creditBalanceUsd: data.account?.creditBalanceUsd,
+  };
+}
