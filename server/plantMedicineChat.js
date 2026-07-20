@@ -1,0 +1,178 @@
+/**
+ * Plant medicine AI chat — Grok + Living Knowledge RAG context, billed via Hive credits.
+ */
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import * as hiveUsage from './hiveUsage.js';
+import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
+import { grokChatMessages } from './socialPosts/grokProvider.js';
+import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FEATURE_ID = 'plant_medicine_chat';
+const PLANT_CHAT_RAW_COST = 0.006;
+
+let ragIndex = null;
+
+function loadRagIndex() {
+  if (!ragIndex) {
+    const p = path.join(__dirname, 'plantMedicineRagIndex.json');
+    ragIndex = JSON.parse(fs.readFileSync(p, 'utf8'));
+  }
+  return ragIndex;
+}
+
+export function resolvePlantHiveUserId(firebaseUid) {
+  return `web_${firebaseUid}`;
+}
+
+export function getPlantRagEntry(plantId) {
+  return loadRagIndex().plants?.[plantId] ?? null;
+}
+
+function formatPlantBlock(plant) {
+  const lines = [
+    `### ${plant.commonName} (${plant.scientificName})`,
+    `- ID: ${plant.id}`,
+    `- Category: ${plant.category} · Uses: ${plant.uses}`,
+    plant.regions?.length ? `- Regions: ${plant.regions.join(', ')}` : '',
+    `- Habitat: ${plant.habitat}`,
+    `- Identification: ${plant.identification}`,
+    plant.lookalikes?.length ? `- Toxic look-alikes: ${plant.lookalikes.join(' | ')}` : '',
+    plant.edibleNotes ? `- Edible notes: ${plant.edibleNotes}` : '',
+    plant.medicinalNotes ? `- Medicinal notes: ${plant.medicinalNotes}` : '',
+    plant.holisticNotes ? `- Holistic notes: ${plant.holisticNotes}` : '',
+    plant.preparation ? `- Preparation: ${plant.preparation}` : '',
+    `- Harvest season: ${plant.harvestSeason}`,
+    plant.safetyWarnings?.length ? `- Safety warnings: ${plant.safetyWarnings.join(' | ')}` : '',
+  ];
+  return lines.filter(Boolean).join('\n');
+}
+
+export function buildPlantRagContext(plantId) {
+  const plant = getPlantRagEntry(plantId);
+  if (!plant) return null;
+
+  const related = Object.values(loadRagIndex().plants || {})
+    .filter(
+      (p) =>
+        p.id !== plantId &&
+        p.category === plant.category &&
+        p.regions?.some((r) => plant.regions?.includes(r)),
+    )
+    .slice(0, 3);
+
+  const relatedBlocks = related.map((p) => formatPlantBlock(p)).join('\n\n');
+
+  return [
+    formatPlantBlock(plant),
+    relatedBlocks ? `\n--- Related species in the same region/category ---\n${relatedBlocks}` : '',
+    '\n--- General safety ---',
+    'Never eat a wild plant or mushroom without 100% identification.',
+    'Oregon Poison Center / California Poison Control: 1-800-222-1222.',
+    'This library is educational — not medical advice.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+const SYSTEM_PROMPT = `You are AiBhive Plant Guide — the Living Knowledge assistant for wild plants and mushrooms in Oregon and Northern California.
+
+RULES:
+- Stay STRICTLY on topic: foraging ID, habitat, look-alikes, preparation, medicinal/edible uses, harvest timing, and safety for the species in context.
+- Use ONLY the plant library context provided below. If the answer is not in context, say you are not sure and recommend expert confirmation or a field guide.
+- ALWAYS mention toxic look-alikes when discussing edibility.
+- Never encourage eating anything without 100% ID. Never give psilocybin cultivation steps.
+- Be warm, concise, and practical — like an experienced PNW forager.
+- If asked about unrelated topics, politely redirect to plants/mushrooms/foraging.
+- Prefer bullet points for ID features. Keep answers under 300 words unless the user asks for detail.`;
+
+export async function runPlantMedicineChat(db, hiveUserId, opts) {
+  const message = String(opts.message || '').trim().slice(0, 2000);
+  const plantId = String(opts.plantId || '').trim();
+  if (!message) return { ok: false, error: 'Message is required.' };
+  if (!plantId) return { ok: false, error: 'Plant id is required.' };
+
+  const plantContext = buildPlantRagContext(plantId);
+  if (!plantContext) return { ok: false, error: 'Plant not found in library.' };
+
+  const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+  if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
+
+  await ensureHiveUser(db, hiveUserId);
+
+  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, PLANT_CHAT_RAW_COST * 1.2, FEATURE_ID, {
+    email: opts.email,
+  });
+  if (!budget.ok) {
+    return {
+      ok: false,
+      needPayment: true,
+      code: 'credits_depleted',
+      error: 'Hive credits depleted — add credits to continue.',
+      amountUsd: budget.amountUsd ?? 0.02,
+      budget: budget.budget,
+    };
+  }
+
+  await resolveLatestGrokModels();
+  const model = process.env.PLANT_MEDICINE_CHAT_MODEL || getCachedGrokChatModel();
+
+  const history = (opts.history || [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-8)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+
+  const plant = getPlantRagEntry(plantId);
+  const system = [
+    SYSTEM_PROMPT,
+    `\nCurrent species focus: ${plant.commonName} (${plant.scientificName})`,
+    '\n--- PLANT LIBRARY CONTEXT (authoritative) ---\n',
+    plantContext.slice(0, 12000),
+  ].join('');
+
+  const messages = [
+    { role: 'system', content: system },
+    ...history,
+    { role: 'user', content: message },
+  ];
+
+  const reply = await grokChatMessages(apiKey, model, messages, {
+    temperature: 0.25,
+    max_tokens: 1200,
+  });
+
+  if (!reply) return { ok: false, error: 'No response from Hive AI.' };
+
+  const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
+    rawCostUsd: PLANT_CHAT_RAW_COST,
+    feature: FEATURE_ID,
+    summary: `Plant guide: ${plant.commonName}`,
+    email: opts.email,
+  });
+
+  if (!usage.ok) {
+    return {
+      ok: false,
+      needPayment: !!usage.needUpgrade,
+      code: usage.needUpgrade ? 'credits_depleted' : 'billing_failed',
+      error: usage.needUpgrade ? 'Hive credits depleted' : usage.error || 'Billing failed',
+      budget: usage.budget,
+    };
+  }
+
+  const account = await getHiveAccount(db, hiveUserId);
+  return {
+    ok: true,
+    reply,
+    source: 'grok',
+    model,
+    chargedUsd: usage.chargedUsd,
+    budget: usage.budget,
+    account: {
+      creditBalanceUsd: account.creditBalanceUsd,
+      usage: account.usage,
+    },
+  };
+}

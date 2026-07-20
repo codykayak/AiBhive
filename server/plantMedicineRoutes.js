@@ -1,5 +1,7 @@
+import express from 'express';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyHiveAuth } from './hiveAuth.js';
+import { runPlantMedicineChat, resolvePlantHiveUserId } from './plantMedicineChat.js';
 import {
   createPost,
   deletePost,
@@ -177,6 +179,32 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/moderate]', err);
       return res.status(400).json({ error: err.message || 'Moderation failed' });
+    }
+  });
+
+  app.post('/api/plant-medicine/chat', express.json({ limit: '512kb' }), async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const { plantId, message, history = [] } = req.body || {};
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      const result = await runPlantMedicineChat(db, hiveUserId, {
+        plantId,
+        message,
+        history,
+        email: user.email,
+      });
+
+      if (!result.ok) {
+        const status = result.needPayment ? 402 : result.error === 'Plant not found in library.' ? 404 : 400;
+        return res.status(status).json(result);
+      }
+
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/chat]', err);
+      return res.status(500).json({ error: err.message || 'Chat failed' });
     }
   });
 }
