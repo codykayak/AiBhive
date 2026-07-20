@@ -18,5 +18,17 @@ export const PLANTS_PUBLIC_PATH = '/plants';
 /** Flat rate to open a new state in the living knowledge base. */
 export const STATE_CONTRIBUTION_USD = 3;
 
+/** Flat rate to publish holistic remedies & protocols research for the community. */
+export const HOLISTIC_CONTRIBUTION_USD = 3;
+
 /** Minimum Hive credit top-up (recharge from $3). */
 export const MIN_RECHARGE_USD = 3;
+
+/** Canonical URL segment for the holistic remedies tab (full path below). */
+export const HOLISTIC_REMEDIES_SLUG = 'holistic-remedies-and-protocols';
+
+export const HOLISTIC_REMEDIES_PATH = `${PLANTS_PUBLIC_PATH}/${HOLISTIC_REMEDIES_SLUG}`;
+
+export const HOLISTIC_TAB_LABEL = 'Holistic remedies & protocols';
+
+export const HOLISTIC_TAB_SHORT_LABEL = 'Holistic protocols';
