@@ -23,6 +23,7 @@ type Props = {
   user: User | null;
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
+  onOpenPost: (post: FeedPost) => void;
 };
 
 function isSeed(post: FeedPost): post is SeedCommunityPost {
@@ -49,12 +50,14 @@ function FeedCard({
   user,
   onSignIn,
   onOpenPlant,
+  onOpenPost,
   onUpvote,
 }: {
   post: FeedPost;
   user: User | null;
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
+  onOpenPost: (post: FeedPost) => void;
   onUpvote: (id: string) => void;
 }) {
   const plant = plantForPost(post);
@@ -96,7 +99,7 @@ function FeedCard({
       </div>
 
       {post.imageUrl ? (
-        <button type="button" onClick={() => plant && onOpenPlant(plant)} className="block w-full text-left">
+        <button type="button" onClick={() => onOpenPost(post)} className="block w-full text-left">
           <PlantPhoto
             src={post.imageUrl}
             plantId={post.plantId ?? undefined}
@@ -132,7 +135,7 @@ function FeedCard({
   );
 }
 
-export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant }: Props) {
+export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpenPost }: Props) {
   const [livePosts, setLivePosts] = useState<PlantMedicinePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -224,6 +227,7 @@ export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant }: Prop
             user={user}
             onSignIn={onSignIn}
             onOpenPlant={onOpenPlant}
+            onOpenPost={onOpenPost}
             onUpvote={onUpvote}
           />
         ))}

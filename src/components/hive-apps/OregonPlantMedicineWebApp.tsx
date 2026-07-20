@@ -60,9 +60,11 @@ import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
 import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
+import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
 import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import {
+  EARTH_PLANT_MEDICINE_NAME,
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
   HYPNOSIS_ENERGY_PATH,
@@ -352,6 +354,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const [selected, setSelected] = useState<PlantEntry | null>(null);
+  const [selectedCommunityPost, setSelectedCommunityPost] = useState<CommunityPostView | null>(null);
   const [askAiPlant, setAskAiPlant] = useState<PlantEntry | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
@@ -714,6 +717,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           <OregonPlantMedicineHome
             onNavigate={(id) => selectTab(id)}
             onOpenPlant={(plant) => setSelected(plant)}
+            onOpenPost={(post) => setSelectedCommunityPost(post)}
           />
         ) : null}
 
@@ -722,6 +726,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             user={user}
             onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
+            onOpenPost={(post) => setSelectedCommunityPost(post)}
           />
         ) : null}
 
@@ -745,7 +750,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   Primary field guide
                 </p>
                 <p>
-                  Oregon Plant Medicine centers on this plant &amp; mushroom library — foraging IDs, regions, look-alikes,
+                  {EARTH_PLANT_MEDICINE_NAME} centers on this plant &amp; mushroom library — foraging IDs, regions, look-alikes,
                   and harvest notes. Holistic protocols, hypnosis, and animal health live under adjacent research libraries
                   in the nav.
                 </p>
@@ -992,6 +997,13 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           user={user}
           onSignIn={() => void handleSignIn()}
           onClose={() => setAskAiPlant(null)}
+        />
+      ) : null}
+      {selectedCommunityPost ? (
+        <CommunityPostModal
+          post={selectedCommunityPost}
+          onClose={() => setSelectedCommunityPost(null)}
+          onOpenPlant={(plant) => setSelected(plant)}
         />
       ) : null}
       {showProfile && user ? (

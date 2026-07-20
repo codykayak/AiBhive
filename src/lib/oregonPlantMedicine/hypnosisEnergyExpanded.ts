@@ -7,15 +7,15 @@ type ExpandedFields = {
 };
 
 const W = {
-  meditation: commonsImage('Meditation (3390876077).jpg'),
+  meditation: commonsImage('Meditation sitting pose siddhasana yoga Gloria.jpg'),
   bowls: commonsImage('Singing bowls.jpg'),
-  reiki: commonsImage('Reiki Treatment.jpg'),
-  hypnosis: commonsImage('Hypnotic seance (1887) by Richard Bergh.jpg'),
-  yoga: commonsImage('Yoga at sunset.jpg'),
+  reiki: commonsImage('Reiki-Hanko.JPG'),
+  hypnosis: commonsImage('Hypnotisk seans av Richard Bergh 1887.jpg'),
+  yoga: commonsImage('African Yoga styles healthy and wellness practice at sunset.jpg'),
   tuning: commonsImage('Tuning fork.jpg'),
-  sound: commonsImage('Gong - Burmese.jpg'),
-  library: commonsImage('Edgar Cayce.jpg'),
-  legal: commonsImage('Scales of justice.svg'),
+  sound: commonsImage('Singing bowl samye ling.jpg'),
+  library: commonsImage('Cayce 1910.jpg'),
+  legal: commonsImage('Balance - Scales of Justice (PSF).png'),
 };
 
 export const HYPNOSIS_TOPIC_EXPANDED: Record<string, ExpandedFields> = {

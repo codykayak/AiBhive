@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import {
+  COMMUNITY_NAV_BRAND,
+  EARTH_PLANT_MEDICINE_NAME,
   LIVING_KNOWLEDGE_APP_NAME,
   LIVING_KNOWLEDGE_HERO_LEAD,
-  LIVING_KNOWLEDGE_SHORT_NAME,
 } from '../../../lib/oregonPlantMedicine/branding';
 import { useAutoplayVideo } from './useAutoplayVideo';
 
@@ -55,7 +56,7 @@ export default function OregonPlantMedicineHero({ compact = false, actions, onCo
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-emerald-300/90">
-              {LIVING_KNOWLEDGE_SHORT_NAME} · living knowledge base
+              {COMMUNITY_NAV_BRAND}
             </p>
             <h1
               className={`font-black text-white tracking-tight ${

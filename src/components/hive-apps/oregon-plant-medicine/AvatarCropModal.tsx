@@ -8,6 +8,8 @@ type Props = {
 };
 
 const OUTPUT_SIZE = 512;
+/** Must match the crop preview circle size (`w-56` = 14rem). */
+const PREVIEW_SIZE = 224;
 
 /** Circular crop UI — pan + zoom, then export a square JPEG for avatar upload. */
 export default function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
@@ -92,10 +94,12 @@ export default function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
 
     ctx.clearRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
 
-    const drawW = img.naturalWidth * scale;
-    const drawH = img.naturalHeight * scale;
-    const x = OUTPUT_SIZE / 2 - drawW / 2 + offset.x;
-    const y = OUTPUT_SIZE / 2 - drawH / 2 + offset.y;
+    const exportScale = scale * (OUTPUT_SIZE / PREVIEW_SIZE);
+
+    const drawW = img.naturalWidth * exportScale;
+    const drawH = img.naturalHeight * exportScale;
+    const x = OUTPUT_SIZE / 2 - drawW / 2 + offset.x * (OUTPUT_SIZE / PREVIEW_SIZE);
+    const y = OUTPUT_SIZE / 2 - drawH / 2 + offset.y * (OUTPUT_SIZE / PREVIEW_SIZE);
     ctx.drawImage(img, x, y, drawW, drawH);
 
     const blob = await new Promise<Blob | null>((resolve) =>

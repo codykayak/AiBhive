@@ -1,0 +1,106 @@
+import { MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
+import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
+import type { PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import PlantPhoto from './PlantImage';
+import UserAvatar from './UserAvatar';
+
+export type CommunityPostView = PlantMedicinePost | SeedCommunityPost;
+
+type Props = {
+  post: CommunityPostView;
+  onClose: () => void;
+  onOpenPlant?: (plant: PlantEntry) => void;
+};
+
+function isSeed(post: CommunityPostView): post is SeedCommunityPost {
+  return 'isSeed' in post && post.isSeed === true;
+}
+
+function timeAgo(iso: string | null): string {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / 86_400_000);
+  if (days < 1) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props) {
+  const seed = isSeed(post);
+  const plant = post.plantId ? PLANT_LIBRARY.find((p) => p.id === post.plantId) : undefined;
+  const plantLabel = seed ? post.plantCommonName : plant?.commonName;
+  const location = seed ? post.locationLabel : null;
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div className="bg-slate-950 border border-sky-500/25 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-slate-800 sticky top-0 bg-slate-950/95 backdrop-blur-sm z-10">
+          <p className="text-xs font-black uppercase tracking-widest text-sky-300">Community post</p>
+          <button type="button" onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 text-slate-400">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 flex items-start gap-3">
+          <UserAvatar
+            url={post.authorAvatarUrl}
+            name={post.authorDisplayName}
+            className="w-11 h-11 rounded-full shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="font-bold text-white">{post.authorDisplayName}</p>
+              {location ? (
+                <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                  <MapPin className="w-3 h-3" />
+                  {location}
+                </span>
+              ) : null}
+              <span className="text-[10px] text-slate-500">{timeAgo(post.createdAt)}</span>
+            </div>
+            {plantLabel ? (
+              <p className="text-[10px] font-bold uppercase tracking-wider text-sky-400/90 mt-1">{plantLabel}</p>
+            ) : null}
+          </div>
+        </div>
+
+        {post.imageUrl ? (
+          <PlantPhoto
+            src={post.imageUrl}
+            plantId={post.plantId ?? undefined}
+            scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
+            alt={plantLabel ?? 'Community foraging photo'}
+            className="w-full max-h-[min(52vh,420px)] object-cover"
+          />
+        ) : null}
+
+        <div className="p-4 space-y-4">
+          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{post.text}</p>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 px-2.5 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10">
+              <ThumbsUp className="w-3.5 h-3.5" />
+              {post.upvoteCount}
+            </span>
+            {plant && plantLabel && onOpenPlant ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenPlant(plant);
+                  onClose();
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+              >
+                <Sprout className="w-3.5 h-3.5" />
+                View {plantLabel} in library
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
