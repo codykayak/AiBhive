@@ -9,6 +9,7 @@ import {
   uploadPlantImage,
   type PlantMedicinePost,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import UserAvatar from './UserAvatar';
 
 type Props = {
   plantId: string;
@@ -17,13 +18,8 @@ type Props = {
 };
 
 function Avatar({ url, name }: { url: string | null; name: string }) {
-  if (url) {
-    return <img src={url} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />;
-  }
   return (
-    <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-xs font-bold shrink-0">
-      {(name[0] || '?').toUpperCase()}
-    </div>
+    <UserAvatar url={url} name={name} className="w-8 h-8 rounded-full text-xs" iconClassName="w-4 h-4" />
   );
 }
 

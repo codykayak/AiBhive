@@ -31,7 +31,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     try {
       const user = await verifyHiveAuth(req);
       if (!user?.uid) return res.json({ profile: null });
-      const profile = await getProfile(db, user.uid);
+      const profile = await getProfile(db, user.uid, gcsBucket);
       return res.json({ profile });
     } catch (err) {
       console.error('[plant-medicine/profile/me]', err);
@@ -44,7 +44,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       const user = await requireAuth(req, res);
       if (!user) return;
       const { displayName, bio, avatarUrl } = req.body || {};
-      const profile = await upsertProfile(db, user.uid, { displayName, bio, avatarUrl });
+      const profile = await upsertProfile(db, user.uid, { displayName, bio, avatarUrl }, gcsBucket);
       return res.json({ profile });
     } catch (err) {
       console.error('[plant-medicine/profile PUT]', err);
@@ -82,7 +82,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       }
       const type = req.query.type === 'comment' || req.query.type === 'photo' ? req.query.type : undefined;
       const viewer = await verifyHiveAuth(req);
-      const posts = await listPostsForPlant(db, plantId, { type, viewerUid: viewer?.uid });
+      const posts = await listPostsForPlant(db, plantId, { type, viewerUid: viewer?.uid, gcsBucket });
       return res.json({ posts });
     } catch (err) {
       console.error('[plant-medicine/posts GET]', err);
@@ -114,7 +114,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
         type,
         text,
         imageUrl,
-      });
+      }, gcsBucket);
       return res.status(201).json({ post });
     } catch (err) {
       console.error('[plant-medicine/posts POST]', err);

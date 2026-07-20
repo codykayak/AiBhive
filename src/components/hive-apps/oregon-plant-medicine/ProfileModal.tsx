@@ -8,6 +8,7 @@ import {
   type PlantMedicineProfile,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import AvatarCropModal from './AvatarCropModal';
+import UserAvatar from './UserAvatar';
 
 type Props = {
   user: User;
@@ -99,18 +100,13 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full bg-emerald-500/20 overflow-hidden shrink-0 ring-2 ring-emerald-500/40">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        className="w-full h-full object-cover object-center"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-emerald-300">
-                        {(displayName[0] || '?').toUpperCase()}
-                      </div>
-                    )}
+                  <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-500/40">
+                    <UserAvatar
+                      url={avatarUrl}
+                      name={displayName || 'Forager'}
+                      className="w-full h-full rounded-full text-2xl"
+                      iconClassName="w-8 h-8"
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="inline-flex text-xs font-bold text-emerald-300 cursor-pointer hover:text-emerald-200">
