@@ -10,7 +10,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['White gold chanterelle'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-rogue', 'ca-shasta', 'ca-sierra-foothills', 'ca-north-coast'],
+    regions: ['ca-north-coast', 'ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-rogue'],
     habitat:
       'Mature conifer forests — Douglas-fir and hemlock from Oregon Cascades through the Klamath-Siskiyou and north-coast California.',
     identification:
@@ -40,7 +40,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Funnel chanterelle', 'Yellow leg'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-willamette', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence', 'eugene'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mossy conifer logs and wet needle litter — late-season coast and valley forests.',
     identification:
       'Small brownish funnel cap with yellow-orange hollow stem. False gills on cap underside. Often in large troops on rotting wood.',
@@ -65,7 +65,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Horn of plenty', 'Trumpet of death (misnomer — edible)'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'ca-north-coast', 'or-willamette', 'ca-sierra-foothills'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-coast', 'or-willamette'],
     habitat: 'Mossy hardwood and mixed forest floors — often near oak and madrone in northerly California foothills.',
     identification:
       'Thin blackish-gray vase- or trumpet-shaped cap with smooth underside (no gills). Fragile, papery flesh.',
@@ -90,7 +90,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Cep', 'Penny bun'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-rogue', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-cascades', 'or-klamath', 'or-rogue'],
     habitat:
       'Under pine and fir — eastern Oregon Cascades, Klamath-Silver Lake country, Mt. Shasta, and Sierra pine belts near Placerville.',
     identification:
@@ -119,7 +119,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Boletus rex-veris',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-rogue', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-klamath', 'or-rogue'],
     habitat: 'Ponderosa pine and mixed conifer — spring snowmelt zones from Rogue Valley to Modoc and Sierra foothills.',
     identification:
       'Large brown cap, stout stem with reticulation. Spring fruiting. Pores yellow. Similar to king bolete but earlier season.',
@@ -140,7 +140,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Aureoboletus mirabilis',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On rotting conifer logs and stumps — classic Pacific Northwest log bolete.',
     identification:
       'Velvety brown cap. Yellow pores bruise blue. Grows directly from wood (not soil). Stem often curved.',
@@ -164,7 +164,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Xerocomellus zelleri',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mixed conifer-hardwood forest floor — common in Douglas-fir and hemlock woods.',
     identification:
       'Dark brown cracked cap, yellow pores that bruise blue, red-stained base of stem. Medium-sized bolete.',
@@ -186,7 +186,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Sulfur shelf'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'or-rogue', 'ca-sierra-foothills', 'ca-north-coast', 'both'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On living or dead hardwoods and conifers — oak, eucalyptus, and fir stumps.',
     identification:
       'Bright orange-yellow overlapping shelf brackets. Soft suede-like surface when young. No gills — porous yellow underside.',
@@ -213,7 +213,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hypomyces lactifluorum',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Parasite on russulas and lactarius — forest floor and trails in mixed woods.',
     identification:
       'Bright orange-red bumpy crust completely covering host mushroom. No visible gills — looks like sculpted seafood.',
@@ -238,7 +238,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Sweet tooth'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-shasta', 'florence', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mossy conifer and mixed woods — often near chanterelle habitat.',
     identification:
       'Pale orange-tan cap with TEETH (spines) underneath instead of gills or pores. Fruity smell when fresh.',
@@ -263,7 +263,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Bearded tooth', 'Pom pom mushroom'],
     uses: 'both',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'ca-sierra-foothills', 'both'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On hardwood logs and wounds — bigleaf maple, oak, and beech in northerly California.',
     identification:
       'White cascading icicle-like teeth hanging from a single attachment point. No cap. Looks like a frozen waterfall.',
@@ -288,7 +288,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hericium abietis',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast'],
     habitat: 'On conifer logs and stumps — fir and hemlock in coastal and montane forests.',
     identification:
       'Branching white coral-like teeth — more branched than lion’s mane. Grows on conifers.',
@@ -310,7 +310,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Phoenix oyster', 'Indian oyster'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-rogue', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On dead hardwood and cottonwood — logs, stumps, and standing snags.',
     identification:
       'Shelf-like caps growing in overlapping clusters. White gills running down short stem. Lilac-gray spore print.',
@@ -337,7 +337,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Calvatia booniana',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-east', 'or-klamath', 'ca-silver-lake', 'ca-shasta', 'ca-sacramento'],
+    regions: ['ca-sacramento', 'ca-shasta', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Open sagebrush-steppe and dry grassland — eastern Oregon, Modoc, and Great Basin fringes of northerly California.',
     identification:
       'Huge white ball on ground — soccer-ball size possible. Interior solid white when young. No stem or gills.',
@@ -364,7 +364,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Lycoperdon perlatum',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-sierra-foothills', 'both'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Wood chip trails, forest edges, and disturbed soil — very common.',
     identification:
       'Small white pear-shaped puffball with conical spines that rub off. Interior white when young. Grows on ground.',
@@ -389,7 +389,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Lawyer’s wig', 'Inky cap'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Disturbed ground — gravel roads, lawns, compost, and trail edges after rain.',
     identification:
       'Tall cylindrical white cap with shaggy scales. Deliquesces to black ink when old. Free white gills. Bulbous base.',
@@ -417,7 +417,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Pine mushroom'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-cascades', 'or-klamath'],
     habitat: 'Under ponderosa pine and Douglas-fir — duff buried under needle litter. Eastern Oregon to Sierra.',
     identification:
       'White to brown cap with cottony veil remnants. Spicy cinnamon-cedar aroma when fresh. White gills. Stains brown when handled.',
@@ -446,7 +446,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Western cauliflower fungus'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'florence', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Base of conifers — pine and fir roots. Often partially buried.',
     identification:
       'Large brain-like or noodle-like white-yellow mass of flattened branches. No cap. Grows from ground at tree base.',
@@ -470,7 +470,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Lactarius rubidus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['ca-north-coast', 'or-coast', 'ca-sierra-foothills', 'florence'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-coast'],
     habitat: 'Coastal oak-madrone and mixed hardwood duff — northern California specialty extending to Oregon coast.',
     identification:
       'Small orange-brown lactarius with brittle flesh. Milky latex when cut. Dries to maple-syrup scent.',
@@ -494,7 +494,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Lactarius deliciosus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-rogue', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-rogue'],
     habitat: 'Under pine — especially Monterey and ponderosa pine belts in southern Oregon and California mountains.',
     identification:
       'Orange cap with darker concentric zones. Orange latex when cut. Brittle flesh. Green staining after handling.',
@@ -519,7 +519,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Crab brittlegill'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Conifer and mixed woods — often with hemlock and fir.',
     identification:
       'Purple to wine-red cap fading with age. White gills. Stem bruises brown. Distinctive fish/shrimp odor when cooked.',
@@ -546,7 +546,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Agaricus augustus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'ca-sierra-foothills', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Wood chip beds, roadsides, and forest edges — often near cedar and fir.',
     identification:
       'Large brown-scaled cap, thick stem with skirt ring. Almond or anise scent. Gills pink then brown. Not yellow-staining.',
@@ -573,7 +573,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Agaricus campestris',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-east', 'ca-sacramento', 'ca-silver-lake', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-silver-lake', 'or-cascades', 'or-coast', 'or-east', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Pastures, lawns, and grasslands after rain — not on wood.',
     identification:
       'White to brown cap, pink gills turning brown. Ring on stem. No yellow staining. Found in grass.',
@@ -601,7 +601,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Hawk’s wing'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On dead hardwood logs and stumps — elm, maple, and cottonwood.',
     identification:
       'Large brown scaly cap resembling pheasant feathers. White porous underside. Grows on wood in spring.',
@@ -626,7 +626,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Honey fungus'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On wood and clustered at tree bases — pathogenic root rot fungus. Very common.',
     identification:
       'Honey-brown cap in dense clusters on wood. Stem with black rhizomorphs. White spore print. Partial ring on stem.',
@@ -655,7 +655,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Clitocybe nuda'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Compost piles, leaf litter, and woody debris — often in rings.',
     identification:
       'Lilac-purple cap and gills fading to tan. Spore print pinkish-buff. No ring on stem. Fruity floral smell.',
@@ -679,7 +679,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Auricularia americana',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-rogue', 'ca-north-coast', 'ca-sierra-foothills', 'both'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On dead hardwood branches and logs — especially elder and maple.',
     identification:
       'Rubbery ear-shaped brown translucent fruiting bodies. No gills. Cartilage texture.',
@@ -701,7 +701,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Velvet foot', 'Winter mushroom'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-cascades', 'ca-sierra-foothills', 'ca-shasta', 'both', 'eugene'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'On hardwood logs and stumps — especially elm and cottonwood in cool weather.',
     identification:
       'Small orange caps with dark velvety stem base. Grows in cold weather on wood. Gilled.',
@@ -725,7 +725,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Suillus luteus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Under planted and wild pine — especially Scots and ponderosa pine plantations.',
     identification:
       'Brown cap with sticky slimy coating when wet. Yellow pores. Ring on stem. Grows with pines.',
@@ -749,7 +749,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Stropharia rugosoannulata',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Wood chip mulch, garden paths, and compost — urban and rural.',
     identification:
       'Large burgundy wine-red cap fading to tan. Purple-gray gills. Thick ring on stem. Chips and compost habitat.',
@@ -773,7 +773,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Gomphus clavatus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-rogue', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-rogue'],
     habitat: 'Old-growth conifer duff — mountain hemlock and fir zones.',
     identification:
       'Clustered vase-shaped purple-brown caps with wrinkled undersurface (not gills). Fleshy.',
@@ -797,7 +797,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Chroogomphus vinicolor',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-silver-lake', 'or-cascades', 'or-klamath'],
     habitat: 'Under pine — often near slippery jacks and boletes. Sandy pine duff.',
     identification:
       'Orange-brown slimy cap, long slender stem. Grows with pines. Gilled (unusual for suillus associates).',
@@ -818,7 +818,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hericium americanum',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-cascades', 'ca-sierra-foothills', 'ca-north-coast', 'both'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Hardwood logs — maple and oak wounds in valley and foothill forests.',
     identification:
       'Branched white icicle teeth — more coral-like than single lion’s mane. On hardwood.',
@@ -839,7 +839,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Russula cyanoxantha',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mixed conifer-hardwood forest floor.',
     identification:
       'Green to purple cap. White gills that do not shatter when rolled between fingers (flexible gills — key trait).',
@@ -863,7 +863,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Morchella elata group',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'eugene', 'both'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'ca-silver-lake', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Burn scars, riparian cottonwoods, and disturbed ground in mountains — spring.',
     identification:
       'Dark brown elongated honeycombed cap. Completely hollow stem and cap. Pits and ridges (not wrinkled brain-like).',
@@ -888,7 +888,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Oak chanterelle', 'Large chanterelle'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['ca-sierra-foothills', 'ca-sacramento', 'ca-north-coast', 'or-rogue'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'ca-sierra-foothills', 'or-rogue'],
     habitat: 'Under oaks in Sierra foothills and interior valleys — large golden clusters in leaf litter.',
     identification:
       'Very large golden chanterelle with false forked ridges. Strong apricot scent. Often grows in massive clumps under live oak.',
@@ -913,7 +913,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Clustered blue chanterelle', 'Fan fungus'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-coast', 'ca-north-coast', 'ca-shasta', 'or-klamath'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath'],
     habitat: 'Old-growth conifer forests — mossy ground under spruce and fir at higher elevation.',
     identification:
       'Dark blue-black to purple clustered fan-shaped caps with wrinkled undersides (not true gills). Grows in tight groups.',
@@ -938,7 +938,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Royal bolete', 'Oak porcini'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['ca-sierra-foothills', 'ca-sacramento', 'ca-north-coast', 'or-rogue', 'or-willamette'],
+    regions: ['ca-north-coast', 'ca-sacramento', 'ca-sierra-foothills', 'or-rogue', 'or-willamette'],
     habitat: 'Under oaks and mixed hardwoods — Sierra foothills and coastal oak woodlands.',
     identification:
       'Large brown cap, thick reticulated stem, white pores that age yellow-green. Nutty aroma. Does not stain blue.',
@@ -962,7 +962,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Butyriboletus persolidus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-rogue', 'ca-shasta', 'ca-sierra-foothills'],
+    regions: ['ca-shasta', 'ca-sierra-foothills', 'or-cascades', 'or-rogue'],
     habitat: 'Under ponderosa pine and mixed conifers in mountains and east-side forests.',
     identification:
       'Red-brown cap, yellow pores, stout yellow stem often with red mesh. Buttery aroma when young.',
@@ -984,7 +984,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Chestnut bolete'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Conifer and mixed woods — often with spruce and fir on coast.',
     identification:
       'Bay-brown cap, yellow pores that bruise blue-green, yellow stem with brown reticulation. Flesh may blue slightly.',
@@ -1008,7 +1008,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Xerocomellus chrysenteron',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'or-cascades', 'ca-north-coast', 'both', 'eugene'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Urban parks, lawns, and mixed woods — very common small bolete.',
     identification:
       'Small brown cap cracking to show red flesh underneath. Yellow pores age reddish. Stem often reddish at base.',
@@ -1029,7 +1029,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Leccinum insigne',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-east', 'or-klamath', 'ca-silver-lake', 'ca-shasta'],
+    regions: ['ca-shasta', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Under aspen and cottonwood in eastern Oregon and Modoc Plateau.',
     identification:
       'Brown cap with dark scabers (dots) on white to gray stem. White flesh. Grows with poplar relatives.',
@@ -1053,7 +1053,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Leccinum manzanitae',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['ca-sierra-foothills', 'ca-north-coast', 'or-rogue'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-rogue'],
     habitat: 'Under manzanita and madrone in chaparral-woodland edges.',
     identification:
       'Brown to gray cap, stem with dark scabers, often stocky. Found only near manzanita hosts.',
@@ -1074,7 +1074,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Laetiporus conifericola',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Parasitic on living and dead conifers — shelf clusters on trunks.',
     identification:
       'Bright orange to salmon shelving brackets with yellow pore underside. Soft when young. On conifers (not hardwood).',
@@ -1102,7 +1102,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Blushing morel', 'Landscape morel'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'ca-sierra-foothills', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-portland', 'or-willamette'],
     habitat: 'Mulched landscaping, disturbed soil, wood chips — urban and suburban spring flushes.',
     identification:
       'Small tan to brown conical morel. Bruises reddish-brown. Honeycombed cap fully attached to stem. Hollow inside.',
@@ -1126,7 +1126,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Morchella punctipes',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Hardwood edges, riparian zones, and disturbed ground in spring.',
     identification:
       'Cap attached only at apex of stem (half-free). Honeycombed brown cap. Completely hollow stem and cap.',
@@ -1151,7 +1151,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Common morel', 'Blonde morel'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-rogue', 'ca-sierra-foothills', 'ca-sacramento', 'both', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Cottonwood riparian zones, old orchards, ash and elm associations in valleys.',
     identification:
       'Tan to yellow honeycombed cap fully attached to white hollow stem. Entire mushroom hollow when cut.',
@@ -1172,7 +1172,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Artomyces pyxidatus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-cascades', 'ca-sierra-foothills', 'both', 'eugene'],
+    regions: ['ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Dead hardwood logs and stumps — common on alder and maple.',
     identification:
       'White to cream branching coral with crown-like depressed tips. Grows on wood. No gelatinous base.',
@@ -1196,7 +1196,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Ramaria aurea',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-coast', 'ca-shasta', 'ca-north-coast'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast'],
     habitat: 'Conifer forest floor — often near spruce and fir.',
     identification:
       'Bright golden-yellow branching coral, tips often pointed. White spore print. Grows from soil not wood.',
@@ -1220,7 +1220,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Aleuria aurantia',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-east', 'or-klamath', 'ca-silver-lake', 'ca-sacramento', 'ca-sierra-foothills'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'ca-silver-lake', 'or-east', 'or-klamath'],
     habitat: 'Compacted soil, gravel roadsides, trail edges — often in groups.',
     identification:
       'Bright orange cup-shaped fungus that looks like scattered orange peels. No stem. Smooth outer surface.',
@@ -1245,7 +1245,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Clustered domecap'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-portland', 'or-willamette', 'ca-sacramento', 'eugene'],
+    regions: ['ca-sacramento', 'or-portland', 'or-willamette'],
     habitat: 'Grass, mulch, and compacted soil — urban parks and landscaped areas.',
     identification:
       'Tan-brown caps in tight clusters, white gills, white spore print. Smooth cap without scales.',
@@ -1270,7 +1270,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Chestnut mushroom', 'Red bricktop'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Clusters on dead hardwood logs and stumps — especially maple and alder.',
     identification:
       'Brick-red cap with yellowish margin when young. Grows in overlapping clusters on wood. Purple-brown spore print.',
@@ -1294,7 +1294,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Sarcodon imbricatus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'or-klamath', 'ca-shasta', 'ca-silver-lake'],
+    regions: ['ca-shasta', 'ca-silver-lake', 'or-cascades', 'or-klamath'],
     habitat: 'Under conifers — especially pine and spruce in mountains.',
     identification:
       'Large brown cap with dark scaly shingles. Underside has teeth (spines) not gills. Often bitter when old.',
@@ -1318,7 +1318,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hydnum rufescens',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Conifer and mixed forest floor — often near moss and spruce.',
     identification:
       'Small orange-tan cap with white to pale spines underneath. Compact stature. Spines descend stem slightly.',
@@ -1340,7 +1340,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Stump puffball'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-coast', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Clusters on rotting logs and stumps — extremely common.',
     identification:
       'Small pear-shaped brownish puffballs growing in dense clusters on wood. White interior when young.',
@@ -1364,7 +1364,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Agaricus arvensis',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-east', 'or-willamette', 'ca-sacramento', 'ca-sierra-foothills', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-east', 'or-willamette'],
     habitat: 'Pastures, meadows, and grassy areas — often in fairy rings.',
     identification:
       'Large white cap staining yellow. Ring on stem. Pink gills aging brown. Anise or almond scent.',
@@ -1389,7 +1389,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Black poplar mushroom', 'Pioppino'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'ca-sacramento', 'ca-sierra-foothills', 'eugene'],
+    regions: ['ca-sacramento', 'ca-sierra-foothills', 'or-willamette'],
     habitat: 'Cottonwood and poplar stumps and buried wood in riparian zones.',
     identification:
       'Brown cap, white stem with ring, gills aging brown. Grows in clusters on poplar wood.',
@@ -1410,7 +1410,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hypsizygus ulmarius',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'eugene'],
+    regions: ['ca-sacramento', 'or-portland', 'or-willamette'],
     habitat: 'Wounds on living hardwoods — elm, cottonwood, and maple in riparian areas.',
     identification:
       'Tan cap, white gills, stem attached to wood. Often high on tree trunks. White spore print.',
@@ -1432,7 +1432,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['American matsutake', 'Pine mushroom'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Under pine and fir — sandy duff in coastal and montane forests.',
     identification:
       'White to brown cap, white gills, thick white stem with cottony ring. Strong cinnamon-spice aroma.',
@@ -1457,7 +1457,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Western painted bolete'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'ca-shasta', 'both'],
+    regions: ['ca-north-coast', 'ca-shasta', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Under Douglas-fir — common PNW associate.',
     identification:
       'Brown cap with reddish pattern, yellow pores, ring on stem. Slimy cap when wet.',
@@ -1478,7 +1478,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Suillus grevillei',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-cascades', 'ca-shasta', 'or-klamath'],
+    regions: ['ca-shasta', 'or-cascades', 'or-klamath'],
     habitat: 'Exclusively under larch (tamarack) in subalpine zones.',
     identification:
       'Yellow to orange slimy cap, yellow pores, yellow stem with dark dots. Grows only with larch.',
@@ -1499,7 +1499,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Laccaria amethysteo-occidentalis',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-cascades', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Mossy conifer forest floor — common and widespread.',
     identification:
       'Small purple to amethyst cap fading with age. Thick purple gills. White spore print. Fibrous stem.',
@@ -1523,7 +1523,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Laccaria laccata',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-willamette', 'or-cascades', 'ca-north-coast', 'both', 'eugene', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Virtually all forest types — one of the most common forest floor mushrooms.',
     identification:
       'Small tawny to orange-brown cap, thick widely spaced gills, fibrous stem. White spore print.',
@@ -1544,7 +1544,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Helvella crispa',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'or-willamette', 'ca-north-coast', 'both', 'florence'],
+    regions: ['ca-north-coast', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Hardwood and mixed forest edges — often near paths in sandy soil.',
     identification:
       'White convoluted saddle-shaped cap on white ribbed stem. No gills — cap is folded and brain-like.',
@@ -1568,7 +1568,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Helvella vespertina',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-coast', 'ca-north-coast', 'ca-sierra-foothills', 'both', 'florence'],
+    regions: ['ca-north-coast', 'ca-sierra-foothills', 'or-cascades', 'or-coast', 'or-klamath', 'or-portland', 'or-rogue', 'or-willamette'],
     habitat: 'Under conifers — especially pine and fir on NorCal coast.',
     identification:
       'Dark gray-brown convoluted saddle cap on pale ribbed stem. Larger than white elfin saddle.',
@@ -1589,7 +1589,7 @@ export const EDIBLE_MUSHROOM_LIBRARY: PlantEntry[] = [
     scientificName: 'Hortiboletus rubellus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['or-willamette', 'or-portland', 'ca-sacramento', 'eugene'],
+    regions: ['ca-sacramento', 'or-portland', 'or-willamette'],
     habitat: 'Urban parks, lawns, and oak woodlands — often in groups.',
     identification:
       'Small red cap, yellow pores, slender red stem. Blue stains quickly when cut. Mild taste.',

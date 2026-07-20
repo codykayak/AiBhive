@@ -49,6 +49,46 @@ const NORCAL_REGIONS = new Set<PlantRegion>([
 /** Legacy region tags that imply coverage of multiple OR sub-regions. */
 const LEGACY_OR_WIDE: PlantRegion[] = ['both', 'eugene', 'florence'];
 
+/** Western Oregon coverage implied by legacy `both` tag in curated entries. */
+export const WESTERN_OREGON_REGIONS: PlantRegion[] = [
+  'or-willamette',
+  'or-coast',
+  'or-portland',
+  'or-cascades',
+  'or-rogue',
+  'or-klamath',
+];
+
+/** Per-plant region overrides for habitat-accurate filtering after legacy migration. */
+const REGION_OVERRIDES: Record<string, PlantRegion[]> = {
+  'psilocybe-azurescens': ['or-coast', 'or-portland', 'ca-north-coast'],
+  'psilocybe-semilanceata': ['or-willamette', 'or-coast', 'or-portland', 'or-cascades', 'or-rogue'],
+  'psilocybe-cyanescens': ['or-willamette', 'or-portland', 'or-coast', 'or-cascades'],
+  'psilocybe-allenii': ['or-coast', 'or-portland', 'ca-north-coast'],
+  'psilocybe-stuntzii': ['or-willamette', 'or-portland', 'or-cascades'],
+  'psilocybe-baeocystis': ['or-willamette', 'or-coast', 'or-portland', 'or-cascades'],
+  'gymnopilus-spectabilis': ['or-willamette', 'or-coast', 'or-cascades', 'or-rogue', 'ca-shasta'],
+  'amanita-muscaria': ['or-willamette', 'or-coast', 'or-cascades', 'or-rogue', 'ca-shasta', 'ca-north-coast'],
+  'amanita-pantherina': ['or-willamette', 'or-coast', 'or-cascades', 'or-rogue', 'ca-shasta'],
+  'panaeolus-cinctulus': ['or-willamette', 'or-portland', 'or-coast'],
+  'datura-stramonium': ['or-willamette', 'or-east', 'ca-sacramento', 'ca-sierra-foothills'],
+};
+
+/** Expand legacy Eugene / Florence / both tags into modern region filters. */
+export function normalizePlantRegions(regions: PlantRegion[], plantId?: string): PlantRegion[] {
+  if (plantId && REGION_OVERRIDES[plantId]) {
+    return [...REGION_OVERRIDES[plantId]];
+  }
+  const out = new Set<PlantRegion>();
+  for (const r of regions) {
+    if (r === 'eugene') out.add('or-willamette');
+    else if (r === 'florence') out.add('or-coast');
+    else if (r === 'both') WESTERN_OREGON_REGIONS.forEach((x) => out.add(x));
+    else out.add(r);
+  }
+  return [...out];
+}
+
 function plantInOregon(plant: PlantEntry): boolean {
   return plant.regions.some((r) => OREGON_REGIONS.has(r));
 }

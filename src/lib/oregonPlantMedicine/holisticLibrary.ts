@@ -585,6 +585,225 @@ export const HOLISTIC_LIBRARY: HolisticTopic[] = [
     ],
     sources: [],
   },
+  {
+    id: 'devils-club-pnw',
+    title: "Devil's club — Pacific Northwest thorny medicine",
+    category: 'immune',
+    summary:
+      'Oplopanax horridus is a signature Cascadia shrub: spiny stems, large maple-like leaves, and red berry clusters. Coastal and moist forest peoples used the inner bark for joint pain, blood sugar balance, and immune support.',
+    whenPeopleExplore:
+      'Chronic inflammation, diabetes support discussions, or interest in Salish/Tlingit traditional medicine.',
+    approaches: [
+      'Inner bark tincture or tea — extremely bitter; small doses in modern herbal practice.',
+      'Often combined with Oregon grape or red cedar in traditional formulas.',
+      'Harvest ethically from abundant stands; never strip bark from the only stem.',
+    ],
+    relatedPlantIds: ['oregon-grape', 'stinging-nettle'],
+    safetyWarnings: [
+      'Sharp spines cause painful wounds — wear thick gloves.',
+      'Not for pregnancy; may lower blood sugar — monitor if diabetic.',
+    ],
+    sources: [
+      { label: 'USDA — Oplopanax horridus', url: 'https://plants.usda.gov/plant-profile/OPHO' },
+    ],
+  },
+  {
+    id: 'cascara-sagrada-pnw',
+    title: 'Cascara sagrada — Oregon coast laxative bark',
+    category: 'digestive',
+    summary:
+      'Rhamnus purshiana is native from the Oregon coast to the Cascades. Aged bark was the classic American herbal laxative before overharvesting — still encountered in wild stands and ethical cultivation.',
+    whenPeopleExplore:
+      'Occasional constipation, interest in bitter laxative herbs, or identifying coastal shrubs.',
+    approaches: [
+      'Bark must be aged 1+ year to reduce vomiting — never use fresh bark.',
+      'Short-term occasional use only; not a daily tonic.',
+      'Identify by veined leaves, red stems, and black berries in fall.',
+    ],
+    relatedPlantIds: ['oregon-grape'],
+    safetyWarnings: [
+      'Fresh bark causes severe vomiting and cramping.',
+      'Avoid in pregnancy, Crohn’s, ulcerative colitis, and with electrolyte imbalance.',
+      'Do not combine with prescription laxatives.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Cascara sagrada', url: 'https://en.wikipedia.org/wiki/Rhamnus_purshiana' },
+    ],
+  },
+  {
+    id: 'mullein-respiratory',
+    title: 'Mullein — respiratory ally of dry cough',
+    category: 'immune',
+    summary:
+      'Verbascum thapsus and V. blattaria appear in disturbed soils, roadsides, and dry east-side Oregon. Fuzzy basal rosettes and tall yellow flower spikes make it unmistakable in summer.',
+    whenPeopleExplore:
+      'Dry cough, smoker’s lung support, ear discomfort, or identifying the “flannel plant” on hikes.',
+    approaches: [
+      'Leaf tea or tincture as a demulcent for dry irritated lungs.',
+      'Flower oil infusion traditionally used for earaches (never if eardrum perforated).',
+      'Harvest first-year rosette leaves before the spike flowers.',
+    ],
+    relatedPlantIds: ['plantain'],
+    safetyWarnings: [
+      'Filter leaf tea through fine cloth — tiny hairs irritate throat.',
+      'Not for wet productive coughs where drying is unwanted.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Verbascum thapsus', url: 'https://en.wikipedia.org/wiki/Verbascum_thapsus' },
+    ],
+  },
+  {
+    id: 'california-poppy-nervine',
+    title: 'California poppy — gentle western nervine',
+    category: 'nervous-system',
+    summary:
+      'Eschscholzia californica spreads in dry west-side meadows and gardens. Orange cups close at night; the whole plant has a mild sedative reputation distinct from opium poppy.',
+    whenPeopleExplore:
+      'Mild insomnia, anxiety, children’s sleep support, or identifying garden escapees.',
+    approaches: [
+      'Tea or tincture from aerial parts — milder than opium poppy.',
+      'Often blended with lemon balm or skullcap for evening wind-down.',
+      'Garden cultivars and wild forms both used in Western herbalism.',
+    ],
+    relatedPlantIds: ['wild-mint', 'mugwort'],
+    safetyWarnings: [
+      'Not an opiate — but avoid confusing with Papaver somniferum.',
+      'Use caution with other sedatives and before surgery.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Eschscholzia californica', url: 'https://en.wikipedia.org/wiki/Eschscholzia_californica' },
+    ],
+  },
+  {
+    id: 'mugwort-dream-herb',
+    title: 'Mugwort — bitter dream herb of the PNW',
+    category: 'traditions',
+    summary:
+      'Artemisia douglasiana lines stream banks from the coast to the valley. Silvery aromatic leaves are used in moxibustion, dream pillows, and digestive bitters.',
+    whenPeopleExplore:
+      'Vivid dreams, menstrual cramping traditions, or identifying aromatic streamside Artemisia.',
+    approaches: [
+      'Small amounts in tea before bed — strong flavor; often as sachet not beverage.',
+      'Dried leaf for moxa-style external heat (trained practitioners).',
+      'Bitter digestive tonic in tiny culinary doses.',
+    ],
+    relatedPlantIds: ['mugwort', 'yerba-buena'],
+    safetyWarnings: [
+      'AVOID IN PREGNANCY — traditional uterine stimulant.',
+      'Ragweed allergy cross-reactivity possible.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Artemisia douglasiana', url: 'https://en.wikipedia.org/wiki/Artemisia_douglasiana' },
+    ],
+  },
+  {
+    id: 'yerba-buena-tea',
+    title: 'Yerba buena — Oregon forest mint tea',
+    category: 'digestive',
+    summary:
+      'Clinopodium douglasii trails through shady coast-range forest floors with a delicate mint aroma. A classic Pacific Northwest tea plant.',
+    whenPeopleExplore:
+      'Gentle stomach soother, forest tea foraging, or distinguishing from upright wild mint.',
+    approaches: [
+      'Fresh or dried leaf tea — mild mint flavor.',
+      'Cold infusion for subtle flavor on summer hikes.',
+      'Harvest sparingly from trailing patches.',
+    ],
+    relatedPlantIds: ['yerba-buena', 'wild-mint'],
+    safetyWarnings: ['Confirm mint aroma — unrelated lookalikes lack mint scent.'],
+    sources: [
+      { label: 'Wikipedia — Clinopodium douglasii', url: 'https://en.wikipedia.org/wiki/Clinopodium_douglasii' },
+    ],
+  },
+  {
+    id: 'kinnikinnick-urinary',
+    title: 'Kinnikinnick — bearberry urinary tonic',
+    category: 'immune',
+    summary:
+      'Arctostaphylos uva-ursi carpets dry open forests and dunes with evergreen leaves and red berries. Contains arbutin — a classic urinary antiseptic in herbal texts.',
+    whenPeopleExplore:
+      'Recurrent UTIs (with medical care), identifying manzanita relatives, or smoking-blend history.',
+    approaches: [
+      'Leaf tea short-term during acute UTI symptoms — alongside medical evaluation.',
+      'Berries mealy but edible in small amounts; leaves are the medicinal part.',
+      'Often grows with manzanita and huckleberry in PNW forests.',
+    ],
+    relatedPlantIds: ['salal'],
+    safetyWarnings: [
+      'Not for pregnancy or kidney disease.',
+      'Arbutin converts to hydroquinone — limit duration of use.',
+      'UTI with fever or back pain needs antibiotics, not herbs alone.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Arctostaphylos uva-ursi', url: 'https://en.wikipedia.org/wiki/Arctostaphylos_uva-ursi' },
+    ],
+  },
+  {
+    id: 'hawthorn-heart',
+    title: 'Hawthorn — rosaceous heart berry',
+    category: 'immune',
+    summary:
+      'Crataegus douglasii and ornamental hawthorns produce tart red pomes across the valley and foothills. A staple Western herbal for cardiovascular toning.',
+    whenPeopleExplore:
+      'Mild hypertension support, heart palpitations with anxiety, or identifying thorny shrubs with lobed leaves.',
+    approaches: [
+      'Berry, leaf, and flower tincture or tea as long-term cardiac tonic.',
+      'Syrup from cooked berries — high in antioxidants.',
+      'Harvest berries after first frost when sweetest.',
+    ],
+    relatedPlantIds: ['oregon-grape'],
+    safetyWarnings: [
+      'May potentiate cardiac medications — pharmacist review required.',
+      'Thorns on branches — wear gloves.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Crataegus', url: 'https://en.wikipedia.org/wiki/Crataegus' },
+    ],
+  },
+  {
+    id: 'reishi-pnw',
+    title: 'Reishi — lacquered shelf fungus',
+    category: 'immune',
+    summary:
+      'Ganoderma oregonense and G. tsugae grow on conifer logs in Oregon forests. The glossy reddish “varnish shelf” is among the most studied medicinal fungi worldwide.',
+    whenPeopleExplore:
+      'Immune modulation, sleep support, or identifying shelf fungi on hemlock and fir.',
+    approaches: [
+      'Long decoction or dual-extract tincture — woody fruiting bodies need extended simmering.',
+      'Often taken as daily tonic in small doses over months.',
+      'Harvest only from clean forest wood, not treated lumber.',
+    ],
+    relatedPlantIds: ['lions-mane'],
+    safetyWarnings: [
+      'Powdery spore release can irritate lungs — harvest young specimens.',
+      'May interact with anticoagulants and immunosuppressants.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Ganoderma oregonense', url: 'https://en.wikipedia.org/wiki/Ganoderma_oregonense' },
+    ],
+  },
+  {
+    id: 'lions-mane-cognitive',
+    title: "Lion's mane — cognitive mushroom of the PNW",
+    category: 'nervous-system',
+    summary:
+      'Hericium erinaceus and H. coralloides fruit on hardwoods and conifers in our region. Icicle-like teeth make it one of the safest groups for beginners — and a focus of nerve-growth research.',
+    whenPeopleExplore:
+      'Brain fog, nerve injury recovery support, or finding a choice edible on the same log as reishi.',
+    approaches: [
+      'Sauté fresh fruiting bodies — seafood-like texture.',
+      'Powder or dual extract for daily nootropic protocols.',
+      'Look for white cascading teeth under hardwood logs in fall.',
+    ],
+    relatedPlantIds: ['lions-mane'],
+    safetyWarnings: [
+      'Confirm icicle teeth — no gilled lookalikes with teeth in our region.',
+      'Start low if new to medicinal fungi.',
+    ],
+    sources: [
+      { label: 'Wikipedia — Hericium erinaceus', url: 'https://en.wikipedia.org/wiki/Hericium_erinaceus' },
+    ],
+  },
 ];
 
 export const HOLISTIC_CATEGORY_ORDER: HolisticCategory[] = [

@@ -63,6 +63,8 @@ import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import {
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
+  ADJACENT_RESEARCH_DESCRIPTION,
+  ADJACENT_RESEARCH_HEADING,
   HYPNOSIS_ENERGY_PATH,
   HYPNOSIS_ENERGY_TAB_SHORT_LABEL,
   ANIMAL_HEALTH_PATH,
@@ -661,31 +663,61 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'comm
           </button>
         </div>
 
-        <nav className="flex gap-2 flex-wrap">
-          {(
-            [
-              ['community', 'Community', Users],
-              ['plants', 'Plant library', Sprout],
-              ['edibles', 'Edibles', Apple],
-              ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
-              ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
-              ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
-            ] as const
-          ).map(([id, label, Icon]) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => selectTab(id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
-                tab === id
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'text-slate-400 hover:text-white border border-transparent'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {label}
-            </button>
-          ))}
+        <nav className="space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            {(
+              [
+                ['community', 'Community', Users],
+                ['plants', 'Plant library', Sprout],
+                ['edibles', 'Edibles', Apple],
+              ] as const
+            ).map(([id, label, Icon]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => selectTab(id)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
+                  tab === id
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    : 'text-slate-400 hover:text-white border border-transparent'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5 px-0.5">
+              {ADJACENT_RESEARCH_HEADING}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {(
+                [
+                  ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
+                  ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
+                  ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
+                ] as const
+              ).map(([id, label, Icon]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => selectTab(id)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-colors ${
+                    tab === id
+                      ? 'bg-violet-500/15 text-violet-200 border border-violet-500/35'
+                      : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-500 mt-1.5 px-0.5 max-w-2xl leading-snug">
+              {ADJACENT_RESEARCH_DESCRIPTION}
+            </p>
+          </div>
         </nav>
       </header>
 
@@ -710,6 +742,17 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'comm
                   <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
                   preparation ideas.{' '}
                   <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
+                </p>
+              </div>
+            ) : tab === 'plants' ? (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 mb-5 text-sm text-emerald-100/90 leading-relaxed">
+                <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
+                  Primary field guide
+                </p>
+                <p>
+                  Oregon Plant Medicine centers on this plant &amp; mushroom library — foraging IDs, regions, look-alikes,
+                  and harvest notes. Holistic protocols, hypnosis, and animal health live under adjacent research libraries
+                  in the nav.
                 </p>
               </div>
             ) : null}
