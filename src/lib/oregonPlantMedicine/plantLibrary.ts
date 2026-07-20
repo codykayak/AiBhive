@@ -27,6 +27,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Rich moist soil along streams, ditches, forest edges, and disturbed ground. Very common near Eugene waterways and coast range valleys toward Florence.',
     identification: 'Opposite serrated leaves with stinging hairs on stems and undersides. Square stems. Can reach 3–6 ft when flowering. Crushing or drying removes the sting.',
+    lookalikes: [
+      'White dead-nettle (Lamium album) — similar leaf shape but NO sting; square stem, white flowers.',
+      'Wood nettle (Laportea canadensis) — alternate leaves with sting; less common in Oregon.',
+      'Clearweed (Pilea pumila) — nettle-like but stingless and translucent stem.',
+    ],
     edibleNotes: 'One of the most nutritious wild greens in the PNW. Young tops in spring taste like spinach. High in iron, calcium, and protein.',
     medicinalNotes: 'Traditional support for seasonal allergies, joint comfort, and nourishing tonics. Often used as dried leaf tea or tincture.',
     holisticNotes: 'A cornerstone “food as medicine” plant in Pacific Northwest herbalism — nutrient-dense and broadly tonifying.',
@@ -53,6 +58,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['eugene', 'both'],
     habitat: 'Dry to moist woodland understory throughout the Willamette Valley and coast range foothills.',
     identification: 'Spiny holly-like evergreen leaflets in groups. Bright yellow flower clusters in early spring. Blue berries with whitish bloom in summer.',
+    lookalikes: [
+      'English holly (Ilex aquifolium) — invasive; red berries, not blue; alternate leaves on tree form.',
+      'Tall Oregon grape vs. dull Oregon grape (M. nervosa) — both edible berries; low ground cover vs. shrub.',
+      'Holly-leaved barberry — spiny but different flower and berry color.',
+    ],
     edibleNotes: 'Berries are very tart — best as jelly, syrup, or mixed with sweeter fruit. Not a snacking berry.',
     medicinalNotes: 'Root and bark traditionally used as a bitter liver and digestive tonic. Contains berberine (similar action to goldenseal).',
     holisticNotes: 'Oregon’s state flower and a signature “bitter tonic” in Western herbal practice.',
@@ -78,6 +88,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Stream banks, wetlands, and shady forest edges — abundant on the coast near Florence and in wet Willamette Valley corridors.',
     identification: 'Magenta flowers in spring. Compound leaves with three leaflets. Orange to red raspberry-like fruit.',
+    lookalikes: [
+      'Thimbleberry — soft red berry, huge maple-like leaves, no thorns.',
+      'Unripe Himalayan or trailing blackberry — black when ripe; salmonberry is orange-red.',
+      'Baneberry (Actaea) — white berries on thick stalk; TOXIC (rare in same habitat).',
+    ],
     edibleNotes: 'Mild, slightly sweet-tart berries. Young shoots also peeled and eaten traditionally in spring.',
     medicinalNotes: 'Primarily food; berry antioxidants and seasonal nutrition.',
     holisticNotes: 'A reliable coast-range wild food — often one of the first berries of the season.',
@@ -99,6 +114,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['florence', 'both'],
     habitat: 'Coastal conifer forest understory — dominant groundcover from Florence dunes inland and common in coast-range woods toward Eugene.',
     identification: 'Leathery evergreen oval leaves. Urn-shaped pink-white flowers. Dark blue-purple mealy berries.',
+    lookalikes: [
+      'Evergreen huckleberry — similar dark berries but toothed leaves and grows as upright shrub, not groundcover.',
+      'Oregon grape berries — blue with bloom, very tart; compound holly-like leaves.',
+      'Nightshade (Solanum) berries — potentially toxic; salal has urn flowers and mealy texture.',
+    ],
     edibleNotes: 'Berries are sweet when fully ripe. Used in jams and pemmican traditionally.',
     medicinalNotes: 'Leaf tea used as an astringent mouth rinse and mild anti-inflammatory wash.',
     holisticNotes: 'Ubiquitous coast plant — berries are a staple wild food where salal thickets are dense.',
@@ -121,6 +141,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['eugene', 'both'],
     habitat: 'Cool moist shady spots, woodland edges, and spring gardens throughout the valley.',
     identification: 'Succulent leaves with a cup-like leaf bracketing the flower stem. Small white or pink flowers.',
+    lookalikes: [
+      'Spring beauty (Claytonia sibirica) — pink flowers, no perfoliate disk; also edible.',
+      'Poison hemlock seedlings — NOT succulent; musty smell, hairless stems with purple blotches.',
+      'Chickweed — mat-forming, no cup leaf; also edible.',
+    ],
     edibleNotes: 'Mild, crunchy salad green — entire aerial parts edible. Excellent source of vitamin C.',
     medicinalNotes: 'Historically used by miners to prevent scurvy.',
     holisticNotes: 'One of the easiest beginner wild foods in Western Oregon spring.',
@@ -184,6 +209,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Lawns, fields, roadsides — ubiquitous.',
     identification: 'Toothed basal leaves, hollow stem, yellow composite flower, white puffball seed head.',
+    lookalikes: [
+      'Cat’s-ear (Hypochaeris) — hairy leaves, solid stem, branching flower stalks.',
+      'Hawkweed (Hieracium) — similar yellow flowers but multiple blooms on branched stem.',
+      'False dandelion — always check for hollow stem and single flower per hollow stalk.',
+    ],
     edibleNotes: 'Young leaves in salad (bitter). Flowers for fritters. Roasted root as coffee substitute.',
     medicinalNotes: 'Bitter root and leaf support digestion and liver function. Gentle diuretic (“piss-a-bed”).',
     holisticNotes: 'Classic liver/spring tonic in Western herbalism.',
@@ -204,6 +234,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['eugene', 'both'],
     habitat: 'Meadows, pastures, and sunny fields in the Willamette Valley.',
     identification: 'Three leaflets with pale chevron. Round pink-purple flower heads.',
+    lookalikes: [
+      'White clover (T. repens) — white flower heads; also edible.',
+      'Crown vetch — pink clusters on vine; NOT a true clover.',
+      'Alsike clover — pale pink; can cause toxicity in livestock (rare in humans).',
+    ],
     edibleNotes: 'Flower heads and young leaves in salads or tea.',
     medicinalNotes: 'Traditional support for skin health and menopausal comfort. Contains isoflavones.',
     holisticNotes: 'Gentle lymphatic and nutritive herb.',
@@ -225,6 +260,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['eugene', 'both'],
     habitat: 'Stream banks, open woods, and disturbed sunny edges in the valley.',
     identification: 'Opposite compound leaves. Large flat cream flower clusters. Powdery blue berries on reddish stems.',
+    lookalikes: [
+      'Red elderberry (S. racemosa) — red berry clusters on coast; TOXIC raw.',
+      'Blue elder vs. red elder — blue powdery berries vs. upright red clusters.',
+      'Hercules’ club / devil’s walking stick — similar flower shape but armed stems; berries different.',
+    ],
     edibleNotes: 'Berries must be cooked — used for syrup, jam, and wine.',
     medicinalNotes: 'Cooked berry syrup traditionally used for immune support during cold season.',
     holisticNotes: 'One of the most popular home herbal preparations in North America.',
@@ -250,6 +290,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Burn sites, roadsides, clearcuts, and open meadows — common coast to cascades.',
     identification: 'Tall spikes of magenta four-petaled flowers. Long narrow leaves. Fluffy seed parachutes.',
+    lookalikes: [
+      'Foxglove (Digitalis) — tall spike; TOXIC. Leaves wider, flowers tubular spotted.',
+      'Purple loosestrife — invasive wetland spike; different leaf arrangement.',
+      'Fireweed has 4 petals; many lookalikes have different flower counts.',
+    ],
     edibleNotes: 'Young shoots peeled like asparagus. Leaves as cooked green. Honey from fireweed is prized.',
     medicinalNotes: 'Mucilaginous — soothing for irritated GI tract. Traditional anti-inflammatory.',
     holisticNotes: 'Pioneer species that heals disturbed land — symbolic in PNW ecology.',
@@ -289,6 +334,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['florence', 'both'],
     habitat: 'Shady moist conifer forest floor — coast range and old growth near Florence.',
     identification: 'Three heart-shaped leaflets often folded. White to pink five-petaled flowers. Sour lemon taste.',
+    lookalikes: [
+      'Wood sorrel vs. clover — sorrel has heart-shaped leaflets in threes; clover has oval leaflets with chevron.',
+      'Violet leaves — similar heart shape but no sour taste; different flowers.',
+      'Redwood sorrel is Oxalis; do not confuse with shamrock clover for large harvests.',
+    ],
     edibleNotes: 'Small amounts as trail nibble — oxalic acid gives sour flavor.',
     holisticNotes: 'Beautiful forest floor indicator species in coast range hikes.',
     preparation: 'Few leaves fresh — not large quantities.',
@@ -311,6 +361,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['florence', 'both'],
     habitat: 'Coastal and low-elevation forest understory — Florence dunes forest and coast range.',
     identification: 'Leathery serrated evergreen leaves. Pink urn flowers. Dark purple-black sweet berries.',
+    lookalikes: [
+      'Salal — groundcover with similar dark berries; leathery entire leaves without serrations.',
+      'Baldhip rose hips — red, not purple-black berries.',
+      'Nightshade berries — grow in different plant form; always confirm serrated evergreen leaves.',
+    ],
     edibleNotes: 'Excellent wild berry — fresh, jam, pancakes. Ripen further after picking.',
     holisticNotes: 'Coast range counterpart to valley black huckleberry species.',
     preparation: 'Fresh or cooked; freeze well.',
@@ -457,6 +512,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['florence', 'both'],
     habitat: 'Mossy conifer forest floor — coast range and valley foothills after fall rains.',
     identification: 'Golden funnel-shaped cap with false gills (forked ridges). Fruity apricot smell. No true gills.',
+    lookalikes: [
+      'Jack-o-lantern (Omphalotus) — grows in clusters on wood; TRUE gills; ORANGE bioluminescent; causes severe GI illness.',
+      'False chanterelle (Hygrophoropsis aurantiaca) — true thin gills, softer flesh, no apricot scent.',
+      'Woolly chanterelle (Turbinellus floccosus) — vase-shaped with woolly cap; causes GI upset for many.',
+    ],
     edibleNotes: 'Oregon state mushroom. Premier wild edible — sauté, dry, freeze.',
     holisticNotes: 'Fall mushroom hunting is a PNW tradition from Eugene foothills to coast range near Florence.',
     preparation: 'Cook thoroughly. Never eat raw wild mushrooms.',
@@ -480,6 +540,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['florence'],
     habitat: 'Coastal sand dunes and bluffs — Florence to Oregon Dunes National Recreation Area.',
     identification: 'Three toothed leaflets, runners on sand. Small sweet white-flowered berries close to ground.',
+    lookalikes: [
+      'Wild strawberry (F. virginiana) — inland; similar but often in forest edges not dunes.',
+      'Mock strawberry (Duchesnea) — yellow flowers, bland/hollow berry; not sweet.',
+      'Cinquefoil — five leaflets, yellow flowers; not a true strawberry.',
+    ],
     edibleNotes: 'Tiny intense strawberries — best trail snack on dune walks.',
     holisticNotes: 'Coast-specific wild food not found inland in Eugene.',
     preparation: 'Eat fresh.',
@@ -499,6 +564,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Dominant conifer from valley floor to coast — everywhere.',
     identification: 'Soft bright green new growth tips in spring. Distinct bracts on cones (“mouse tail and legs”).',
+    lookalikes: [
+      'Western yew (Taxus brevifolia) — TOXIC; flat dark green needles, red cup berry, no pine-like cones.',
+      'Spruce/hemlock tips — edible in tea but different needle arrangement and cone type.',
+      'Only harvest from true Douglas fir with the three-pronged bracts on cones.',
+    ],
     edibleNotes: 'Citrus-pine flavored tips for tea, syrup, and seasoning. High vitamin C.',
     medicinalNotes: 'Resinous tea for congestion. Traditional respiratory support.',
     holisticNotes: 'Signature tree of the PNW — spring tip harvest connects you to forest seasonality.',
@@ -519,6 +589,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     regions: ['both'],
     habitat: 'Stream banks, roadsides, and open sunny areas valley and coast.',
     identification: 'Pink five-petaled flowers. Thorns on stems. Large red rose hips in fall.',
+    lookalikes: [
+      'Baldhip rose (R. gymnocarpa) — hips lose sepals early; also edible with same hair caution.',
+      'Himalayan blackberry — thorny but compound leaves and aggregate fruit, not rose hips.',
+      'Any rose hip has irritating hairs inside — strain all preparations.',
+    ],
     edibleNotes: 'Rose hips extremely high in vitamin C — tea and jelly. Petals for garnish.',
     medicinalNotes: 'Astringent hip tea for digestive and skin support.',
     holisticNotes: 'Fall hip harvest along Willamette paths and coastal trails.',
@@ -569,6 +644,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Openings, stream banks, and forest edges from Willamette Valley foothills to coast range near Florence. Large soft maple-like leaves on thornless stems.',
     identification:
       'Huge velvety 5-lobed maple-shaped leaves. White flowers in spring. Bright red soft berries that pull off like a thimble. No thorns.',
+    lookalikes: [
+      'Salmonberry — orange to red berry, magenta flowers, three leaflets (not maple-shaped).',
+      'Himalayan blackberry — thorny canes; hard black fruit, not soft thimble.',
+      'Baneberry — white toxic berries on thick stalk; completely different leaf shape.',
+    ],
     edibleNotes:
       'One of the best fresh-eating trail berries in the PNW — soft, tart-sweet, doesn’t ship so you rarely see it in stores. Jam and sauce within hours of picking.',
     holisticNotes: 'Classic coast-to-valley summer berry — often growing with salmonberry on the same hike.',
@@ -596,6 +676,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Sunny roadsides, clearings, and dry edges throughout Lane County and coastal scrub toward Florence. Low trailing vines, not tall canes.',
     identification:
       'Thin trailing stems with small hooked prickles. White to pink flowers. Small intense black berries with excellent flavor — parent of many cultivated varieties.',
+    lookalikes: [
+      'Himalayan blackberry — tall arching canes, larger berries; also edible but invasive.',
+      'Dewberry — similar trailing habit; confirm 5-part leaves and Rubus ID.',
+      'Nightshade berries — NOT on thorny Rubus stems; always check flower structure.',
+    ],
     edibleNotes:
       'Oregon’s native wild blackberry — smaller but far more aromatic than Himalayan blackberry. Best pies and jam berry in the valley.',
     holisticNotes: 'Seek out native patches instead of invasive Himalaya thickets when possible.',
@@ -625,6 +710,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Often on decaying logs and stumps in moist conifer forest — common in coast range hikes near Florence and foothill forests around Eugene.',
     identification:
       'Tiny bright green leaves on angular green stems. Small red translucent berries. Grows on wood, not in soil (key ID clue).',
+    lookalikes: [
+      'Evergreen huckleberry — dark berries on woody shrub in soil, not from logs.',
+      'Salal — dark blue mealy berries, leathery oval leaves.',
+      'Red berries on green stems from wood is the key — do not pick bush berries by mistake.',
+    ],
     edibleNotes:
       'Tart bright berries — outstanding for pancakes, muffins, and syrup. Less sweet than evergreen huckleberry but incredible baked.',
     holisticNotes: 'Look for red berries on green stems sprouting from old logs.',
@@ -652,6 +742,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Open slopes, oak savanna edges, and sunny forest margins in the eastern Willamette Valley and foothills — less common on immediate coast but present inland.',
     identification:
       'Shrub or small tree. White spring flowers in clusters. Blue-purple berries with crown scar on bottom (like tiny apples). Oval finely toothed leaves.',
+    lookalikes: [
+      'Blue elderberry — cluster berries without crown scar on each fruit; opposite leaves.',
+      'Huckleberries — single berries, no crown scar dimple.',
+      'Nightshade — may have berry clusters; lacks apple-like crown scar on each fruit.',
+    ],
     edibleNotes:
       'Sweet nutty berries — excellent fresh, in pies, or dried like raisins. One of the best “fruit tree” wild foods in eastern Lane County.',
     holisticNotes: 'Ripens early — often called Juneberry for a reason.',
@@ -678,6 +773,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Cool moist gardens, farm edges, and disturbed soil — abundant in Eugene valley winter and spring; mild coast winters near Florence.',
     identification:
       'Low tangled mat. Opposite oval leaves. Tiny white star flowers with five deeply split petals (looks like ten). Single line of hairs on stem that switches sides at each node.',
+    lookalikes: [
+      'Mouse-ear chickweed — similar; also edible.',
+      'Spurge (Euphorbia) — milky sap when broken; NOT edible — TOXIC.',
+      'Scarlet pimpernel — low mat; different flower color; not edible.',
+    ],
     edibleNotes:
       'Mild salad green — tastes like corn silk or mild lettuce. High in vitamins. One of the best winter wild greens in the valley.',
     holisticNotes: 'Harvest when lush and green — bolts and fades in hot dry summer.',
@@ -707,6 +807,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Disturbed soil, gardens, and farm fields throughout Eugene and coastal towns — classic “weed” superfood.',
     identification:
       'Gray-green leaves often with mealy white coating on undersides. Diamond toothed shape. Tall spikes of tiny green flowers in summer.',
+    lookalikes: [
+      'Orach (Atriplex) — related edible; similar leaf shape.',
+      'Nightshade (Solanum) — may resemble young shoots; TOXIC berries and leaves.',
+      'Spinach — cultivated lookalike; wild lambs quarters has mealy coating under leaves.',
+    ],
     edibleNotes:
       'Top wild spinach substitute — steam, sauté, or blend in smoothies. More nutritious than cultivated spinach by many measures.',
     holisticNotes: 'Young plants are tender; pinch tops for continued harvest.',
@@ -736,6 +841,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Wet meadows, ditches, and stream margins — Willamette valley waterways and coastal creek bottoms near Florence.',
     identification:
       'Square stems. Opposite toothed leaves. Strong mint smell when crushed. Whorls of small lavender flowers.',
+    lookalikes: [
+      'Horse mint / other Mentha — must smell strongly of mint when crushed.',
+      'Ground ivy (Glechoma) — mint family but creeping; different flower shape.',
+      'Pennyroyal — mint family; historically used but toxic in large doses.',
+    ],
     edibleNotes:
       'Tea, tabbouleh, fruit salads, and syrup. Classic digestive and cooling summer herb.',
     holisticNotes: 'Crush a leaf — if it doesn’t smell minty, it’s not mint.',
@@ -764,6 +874,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Shallow freshwater marshes, ponds, and slow sloughs — West Eugene wetlands, Fern Ridge area, and Siuslaw estuary margins.',
     identification:
       'Tall sword-like leaves. Brown hot-dog seed heads in late summer. Grows in standing water or saturated mud.',
+    lookalikes: [
+      'Iris (blue flag) — TOXIC; flat fan of leaves, showy flowers, no brown cigar head.',
+      'Sweet flag (Acorus) — similar wetland leaves; different flower spike; check habitat.',
+      'Prairie cordgrass — sharp edges; not the classic cattail cigar seed head.',
+    ],
     edibleNotes:
       'Four-season food: spring white shoots (peel), early green flower spikes (corn-on-the-cob), pollen flour, and starchy rhizomes in fall/winter.',
     holisticNotes: 'The “supermarket of the swamp” — learn one plant for many calories.',
@@ -795,6 +910,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Wet coastal forest and stream banks — native from Florence estuary north; occasional in valley riparian plantings.',
     identification:
       'Small tree with thorny twigs. White to pink spring blossoms. Yellow to reddish crabapples under 1 inch — very tart raw.',
+    lookalikes: [
+      'Cultivated apple escapes — larger fruit; similar but often bigger leaves.',
+      'Hawthorn (Crataegus) — similar rosaceous fruit; hawthorn berries have different seed pattern.',
+      'Chokecherry — dark purple-black drupes in racemes, not small apples.',
+    ],
     edibleNotes:
       'Classic pectin-rich wild fruit for jelly and cider. High natural pectin means excellent set without added box pectin.',
     holisticNotes: 'Coast specialty — combine with sweeter fruit for sauce.',
@@ -825,6 +945,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Burn scars, disturbed soil, cottonwood bottoms, and old orchards in the Willamette Valley — spring specialty after warm rains.',
     identification:
       'Honeycombed pitted cap attached to stem. Hollow inside entire mushroom (cut lengthwise to verify). No gills — pits and ridges.',
+    lookalikes: [
+      'False morel (Gyromitra) — brain-like red-brown cap; NOT fully hollow; contains gyromitrin — TOXIC.',
+      'Verpa (thimble cap) — cap attached only at top of stem; cap separates from stalk.',
+      'Stinkhorn eggs — may resemble young morels; break open to check for developing stalk smell.',
+    ],
     edibleNotes:
       'Premier spring gourmet mushroom — sauté in butter, dry for year-round use. Oregon spring morel season rivals anywhere in North America.',
     holisticNotes: 'Check burn permits and land access — popular on public land near Eugene foothills.',
@@ -855,6 +980,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Hot dry disturbed soil — garden paths, farm rows, and sandy lots in Eugene summer and Florence coastal gardens.',
     identification:
       'Succulent red stems sprawling on ground. Small fleshy oval leaves. Tiny yellow flowers. Leaves feel juicy when pinched.',
+    lookalikes: [
+      'Spurge (Euphorbia) — milky white sap when stem broken; NOT succulent — TOXIC.',
+      'Spotted spurge — prostrate; exudes milky latex.',
+      'Purslane has no milky sap — that is the critical field test.',
+    ],
     edibleNotes:
       'Highest plant source of omega-3 ALA among common weeds. Tangy lemon crunch in salads and tacos.',
     holisticNotes: 'Thrives in summer heat when other greens bolt — valuable dry-season food.',
@@ -884,6 +1014,11 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       'Disturbed ground, trailsides, and vacant lots — ubiquitous weed with Velcro-like seed heads.',
     identification:
       'Large heart-shaped leaves with woolly undersides. Purple thistle-like flowers. Round bur seed heads that stick to clothing.',
+    lookalikes: [
+      'Rhubarb — cultivated; similar large leaves but no burs; poisonous leaves on rhubarb too.',
+      'Butterbur (Petasites) — huge leaves; different flower timing; not the same root.',
+      'Foxglove first-year rosette — TOXIC; soft fuzzy leaves but different venation.',
+    ],
     edibleNotes:
       'First-year roots are the famous Japanese gobo — earthy, crunchy, stir-fry staple. Peel thick skin; soak to reduce bitterness.',
     holisticNotes: 'Harvest roots first fall or spring from first-year rosettes (no flower stalk yet).',
@@ -899,6 +1034,140 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     ]),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Arctium_minus' },
+    ],
+  },
+  {
+    id: 'wild-lettuce',
+    commonName: 'Wild Lettuce',
+    scientificName: 'Lactuca serriola / L. virosa',
+    alsoKnownAs: ['Prickly lettuce', 'Opium lettuce', 'Great lettuce'],
+    uses: 'medicinal',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Roadsides, vacant lots, farm edges, and disturbed soil throughout Eugene and the Willamette Valley — also along I-5 corridor toward Florence. Tall weed with milky sap.',
+    identification:
+      'L. serriola: prickly spines on midrib underside, blue-green leaves, tall flowering stalk with small yellow dandelion-like flowers. L. virosa: larger, more robust cousin with similar milky latex. Both bleed white sap when stem is broken.',
+    medicinalNotes:
+      'Folk “lettuce opium” lore — dried latex (lactucarium) historically used for pain and sleep in 19th-century herbalism. Modern evidence is weak; effects are mild compared to true opiates.',
+    holisticNotes:
+      'Common valley weed — often confused with sow thistle. The sap is the traditional focus, not the leaves as salad.',
+    preparation:
+      'Historical: score stem, collect dried white sap. Modern herbalism sometimes uses tincture of flowering tops. Educational reference only.',
+    harvestSeason: 'Flowering stalks: summer. Sap: when stems are actively growing.',
+    safetyWarnings: [
+      'Not a substitute for prescribed pain medication.',
+      'Can cause drowsiness — do not drive or combine with sedatives.',
+      'L. virosa is more potent in folklore; positive species ID required.',
+      'Avoid during pregnancy and breastfeeding.',
+    ],
+    ...gallery('wild-lettuce', 'Wikimedia Commons — Lactuca serriola', [
+      'Prickly midrib & rosette',
+      'Yellow flower stalk',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia — L. serriola', url: 'https://en.wikipedia.org/wiki/Lactuca_serriola' },
+      { label: 'Wikipedia — L. virosa', url: 'https://en.wikipedia.org/wiki/Lactuca_virosa' },
+    ],
+  },
+  {
+    id: 'pokeweed',
+    commonName: 'Pokeweed',
+    scientificName: 'Phytolacca americana',
+    alsoKnownAs: ['American pokeweed', 'Poke sallet'],
+    uses: 'medicinal',
+    category: 'herb',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Disturbed ground, fence lines, and garden edges — naturalized in parts of western Oregon including Willamette Valley towns. Less common on immediate coast but reported inland from Florence.',
+    identification:
+      'Large herbaceous perennial with red-purple stems. Alternate oval leaves. Long drooping racemes of white flowers followed by dark purple-black berries on hot pink pedicels.',
+    medicinalNotes:
+      'Traditional Southern and Appalachian folk medicine — berries and roots appear in “detox” and immune folklore. All parts contain saponins and lectins (especially root and seeds).',
+    holisticNotes:
+      'Young spring shoots were historically boiled in multiple changes of water (“poke sallet”) — a dangerous practice if done incorrectly.',
+    preparation:
+      'Historical reference only. Modern herbalism does not recommend internal use. Topical applications appear in some folk traditions.',
+    harvestSeason: 'Spring shoots (historical only) — berries ripen late summer.',
+    safetyWarnings: [
+      'ROOTS AND SEEDS ARE HIGHLY TOXIC — can cause severe vomiting, diarrhea, and death.',
+      'Raw berries poisonous to children and pets.',
+      'Do not follow social-media “detox” protocols.',
+      'If ingested, call Oregon Poison Center 1-800-222-1222 immediately.',
+    ],
+    ...gallery('pokeweed', 'Wikimedia Commons — Phytolacca americana', [
+      'Red stem & leaves',
+      'Purple berries',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/PHAM4' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Phytolacca_americana' },
+    ],
+  },
+  {
+    id: 'comfrey',
+    commonName: 'Comfrey',
+    scientificName: 'Symphytum officinale',
+    alsoKnownAs: ['Knitbone', 'Boneset'],
+    uses: 'medicinal',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Garden escape and riparian edges — widely planted in Eugene valley herb gardens and naturalized near streams. Large hairy leaves in basal rosette.',
+    identification:
+      'Coarse hairy lance-shaped leaves with decurrent wings on stem. Clusters of drooping bell-shaped purple to cream flowers. Thick black taproot.',
+    medicinalNotes:
+      'Allantoin-rich leaves traditionally used for bruises, sprains, and topical wound support. Pyrrolizidine alkaloids (PAs) in roots and leaves damage the liver when taken internally.',
+    holisticNotes:
+      'FDA and European regulators have restricted or banned oral comfrey products — yet it remains one of the most popular folk topical herbs in Pacific Northwest homestead culture.',
+    preparation:
+      'External only: infused oil or poultice from dried leaves. Never use on broken skin long-term. Do not ingest teas, capsules, or tinctures.',
+    harvestSeason: 'Leaves: before flowering (spring). Flowers: early summer.',
+    safetyWarnings: [
+      'BANNED for internal use in many countries — hepatotoxic PAs accumulate.',
+      'Do not use during pregnancy or breastfeeding.',
+      'Do not apply open-wound poultices without qualified herbalist guidance.',
+      'Russian comfrey (S. × uplandicum) is also PA-containing.',
+    ],
+    ...gallery('comfrey', 'Wikimedia Commons — Symphytum officinale', [
+      'Hairy leaves & flowers',
+      'Flower cluster detail',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Symphytum_officinale' },
+      { label: 'OSU Extension — herbal safety', url: 'https://extension.oregonstate.edu/' },
+    ],
+  },
+  {
+    id: 'sheep-sorrel',
+    commonName: 'Sheep Sorrel',
+    scientificName: 'Rumex acetosella',
+    alsoKnownAs: ['Red sorrel', 'Field sorrel'],
+    uses: 'medicinal',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Lawns, pastures, roadsides, and disturbed acidic soils — one of the most common weeds in Oregon. Often grows alongside burdock in the same disturbed patches.',
+    identification:
+      'Arrowhead-shaped leaves with basal lobes pointing backward (sheep’s head silhouette). Red-tinged stems. Small reddish flower spikes on wire-like stalks. Sour lemon taste from oxalic acid.',
+    medicinalNotes:
+      'Key ingredient in the Essiac folk cancer-support tea formula (with burdock root, slippery elm, and Indian rhubarb). No clinical proof of anti-cancer effect; used historically as cooling astringent.',
+    holisticNotes: 'Pairs ecologically and in herbal lore with burdock — both common valley “weeds” with deep folk followings.',
+    preparation:
+      'Essiac-style decoctions use dried aerial parts. Small amounts in salad. Tea from dried herb.',
+    harvestSeason: 'Spring through summer before seed set.',
+    safetyWarnings: [
+      'High oxalates — avoid large amounts; kidney stone risk.',
+      'Essiac and cancer claims are not FDA-approved — consult oncology providers.',
+      'Do not confuse with toxic lookalikes in unrelated families.',
+    ],
+    ...gallery('sheep-sorrel', 'Wikimedia Commons — Rumex acetosella', [
+      'Arrowhead leaves',
+      'Red flower spikes',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rumex_acetosella' },
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/RUAC' },
     ],
   },
 
@@ -987,6 +1256,94 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     ]),
     externalLinks: [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_semilanceata' },
+    ],
+  },
+  {
+    id: 'psilocybe-allenii',
+    commonName: 'Allenii',
+    scientificName: 'Psilocybe allenii',
+    alsoKnownAs: ['Psilocybe cyanofriscosa'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['florence', 'both'],
+    habitat:
+      'Wood-chip mulch and landscaped beds along the Oregon coast and I-5 corridor — first described from the San Francisco Bay Area and documented north into coastal Oregon towns including the Florence area.',
+    identification:
+      'Caramel to chestnut cap, often wavy when mature. White stem with strong blue bruising. Purple-brown spore print. Grows on wood chips — member of the Pacific wood-lover complex related to P. cyanescens.',
+    holisticNotes:
+      'Often found alongside P. cyanescens in the same mulch beds — cap size and subtle macro features help separate species.',
+    preparation: 'Reference only — not consumption guidance.',
+    harvestSeason: 'Late fall through winter (Nov–Jan) after rains.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed Oregon psilocybin service contexts.',
+      'Deadly Galerina marginata shares the same wood-chip habitat.',
+      'Spore print and expert confirmation mandatory.',
+      'Educational reference only.',
+    ],
+    ...gallery('psilocybe-allenii', 'Wikimedia Commons — Psilocybe allenii', [
+      'Wood-chip cluster',
+      'Cap & stem bruising',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_allenii' },
+      { label: 'Mushroom Observer', url: 'https://mushroomobserver.org/' },
+    ],
+  },
+  {
+    id: 'psilocybe-stuntzii',
+    commonName: 'Stuntz’s Blue Legs',
+    scientificName: 'Psilocybe stuntzii',
+    alsoKnownAs: ['Blue ringer', 'Stuntz’s psilocybe'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Lawns, grassy areas near conifers, and mulched beds in the Willamette Valley — named for UW mycologist Daniel Stuntz. Common in Eugene-area campus lawns and park edges after fall rains.',
+    identification:
+      'Small to medium brown cap. Stem bruises blue-green distinctly (“blue legs”). Purple-brown spore print. Often grows in grass or near wood chips — not a large wood-cluster species.',
+    holisticNotes: 'One of the classic PNW lawn-and-mulch psilocybes — smaller than cyanescens but similarly potent.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Fall (Oct–Dec) during cool wet weather.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed contexts.',
+      'Lawn mushrooms include toxic species — never rely on blue bruising alone.',
+      'Pesticide-treated lawns are unsafe to forage.',
+      'Educational reference only.',
+    ],
+    ...gallery('psilocybe-stuntzii', 'Wikimedia Commons — Psilocybe stuntzii', [
+      'Lawn habitat',
+      'Blue stem bruising',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_stuntzii' },
+    ],
+  },
+  {
+    id: 'psilocybe-baeocystis',
+    commonName: 'Bottle Cap',
+    scientificName: 'Psilocybe baeocystis',
+    alsoKnownAs: ['Knobby tops', 'Blue bell'],
+    uses: 'hallucinogenic',
+    category: 'mushroom',
+    regions: ['both'],
+    habitat:
+      'Mulched garden beds, bark chips, and rich soil under conifers — reported throughout western Oregon from valley cities to coast range towns near Florence.',
+    identification:
+      'Dark olive-brown conical cap (“bottle cap” shape). Stem often banded and bruises blue. Distinctive baeocystin content in chemistry literature. Purple-brown spore print.',
+    holisticNotes: 'Named for the bottle-cap silhouette of young specimens — another cyanescens-complex wood-lover.',
+    preparation: 'Reference only.',
+    harvestSeason: 'Late fall through winter on mulched beds.',
+    safetyWarnings: [
+      'ILLEGAL outside licensed contexts.',
+      'Galerina and other wood-inhabiting amatoxin species are deadly lookalikes.',
+      'Educational reference only — not medical or legal advice.',
+    ],
+    ...gallery('psilocybe-baeocystis', 'Wikimedia Commons — Psilocybe baeocystis', [
+      'Conical cap on mulch',
+      'Stem banding & bruising',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Psilocybe_baeocystis' },
     ],
   },
   {

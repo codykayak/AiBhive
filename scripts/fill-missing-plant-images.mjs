@@ -55,6 +55,13 @@ const SPECIES = [
   { id: 'morel', search: 'Morchella esculenta' },
   { id: 'purslane', search: 'Portulaca oleracea' },
   { id: 'burdock', search: 'Arctium minus' },
+  { id: 'wild-lettuce', search: 'Lactuca serriola' },
+  { id: 'pokeweed', search: 'Phytolacca americana' },
+  { id: 'comfrey', search: 'Symphytum officinale' },
+  { id: 'sheep-sorrel', search: 'Rumex acetosella' },
+  { id: 'psilocybe-allenii', search: 'Psilocybe allenii' },
+  { id: 'psilocybe-stuntzii', search: 'Psilocybe stuntzii' },
+  { id: 'psilocybe-baeocystis', search: 'Psilocybe baeocystis' },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

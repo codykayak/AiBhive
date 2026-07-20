@@ -34,6 +34,8 @@ export type PlantEntry = {
   regions: PlantRegion[];
   habitat: string;
   identification: string;
+  /** Toxic or confusing species — especially important on edible entries */
+  lookalikes?: string[];
   edibleNotes?: string;
   medicinalNotes?: string;
   holisticNotes?: string;
