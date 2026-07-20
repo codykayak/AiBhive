@@ -4,6 +4,7 @@ import {
   LIVING_KNOWLEDGE_HERO_LEAD,
   LIVING_KNOWLEDGE_SHORT_NAME,
 } from '../../../lib/oregonPlantMedicine/branding';
+import { useAutoplayVideo } from './useAutoplayVideo';
 
 const MP4 = '/plant-medicine-foraging-aibhive.mp4';
 const WEBM = '/plant-medicine-foraging-aibhive.webm';
@@ -15,6 +16,8 @@ type Props = {
 };
 
 export default function OregonPlantMedicineHero({ compact = false, actions, onContribute }: Props) {
+  const videoRef = useAutoplayVideo([]);
+
   return (
     <section
       className={`relative overflow-hidden ${
@@ -24,12 +27,13 @@ export default function OregonPlantMedicineHero({ compact = false, actions, onCo
     >
       <div className="absolute inset-0" aria-hidden>
         <video
+          ref={videoRef}
           className="absolute inset-0 w-full h-[115%] object-cover object-center"
           autoPlay
           loop
           muted
           playsInline
-          preload="metadata"
+          preload="auto"
         >
           <source src={WEBM} type="video/webm" />
           <source src={MP4} type="video/mp4" />

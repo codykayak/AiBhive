@@ -24,10 +24,11 @@ type Props = {
   scientificName: string;
   alt: string;
   className?: string;
+  plantId?: string;
 };
 
-/** Plant photo with Wikipedia fallback when Commons hotlink fails. */
-export default function PlantImage({ src, scientificName, alt, className }: Props) {
+/** Plant photo with local-file and Wikipedia fallbacks when remote URLs fail. */
+export default function PlantImage({ src, scientificName, alt, className, plantId }: Props) {
   const [current, setCurrent] = useState(src);
   const [failed, setFailed] = useState(false);
 
@@ -38,6 +39,10 @@ export default function PlantImage({ src, scientificName, alt, className }: Prop
 
   const onError = () => {
     void (async () => {
+      if (plantId && current !== `/oregon-plant-medicine/${plantId}.jpg`) {
+        setCurrent(`/oregon-plant-medicine/${plantId}.jpg`);
+        return;
+      }
       const fallback = await wikipediaFallback(scientificName);
       if (fallback && fallback !== current) {
         setCurrent(fallback);

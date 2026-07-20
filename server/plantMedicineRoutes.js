@@ -8,6 +8,7 @@ import {
   deletePost,
   getProfile,
   listPendingPosts,
+  listCommunityFeed,
   listPostsForPlant,
   listPostsForTopic,
   moderatePost,
@@ -75,6 +76,17 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/upload]', err);
       return res.status(500).json({ error: err.message || 'Upload failed' });
+    }
+  });
+
+  app.get('/api/plant-medicine/feed', async (req, res) => {
+    try {
+      const viewer = await verifyHiveAuth(req);
+      const posts = await listCommunityFeed(db, { viewerUid: viewer?.uid, gcsBucket });
+      return res.json({ posts });
+    } catch (err) {
+      console.error('[plant-medicine/feed GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load feed' });
     }
   });
 

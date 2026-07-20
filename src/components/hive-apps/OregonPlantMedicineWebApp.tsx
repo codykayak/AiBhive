@@ -22,6 +22,7 @@ import {
   X,
   PlusCircle,
   PawPrint,
+  Users,
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
 import {
@@ -57,6 +58,7 @@ import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
+import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import {
   HOLISTIC_REMEDIES_PATH,
@@ -81,7 +83,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
+type Tab = 'community' | 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -341,7 +343,7 @@ function PlantDetail({
 }
 
 /** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
-export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plants' }: Props) {
+export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'community' }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
@@ -662,6 +664,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
         <nav className="flex gap-2 flex-wrap">
           {(
             [
+              ['community', 'Community', Users],
               ['plants', 'Plant library', Sprout],
               ['edibles', 'Edibles', Apple],
               ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
@@ -687,6 +690,14 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
       </header>
 
       <div className={expanded ? 'px-4 sm:px-8 py-6 max-w-6xl mx-auto' : 'p-4 max-h-[70vh] overflow-y-auto'}>
+        {tab === 'community' ? (
+          <CommunityFeedPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onOpenPlant={(plant) => setSelected(plant)}
+          />
+        ) : null}
+
         {tab === 'plants' || tab === 'edibles' ? (
           <>
             {tab === 'edibles' ? (
@@ -819,6 +830,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
                   <div className="relative h-36 overflow-hidden">
                     <PlantPhoto
                       src={plant.imageUrl}
+                      plantId={plant.id}
                       scientificName={plant.scientificName}
                       alt={plant.commonName}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
