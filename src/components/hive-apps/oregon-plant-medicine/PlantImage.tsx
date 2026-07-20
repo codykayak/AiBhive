@@ -39,8 +39,16 @@ export default function PlantImage({ src, scientificName, alt, className, plantI
 
   const onError = () => {
     void (async () => {
-      if (plantId && current !== `/oregon-plant-medicine/${plantId}.jpg`) {
+      if (plantId && current === src && current !== `/oregon-plant-medicine/${plantId}.jpg`) {
         setCurrent(`/oregon-plant-medicine/${plantId}.jpg`);
+        return;
+      }
+      if (plantId && current.endsWith('.jpg') && !current.includes('-2.jpg')) {
+        setCurrent(`/oregon-plant-medicine/${plantId}-2.jpg`);
+        return;
+      }
+      if (plantId && current.includes('-2.jpg')) {
+        setCurrent(`/oregon-plant-medicine/${plantId}-3.jpg`);
         return;
       }
       const fallback = await wikipediaFallback(scientificName);

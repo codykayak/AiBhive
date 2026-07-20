@@ -1,6 +1,7 @@
 import type { PlantEntry, PlantImage } from './types';
 import { PLANT_IMAGE_MANIFEST } from './plantImageManifest';
 import { LOCAL_PLANT_IMAGE_IDS } from './localPlantImageIds';
+import { commonsImage } from './commonsImage';
 
 /** Local public folder images (downloaded via fetch-oregon-plant-images.mjs). */
 export function gallery(
@@ -24,8 +25,7 @@ export function wikiGallery(
   credit = 'Wikimedia Commons',
   captions: [string, string] = ['Habitat & growth habit', 'Flowers, fruit, or ID detail'],
 ): Pick<PlantEntry, 'imageUrl' | 'imageCredit' | 'additionalImages'> {
-  const url = (file: string) =>
-    `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=900`;
+  const url = (file: string) => commonsImage(file, 900);
   return {
     imageUrl: url(files[0]),
     imageCredit: credit,

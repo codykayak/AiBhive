@@ -36,23 +36,50 @@ function gcsPublicUrl(bucketName, objectPath) {
   return `https://storage.googleapis.com/${bucketName}/${objectPath}`;
 }
 
-/** Ensure plant-medicine uploads use a browser-loadable public GCS URL. */
-export async function resolvePlantMedicineMediaUrl(gcsBucket, url) {
-  if (!url || !gcsBucket) return url;
+/** Same-origin proxy URL — reliable in browsers regardless of GCS bucket ACL. */
+export function plantMedicineMediaProxyUrl(objectPath) {
+  const encoded = objectPath.split('/').map((seg) => encodeURIComponent(seg)).join('/');
+  return `/api/plant-medicine/media/${encoded}`;
+}
+
+/** Normalize stored media URLs to the app proxy path. */
+export async function resolvePlantMedicineMediaUrl(_gcsBucket, url) {
+  if (!url) return url;
+  if (url.startsWith('/api/plant-medicine/media/')) return url;
 
   const path = parsePlantMedicineStoragePath(url);
-  if (!path?.startsWith('plant-medicine/')) {
-    if (url.includes(`storage.googleapis.com/${gcsBucket.name}/plant-medicine/`)) return url;
-    return url;
+  if (path?.startsWith('plant-medicine/')) {
+    return plantMedicineMediaProxyUrl(path);
   }
+  if (url.includes('/plant-medicine/')) {
+    const idx = url.indexOf('plant-medicine/');
+    const objectPath = url.slice(idx).split('?')[0];
+    if (objectPath.startsWith('plant-medicine/')) {
+      return plantMedicineMediaProxyUrl(objectPath);
+    }
+  }
+  return url;
+}
 
-  const file = gcsBucket.file(path);
-  try {
-    await file.makePublic();
-  } catch {
-    // Bucket may use uniform public access or IAM-only policy
+export async function streamPlantMedicineMedia(gcsBucket, objectPath, res) {
+  if (!gcsBucket) {
+    res.status(503).json({ error: 'Media storage not configured' });
+    return;
   }
-  return gcsPublicUrl(gcsBucket.name, path);
+  if (!objectPath?.startsWith('plant-medicine/')) {
+    res.status(400).json({ error: 'Invalid media path' });
+    return;
+  }
+  const file = gcsBucket.file(objectPath);
+  const [exists] = await file.exists();
+  if (!exists) {
+    res.status(404).end();
+    return;
+  }
+  const [meta] = await file.getMetadata();
+  res.setHeader('Content-Type', meta.contentType || 'application/octet-stream');
+  res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+  file.createReadStream().on('error', () => res.status(500).end()).pipe(res);
 }
 
 async function resolveProfile(db, uid, gcsBucket) {
@@ -342,5 +369,5 @@ export async function uploadPlantMedicineImage(gcsBucket, { uid, kind, buffer, m
   } catch {
     // Bucket may already use uniform public access
   }
-  return gcsPublicUrl(gcsBucket.name, path);
+  return plantMedicineMediaProxyUrl(path);
 }

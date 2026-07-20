@@ -5,7 +5,7 @@ import {
   matchesAnimalHealthCategory,
 } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
 import { ANIMAL_HEALTH_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
-import { ANIMAL_HEALTH_TAB_LABEL, ADJACENT_RESEARCH_HEADING } from '../../../lib/oregonPlantMedicine/branding';
+import { ANIMAL_HEALTH_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
 
@@ -36,12 +36,11 @@ export default function AnimalHealthPanel({ user, onSignIn, onOpenPlant, onContr
   return (
     <ResearchLibraryPanel
       library="animal-health"
-      tabLabel={`${ADJACENT_RESEARCH_HEADING} · ${ANIMAL_HEALTH_TAB_LABEL}`}
+      tabLabel={ANIMAL_HEALTH_TAB_LABEL}
       introText={
         <p>
           Holistic veterinary education for dogs, cats, horses, and livestock — gut health, herbal context, energy work,
-          and nutrition debates. An <strong className="text-white">adjacent research library</strong> alongside wild
-          plant foraging, not a substitute for your veterinarian.{' '}
+          and nutrition debates. Community notes and upvotes like our plant library.{' '}
           <strong className="text-white">Not veterinary advice.</strong>
         </p>
       }

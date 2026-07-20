@@ -15,6 +15,7 @@ import {
   toggleUpvote,
   uploadPlantMedicineImage,
   upsertProfile,
+  streamPlantMedicineMedia,
 } from './plantMedicine.js';
 
 const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
@@ -76,6 +77,16 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/upload]', err);
       return res.status(500).json({ error: err.message || 'Upload failed' });
+    }
+  });
+
+  app.get(/^\/api\/plant-medicine\/media\/(.+)$/, async (req, res) => {
+    try {
+      const objectPath = decodeURIComponent(req.params[0]);
+      await streamPlantMedicineMedia(gcsBucket, objectPath, res);
+    } catch (err) {
+      console.error('[plant-medicine/media]', err);
+      if (!res.headersSent) res.status(500).json({ error: err.message || 'Media failed' });
     }
   });
 
