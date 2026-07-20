@@ -29,6 +29,9 @@
   ── DEFAULTS ────────────────────────────────────────────────────────────────
   Anti-Recoil ON (low recoil) | Polar AA ON | Hold Breath ON | Auto Run ON
   Slide Cancel OFF | Hair Triggers ON | VM Speed 3 | Move Boost OFF
+
+  Hold Breath: while ADS (LT), auto-presses L3 (click / push down on left stick) for
+  Steady Aim / hold breath — set Steady Aim to Left Stick Press in CoD settings.
 ================================================================================
 */
 
@@ -38,7 +41,8 @@ define ADS_BTN      = XB1_LT;
 define MENU_HOLD    = XB1_LT;
 define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
-define SPRINT_BTN   = XB1_LS;
+define SPRINT_BTN   = XB1_LS;   // L3 — tactical sprint (Auto Run) & Steady Aim (Hold Breath)
+define HOLDBREATH_BTN = XB1_LS; // press down on left thumbstick (L3 click)
 define RX           = XB1_RX;
 define RY           = XB1_RY;
 define LX           = XB1_LX;
@@ -304,7 +308,7 @@ main {
 
             if(mod_auto_run && get_val(LY) < -25 && !get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
 
-            if(mod_hold_breath && get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            run_hold_breath();
 
             if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
                 set_val(LY, clamp(get_val(LY) - Move_boost_val, -100, -1));
@@ -398,6 +402,13 @@ function block_menu_outputs() {
 
 function reset_menu_timeout() {
     MenuTimeOut = menu_time_active;
+}
+
+// While ADS: auto-click L3 (press down left stick) for Steady Aim / hold breath.
+// Uses get_val(ADS_BTN) so Hair Triggers + physical LT both count as aiming.
+function run_hold_breath() {
+    if(!mod_hold_breath) return;
+    if(get_val(ADS_BTN) > 10) set_val(HOLDBREATH_BTN, 100);
 }
 
 function run_polar_aa() {
