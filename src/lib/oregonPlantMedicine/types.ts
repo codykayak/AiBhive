@@ -1,4 +1,22 @@
-export type PlantRegion = 'eugene' | 'florence' | 'both';
+export type PlantRegion =
+  | 'or-willamette'
+  | 'or-coast'
+  | 'or-portland'
+  | 'or-cascades'
+  | 'or-klamath'
+  | 'or-rogue'
+  | 'or-east'
+  | 'ca-sierra-foothills'
+  | 'ca-silver-lake'
+  | 'ca-sacramento'
+  | 'ca-shasta'
+  | 'ca-north-coast'
+  /** @deprecated use or-willamette */
+  | 'eugene'
+  /** @deprecated use or-coast */
+  | 'florence'
+  /** @deprecated valley + coast OR */
+  | 'both';
 
 export type PlantUse = 'edible' | 'medicinal' | 'both' | 'hallucinogenic';
 

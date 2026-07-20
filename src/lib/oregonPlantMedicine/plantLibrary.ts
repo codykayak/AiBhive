@@ -1,4 +1,7 @@
 import type { PlantEntry, PlantImage, ResourceCategory } from './types';
+import { EDIBLE_MUSHROOM_LIBRARY } from './plantLibraryEdibleMushrooms';
+export { matchesRegion, regionFilterLabel, regionLabel, REGION_FILTER_OPTIONS } from './regionCatalog';
+export type { RegionFilter } from './regionCatalog';
 
 function gallery(
   id: string,
@@ -509,7 +512,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     scientificName: 'Cantharellus formosus',
     uses: 'edible',
     category: 'mushroom',
-    regions: ['florence', 'both'],
+    regions: ['florence', 'both', 'or-coast', 'or-cascades', 'or-rogue', 'ca-north-coast', 'ca-shasta'],
     habitat: 'Mossy conifer forest floor — coast range and valley foothills after fall rains.',
     identification: 'Golden funnel-shaped cap with false gills (forked ridges). Fruity apricot smell. No true gills.',
     lookalikes: [
@@ -940,7 +943,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
     alsoKnownAs: ['Yellow morel', 'Black morel'],
     uses: 'edible',
     category: 'mushroom',
-    regions: ['eugene', 'both'],
+    regions: ['eugene', 'both', 'or-willamette', 'or-cascades', 'or-klamath', 'or-rogue', 'ca-sierra-foothills', 'ca-shasta'],
     habitat:
       'Burn scars, disturbed soil, cottonwood bottoms, and old orchards in the Willamette Valley — spring specialty after warm rains.',
     identification:
@@ -1482,6 +1485,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       { label: 'OSU — Poisonous plants', url: 'https://extension.oregonstate.edu/gardening/techniques/poisonous-plants' },
     ],
   },
+  ...EDIBLE_MUSHROOM_LIBRARY,
 ];
 
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
@@ -1686,14 +1690,3 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
     ],
   },
 ];
-
-export function regionLabel(r: PlantEntry['regions'][number]): string {
-  if (r === 'eugene') return 'Eugene / Willamette Valley';
-  if (r === 'florence') return 'Florence / Oregon Coast';
-  return 'Both regions';
-}
-
-export function matchesRegion(plant: PlantEntry, filter: 'all' | 'eugene' | 'florence'): boolean {
-  if (filter === 'all') return true;
-  return plant.regions.includes(filter) || plant.regions.includes('both');
-}
