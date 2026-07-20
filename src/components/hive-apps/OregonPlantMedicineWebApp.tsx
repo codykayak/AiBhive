@@ -63,6 +63,8 @@ import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
 import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
+import { getFeaturedEssay } from '../../lib/oregonPlantMedicine/featuredEssays';
+import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import {
   EARTH_PLANT_MEDICINE_NAME,
   HOLISTIC_REMEDIES_PATH,
@@ -568,6 +570,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   }, [query, region, favoritesOnly, favorites]);
 
   const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
+  const ediblesFeaturedEssay = getFeaturedEssay('edibles');
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -731,17 +734,28 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         {tab === 'plants' || tab === 'edibles' ? (
           <>
             {tab === 'edibles' ? (
-              <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
-                <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
-                  Wild edible foods &amp; mushrooms
-                </p>
-                <p>
-                  Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
-                  <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
-                  preparation ideas.{' '}
-                  <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
-                </p>
-              </div>
+              <>
+                {ediblesFeaturedEssay ? (
+                  <div className="mb-5">
+                    <FeaturedEssayPanel
+                      essay={ediblesFeaturedEssay}
+                      onOpenPlant={(plant) => setSelected(plant)}
+                      spanGrid={false}
+                    />
+                  </div>
+                ) : null}
+                <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
+                  <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
+                    Wild edible foods &amp; mushrooms
+                  </p>
+                  <p>
+                    Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
+                    <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
+                    preparation ideas.{' '}
+                    <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
+                  </p>
+                </div>
+              </>
             ) : tab === 'plants' ? (
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 mb-5 text-sm text-emerald-100/90 leading-relaxed">
                 <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
