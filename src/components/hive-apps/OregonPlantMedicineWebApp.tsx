@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  Apple,
   BookOpen,
   ExternalLink,
   FileText,
@@ -23,7 +24,7 @@ import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonP
 
 type Props = { expanded?: boolean };
 
-type Tab = 'plants' | 'resources' | 'guide' | 'pdfs';
+type Tab = 'plants' | 'edibles' | 'resources' | 'guide' | 'pdfs';
 type RegionFilter = 'all' | 'eugene' | 'florence';
 type UseFilter = 'all' | PlantUse;
 
@@ -254,6 +255,30 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
     });
   }, [query, region, useFilter, favoritesOnly, favorites]);
 
+  const edibleFiltered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return PLANT_LIBRARY.filter((p) => {
+      if (p.uses !== 'edible' && p.uses !== 'both') return false;
+      if (!matchesRegion(p, region)) return false;
+      if (favoritesOnly && !favorites.has(p.id)) return false;
+      if (!q) return true;
+      const hay = [
+        p.commonName,
+        p.scientificName,
+        ...(p.alsoKnownAs ?? []),
+        p.habitat,
+        p.identification,
+        p.edibleNotes ?? '',
+        p.preparation ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [query, region, favoritesOnly, favorites]);
+
+  const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
+
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
       const next = new Set(prev);
@@ -289,6 +314,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           {(
             [
               ['plants', 'Plant library', Sprout],
+              ['edibles', 'Edibles', Apple],
               ['pdfs', 'PDF guides', FileText],
               ['resources', 'Resources', BookOpen],
               ['guide', 'Field guide', MapPin],
@@ -312,8 +338,19 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
       </header>
 
       <div className={expanded ? 'px-4 sm:px-8 py-6 max-w-6xl mx-auto' : 'p-4 max-h-[70vh] overflow-y-auto'}>
-        {tab === 'plants' ? (
+        {tab === 'plants' || tab === 'edibles' ? (
           <>
+            {tab === 'edibles' ? (
+              <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
+                <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">Wild edible foods</p>
+                <p>
+                  Berries, greens, mushrooms, and roots of Eugene &amp; Florence — each entry includes{' '}
+                  <strong className="text-white">three ID photos</strong>, habitat notes, harvest season, and food
+                  preparation ideas. Tap any plant for edible uses, cooking tips, and safety warnings.
+                </p>
+              </div>
+            ) : null}
+
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -321,7 +358,9 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                   type="search"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search plants, Latin names, habitat…"
+                  placeholder={
+                    tab === 'edibles' ? 'Search berries, greens, mushrooms…' : 'Search plants, Latin names, habitat…'
+                  }
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-emerald-500/50"
                 />
               </div>
@@ -334,17 +373,19 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 <option value="eugene">Eugene / Valley</option>
                 <option value="florence">Florence / Coast</option>
               </select>
-              <select
-                value={useFilter}
-                onChange={(e) => setUseFilter(e.target.value as UseFilter)}
-                className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
-              >
-                <option value="all">All uses</option>
-                <option value="edible">Edible</option>
-                <option value="medicinal">Medicinal</option>
-                <option value="both">Edible &amp; medicinal</option>
-                <option value="hallucinogenic">Hallucinogenic</option>
-              </select>
+              {tab === 'plants' ? (
+                <select
+                  value={useFilter}
+                  onChange={(e) => setUseFilter(e.target.value as UseFilter)}
+                  className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+                >
+                  <option value="all">All uses</option>
+                  <option value="edible">Edible</option>
+                  <option value="medicinal">Medicinal</option>
+                  <option value="both">Edible &amp; medicinal</option>
+                  <option value="hallucinogenic">Hallucinogenic</option>
+                </select>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setFavoritesOnly((v) => !v)}
@@ -359,13 +400,19 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 mb-4">{filtered.length} plants in library</p>
+            <p className="text-xs text-slate-500 mb-4">
+              {plantsToShow.length} {tab === 'edibles' ? 'edible wild foods' : 'plants in library'}
+            </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((plant) => (
+              {plantsToShow.map((plant) => (
                 <article
                   key={plant.id}
-                  className="group rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden hover:border-emerald-500/40 transition-colors cursor-pointer"
+                  className={`group rounded-xl border bg-slate-900/60 overflow-hidden transition-colors cursor-pointer ${
+                    tab === 'edibles'
+                      ? 'border-slate-800 hover:border-lime-500/40'
+                      : 'border-slate-800 hover:border-emerald-500/40'
+                  }`}
                   onClick={() => setSelected(plant)}
                   onKeyDown={(e) => e.key === 'Enter' && setSelected(plant)}
                   role="button"
@@ -536,6 +583,33 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 strawberry, licorice fern on mossy maples, and chanterelles in fall. Coastal plants tolerate salt spray
                 and sand — very different from valley species 60 miles inland.
               </p>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-black text-white mb-2">Edible wild foods — fruit &amp; preparation</h2>
+              <p className="mb-3">
+                Open the <strong className="text-lime-300">Edibles</strong> tab for the full wild-food library — berries,
+                greens, mushrooms, and roots with three ID photos each. Below are seasonal highlights for Eugene and
+                Florence.
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-slate-400">
+                <li>
+                  <strong className="text-slate-200">Spring greens</strong> — nettle, miner&apos;s lettuce, chickweed,
+                  lamb&apos;s quarters, Douglas fir tips (April–May).
+                </li>
+                <li>
+                  <strong className="text-slate-200">Summer berries</strong> — salmonberry, thimbleberry, trailing
+                  blackberry, serviceberry, red huckleberry (May–August).
+                </li>
+                <li>
+                  <strong className="text-slate-200">Fall fruit &amp; fungi</strong> — evergreen huckleberry, salal,
+                  Nootka rose hips, chanterelles, and coastal crabapple jelly (Sep–Nov).
+                </li>
+                <li>
+                  <strong className="text-slate-200">Prep basics</strong> — cook all wild mushrooms; blanch nettle;
+                  strain rose hip hairs; never eat cattail from polluted water.
+                </li>
+              </ul>
             </section>
 
             <section>

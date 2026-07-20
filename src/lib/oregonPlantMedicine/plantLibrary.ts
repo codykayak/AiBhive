@@ -556,6 +556,352 @@ export const PLANT_LIBRARY: PlantEntry[] = [
       { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Equisetum_arvense' },
     ],
   },
+
+  // ——— Edible wild foods (Eugene & Florence) ———
+  {
+    id: 'thimbleberry',
+    commonName: 'Thimbleberry',
+    scientificName: 'Rubus parviflorus',
+    uses: 'edible',
+    category: 'berry',
+    regions: ['both'],
+    habitat:
+      'Openings, stream banks, and forest edges from Willamette Valley foothills to coast range near Florence. Large soft maple-like leaves on thornless stems.',
+    identification:
+      'Huge velvety 5-lobed maple-shaped leaves. White flowers in spring. Bright red soft berries that pull off like a thimble. No thorns.',
+    edibleNotes:
+      'One of the best fresh-eating trail berries in the PNW — soft, tart-sweet, doesn’t ship so you rarely see it in stores. Jam and sauce within hours of picking.',
+    holisticNotes: 'Classic coast-to-valley summer berry — often growing with salmonberry on the same hike.',
+    preparation: 'Eat fresh, freezer jam, or cook into sauce. Too delicate to dry well.',
+    harvestSeason: 'Berries: July–August. Young shoots peeled in spring (traditional).',
+    safetyWarnings: ['Positive Rubus ID — no thorns distinguishes from blackberries.'],
+    ...gallery('thimbleberry', 'Wikimedia Commons — Rubus parviflorus', [
+      'Large maple-like leaves',
+      'Red thimble fruits',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/RUPA2' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rubus_parviflorus' },
+    ],
+  },
+  {
+    id: 'trailing-blackberry',
+    commonName: 'Trailing Blackberry',
+    scientificName: 'Rubus ursinus',
+    alsoKnownAs: ['Pacific blackberry', 'California blackberry'],
+    uses: 'edible',
+    category: 'berry',
+    regions: ['both'],
+    habitat:
+      'Sunny roadsides, clearings, and dry edges throughout Lane County and coastal scrub toward Florence. Low trailing vines, not tall canes.',
+    identification:
+      'Thin trailing stems with small hooked prickles. White to pink flowers. Small intense black berries with excellent flavor — parent of many cultivated varieties.',
+    edibleNotes:
+      'Oregon’s native wild blackberry — smaller but far more aromatic than Himalayan blackberry. Best pies and jam berry in the valley.',
+    holisticNotes: 'Seek out native patches instead of invasive Himalaya thickets when possible.',
+    preparation: 'Fresh, pie, jam, vinegar, or freeze on sheet trays.',
+    harvestSeason: 'Berries: July–September.',
+    safetyWarnings: [
+      'Do not confuse with unripe or toxic berries on other plants.',
+      'Himalayan blackberry is invasive but also edible — native trailing has finer flavor.',
+    ],
+    ...gallery('trailing-blackberry', 'Wikimedia Commons — Rubus ursinus', [
+      'Trailing vine habit',
+      'Ripe black fruit',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/RUUR' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Rubus_ursinus' },
+    ],
+  },
+  {
+    id: 'red-huckleberry',
+    commonName: 'Red Huckleberry',
+    scientificName: 'Vaccinium parvifolium',
+    uses: 'edible',
+    category: 'berry',
+    regions: ['both'],
+    habitat:
+      'Often on decaying logs and stumps in moist conifer forest — common in coast range hikes near Florence and foothill forests around Eugene.',
+    identification:
+      'Tiny bright green leaves on angular green stems. Small red translucent berries. Grows on wood, not in soil (key ID clue).',
+    edibleNotes:
+      'Tart bright berries — outstanding for pancakes, muffins, and syrup. Less sweet than evergreen huckleberry but incredible baked.',
+    holisticNotes: 'Look for red berries on green stems sprouting from old logs.',
+    preparation: 'Cook with sugar, bake, or dry for winter tea. Raw is quite tart.',
+    harvestSeason: 'Late summer–fall.',
+    safetyWarnings: ['Some Vaccinium species look similar — confirm red berries on woody stems from logs.'],
+    ...gallery('red-huckleberry', 'Wikimedia Commons — Vaccinium parvifolium', [
+      'On decaying wood',
+      'Red berries on green stems',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/VAPA8' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Vaccinium_parvifolium' },
+    ],
+  },
+  {
+    id: 'serviceberry',
+    commonName: 'Serviceberry',
+    scientificName: 'Amelanchier alnifolia',
+    alsoKnownAs: ['Saskatoon', 'Juneberry'],
+    uses: 'edible',
+    category: 'shrub',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Open slopes, oak savanna edges, and sunny forest margins in the eastern Willamette Valley and foothills — less common on immediate coast but present inland.',
+    identification:
+      'Shrub or small tree. White spring flowers in clusters. Blue-purple berries with crown scar on bottom (like tiny apples). Oval finely toothed leaves.',
+    edibleNotes:
+      'Sweet nutty berries — excellent fresh, in pies, or dried like raisins. One of the best “fruit tree” wild foods in eastern Lane County.',
+    holisticNotes: 'Ripens early — often called Juneberry for a reason.',
+    preparation: 'Fresh, pie, fruit leather, or dry. Remove stems.',
+    harvestSeason: 'Berries: June–July. Flowers: April–May.',
+    safetyWarnings: ['Berries must have crown scar (bottom dimple) like blueberry — not a nightshade.'],
+    ...gallery('serviceberry', 'Wikimedia Commons — Amelanchier alnifolia', [
+      'White spring flowers',
+      'Blue-purple fruit',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/AMAL2' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Amelanchier_alnifolia' },
+    ],
+  },
+  {
+    id: 'chickweed',
+    commonName: 'Chickweed',
+    scientificName: 'Stellaria media',
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Cool moist gardens, farm edges, and disturbed soil — abundant in Eugene valley winter and spring; mild coast winters near Florence.',
+    identification:
+      'Low tangled mat. Opposite oval leaves. Tiny white star flowers with five deeply split petals (looks like ten). Single line of hairs on stem that switches sides at each node.',
+    edibleNotes:
+      'Mild salad green — tastes like corn silk or mild lettuce. High in vitamins. One of the best winter wild greens in the valley.',
+    holisticNotes: 'Harvest when lush and green — bolts and fades in hot dry summer.',
+    preparation: 'Raw in salads, pesto, or brief wilt in soup. Do not cook long.',
+    harvestSeason: 'Best: October–April. Fades in summer heat.',
+    safetyWarnings: [
+      'Learn the stem-hair ID — spurge and other lookalikes lack the hair line.',
+      'Wash well — often grows near foot traffic.',
+    ],
+    ...gallery('chickweed', 'Wikimedia Commons — Stellaria media', [
+      'Mat growth habit',
+      'Star-shaped white flowers',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Stellaria_media' },
+    ],
+  },
+  {
+    id: 'lambs-quarters',
+    commonName: "Lamb's Quarters",
+    scientificName: 'Chenopodium album',
+    alsoKnownAs: ['Goosefoot', 'Wild spinach'],
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Disturbed soil, gardens, and farm fields throughout Eugene and coastal towns — classic “weed” superfood.',
+    identification:
+      'Gray-green leaves often with mealy white coating on undersides. Diamond toothed shape. Tall spikes of tiny green flowers in summer.',
+    edibleNotes:
+      'Top wild spinach substitute — steam, sauté, or blend in smoothies. More nutritious than cultivated spinach by many measures.',
+    holisticNotes: 'Young plants are tender; pinch tops for continued harvest.',
+    preparation: 'Steam or sauté young leaves and tips. Blanch and freeze for winter.',
+    harvestSeason: 'Young leaves: spring–early summer before flowering.',
+    safetyWarnings: [
+      'Always cook or blanch — raw in large amounts contains oxalates.',
+      'Avoid plants from contaminated soil (lead, pesticides).',
+    ],
+    ...gallery('lambs-quarters', 'Wikimedia Commons — Chenopodium album', [
+      'Mealy gray-green leaves',
+      'Flower spikes',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Chenopodium_album' },
+    ],
+  },
+  {
+    id: 'wild-mint',
+    commonName: 'Wild Mint',
+    scientificName: 'Mentha arvensis',
+    alsoKnownAs: ['Field mint', 'Corn mint'],
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Wet meadows, ditches, and stream margins — Willamette valley waterways and coastal creek bottoms near Florence.',
+    identification:
+      'Square stems. Opposite toothed leaves. Strong mint smell when crushed. Whorls of small lavender flowers.',
+    edibleNotes:
+      'Tea, tabbouleh, fruit salads, and syrup. Classic digestive and cooling summer herb.',
+    holisticNotes: 'Crush a leaf — if it doesn’t smell minty, it’s not mint.',
+    preparation: 'Fresh or dried tea. Infused honey. Chop leaves into salads.',
+    harvestSeason: 'Spring through fall — best before flowering for tenderest leaves.',
+    safetyWarnings: [
+      'Must smell strongly of mint — toxic lookalikes exist without mint odor.',
+      'Avoid polluted ditches.',
+    ],
+    ...gallery('wild-mint', 'Wikimedia Commons — Mentha arvensis', [
+      'Square stem & opposite leaves',
+      'Lavender flower whorls',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Mentha_arvensis' },
+    ],
+  },
+  {
+    id: 'cattail',
+    commonName: 'Cattail',
+    scientificName: 'Typha latifolia',
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Shallow freshwater marshes, ponds, and slow sloughs — West Eugene wetlands, Fern Ridge area, and Siuslaw estuary margins.',
+    identification:
+      'Tall sword-like leaves. Brown hot-dog seed heads in late summer. Grows in standing water or saturated mud.',
+    edibleNotes:
+      'Four-season food: spring white shoots (peel), early green flower spikes (corn-on-the-cob), pollen flour, and starchy rhizomes in fall/winter.',
+    holisticNotes: 'The “supermarket of the swamp” — learn one plant for many calories.',
+    preparation:
+      'Peel young shoots for stir-fry. Boil immature green spikes 5 min. Pollen in baked goods. Rhizome starch requires cleaning.',
+    harvestSeason: 'Shoots: spring. Pollen: early summer. Roots: fall.',
+    safetyWarnings: [
+      'NEVER harvest where water may be contaminated (ag runoff, sewage).',
+      'Do not confuse with toxic iris (flat fan leaves, no cattail seed head).',
+    ],
+    ...gallery('cattail', 'Wikimedia Commons — Typha latifolia', [
+      'Marsh habitat',
+      'Brown seed head',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/TYLA' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Typha_latifolia' },
+    ],
+  },
+  {
+    id: 'pacific-crabapple',
+    commonName: 'Pacific Crabapple',
+    scientificName: 'Malus fusca',
+    alsoKnownAs: ['Oregon crabapple'],
+    uses: 'edible',
+    category: 'tree',
+    regions: ['florence', 'both'],
+    habitat:
+      'Wet coastal forest and stream banks — native from Florence estuary north; occasional in valley riparian plantings.',
+    identification:
+      'Small tree with thorny twigs. White to pink spring blossoms. Yellow to reddish crabapples under 1 inch — very tart raw.',
+    edibleNotes:
+      'Classic pectin-rich wild fruit for jelly and cider. High natural pectin means excellent set without added box pectin.',
+    holisticNotes: 'Coast specialty — combine with sweeter fruit for sauce.',
+    preparation: 'Cook and strain for jelly. Cider vinegar. Never eat large amounts raw.',
+    harvestSeason: 'Fruit: September–October after frost sweetens slightly.',
+    safetyWarnings: [
+      'Very tart raw — cook before eating in quantity.',
+      'Crush seeds contain amygdalin — don’t eat crushed seeds.',
+    ],
+    ...gallery('pacific-crabapple', 'Wikimedia Commons — Malus fusca', [
+      'Spring blossoms',
+      'Small tart crabapples',
+    ]),
+    externalLinks: [
+      { label: 'USDA Plant Profile', url: 'https://plants.usda.gov/plant-profile/MAFU' },
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Malus_fusca' },
+    ],
+  },
+  {
+    id: 'morel',
+    commonName: 'Morel',
+    scientificName: 'Morchella sp.',
+    alsoKnownAs: ['Yellow morel', 'Black morel'],
+    uses: 'edible',
+    category: 'mushroom',
+    regions: ['eugene', 'both'],
+    habitat:
+      'Burn scars, disturbed soil, cottonwood bottoms, and old orchards in the Willamette Valley — spring specialty after warm rains.',
+    identification:
+      'Honeycombed pitted cap attached to stem. Hollow inside entire mushroom (cut lengthwise to verify). No gills — pits and ridges.',
+    edibleNotes:
+      'Premier spring gourmet mushroom — sauté in butter, dry for year-round use. Oregon spring morel season rivals anywhere in North America.',
+    holisticNotes: 'Check burn permits and land access — popular on public land near Eugene foothills.',
+    preparation: 'Always cook thoroughly. Split and wash out grit. Dry or sauté — never raw.',
+    harvestSeason: 'March–May after soil reaches ~50°F and spring rains.',
+    safetyWarnings: [
+      'MUST be hollow — false morels (Gyromitra) are solid and toxic.',
+      'Never eat raw — cook every wild mushroom.',
+      'Know land rules — some areas restrict mushroom harvest.',
+    ],
+    ...gallery('morel', 'Wikimedia Commons — Morchella', [
+      'Honeycombed cap',
+      'Hollow stem cross-section',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Morchella' },
+      { label: 'PSMS — Mushroom ID', url: 'https://www.psms.org/' },
+    ],
+  },
+  {
+    id: 'purslane',
+    commonName: 'Purslane',
+    scientificName: 'Portulaca oleracea',
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Hot dry disturbed soil — garden paths, farm rows, and sandy lots in Eugene summer and Florence coastal gardens.',
+    identification:
+      'Succulent red stems sprawling on ground. Small fleshy oval leaves. Tiny yellow flowers. Leaves feel juicy when pinched.',
+    edibleNotes:
+      'Highest plant source of omega-3 ALA among common weeds. Tangy lemon crunch in salads and tacos.',
+    holisticNotes: 'Thrives in summer heat when other greens bolt — valuable dry-season food.',
+    preparation: 'Raw in salads, pickled stems, or brief sauté. Thickens soups.',
+    harvestSeason: 'Summer when succulent — June–September.',
+    safetyWarnings: [
+      'Do not confuse with spurge — spurge has milky sap and is NOT succulent.',
+      'Wash away soil — low-growing.',
+    ],
+    ...gallery('purslane', 'Wikimedia Commons — Portulaca oleracea', [
+      'Succulent red stems',
+      'Yellow flowers',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Portulaca_oleracea' },
+    ],
+  },
+  {
+    id: 'burdock',
+    commonName: 'Burdock',
+    scientificName: 'Arctium minus',
+    alsoKnownAs: ['Lesser burdock', 'Gobo'],
+    uses: 'edible',
+    category: 'herb',
+    regions: ['both'],
+    habitat:
+      'Disturbed ground, trailsides, and vacant lots — ubiquitous weed with Velcro-like seed heads.',
+    identification:
+      'Large heart-shaped leaves with woolly undersides. Purple thistle-like flowers. Round bur seed heads that stick to clothing.',
+    edibleNotes:
+      'First-year roots are the famous Japanese gobo — earthy, crunchy, stir-fry staple. Peel thick skin; soak to reduce bitterness.',
+    holisticNotes: 'Harvest roots first fall or spring from first-year rosettes (no flower stalk yet).',
+    preparation: 'Scrub, peel, slice, soak 30 min. Stir-fry, pickle, or add to miso soup. Young leaf petioles peeled.',
+    harvestSeason: 'Roots: fall or spring of first year. Stalks: before flowers open.',
+    safetyWarnings: [
+      'Only first-year plants — woody second-year roots are inedible.',
+      'Flower stalk appears second year — then root is too tough.',
+    ],
+    ...gallery('burdock', 'Wikimedia Commons — Arctium minus', [
+      'Large rosette leaves',
+      'Purple flower & bur',
+    ]),
+    externalLinks: [
+      { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Arctium_minus' },
+    ],
+  },
+
   // ——— Hallucinogenics (educational reference — Oregon / PNW) ———
   {
     id: 'psilocybe-cyanescens',
@@ -782,6 +1128,38 @@ export const PLANT_LIBRARY: PlantEntry[] = [
 ];
 
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
+  {
+    id: 'edible-wild-foods',
+    title: 'Edible Wild Foods — Willamette & Coast',
+    description: 'Fruit, greens, mushrooms, and preparation references for Oregon foragers.',
+    links: [
+      {
+        label: 'OSU Extension — Wild harvesting',
+        url: 'https://extension.oregonstate.edu/',
+        description: 'Sustainable harvest guidelines and food safety basics.',
+      },
+      {
+        label: 'Oregon Flora Project',
+        url: 'https://www.oregonflora.org/',
+        description: 'Confirm species ID before any wild food harvest.',
+      },
+      {
+        label: 'PSMS — Pacific Northwest mushrooms',
+        url: 'https://www.psms.org/',
+        description: 'Chanterelle, morel, and other edible fungi ID.',
+      },
+      {
+        label: 'iNaturalist — Lane County edibles',
+        url: 'https://www.inaturalist.org/places/lane-county-us-or',
+        description: 'Community photos of berries and plants near Eugene.',
+      },
+      {
+        label: 'Oregon Poison Center',
+        url: 'https://www.ohsu.edu/oregon-poison-center',
+        description: '1-800-222-1222 — mushroom or plant exposure emergencies.',
+      },
+    ],
+  },
   {
     id: 'pnw-field-guides',
     title: 'Pacific Northwest Field Guides & ID',
