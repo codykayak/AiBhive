@@ -26,6 +26,11 @@
   Hold RS + D-Pad LEFT/RIGHT     = Anti-Recoil horizontal ±1
   Hold RS + VIEW                 = Save AR values
 
+  ── L3 (LEFT STICK CLICK) — CLAW LAYOUT ─────────────────────────────────────
+  Physical L3 is blocked — a faulty stick cannot toggle sprint/breath in-game.
+  Hold Breath: hold LB (left bumper) while ADS (LT) — script simulates L3.
+  Sprint: Auto Run simulates L3 when pushing the stick forward (hip-fire).
+
   ── DEFAULTS ────────────────────────────────────────────────────────────────
   Anti-Recoil ON (low recoil) | Polar AA ON | Hold Breath ON | Auto Run ON
   Slide Cancel OFF | Hair Triggers ON | VM Speed 3 | Move Boost OFF
@@ -39,6 +44,7 @@ define MENU_HOLD    = XB1_LT;
 define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
+define BREATH_BTN   = XB1_LB;
 define RX           = XB1_RX;
 define RY           = XB1_RY;
 define LX           = XB1_LX;
@@ -77,6 +83,7 @@ int count_black       = 0;
 int MenuTimeOut       = 0;
 define menu_time_active = 30000;
 define TimeToShowTitle  = 30000;
+define SPRINT_STICK_THR = -20;
 
 int aa_time;
 int aa_angle;
@@ -108,7 +115,8 @@ const string ON_TXT       = "ON";
 const string OFF_TXT      = "OFF";
 const string SAVED1       = "SETTINGS";
 const string SAVED2       = "SAVED";
-const string MENU_HINT    = "LT+START";
+const string SPLASH_L1    = "Press LT+START";
+const string SPLASH_L2    = "to enter menu";
 const string NO_EDIT1     = "No values to";
 const string NO_EDIT2     = "edit for mod";
 const string LBL_AR_VERT  = "AR Vertical";
@@ -218,9 +226,7 @@ main {
     }
 
     if(display_title && !ModMenu && !ModEdit) {
-        cls_oled(0);
-        print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 8, OLED_FONT_MEDIUM, 1, TITLE[0]);
-        print(center_x(sizeof(MENU_HINT) - 1, OLED_FONT_SMALL_WIDTH), 30, OLED_FONT_SMALL, 1, MENU_HINT[0]);
+        draw_splash_screen();
         ModMenu = FALSE;
         display_title = FALSE;
         display_black = TRUE;
@@ -302,9 +308,18 @@ main {
 
             if(mod_hair_trigger && get_ival(ADS_BTN) > 20) set_val(ADS_BTN, 100);
 
-            if(mod_auto_run && get_val(LY) < -25 && !get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            // Block broken / stuck physical L3; only script may press sprint/breath
+            set_val(SPRINT_BTN, 0);
 
-            if(mod_hold_breath && get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            // Claw sprint: simulate L3 on forward stick (hip-fire, LB not held)
+            if(mod_auto_run && get_val(LY) < SPRINT_STICK_THR && !get_ival(ADS_BTN) && !get_ival(BREATH_BTN)) {
+                set_val(SPRINT_BTN, 100);
+            }
+
+            // Claw hold breath: LB while ADS simulates L3 (replaces stick click)
+            if(mod_hold_breath && get_ival(ADS_BTN) && get_ival(BREATH_BTN)) {
+                set_val(SPRINT_BTN, 100);
+            }
 
             if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
                 set_val(LY, clamp(get_val(LY) - Move_boost_val, -100, -1));
@@ -449,6 +464,45 @@ function center_x(chars, font_w) {
 function draw_menu_border() {
     rect_oled(0, 0, 127, 63, 0, 1);
     line_oled(1, 17, 126, 17, 1, 1);
+}
+
+function draw_splash_screen() {
+  int sx;
+  cls_oled(0);
+
+  // Outer frame
+  rect_oled(0, 0, 127, 63, 0, 1);
+  line_oled(0, 24, 127, 24, 1, 1);
+
+  // Corner bracket accents (tactical HUD look)
+  line_oled(4, 4, 18, 4, 1, 1);
+  line_oled(4, 4, 4, 18, 1, 1);
+  line_oled(109, 4, 123, 4, 1, 1);
+  line_oled(123, 4, 123, 18, 1, 1);
+  line_oled(4, 59, 18, 59, 1, 1);
+  line_oled(4, 45, 4, 59, 1, 1);
+  line_oled(109, 59, 123, 59, 1, 1);
+  line_oled(123, 45, 123, 59, 1, 1);
+
+  // Center crosshair emblem
+  line_oled(64, 7, 64, 17, 1, 1);
+  line_oled(58, 12, 70, 12, 1, 1);
+  rect_oled(61, 9, 6, 6, 0, 1);
+
+  // Diagonal claw slashes
+  line_oled(22, 28, 34, 16, 1, 1);
+  line_oled(26, 28, 38, 16, 1, 1);
+  line_oled(93, 28, 81, 16, 1, 1);
+  line_oled(97, 28, 85, 16, 1, 1);
+
+  // Decorative scan ticks along the divider
+  for(sx = 10; sx <= 118; sx += 12) {
+    line_oled(sx, 22, sx, 24, 1, 1);
+  }
+
+  print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 30, OLED_FONT_MEDIUM, 1, TITLE[0]);
+  print(center_x(sizeof(SPLASH_L1) - 1, OLED_FONT_SMALL_WIDTH), 46, OLED_FONT_SMALL, 1, SPLASH_L1[0]);
+  print(center_x(sizeof(SPLASH_L2) - 1, OLED_FONT_SMALL_WIDTH), 55, OLED_FONT_SMALL, 1, SPLASH_L2[0]);
 }
 
 function get_mod_toggle(idx) {
