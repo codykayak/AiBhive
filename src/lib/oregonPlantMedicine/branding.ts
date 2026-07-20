@@ -21,6 +21,9 @@ export const STATE_CONTRIBUTION_USD = 3;
 /** Flat rate to publish holistic remedies & protocols research for the community. */
 export const HOLISTIC_CONTRIBUTION_USD = 3;
 
+/** Flat rate to publish hypnosis & energy research for the community. */
+export const HYPNOSIS_ENERGY_CONTRIBUTION_USD = 3;
+
 /** Minimum Hive credit top-up (recharge from $3). */
 export const MIN_RECHARGE_USD = 3;
 
@@ -32,3 +35,12 @@ export const HOLISTIC_REMEDIES_PATH = `${PLANTS_PUBLIC_PATH}/${HOLISTIC_REMEDIES
 export const HOLISTIC_TAB_LABEL = 'Holistic remedies & protocols';
 
 export const HOLISTIC_TAB_SHORT_LABEL = 'Holistic protocols';
+
+/** Canonical URL segment for hypnosis & energy (full path below). */
+export const HYPNOSIS_ENERGY_SLUG = 'hypnosis-and-energy';
+
+export const HYPNOSIS_ENERGY_PATH = `${PLANTS_PUBLIC_PATH}/${HYPNOSIS_ENERGY_SLUG}`;
+
+export const HYPNOSIS_ENERGY_TAB_LABEL = 'Hypnosis & Energy';
+
+export const HYPNOSIS_ENERGY_TAB_SHORT_LABEL = 'Hypnosis & Energy';

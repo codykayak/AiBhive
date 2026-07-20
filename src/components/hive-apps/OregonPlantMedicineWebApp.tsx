@@ -9,7 +9,6 @@ import {
 import {
   AlertTriangle,
   Apple,
-  BookOpen,
   ExternalLink,
   FileText,
   HeartPulse,
@@ -26,7 +25,6 @@ import {
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
 import {
-  EXTERNAL_RESOURCE_LIBRARY,
   PLANT_LIBRARY,
   matchesRegion,
   regionLabel,
@@ -34,7 +32,7 @@ import {
   type RegionFilter,
 } from '../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
-import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
+import { getPdfGuidesForPlant } from '../../lib/oregonPlantMedicine/guidePdfs';
 import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
 import PlantAskAiPanel from './oregon-plant-medicine/PlantAskAiPanel';
@@ -49,14 +47,22 @@ import UserAvatar from './oregon-plant-medicine/UserAvatar';
 import HolisticRemediesPanel from './oregon-plant-medicine/HolisticRemediesPanel';
 import HolisticDisclaimerModal from './oregon-plant-medicine/HolisticDisclaimerModal';
 import HolisticContributeModal from './oregon-plant-medicine/HolisticContributeModal';
+import HypnosisEnergyPanel from './oregon-plant-medicine/HypnosisEnergyPanel';
+import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnergyDisclaimerModal';
+import HypnosisEnergyContributeModal from './oregon-plant-medicine/HypnosisEnergyContributeModal';
+import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
+import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
+import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import {
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
-  LIVING_KNOWLEDGE_APP_NAME,
+  HYPNOSIS_ENERGY_PATH,
+  HYPNOSIS_ENERGY_TAB_SHORT_LABEL,
   LIVING_KNOWLEDGE_TAGLINE,
   STATE_CONTRIBUTION_USD,
 } from '../../lib/oregonPlantMedicine/branding';
 import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
+import { hasAcceptedHypnosisEnergyDisclaimer } from '../../lib/oregonPlantMedicine/hypnosisEnergyDisclaimer';
 import {
   isSupportedLocation,
   locationLabel,
@@ -67,7 +73,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'plants' | 'edibles' | 'mushrooms' | 'resources' | 'holistic' | 'guide';
+type Tab = 'plants' | 'edibles' | 'mushrooms' | 'holistic' | 'hypnosis' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -345,6 +351,11 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
   const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
   const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
   const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
+  const [showHypnosisContribute, setShowHypnosisContribute] = useState(false);
+  const [hypnosisContributeTopic, setHypnosisContributeTopic] = useState<string | undefined>();
+  const [hypnosisDisclaimerOpen, setHypnosisDisclaimerOpen] = useState(false);
+  const [hypnosisAccepted, setHypnosisAccepted] = useState(() => hasAcceptedHypnosisEnergyDisclaimer());
+  const [pendingHypnosisTab, setPendingHypnosisTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
   const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
@@ -357,6 +368,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
     if (initialTab === 'holistic' && !hasAcceptedHolisticDisclaimer()) {
       setHolisticDisclaimerOpen(true);
       setPendingHolisticTab(true);
+    }
+    if (initialTab === 'hypnosis' && !hasAcceptedHypnosisEnergyDisclaimer()) {
+      setHypnosisDisclaimerOpen(true);
+      setPendingHypnosisTab(true);
     }
   }, [initialTab]);
 
@@ -372,10 +387,26 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
     }
   }, [expanded, holisticAccepted]);
 
+  const openHypnosisTab = useCallback(() => {
+    if (!hypnosisAccepted) {
+      setPendingHypnosisTab(true);
+      setHypnosisDisclaimerOpen(true);
+      return;
+    }
+    setTab('hypnosis');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', HYPNOSIS_ENERGY_PATH);
+    }
+  }, [expanded, hypnosisAccepted]);
+
   const selectTab = useCallback(
     (id: Tab) => {
       if (id === 'holistic') {
         openHolisticTab();
+        return;
+      }
+      if (id === 'hypnosis') {
+        openHypnosisTab();
         return;
       }
       setTab(id);
@@ -383,7 +414,21 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
         window.history.replaceState(null, '', '/plants');
       }
     },
-    [expanded, openHolisticTab],
+    [expanded, openHolisticTab, openHypnosisTab],
+  );
+
+  const footerView: FooterView =
+    tab === 'guide' ? 'guide' : tab === 'resources' ? 'resources' : null;
+
+  const navigateFooter = useCallback(
+    (view: FooterView) => {
+      if (!view) return;
+      setTab(view);
+      if (expanded && typeof window !== 'undefined') {
+        window.history.replaceState(null, '', '/plants');
+      }
+    },
+    [expanded],
   );
 
   useEffect(() => {
@@ -613,9 +658,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
               ['plants', 'Plant library', Sprout],
               ['edibles', 'Edibles', Apple],
               ['mushrooms', 'Edible mushrooms', Layers],
-              ['resources', 'Resources', BookOpen],
               ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
-              ['guide', 'Field guide', MapPin],
+              ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
             ] as const
           ).map(([id, label, Icon]) => (
             <button
@@ -828,183 +872,31 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
           />
         ) : null}
 
-        {tab === 'resources' ? (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-400 leading-relaxed">
-              Curated external guides with photos and identification help. Links open in a new tab — for private
-              study only.
-            </p>
-            {EXTERNAL_RESOURCE_LIBRARY.map((cat) => (
-              <section key={cat.id} className="rounded-xl border border-emerald-500/20 bg-slate-900/40 overflow-hidden">
-                <div className="p-4 border-b border-emerald-500/10">
-                  <h2 className="font-bold text-emerald-300">{cat.title}</h2>
-                  <p className="text-xs text-slate-400 mt-1">{cat.description}</p>
-                </div>
-                <ul className="divide-y divide-slate-800">
-                  {cat.links.map((link) => (
-                    <li key={link.url}>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-start gap-3 p-4 hover:bg-white/[0.03] transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-sm font-semibold text-white">{link.label}</p>
-                          {link.description ? (
-                            <p className="text-xs text-slate-400 mt-0.5">{link.description}</p>
-                          ) : null}
-                        </div>
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
+        {tab === 'hypnosis' && hypnosisAccepted ? (
+          <HypnosisEnergyPanel
+            onOpenPlant={(plant) => setSelected(plant)}
+            onContribute={(topicTitle) => {
+              setHypnosisContributeTopic(topicTitle);
+              setShowHypnosisContribute(true);
+            }}
+          />
         ) : null}
 
-        {tab === 'guide' ? (
-          <div className="space-y-6 text-sm text-slate-300 leading-relaxed max-w-3xl">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
-                {LIVING_KNOWLEDGE_APP_NAME}
-              </p>
-              <p className="text-emerald-100/90">
-                This is a <strong className="text-white">living knowledge base</strong> — starting in Oregon and open to
-                new states as contributors document local edibles and homeopathic remedies. Share photos on plant pages,
-                or tap <strong className="text-white">Contribute</strong> to publish new species and regions for
-                everyone.
-              </p>
-            </div>
+        {tab === 'resources' ? <ResourcesPanel /> : null}
 
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
-              <p className="text-xs font-black uppercase tracking-widest text-amber-300 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" /> Important disclaimer
-              </p>
-              <p className="mt-2 text-amber-100/90">
-                This library is for <strong>private educational use</strong> only. It is not medical advice. Never
-                consume or apply a plant unless you are 100% certain of identification. Many edible plants have toxic
-                lookalikes. Consult a qualified herbalist or healthcare provider before using plants medicinally.
-              </p>
-            </div>
-
-            <section>
-              <h2 className="text-lg font-black text-white mb-2">Eugene &amp; Willamette Valley</h2>
-              <p>
-                The valley floor and coast-range foothills offer rich riparian corridors (Willamette River, Amazon
-                Creek), oak savanna at Buford Park, and wetland edges perfect for nettle, miner&apos;s lettuce, Oregon
-                grape, and cottonwood. Spring (March–May) is peak green foraging season.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-black text-white mb-2">Florence &amp; Oregon Coast</h2>
-              <p>
-                From the Siuslaw River estuary to the Oregon Dunes, expect salal, evergreen huckleberry, beach
-                strawberry, licorice fern on mossy maples, and chanterelles in fall. Coastal plants tolerate salt spray
-                and sand — very different from valley species 60 miles inland.
-              </p>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-black text-white mb-2">Edible wild foods — fruit &amp; preparation</h2>
-              <p className="mb-3">
-                Open the <strong className="text-lime-300">Edibles</strong> tab for the full wild-food library — berries,
-                greens, mushrooms, and roots with three ID photos each. Below are seasonal highlights for Eugene and
-                Florence.
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-slate-400">
-                <li>
-                  <strong className="text-slate-200">Spring greens</strong> — nettle, miner&apos;s lettuce, chickweed,
-                  lamb&apos;s quarters, Douglas fir tips (April–May).
-                </li>
-                <li>
-                  <strong className="text-slate-200">Summer berries</strong> — salmonberry, thimbleberry, trailing
-                  blackberry, serviceberry, red huckleberry (May–August).
-                </li>
-                <li>
-                  <strong className="text-slate-200">Fall fruit &amp; fungi</strong> — evergreen huckleberry, salal,
-                  Nootka rose hips, chanterelles, and coastal crabapple jelly (Sep–Nov).
-                </li>
-                <li>
-                  <strong className="text-slate-200">Prep basics</strong> — cook all wild mushrooms; blanch nettle;
-                  strain rose hip hairs; never eat cattail from polluted water.
-                </li>
-              </ul>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-black text-white mb-2">Hallucinogenics — legal &amp; safety</h2>
-              <p className="mb-3">
-                The library includes a separate <strong className="text-violet-300">Hallucinogenic</strong> filter for
-                psilocybin mushrooms, muscimol Amanita species, and deliriant plants documented in western Oregon. This
-                is <strong className="text-slate-200">educational reference only</strong> — not encouragement to harvest
-                or consume.
-              </p>
-              <ul className="list-disc list-inside space-y-2 text-slate-400">
-                <li>
-                  <strong className="text-slate-200">Oregon law</strong> — psilocybin is legal only in licensed service
-                  centers, not for casual wild foraging possession.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Mushroom ID</strong> — wood-chip psilocybes have deadly Galerina
-                  lookalikes. Use spore prints and expert confirmation.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Amanita</strong> — fly agaric and panther cap are not psilocybin;
-                  raw consumption causes severe poisoning.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Jimsonweed</strong> — extremely dangerous deliriant; never ingest.
-                </li>
-              </ul>
-              <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                {OREGON_PLANT_PDF_GUIDES.map((g) => (
-                  <a
-                    key={g.id}
-                    href={g.pdfUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-200 hover:bg-violet-500/20 transition-colors"
-                  >
-                    <FileText className="w-4 h-4 shrink-0" />
-                    {g.title}
-                    <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-                  </a>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-lg font-black text-white mb-2">Holistic plant medicine basics</h2>
-              <ul className="list-disc list-inside space-y-2 text-slate-400">
-                <li>
-                  <strong className="text-slate-200">Food as medicine</strong> — nettle, dandelion, and berries nourish
-                  while supporting wellness.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Bitter tonics</strong> — Oregon grape root stimulates digestion
-                  (use sustainably).
-                </li>
-                <li>
-                  <strong className="text-slate-200">First-aid plants</strong> — yarrow and plantain for minor wounds on
-                  the trail.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Mushrooms</strong> — always confirm with expert ID; chanterelle
-                  vs. jack-o-lantern is life or death.
-                </li>
-                <li>
-                  <strong className="text-slate-200">Sustainable harvest</strong> — take less than 10%, never uproot
-                  unless abundant, know land rules.
-                </li>
-              </ul>
-            </section>
-          </div>
-        ) : null}
+        {tab === 'guide' ? <FieldGuidePanel /> : null}
       </div>
+
+      <LivingKnowledgeFooter
+        activeView={footerView}
+        onNavigate={navigateFooter}
+        onShowHolisticDisclaimer={() => {
+          setHolisticDisclaimerOpen(true);
+        }}
+        onShowHypnosisDisclaimer={() => {
+          setHypnosisDisclaimerOpen(true);
+        }}
+      />
 
       {selected ? (
         <PlantDetail
@@ -1046,6 +938,15 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
           }}
         />
       ) : null}
+      {showHypnosisContribute ? (
+        <HypnosisEnergyContributeModal
+          topicTitle={hypnosisContributeTopic}
+          onClose={() => {
+            setShowHypnosisContribute(false);
+            setHypnosisContributeTopic(undefined);
+          }}
+        />
+      ) : null}
       {holisticDisclaimerOpen ? (
         <HolisticDisclaimerModal
           onCancel={() => {
@@ -1066,6 +967,31 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'plan
               setTab('holistic');
               if (expanded && typeof window !== 'undefined') {
                 window.history.replaceState(null, '', HOLISTIC_REMEDIES_PATH);
+              }
+            }
+          }}
+        />
+      ) : null}
+      {hypnosisDisclaimerOpen ? (
+        <HypnosisEnergyDisclaimerModal
+          onCancel={() => {
+            setHypnosisDisclaimerOpen(false);
+            setPendingHypnosisTab(false);
+            if (tab === 'hypnosis' && !hypnosisAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            setHypnosisAccepted(true);
+            setHypnosisDisclaimerOpen(false);
+            if (pendingHypnosisTab) {
+              setPendingHypnosisTab(false);
+              setTab('hypnosis');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', HYPNOSIS_ENERGY_PATH);
               }
             }
           }}

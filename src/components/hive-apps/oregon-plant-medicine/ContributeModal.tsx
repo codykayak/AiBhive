@@ -8,10 +8,13 @@ import {
   STATE_CONTRIBUTION_USD,
   HOLISTIC_CONTRIBUTION_USD,
   HOLISTIC_TAB_LABEL,
+  HYPNOSIS_ENERGY_CONTRIBUTION_USD,
+  HYPNOSIS_ENERGY_TAB_LABEL,
 } from '../../../lib/oregonPlantMedicine/branding';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import { builderUrlForState } from '../../../lib/oregonPlantMedicine/stateContribution';
 import { builderUrlForHolisticTopic } from '../../../lib/oregonPlantMedicine/holisticContribution';
+import { builderUrlForHypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyContribution';
 
 type Props = {
   onClose: () => void;
@@ -102,6 +105,17 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             </div>
           </div>
 
+          <div className="flex gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-4">
+            <Sparkles className="w-5 h-5 text-cyan-300 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-cyan-200">Add hypnosis &amp; energy research for ${HYPNOSIS_ENERGY_CONTRIBUTION_USD}</p>
+              <p className="mt-1 text-slate-300">
+                Publish a new topic to <strong className="text-white">{HYPNOSIS_ENERGY_TAB_LABEL}</strong> — regression,
+                Reiki, sound healing, frequencies, and safety notes for everyone.
+              </p>
+            </div>
+          </div>
+
           <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
             <Sparkles className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
             <div>
@@ -142,6 +156,23 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             >
               {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Add holistic research — ${HOLISTIC_CONTRIBUTION_USD}
+            </button>
+            <Link
+              to={builderUrlForHypnosisEnergyTopic()}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 text-cyan-200 font-bold px-4 py-3 text-sm hover:bg-cyan-500/10"
+            >
+              Open Builder — hypnosis &amp; energy
+              <ExternalLink className="w-4 h-4 opacity-90" />
+            </Link>
+            <button
+              type="button"
+              disabled={checkoutBusy}
+              onClick={() => void buyCredits(HYPNOSIS_ENERGY_CONTRIBUTION_USD)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/30 text-cyan-100 font-bold px-4 py-3 text-sm hover:bg-cyan-500/10 disabled:opacity-60"
+            >
+              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Add hypnosis &amp; energy — ${HYPNOSIS_ENERGY_CONTRIBUTION_USD}
             </button>
             <Link
               to={builderHref}
