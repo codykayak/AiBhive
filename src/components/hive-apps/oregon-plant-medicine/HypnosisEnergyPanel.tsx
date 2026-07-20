@@ -5,6 +5,7 @@ import {
   matchesHypnosisEnergyCategory,
 } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { HYPNOSIS_ENERGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { HYPNOSIS_ENERGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
@@ -58,6 +59,7 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
       onOpenPlant={onOpenPlant}
       onContribute={onContribute}
       gridVideo={SECTION_VIDEOS.hypnosis}
+      featuredEssay={getFeaturedEssay('hypnosis')}
     />
   );
 }
