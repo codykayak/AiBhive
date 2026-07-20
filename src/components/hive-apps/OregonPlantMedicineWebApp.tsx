@@ -43,6 +43,8 @@ import ContributeModal from './oregon-plant-medicine/ContributeModal';
 import LocationOnboardingModal from './oregon-plant-medicine/LocationOnboardingModal';
 import ProfileModal from './oregon-plant-medicine/ProfileModal';
 import PlantPhoto from './oregon-plant-medicine/PlantImage';
+import FullscreenImageViewer from './oregon-plant-medicine/FullscreenImageViewer';
+import UserAvatar from './oregon-plant-medicine/UserAvatar';
 import { LIVING_KNOWLEDGE_APP_NAME, LIVING_KNOWLEDGE_TAGLINE, STATE_CONTRIBUTION_USD } from '../../lib/oregonPlantMedicine/branding';
 import {
   isSupportedLocation,
@@ -113,20 +115,29 @@ function ImageGallery({
   scientificName: string;
 }) {
   const [active, setActive] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
   const current = images[active] ?? images[0];
   if (!current) return null;
 
   return (
     <>
-      <PlantPhoto
-        src={current.url}
-        scientificName={scientificName}
-        alt={`${name} — ${current.caption ?? 'identification photo'}`}
-        className="w-full h-48 sm:h-56 object-cover"
-      />
-      <p className="absolute bottom-2 left-3 right-3 text-[10px] text-white/80 bg-black/50 px-2 py-1 rounded">
+      <button
+        type="button"
+        onClick={() => setFullscreen(true)}
+        className="block w-full text-left cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+        aria-label={`View full size photo of ${name}`}
+      >
+        <PlantPhoto
+          src={current.url}
+          scientificName={scientificName}
+          alt={`${name} — ${current.caption ?? 'identification photo'}`}
+          className="w-full h-48 sm:h-56 object-cover pointer-events-none"
+        />
+      </button>
+      <p className="absolute bottom-2 left-3 right-3 text-[10px] text-white/80 bg-black/50 px-2 py-1 rounded pointer-events-none z-[1]">
         {current.caption ? `${current.caption} · ` : ''}
         {current.credit}
+        <span className="opacity-75"> · Tap image for full screen</span>
       </p>
       {images.length > 1 ? (
         <div className="flex gap-2 p-3 bg-slate-900/80 overflow-x-auto border-t border-white/5">
@@ -148,6 +159,17 @@ function ImageGallery({
             </button>
           ))}
         </div>
+      ) : null}
+
+      {fullscreen ? (
+        <FullscreenImageViewer
+          src={current.url}
+          scientificName={scientificName}
+          alt={name}
+          caption={current.caption}
+          credit={current.credit}
+          onClose={() => setFullscreen(false)}
+        />
       ) : null}
     </>
   );
@@ -463,7 +485,11 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
         className="flex items-center gap-2 rounded-lg border border-emerald-400/40 bg-black/35 backdrop-blur-sm px-2.5 py-1.5 text-xs font-bold text-emerald-100 hover:bg-black/50"
       >
         {profile?.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover object-center" />
+          <UserAvatar
+            url={profile.avatarUrl}
+            name={profile.displayName || 'Profile'}
+            className="w-6 h-6 rounded-full"
+          />
         ) : (
           <UserIcon className="w-4 h-4" />
         )}

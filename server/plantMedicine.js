@@ -2,6 +2,7 @@
  * Oregon Plant Medicine — profiles, community posts, votes.
  * All writes via Admin SDK; public reads return approved content only.
  */
+import { randomUUID } from 'crypto';
 
 const PROFILES = 'plant_medicine_profiles';
 const POSTS = 'plant_medicine_posts';
@@ -10,6 +11,79 @@ function clip(s, max) {
   return String(s ?? '')
     .trim()
     .slice(0, max);
+}
+
+function parsePlantMedicineStoragePath(url) {
+  if (!url || typeof url !== 'string') return null;
+  try {
+    if (url.includes('storage.googleapis.com/')) {
+      const match = url.match(/storage\.googleapis\.com\/[^/]+\/(.+)$/);
+      return match?.[1] ? decodeURIComponent(match[1]) : null;
+    }
+    if (url.includes('firebasestorage.googleapis.com')) {
+      const match = url.match(/\/o\/([^?]+)/);
+      return match?.[1] ? decodeURIComponent(match[1]) : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function firebaseDownloadUrl(bucketName, path, token) {
+  const encoded = encodeURIComponent(path);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encoded}?alt=media&token=${token}`;
+}
+
+/** Ensure plant-medicine uploads use a browser-loadable Firebase download URL. */
+export async function resolvePlantMedicineMediaUrl(gcsBucket, url) {
+  if (!url || !gcsBucket) return url;
+  if (url.includes('firebasestorage.googleapis.com') && url.includes('token=')) return url;
+
+  const path = parsePlantMedicineStoragePath(url);
+  if (!path?.startsWith('plant-medicine/')) return url;
+
+  const file = gcsBucket.file(path);
+  let meta;
+  try {
+    [meta] = await file.getMetadata();
+  } catch {
+    return url;
+  }
+
+  let token = meta?.metadata?.firebaseStorageDownloadTokens;
+  if (!token) {
+    token = randomUUID();
+    await file.setMetadata({
+      metadata: {
+        ...(meta.metadata || {}),
+        firebaseStorageDownloadTokens: token,
+      },
+    });
+  } else {
+    token = String(token).split(',')[0];
+  }
+
+  return firebaseDownloadUrl(gcsBucket.name, path, token);
+}
+
+async function resolveProfile(db, uid, gcsBucket) {
+  if (!uid) return null;
+  const snap = await db.collection(PROFILES).doc(uid).get();
+  if (!snap.exists) return null;
+  const d = snap.data();
+  let avatarUrl = d.avatarUrl || null;
+  if (avatarUrl && gcsBucket) {
+    avatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, avatarUrl);
+  }
+  return {
+    uid,
+    displayName: d.displayName || '',
+    bio: d.bio || '',
+    avatarUrl,
+    createdAt: d.createdAt?.toDate?.()?.toISOString?.() || null,
+    updatedAt: d.updatedAt?.toDate?.()?.toISOString?.() || null,
+  };
 }
 
 function serializePost(id, d) {
@@ -29,22 +103,11 @@ function serializePost(id, d) {
   };
 }
 
-export async function getProfile(db, uid) {
-  if (!uid) return null;
-  const snap = await db.collection(PROFILES).doc(uid).get();
-  if (!snap.exists) return null;
-  const d = snap.data();
-  return {
-    uid,
-    displayName: d.displayName || '',
-    bio: d.bio || '',
-    avatarUrl: d.avatarUrl || null,
-    createdAt: d.createdAt?.toDate?.()?.toISOString?.() || null,
-    updatedAt: d.updatedAt?.toDate?.()?.toISOString?.() || null,
-  };
+export async function getProfile(db, uid, gcsBucket = null) {
+  return resolveProfile(db, uid, gcsBucket);
 }
 
-export async function upsertProfile(db, uid, { displayName, bio, avatarUrl }) {
+export async function upsertProfile(db, uid, { displayName, bio, avatarUrl }, gcsBucket = null) {
   const ref = db.collection(PROFILES).doc(uid);
   const existing = await ref.get();
   const now = new Date();
@@ -62,10 +125,10 @@ export async function upsertProfile(db, uid, { displayName, bio, avatarUrl }) {
   } else {
     await ref.update(payload);
   }
-  return getProfile(db, uid);
+  return getProfile(db, uid, gcsBucket);
 }
 
-export async function listPostsForPlant(db, plantId, { type, viewerUid } = {}) {
+export async function listPostsForPlant(db, plantId, { type, viewerUid, gcsBucket = null } = {}) {
   let q = db.collection(POSTS).where('plantId', '==', plantId).where('status', '==', 'approved');
   if (type) q = q.where('type', '==', type);
   const snap = await q.limit(100).get();
@@ -80,6 +143,16 @@ export async function listPostsForPlant(db, plantId, { type, viewerUid } = {}) {
     }
     posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
   }
+  if (gcsBucket) {
+    for (const post of posts) {
+      if (post.authorAvatarUrl) {
+        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+      }
+      if (post.imageUrl) {
+        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
+      }
+    }
+  }
   posts.sort((a, b) => {
     if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount;
     return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
@@ -87,8 +160,8 @@ export async function listPostsForPlant(db, plantId, { type, viewerUid } = {}) {
   return posts;
 }
 
-export async function createPost(db, FieldValue, { plantId, author, type, text, imageUrl }) {
-  const profile = (await getProfile(db, author.uid)) || {};
+export async function createPost(db, FieldValue, { plantId, author, type, text, imageUrl }, gcsBucket = null) {
+  const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const status = type === 'comment' ? 'approved' : 'pending';
   const ref = db.collection(POSTS).doc();
   const now = new Date();
@@ -169,15 +242,17 @@ export async function uploadPlantMedicineImage(gcsBucket, { uid, kind, buffer, m
   const safeKind = kind === 'avatar' ? 'avatars' : 'photos';
   const path = `plant-medicine/${safeKind}/${uid}-${Date.now()}.${ext}`;
   const file = gcsBucket.file(path);
+  const downloadToken = randomUUID();
   await file.save(buffer, {
     contentType: mimeType || 'image/jpeg',
     resumable: false,
-    metadata: { cacheControl: 'public, max-age=31536000' },
+    metadata: {
+      cacheControl: 'public, max-age=31536000',
+      metadata: {
+        firebaseStorageDownloadTokens: downloadToken,
+      },
+    },
   });
-  try {
-    await file.makePublic();
-  } catch {
-    /* uniform bucket access */
-  }
-  return `https://storage.googleapis.com/${gcsBucket.name}/${path}`;
+  const encoded = encodeURIComponent(path);
+  return `https://firebasestorage.googleapis.com/v0/b/${gcsBucket.name}/o/${encoded}?alt=media&token=${downloadToken}`;
 }
