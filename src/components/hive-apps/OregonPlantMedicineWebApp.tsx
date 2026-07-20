@@ -182,6 +182,20 @@ function PlantDetail({
 
           <DetailSection title="Habitat" text={plant.habitat} />
           <DetailSection title="Identification" text={plant.identification} />
+
+          {plant.lookalikes && plant.lookalikes.length > 0 ? (
+            <div className="rounded-xl border border-red-500/35 bg-red-500/10 p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-red-300 mb-2 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> Toxic look-alikes
+              </p>
+              <ul className="space-y-2 text-sm text-red-100/90 list-disc list-inside leading-relaxed">
+                {plant.lookalikes.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {plant.edibleNotes ? <DetailSection title="Edible uses" text={plant.edibleNotes} /> : null}
           {plant.medicinalNotes ? <DetailSection title="Medicinal uses" text={plant.medicinalNotes} /> : null}
           {plant.holisticNotes ? <DetailSection title="Holistic notes" text={plant.holisticNotes} /> : null}

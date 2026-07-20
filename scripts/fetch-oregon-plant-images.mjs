@@ -244,6 +244,41 @@ const MANIFEST = {
     'Arctium minus flower.jpg',
     'Arctium minus kz01.jpg',
   ],
+  'wild-lettuce': [
+    'Lactuca serriola 001.JPG',
+    'Lactuca serriola flower.jpg',
+    'Lactuca serriola kz01.jpg',
+  ],
+  pokeweed: [
+    'Phytolacca americana 001.JPG',
+    'Phytolacca americana berries.jpg',
+    'Phytolacca americana kz01.jpg',
+  ],
+  comfrey: [
+    'Symphytum officinale 001.JPG',
+    'Symphytum officinale flower.jpg',
+    'Symphytum officinale kz01.jpg',
+  ],
+  'sheep-sorrel': [
+    'Rumex acetosella 001.JPG',
+    'Rumex acetosella flower.jpg',
+    'Rumex acetosella kz01.jpg',
+  ],
+  'psilocybe-allenii': [
+    'Psilocybe allenii 1.jpg',
+    'Psilocybe allenii cap.jpg',
+    'Psilocybe allenii stem.jpg',
+  ],
+  'psilocybe-stuntzii': [
+    'Psilocybe stuntzii 1.jpg',
+    'Psilocybe stuntzii cap.jpg',
+    'Psilocybe stuntzii stem.jpg',
+  ],
+  'psilocybe-baeocystis': [
+    'Psilocybe baeocystis 1.jpg',
+    'Psilocybe baeocystis cap.jpg',
+    'Psilocybe baeocystis stem.jpg',
+  ],
 };
 
 function sleep(ms) {
