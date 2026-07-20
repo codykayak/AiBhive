@@ -1,0 +1,135 @@
+import type { PlantEntry, PlantRegion } from './types';
+
+/** UI + filter values for browsing the library by geography. */
+export type RegionFilter =
+  | 'all'
+  | 'or-all'
+  | 'ca-all'
+  | PlantRegion;
+
+export const REGION_FILTER_OPTIONS: { value: RegionFilter; label: string; group: 'all' | 'oregon' | 'norcal' }[] = [
+  { value: 'all', label: 'All regions', group: 'all' },
+  { value: 'or-all', label: 'Oregon — statewide', group: 'oregon' },
+  { value: 'or-willamette', label: 'Oregon — Willamette Valley', group: 'oregon' },
+  { value: 'or-coast', label: 'Oregon — Coast', group: 'oregon' },
+  { value: 'or-portland', label: 'Oregon — Portland & Gorge', group: 'oregon' },
+  { value: 'or-cascades', label: 'Oregon — Cascades & Bend', group: 'oregon' },
+  { value: 'or-klamath', label: 'Oregon — Klamath & Silver Lake', group: 'oregon' },
+  { value: 'or-rogue', label: 'Oregon — Rogue & Umpqua', group: 'oregon' },
+  { value: 'or-east', label: 'Oregon — High desert & east', group: 'oregon' },
+  { value: 'ca-all', label: 'Northern California — statewide', group: 'norcal' },
+  { value: 'ca-sierra-foothills', label: 'NorCal — Sierra foothills (Placerville)', group: 'norcal' },
+  { value: 'ca-silver-lake', label: 'NorCal — Silver Lake & Modoc', group: 'norcal' },
+  { value: 'ca-sacramento', label: 'NorCal — Sacramento Valley', group: 'norcal' },
+  { value: 'ca-shasta', label: 'NorCal — Shasta & Siskiyou', group: 'norcal' },
+  { value: 'ca-north-coast', label: 'NorCal — North Coast', group: 'norcal' },
+];
+
+const OREGON_REGIONS = new Set<PlantRegion>([
+  'or-willamette',
+  'or-coast',
+  'or-portland',
+  'or-cascades',
+  'or-klamath',
+  'or-rogue',
+  'or-east',
+  'eugene',
+  'florence',
+  'both',
+]);
+
+const NORCAL_REGIONS = new Set<PlantRegion>([
+  'ca-sierra-foothills',
+  'ca-silver-lake',
+  'ca-sacramento',
+  'ca-shasta',
+  'ca-north-coast',
+]);
+
+/** Legacy region tags that imply coverage of multiple OR sub-regions. */
+const LEGACY_OR_WIDE: PlantRegion[] = ['both', 'eugene', 'florence'];
+
+function plantInOregon(plant: PlantEntry): boolean {
+  return plant.regions.some((r) => OREGON_REGIONS.has(r));
+}
+
+function plantInNorcal(plant: PlantEntry): boolean {
+  return plant.regions.some((r) => NORCAL_REGIONS.has(r));
+}
+
+/** Human label for a single plant region tag (badges on cards). */
+export function regionLabel(r: PlantRegion): string {
+  const labels: Record<PlantRegion, string> = {
+    'or-willamette': 'Willamette Valley',
+    'or-coast': 'Oregon Coast',
+    'or-portland': 'Portland & Gorge',
+    'or-cascades': 'Oregon Cascades',
+    'or-klamath': 'Klamath & Silver Lake',
+    'or-rogue': 'Rogue & Umpqua',
+    'or-east': 'Eastern Oregon',
+    'ca-sierra-foothills': 'Sierra Foothills',
+    'ca-silver-lake': 'Silver Lake & Modoc',
+    'ca-sacramento': 'Sacramento Valley',
+    'ca-shasta': 'Shasta & Siskiyou',
+    'ca-north-coast': 'North Coast CA',
+    eugene: 'Willamette Valley',
+    florence: 'Oregon Coast',
+    both: 'Oregon wide',
+  };
+  return labels[r] ?? r;
+}
+
+export function regionFilterLabel(filter: RegionFilter): string {
+  return REGION_FILTER_OPTIONS.find((o) => o.value === filter)?.label ?? filter;
+}
+
+export function matchesRegion(plant: PlantEntry, filter: RegionFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'or-all') return plantInOregon(plant);
+  if (filter === 'ca-all') return plantInNorcal(plant);
+
+  if (filter === 'or-willamette') {
+    return plant.regions.some((r) => r === 'or-willamette' || r === 'eugene' || r === 'both');
+  }
+  if (filter === 'or-coast') {
+    return plant.regions.some((r) => r === 'or-coast' || r === 'florence' || r === 'both');
+  }
+  if (filter === 'or-portland') {
+    return plant.regions.includes('or-portland') || plant.regions.includes('both');
+  }
+  if (filter === 'or-cascades') {
+    return plant.regions.includes('or-cascades');
+  }
+  if (filter === 'or-klamath') {
+    return plant.regions.includes('or-klamath');
+  }
+  if (filter === 'or-rogue') {
+    return plant.regions.includes('or-rogue');
+  }
+  if (filter === 'or-east') {
+    return plant.regions.includes('or-east');
+  }
+
+  // Legacy filters still used when syncing user location
+  if (filter === 'eugene') {
+    return plant.regions.some((r) => r === 'eugene' || r === 'or-willamette' || r === 'both');
+  }
+  if (filter === 'florence') {
+    return plant.regions.some((r) => r === 'florence' || r === 'or-coast' || r === 'both');
+  }
+  if (filter === 'both') {
+    return plant.regions.includes('both');
+  }
+
+  return plant.regions.includes(filter);
+}
+
+export function isOregonRegion(filter: RegionFilter): boolean {
+  return filter === 'or-all' || filter.startsWith('or-') || filter === 'eugene' || filter === 'florence' || filter === 'both';
+}
+
+export function isNorcalRegion(filter: RegionFilter): boolean {
+  return filter === 'ca-all' || filter.startsWith('ca-');
+}
+
+export { LEGACY_OR_WIDE, OREGON_REGIONS, NORCAL_REGIONS };

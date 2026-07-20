@@ -20,6 +20,7 @@ import {
   User as UserIcon,
   X,
   PlusCircle,
+  Layers,
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
 import {
@@ -27,6 +28,8 @@ import {
   PLANT_LIBRARY,
   matchesRegion,
   regionLabel,
+  REGION_FILTER_OPTIONS,
+  type RegionFilter,
 } from '../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
 import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
@@ -40,15 +43,14 @@ import { LIVING_KNOWLEDGE_APP_NAME, LIVING_KNOWLEDGE_TAGLINE, STATE_CONTRIBUTION
 import {
   isSupportedLocation,
   locationLabel,
-  oregonRegionLabel,
+  subRegionLabel,
   type UserLocation,
 } from '../../lib/oregonPlantMedicine/regions';
 import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicine/userLocation';
 
 type Props = { expanded?: boolean };
 
-type Tab = 'plants' | 'edibles' | 'resources' | 'guide' | 'pdfs';
-type RegionFilter = 'all' | 'eugene' | 'florence';
+type Tab = 'plants' | 'edibles' | 'resources' | 'guide' | 'pdfs' | 'mushrooms';
 type UseFilter = 'all' | PlantUse;
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
@@ -291,22 +293,16 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const regionSupported = userLocation ? isSupportedLocation(userLocation) : true;
 
   useEffect(() => {
-    if (!userLocation || userLocation.stateId !== 'oregon') return;
-    if (userLocation.oregonRegion === 'eugene' || userLocation.oregonRegion === 'florence') {
-      setRegion(userLocation.oregonRegion);
-    }
+    if (!userLocation?.subRegion || userLocation.subRegion === 'all') return;
+    setRegion(userLocation.subRegion);
   }, [userLocation]);
 
   const handleLocationComplete = useCallback((loc: UserLocation) => {
     saveUserLocation(loc);
     setUserLocation(loc);
     setShowLocationModal(false);
-    if (loc.stateId === 'oregon') {
-      if (loc.oregonRegion === 'eugene' || loc.oregonRegion === 'florence') {
-        setRegion(loc.oregonRegion);
-      } else {
-        setRegion('all');
-      }
+    if (loc.subRegion && loc.subRegion !== 'all') {
+      setRegion(loc.subRegion);
     }
   }, []);
 
@@ -376,6 +372,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
     if (userLocation && !regionSupported) return [];
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
+      if (p.category === 'mushroom') return false;
       if (p.uses !== 'edible' && p.uses !== 'both') return false;
       if (!matchesRegion(p, region)) return false;
       if (favoritesOnly && !favorites.has(p.id)) return false;
@@ -395,7 +392,32 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
     });
   }, [query, region, favoritesOnly, favorites, userLocation, regionSupported]);
 
-  const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
+  const mushroomFiltered = useMemo(() => {
+    if (userLocation && !regionSupported) return [];
+    const q = query.trim().toLowerCase();
+    return PLANT_LIBRARY.filter((p) => {
+      if (p.category !== 'mushroom') return false;
+      if (p.uses !== 'edible' && p.uses !== 'both') return false;
+      if (!matchesRegion(p, region)) return false;
+      if (favoritesOnly && !favorites.has(p.id)) return false;
+      if (!q) return true;
+      const hay = [
+        p.commonName,
+        p.scientificName,
+        ...(p.alsoKnownAs ?? []),
+        p.habitat,
+        p.identification,
+        p.edibleNotes ?? '',
+        p.preparation ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [query, region, favoritesOnly, favorites, userLocation, regionSupported]);
+
+  const plantsToShow =
+    tab === 'edibles' ? edibleFiltered : tab === 'mushrooms' ? mushroomFiltered : filtered;
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -469,8 +491,8 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               >
                 <MapPin className="w-3.5 h-3.5" />
                 {locationLabel(userLocation)}
-                {regionSupported && userLocation.stateId === 'oregon'
-                  ? ` · ${oregonRegionLabel(userLocation.oregonRegion)}`
+                {regionSupported && userLocation.stateId
+                  ? ` · ${subRegionLabel(userLocation.subRegion)}`
                   : !regionSupported
                     ? ' · not in library yet'
                     : ''}
@@ -492,6 +514,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
             [
               ['plants', 'Plant library', Sprout],
               ['edibles', 'Edibles', Apple],
+              ['mushrooms', 'Edible mushrooms', Layers],
               ['pdfs', 'PDF guides', FileText],
               ['resources', 'Resources', BookOpen],
               ['guide', 'Field guide', MapPin],
@@ -515,15 +538,25 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
       </header>
 
       <div className={expanded ? 'px-4 sm:px-8 py-6 max-w-6xl mx-auto' : 'p-4 max-h-[70vh] overflow-y-auto'}>
-        {tab === 'plants' || tab === 'edibles' ? (
+        {tab === 'plants' || tab === 'edibles' || tab === 'mushrooms' ? (
           <>
             {tab === 'edibles' ? (
               <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
                 <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">Wild edible foods</p>
                 <p>
-                  Berries, greens, mushrooms, and roots of Eugene &amp; Florence — each entry includes{' '}
-                  <strong className="text-white">three ID photos</strong>, habitat notes, harvest season, and food
-                  preparation ideas. Tap any plant for edible uses, cooking tips, and safety warnings.
+                  Berries, greens, and roots across Oregon and Northern California — each entry includes{' '}
+                  <strong className="text-white">three ID photos</strong>, habitat notes, and preparation ideas. For
+                  fungi, see the <strong className="text-white">Edible mushrooms</strong> tab.
+                </p>
+              </div>
+            ) : null}
+            {tab === 'mushrooms' ? (
+              <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-4 mb-5 text-sm text-amber-100/90 leading-relaxed">
+                <p className="text-xs font-black uppercase tracking-widest text-amber-300 mb-2">Edible wild mushrooms</p>
+                <p>
+                  <strong className="text-white">{mushroomFiltered.length}+ species</strong> across Oregon and Northern
+                  California — chanterelles, boletes, morels, hedgehogs, and more. Every entry includes three ID photos,
+                  toxic look-alikes, and cooking notes. <strong className="text-white">Never eat a wild mushroom without 100% ID.</strong>
                 </p>
               </div>
             ) : null}
@@ -536,7 +569,11 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={
-                    tab === 'edibles' ? 'Search berries, greens, mushrooms…' : 'Search plants, Latin names, habitat…'
+                    tab === 'edibles'
+                      ? 'Search berries, greens, roots…'
+                      : tab === 'mushrooms'
+                        ? 'Search chanterelles, boletes, morels…'
+                        : 'Search plants, Latin names, habitat…'
                   }
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-emerald-500/50"
                 />
@@ -546,9 +583,11 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 onChange={(e) => setRegion(e.target.value as RegionFilter)}
                 className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
               >
-                <option value="all">All regions</option>
-                <option value="eugene">Eugene / Valley</option>
-                <option value="florence">Florence / Coast</option>
+                {REGION_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
               {tab === 'plants' ? (
                 <select
@@ -601,12 +640,13 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
             ) : userLocation && regionSupported ? (
               <p className="text-xs text-emerald-400/90 mb-4">
                 Localized for {locationLabel(userLocation)}
-                {userLocation.oregonRegion !== 'all' ? ` · ${oregonRegionLabel(userLocation.oregonRegion)}` : ''}
+                {userLocation.subRegion !== 'all' ? ` · ${subRegionLabel(userLocation.subRegion)}` : ''}
               </p>
             ) : null}
 
             <p className="text-xs text-slate-500 mb-4">
-              {plantsToShow.length} {tab === 'edibles' ? 'edible wild foods' : 'plants in library'}
+              {plantsToShow.length}{' '}
+              {tab === 'edibles' ? 'edible wild foods' : tab === 'mushrooms' ? 'edible mushrooms' : 'plants in library'}
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -616,7 +656,9 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                   className={`group rounded-xl border bg-slate-900/60 overflow-hidden transition-colors cursor-pointer ${
                     tab === 'edibles'
                       ? 'border-slate-800 hover:border-lime-500/40'
-                      : 'border-slate-800 hover:border-emerald-500/40'
+                      : tab === 'mushrooms'
+                        ? 'border-slate-800 hover:border-amber-500/40'
+                        : 'border-slate-800 hover:border-emerald-500/40'
                   }`}
                   onClick={() => setSelected(plant)}
                   onKeyDown={(e) => e.key === 'Enter' && setSelected(plant)}

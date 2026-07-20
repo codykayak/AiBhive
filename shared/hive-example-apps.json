@@ -432,13 +432,13 @@
         "config": {
           "body": "Open the full interactive living knowledge base with search, regional filters, favorites, community photos, and contributor tools.",
           "bullets": [
-            "50+ plants in the Oregon seed library — edibles, medicinals, and more",
+            "120+ wild foods and mushrooms across Oregon and Northern California",
             "Living knowledge base: contribute photos, plants, and new states",
             "Multi-photo ID, PDF guides, and community field notes",
-            "Expand to Washington and beyond via AiBhive Builder"
+            "Expand to new states via AiBhive Builder — $3 in Hive credits"
           ],
           "links": [
-            { "label": "Run Living Knowledge Plants and Medicine", "url": "https://aibhive.com/hive-apps/run/example-oregon-plant-medicine" }
+            { "label": "Open Living Knowledge Plants and Medicine", "url": "https://aibhive.com/plants" }
           ]
         }
       }

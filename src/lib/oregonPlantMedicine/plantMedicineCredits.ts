@@ -8,7 +8,7 @@ export async function startLivingKnowledgeCreditsCheckout(
   const base =
     typeof window !== 'undefined'
       ? `${window.location.origin}${window.location.pathname}`
-      : 'https://aibhive.com/hive-apps/run/example-oregon-plant-medicine';
+      : 'https://aibhive.com/plants';
 
   const res = await fetch(`/api/hive/account/${encodeURIComponent(userId)}/checkout`, {
     method: 'POST',

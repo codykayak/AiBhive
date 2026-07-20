@@ -54,6 +54,7 @@ export function getSitemapEntries() {
     { loc: '/hive-apps', priority: '0.95', changefreq: 'weekly' },
     { loc: '/hive-apps/build', priority: '0.9', changefreq: 'weekly' },
     { loc: '/research-lab', priority: '0.95', changefreq: 'weekly' },
+    { loc: '/plants', priority: '0.95', changefreq: 'weekly' },
     { loc: '/research-lab/communal-library', priority: '0.92', changefreq: 'weekly' },
     ...communalTopics.map((id) => ({
       loc: `/research-lab/communal-library/${id}`,

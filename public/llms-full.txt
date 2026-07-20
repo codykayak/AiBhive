@@ -34,9 +34,9 @@ Guided flow: describe the app in plain English, review a quote, approve, and Bhi
 
 Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, Living Knowledge Plants and Medicine (community plant living knowledge base), and a mock real estate dashboard.
 
-## Living Knowledge Plants and Medicine (Hive App demo) — https://aibhive.com/hive-apps/run/example-oregon-plant-medicine
+## Living Knowledge Plants and Medicine — https://aibhive.com/plants
 
-Community living knowledge base for edible, medicinal, and homeopathic wild plants — starting in Oregon (Eugene & Florence) and expandable to new states via contributor submissions through AiBhive Builder. Searchable library, regional filters, multi-photo ID, PDF guides, community photos/comments, Contribute flow (Hive credits), and favorites stored locally in the browser.
+Community living knowledge base for edible wild plants, mushrooms, and homeopathic remedies across Oregon and Northern California — searchable library, regional filters, multi-photo ID, PDF guides, community photos/comments, Contribute flow (Hive credits), and favorites stored locally in the browser. Public URL: aibhive.com/plants (legacy hive runner redirects here).
 
 ## AiBhive Pros — https://aibhive.com/pros
 
