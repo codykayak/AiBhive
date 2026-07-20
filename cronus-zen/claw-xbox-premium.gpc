@@ -26,9 +26,10 @@
   Hold RS + D-Pad LEFT/RIGHT     = Anti-Recoil horizontal ±1
   Hold RS + VIEW                 = Save AR values
 
-  ── L3 (LEFT STICK CLICK) ───────────────────────────────────────────────────
+  ── L3 (LEFT STICK CLICK) — CLAW LAYOUT ─────────────────────────────────────
   Physical L3 is blocked — a faulty stick cannot toggle sprint/breath in-game.
-  Hold Breath simulates L3 only while ADS (left trigger) is held.
+  Hold Breath: hold LB (left bumper) while ADS (LT) — script simulates L3.
+  Sprint: Auto Run simulates L3 when pushing the stick forward (hip-fire).
 
   ── DEFAULTS ────────────────────────────────────────────────────────────────
   Anti-Recoil ON (low recoil) | Polar AA ON | Hold Breath ON | Auto Run ON
@@ -43,6 +44,7 @@ define MENU_HOLD    = XB1_LT;
 define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
+define BREATH_BTN   = XB1_LB;
 define RX           = XB1_RX;
 define RY           = XB1_RY;
 define LX           = XB1_LX;
@@ -81,6 +83,7 @@ int count_black       = 0;
 int MenuTimeOut       = 0;
 define menu_time_active = 30000;
 define TimeToShowTitle  = 30000;
+define SPRINT_STICK_THR = -20;
 
 int aa_time;
 int aa_angle;
@@ -308,9 +311,15 @@ main {
             // Block broken / stuck physical L3; only script may press sprint/breath
             set_val(SPRINT_BTN, 0);
 
-            if(mod_auto_run && get_val(LY) < -25 && !get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            // Claw sprint: simulate L3 on forward stick (hip-fire, LB not held)
+            if(mod_auto_run && get_val(LY) < SPRINT_STICK_THR && !get_ival(ADS_BTN) && !get_ival(BREATH_BTN)) {
+                set_val(SPRINT_BTN, 100);
+            }
 
-            if(mod_hold_breath && get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            // Claw hold breath: LB while ADS simulates L3 (replaces stick click)
+            if(mod_hold_breath && get_ival(ADS_BTN) && get_ival(BREATH_BTN)) {
+                set_val(SPRINT_BTN, 100);
+            }
 
             if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
                 set_val(LY, clamp(get_val(LY) - Move_boost_val, -100, -1));
