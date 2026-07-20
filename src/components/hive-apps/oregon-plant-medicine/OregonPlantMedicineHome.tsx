@@ -59,7 +59,7 @@ const THEMES: Record<HomeTab, SectionTheme> = {
     label: 'Community',
     headline: 'Real foragers, real finds',
     blurb:
-      'Share photos, upvote the best IDs, and learn from harvesters across Eugene, Florence, Portland, and the Cascades.',
+      'Share photos, upvote the best IDs, and learn from harvesters across regions and seasons.',
     gradient: 'from-sky-950/80 via-slate-950/40 to-transparent',
     border: 'border-sky-500/25',
     accent: 'text-sky-300',
@@ -69,9 +69,9 @@ const THEMES: Record<HomeTab, SectionTheme> = {
   plants: {
     icon: Sprout,
     label: 'Plant library',
-    headline: 'Pacific Northwest field guide',
+    headline: 'Living field guide',
     blurb:
-      'Medicinal herbs, toxic look-alikes, habitat notes, and harvest ethics — curated for Oregon and Northern California.',
+      'Medicinal herbs, toxic look-alikes, habitat notes, and harvest ethics — curated for the Americas.',
     gradient: 'from-emerald-950/80 via-slate-950/40 to-transparent',
     border: 'border-emerald-500/25',
     accent: 'text-emerald-300',
@@ -93,7 +93,7 @@ const THEMES: Record<HomeTab, SectionTheme> = {
   holistic: {
     icon: HeartPulse,
     label: 'Holistic protocols',
-    headline: 'PNW materia medica',
+    headline: 'Holistic materia medica',
     blurb:
       "Devil's club, cascara, reishi, and seasonal tonics — traditions and protocols with safety notes. Not medical advice.",
     gradient: 'from-violet-950/80 via-slate-950/40 to-transparent',
@@ -175,52 +175,58 @@ function HomeHero() {
   const videoRef = useAutoplayVideo([src ?? '']);
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-950 mb-10">
-      <div className="absolute inset-0">
-        {src ? (
-          <video
-            ref={videoRef}
-            key={src}
-            className="w-full h-full object-cover opacity-70"
-            src={src}
-            muted
-            playsInline
-            autoPlay
-            loop
-            preload="auto"
-            onError={() => {
-              if (sourceIndex < video.sources.length - 1) setSourceIndex((i) => i + 1);
-            }}
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-emerald-950/20" />
-      </div>
+    <section className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-950 mb-10">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center lg:gap-10">
+        <div className="px-6 sm:px-10 py-10 sm:py-12 lg:py-14">
+          <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300 mb-4">
+            <Leaf className="w-4 h-4" />
+            Oregon Plant Medicine
+          </p>
+          <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black text-white leading-[1.1] tracking-tight">
+            Forage smarter.
+            <span className="block text-emerald-300 mt-1">Heal deeper. Learn together.</span>
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-xl">
+            A living field guide for wild plants, mushrooms, and holistic research — with community photos,
+            regional filters, and libraries you can explore at your own pace.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-400">
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
+              180+ plants & mushrooms
+            </span>
+            <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1">Regional filters</span>
+            <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1">Community feed</span>
+          </div>
+        </div>
 
-      <div className="relative px-6 sm:px-10 py-12 sm:py-16 max-w-3xl">
-        <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300 mb-4">
-          <Leaf className="w-4 h-4" />
-          Oregon Plant Medicine
-        </p>
-        <h1 className="text-3xl sm:text-5xl font-black text-white leading-[1.1] tracking-tight">
-          Forage smarter.
-          <span className="block text-emerald-300 mt-1">Heal deeper. Learn together.</span>
-        </h1>
-        <p className="mt-4 text-base sm:text-lg text-slate-300/90 leading-relaxed max-w-xl">
-          {video.caption}
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3 text-xs font-bold text-slate-400">
-          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-200">
-            180+ plants & mushrooms
-          </span>
-          <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1">PNW regions</span>
-          <span className="rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1">Community feed</span>
+        <div className="relative px-4 pb-8 sm:px-6 sm:pb-10 lg:px-8 lg:pb-0 lg:pt-10">
+          <div className="overflow-hidden rounded-2xl border border-emerald-500/25 bg-black shadow-xl shadow-black/40 ring-1 ring-white/5">
+            {src ? (
+              <video
+                ref={videoRef}
+                key={src}
+                className="aspect-video w-full object-contain bg-black"
+                src={src}
+                muted
+                playsInline
+                autoPlay
+                loop
+                preload="auto"
+                aria-label={video.title}
+                onError={() => {
+                  if (sourceIndex < video.sources.length - 1) setSourceIndex((i) => i + 1);
+                }}
+              />
+            ) : null}
+          </div>
+          {video.caption ? (
+            <p className="mt-3 text-center text-xs text-slate-500 lg:text-left">{video.caption}</p>
+          ) : null}
         </div>
       </div>
     </section>
   );
 }
-
 function CommunitySection({ onNavigate }: { onNavigate: (tab: HomeTab) => void }) {
   const theme = THEMES.community;
   const posts = [...SEED_COMMUNITY_POSTS].sort((a, b) => b.upvoteCount - a.upvoteCount).slice(0, 3);

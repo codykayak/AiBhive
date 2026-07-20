@@ -29,7 +29,7 @@ export default function UserAvatar({
   if (!url || (failed && !(preferBlob && isBlob))) {
     return (
       <div
-        className={`flex items-center justify-center bg-emerald-500/20 text-emerald-300 font-bold shrink-0 ${className}`}
+        className={`flex items-center justify-center bg-emerald-500/20 text-emerald-300 font-bold shrink-0 rounded-full ${className}`}
         aria-hidden
       >
         {url && failed ? (
@@ -42,14 +42,16 @@ export default function UserAvatar({
   }
 
   return (
-    <img
-      src={url}
-      alt=""
-      className={`object-cover object-center shrink-0 ${className}`}
-      onError={() => {
-        if (preferBlob && isBlob) return;
-        setFailed(true);
-      }}
-    />
+    <div className={`relative shrink-0 overflow-hidden rounded-full ${className}`}>
+      <img
+        src={url}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover object-center"
+        onError={() => {
+          if (preferBlob && isBlob) return;
+          setFailed(true);
+        }}
+      />
+    </div>
   );
 }

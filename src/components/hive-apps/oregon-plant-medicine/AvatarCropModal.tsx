@@ -81,16 +81,22 @@ export default function AvatarCropModal({ file, onCancel, onConfirm }: Props) {
   const onPointerUp = () => setDragging(false);
 
   const exportCrop = async () => {
-    drawPreview();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const img = imgRef.current;
+    if (!img) return;
 
     const exportCanvas = document.createElement('canvas');
     exportCanvas.width = OUTPUT_SIZE;
     exportCanvas.height = OUTPUT_SIZE;
     const ctx = exportCanvas.getContext('2d');
     if (!ctx) return;
-    ctx.drawImage(canvas, 0, 0);
+
+    ctx.clearRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+    const x = OUTPUT_SIZE / 2 - drawW / 2 + offset.x;
+    const y = OUTPUT_SIZE / 2 - drawH / 2 + offset.y;
+    ctx.drawImage(img, x, y, drawW, drawH);
 
     const blob = await new Promise<Blob | null>((resolve) =>
       exportCanvas.toBlob(resolve, 'image/jpeg', 0.92),

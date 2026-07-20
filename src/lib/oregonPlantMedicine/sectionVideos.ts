@@ -21,7 +21,7 @@ export const SECTION_VIDEOS = {
     sources: videoSources('aibhive-holistic-health-wellness-community-and-library'),
     title: 'Holistic health, wellness & community',
     caption:
-      'Oregon Plant Medicine brings together Pacific Northwest foraging, holistic protocols, hypnosis & energy research, and animal wellness — one living library for the PNW.',
+      'Wild plants, holistic protocols, hypnosis & energy research, and animal wellness — one living library for curious foragers and healers.',
     page: 'Home',
   },
   edibles: {
