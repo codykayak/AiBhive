@@ -111,6 +111,7 @@ function serializePost(id, d) {
     authorDisplayName: d.authorDisplayName || 'Forager',
     authorAvatarUrl: d.authorAvatarUrl || null,
     type: d.type,
+    title: d.title || null,
     text: d.text || '',
     imageUrl: d.imageUrl || null,
     status: d.status,
@@ -246,7 +247,12 @@ export async function listCommunityFeed(db, { viewerUid, gcsBucket, limit = 50 }
   return posts.slice(0, limit);
 }
 
-export async function createPost(db, FieldValue, { plantId, author, type, text, imageUrl }, gcsBucket = null) {
+export async function createPost(
+  db,
+  FieldValue,
+  { plantId, author, type, title, text, imageUrl },
+  gcsBucket = null,
+) {
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const status = type === 'comment' ? 'approved' : 'pending';
   const ref = db.collection(POSTS).doc();
@@ -257,7 +263,40 @@ export async function createPost(db, FieldValue, { plantId, author, type, text, 
     authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Forager',
     authorAvatarUrl: profile.avatarUrl || null,
     type,
+    title: title ? clip(title, 120) : null,
     text: clip(text, type === 'comment' ? 2000 : 500),
+    imageUrl: imageUrl || null,
+    status,
+    upvoteCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ref.set(payload);
+  return serializePost(ref.id, { ...payload, viewerHasUpvoted: false });
+}
+
+export async function createFeedPost(
+  db,
+  FieldValue,
+  { author, title, text, imageUrl, plantId },
+  gcsBucket = null,
+) {
+  const trimmedTitle = clip(title, 120);
+  if (!trimmedTitle) throw new Error('Title is required.');
+
+  const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
+  const hasImage = !!imageUrl;
+  const status = hasImage ? 'pending' : 'approved';
+  const ref = db.collection(POSTS).doc();
+  const now = new Date();
+  const payload = {
+    plantId: plantId || null,
+    authorUid: author.uid,
+    authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Forager',
+    authorAvatarUrl: profile.avatarUrl || null,
+    type: 'feed',
+    title: trimmedTitle,
+    text: clip(text, 2000),
     imageUrl: imageUrl || null,
     status,
     upvoteCount: 0,

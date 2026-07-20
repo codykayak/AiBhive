@@ -1,4 +1,4 @@
-import { BUILDER_PATH, ANIMAL_HEALTH_CONTRIBUTION_USD } from './branding';
+import { BUILDER_PATH } from './branding';
 
 export function buildAddAnimalHealthTopicPrompt(topicTitle?: string): string {
   const focus = topicTitle?.trim()
@@ -19,7 +19,7 @@ export function buildAddAnimalHealthTopicPrompt(topicTitle?: string): string {
     '',
     'Do NOT provide veterinary prescriptions, essential oil recipes for cats, or livestock drug dosing.',
     '',
-    `Contributor fee: $${ANIMAL_HEALTH_CONTRIBUTION_USD} Hive credits to publish for the whole community.`,
+    'Contributor fee: free — open AiBhive Builder to publish for the whole community.',
   ].join('\n');
 }
 

@@ -2,15 +2,11 @@ import { useState } from 'react';
 import { ExternalLink, HeartPulse, Leaf, Loader2, MapPin, PawPrint, Sparkles, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
-  LIVING_KNOWLEDGE_APP_NAME,
   LIVING_KNOWLEDGE_SHORT_NAME,
   MIN_RECHARGE_USD,
   STATE_CONTRIBUTION_USD,
-  HOLISTIC_CONTRIBUTION_USD,
   HOLISTIC_TAB_LABEL,
-  HYPNOSIS_ENERGY_CONTRIBUTION_USD,
   HYPNOSIS_ENERGY_TAB_LABEL,
-  ANIMAL_HEALTH_CONTRIBUTION_USD,
   ANIMAL_HEALTH_TAB_LABEL,
 } from '../../../lib/oregonPlantMedicine/branding';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
@@ -41,9 +37,12 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
     }
   };
 
-  const builderHref = stateName ? builderUrlForState(stateName, city) : '/hive-apps/build?q=' + encodeURIComponent(
-    'Add new plants to Living Knowledge Plants and Medicine — same fields as the Oregon library (habitat, ID photos, look-alikes, edible/medicinal notes).',
-  );
+  const builderHref = stateName
+    ? builderUrlForState(stateName, city)
+    : '/hive-apps/build?q=' +
+      encodeURIComponent(
+        'Add new plants to Living Knowledge Plants and Medicine — same fields as the Oregon library (habitat, ID photos, look-alikes, edible/medicinal notes).',
+      );
 
   return (
     <div
@@ -69,8 +68,8 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             Contribute to the living knowledge base
           </h2>
           <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-            Help grow {LIVING_KNOWLEDGE_APP_NAME}. Add as many plants as you like — each entry helps document Mother
-            Earth&apos;s natural homeopathic remedies and wild edibles for everyone.
+            Browse and search the library for free. Adding a new state to the map costs Hive credits; adding plants and
+            edibles uses Builder credits because those entries are deep and AI-assisted.
           </p>
         </div>
 
@@ -78,10 +77,10 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
           <div className="flex gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
             <Leaf className="w-5 h-5 text-emerald-300 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-emerald-200">Add as many plants as you like</p>
+              <p className="font-bold text-emerald-200">Add plants &amp; mushrooms (Builder)</p>
               <p className="mt-1 text-slate-300">
-                Publish species entries with three ID photos, habitat, look-alikes, and preparation notes — the same depth
-                as our Oregon seed library.
+                Publish species with three ID photos, habitat, look-alikes, and preparation notes. Uses AiBhive Builder
+                credits — the same depth as our Oregon seed library.
               </p>
             </div>
           </div>
@@ -91,8 +90,8 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             <div>
               <p className="font-bold text-sky-200">Add your state for ${STATE_CONTRIBUTION_USD}</p>
               <p className="mt-1 text-slate-300">
-                New states (e.g. Washington) go live for the whole app. Your contribution is uploaded for everybody
-                browsing that region.
+                New states (e.g. Washington) go live for the whole app. This is the only flat ${STATE_CONTRIBUTION_USD}{' '}
+                contribution — search and browsing stay free.
               </p>
             </div>
           </div>
@@ -100,10 +99,9 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
           <div className="flex gap-3 rounded-xl border border-violet-500/25 bg-violet-500/10 p-4">
             <HeartPulse className="w-5 h-5 text-violet-300 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-violet-200">Add holistic research for ${HOLISTIC_CONTRIBUTION_USD}</p>
+              <p className="font-bold text-violet-200">Holistic research — free via Builder</p>
               <p className="mt-1 text-slate-300">
-                Publish a new topic to <strong className="text-white">{HOLISTIC_TAB_LABEL}</strong> — detox overviews,
-                Cayce traditions, protocols, and safety notes for everyone.
+                Publish to <strong className="text-white">{HOLISTIC_TAB_LABEL}</strong> at no flat fee.
               </p>
             </div>
           </div>
@@ -111,10 +109,9 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
           <div className="flex gap-3 rounded-xl border border-cyan-500/25 bg-cyan-500/10 p-4">
             <Sparkles className="w-5 h-5 text-cyan-300 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-cyan-200">Add hypnosis &amp; energy research for ${HYPNOSIS_ENERGY_CONTRIBUTION_USD}</p>
+              <p className="font-bold text-cyan-200">Hypnosis &amp; energy — free via Builder</p>
               <p className="mt-1 text-slate-300">
-                Publish a new topic to <strong className="text-white">{HYPNOSIS_ENERGY_TAB_LABEL}</strong> — regression,
-                Reiki, sound healing, frequencies, and safety notes for everyone.
+                Publish to <strong className="text-white">{HYPNOSIS_ENERGY_TAB_LABEL}</strong> at no flat fee.
               </p>
             </div>
           </div>
@@ -122,22 +119,9 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
           <div className="flex gap-3 rounded-xl border border-rose-500/25 bg-rose-500/10 p-4">
             <PawPrint className="w-5 h-5 text-rose-300 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold text-rose-200">Add animal health research for ${ANIMAL_HEALTH_CONTRIBUTION_USD}</p>
+              <p className="font-bold text-rose-200">Animal health — free via Builder</p>
               <p className="mt-1 text-slate-300">
-                Publish a new topic to <strong className="text-white">{ANIMAL_HEALTH_TAB_LABEL}</strong> — dogs, cats,
-                horses, livestock, and holistic vet education for everyone.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-3 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-            <Sparkles className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-bold text-amber-200">AiBhive Builder + Hive credits</p>
-              <p className="mt-1 text-slate-300">
-                Open states for <strong className="text-white">${STATE_CONTRIBUTION_USD}</strong>. Recharge anytime from{' '}
-                <strong className="text-white">${MIN_RECHARGE_USD}</strong>. Builder prompts match the fields we used to
-                author this database.
+                Publish to <strong className="text-white">{ANIMAL_HEALTH_TAB_LABEL}</strong> at no flat fee.
               </p>
             </div>
           </div>
@@ -149,11 +133,19 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
               type="button"
               disabled={checkoutBusy}
               onClick={() => void buyCredits(STATE_CONTRIBUTION_USD)}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white font-bold px-4 py-3 text-sm"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white font-bold px-4 py-3 text-sm"
             >
               {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {stateName ? `Add ${stateName}` : 'Add your state'} — ${STATE_CONTRIBUTION_USD}
             </button>
+            <Link
+              to={builderHref}
+              onClick={onClose}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 text-sm"
+            >
+              Open Builder — plants &amp; mushrooms
+              <ExternalLink className="w-4 h-4 opacity-90" />
+            </Link>
             <Link
               to={builderUrlForHolisticTopic()}
               onClick={onClose}
@@ -162,15 +154,6 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
               Open Builder — holistic topic
               <ExternalLink className="w-4 h-4 opacity-90" />
             </Link>
-            <button
-              type="button"
-              disabled={checkoutBusy}
-              onClick={() => void buyCredits(HOLISTIC_CONTRIBUTION_USD)}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/30 text-violet-100 font-bold px-4 py-3 text-sm hover:bg-violet-500/10 disabled:opacity-60"
-            >
-              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Add holistic research — ${HOLISTIC_CONTRIBUTION_USD}
-            </button>
             <Link
               to={builderUrlForHypnosisEnergyTopic()}
               onClick={onClose}
@@ -179,15 +162,6 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
               Open Builder — hypnosis &amp; energy
               <ExternalLink className="w-4 h-4 opacity-90" />
             </Link>
-            <button
-              type="button"
-              disabled={checkoutBusy}
-              onClick={() => void buyCredits(HYPNOSIS_ENERGY_CONTRIBUTION_USD)}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/30 text-cyan-100 font-bold px-4 py-3 text-sm hover:bg-cyan-500/10 disabled:opacity-60"
-            >
-              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Add hypnosis &amp; energy — ${HYPNOSIS_ENERGY_CONTRIBUTION_USD}
-            </button>
             <Link
               to={builderUrlForAnimalHealthTopic()}
               onClick={onClose}
@@ -199,27 +173,10 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             <button
               type="button"
               disabled={checkoutBusy}
-              onClick={() => void buyCredits(ANIMAL_HEALTH_CONTRIBUTION_USD)}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 text-rose-100 font-bold px-4 py-3 text-sm hover:bg-rose-500/10 disabled:opacity-60"
-            >
-              {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Add animal health — ${ANIMAL_HEALTH_CONTRIBUTION_USD}
-            </button>
-            <Link
-              to={builderHref}
-              onClick={onClose}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 text-emerald-200 font-bold px-4 py-3 text-sm hover:bg-emerald-500/10"
-            >
-              Open AiBhive Builder
-              <ExternalLink className="w-4 h-4 opacity-90" />
-            </Link>
-            <button
-              type="button"
-              disabled={checkoutBusy}
               onClick={() => void buyCredits(MIN_RECHARGE_USD)}
               className="w-full text-slate-400 hover:text-white text-xs py-2"
             >
-              Recharge from ${MIN_RECHARGE_USD}
+              Recharge Builder credits from ${MIN_RECHARGE_USD}
             </button>
           </div>
         </div>

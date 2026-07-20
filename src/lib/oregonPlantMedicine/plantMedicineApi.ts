@@ -18,7 +18,8 @@ export type PlantMedicinePost = {
   authorUid: string;
   authorDisplayName: string;
   authorAvatarUrl: string | null;
-  type: 'comment' | 'photo';
+  type: 'comment' | 'photo' | 'feed';
+  title?: string | null;
   text: string;
   imageUrl: string | null;
   status: string;
@@ -98,9 +99,19 @@ export async function fetchPlantPosts(
 export function createPlantPost(
   user: User,
   plantId: string,
-  body: { type: 'comment' | 'photo'; text?: string; imageUrl?: string },
+  body: { type: 'comment' | 'photo'; title?: string; text?: string; imageUrl?: string },
 ): Promise<PlantMedicinePost> {
   return adminJson(`/api/plant-medicine/plants/${encodeURIComponent(plantId)}/posts`, user, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then((d) => (d as { post: PlantMedicinePost }).post);
+}
+
+export function createFeedPost(
+  user: User,
+  body: { title: string; text?: string; imageUrl?: string; plantId?: string },
+): Promise<PlantMedicinePost> {
+  return adminJson('/api/plant-medicine/feed/posts', user, {
     method: 'POST',
     body: JSON.stringify(body),
   }).then((d) => (d as { post: PlantMedicinePost }).post);

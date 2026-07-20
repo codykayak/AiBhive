@@ -1,12 +1,13 @@
 import type { User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, MapPin, Sprout, ThumbsUp, Users } from 'lucide-react';
+import { Loader2, MapPin, PenSquare, Sprout, ThumbsUp, Users } from 'lucide-react';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import {
   fetchCommunityFeed,
   togglePostUpvote,
   type PlantMedicinePost,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadges';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import {
   mergeCommunityFeed,
@@ -14,6 +15,7 @@ import {
   SEED_COMMUNITY_VOTER_COUNT,
   type SeedCommunityPost,
 } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import CreateCommunityPostModal from './CreateCommunityPostModal';
 import PlantPhoto from './PlantImage';
 import UserAvatar from './UserAvatar';
 
@@ -45,6 +47,11 @@ function plantForPost(post: FeedPost): PlantEntry | undefined {
   return PLANT_LIBRARY.find((p) => p.id === post.plantId);
 }
 
+function feedTitle(post: FeedPost): string | null {
+  if ('title' in post && post.title) return post.title;
+  return null;
+}
+
 function FeedCard({
   post,
   user,
@@ -64,6 +71,7 @@ function FeedCard({
   const seed = isSeed(post);
   const location = seed ? post.locationLabel : null;
   const plantLabel = seed ? post.plantCommonName : plant?.commonName;
+  const title = feedTitle(post);
 
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
@@ -84,7 +92,11 @@ function FeedCard({
             ) : null}
             <span className="text-[10px] text-slate-500">{timeAgo(post.createdAt)}</span>
           </div>
-          <p className="text-sm text-slate-300 mt-2 leading-relaxed">{post.text}</p>
+          {title ? <h3 className="font-black text-white mt-2 leading-snug">{title}</h3> : null}
+          {plant ? <PlantCategoryBadges plant={plant} className="mt-2" /> : null}
+          {post.text ? (
+            <p className="text-sm text-slate-300 mt-2 leading-relaxed line-clamp-3">{post.text}</p>
+          ) : null}
           {plant && plantLabel ? (
             <button
               type="button"
@@ -139,6 +151,7 @@ export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpen
   const [livePosts, setLivePosts] = useState<PlantMedicinePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
   const [seedVotes, setSeedVotes] = useState<Record<string, { count: number; voted: boolean }>>(() =>
     Object.fromEntries(SEED_COMMUNITY_POSTS.map((p) => [p.id, { count: p.upvoteCount, voted: false }])),
   );
@@ -200,16 +213,32 @@ export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpen
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm text-sky-100/90 leading-relaxed">
-        <p className="text-xs font-black uppercase tracking-widest text-sky-300 mb-2 flex items-center gap-2">
-          <Users className="w-4 h-4" />
-          Community feed
-        </p>
-        <p>
-          Latest foraging photos and field notes from Oregon &amp; Northern California — sorted by upvotes.{' '}
-          <strong className="text-white">{SEED_COMMUNITY_VOTER_COUNT} early members</strong> are already sharing
-          local picks and ID tips.
-        </p>
+      <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-sm text-sky-100/90 leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-sky-300 mb-2 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Community feed
+          </p>
+          <p>
+            Share foraging photos and field notes — sorted by upvotes.{' '}
+            <strong className="text-white">{SEED_COMMUNITY_VOTER_COUNT} early members</strong> are already sharing
+            local picks and ID tips.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (!user) {
+              onSignIn();
+              return;
+            }
+            setShowCreate(true);
+          }}
+          className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2.5 text-sm"
+        >
+          <PenSquare className="w-4 h-4" />
+          New post
+        </button>
       </div>
 
       {loading ? (
@@ -232,6 +261,15 @@ export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpen
           />
         ))}
       </div>
+
+      {showCreate ? (
+        <CreateCommunityPostModal
+          user={user}
+          onClose={() => setShowCreate(false)}
+          onSignIn={onSignIn}
+          onCreated={() => void load()}
+        />
+      ) : null}
     </div>
   );
 }

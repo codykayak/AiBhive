@@ -523,7 +523,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   }, []);
 
   const filtered = useMemo(() => {
-    if (userLocation && !regionSupported) return [];
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
       if (!matchesRegion(p, region)) return false;
@@ -544,10 +543,9 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [query, region, useFilter, favoritesOnly, favorites, userLocation, regionSupported]);
+  }, [query, region, useFilter, favoritesOnly, favorites]);
 
   const edibleFiltered = useMemo(() => {
-    if (userLocation && !regionSupported) return [];
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
       if (p.uses !== 'edible' && p.uses !== 'both') return false;
@@ -567,7 +565,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [query, region, favoritesOnly, favorites, userLocation, regionSupported]);
+  }, [query, region, favoritesOnly, favorites]);
 
   const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
 
@@ -813,12 +811,13 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             {userLocation && !regionSupported ? (
               <div className="rounded-xl border border-sky-500/35 bg-sky-500/10 p-5 mb-5 text-sm text-sky-100/90">
                 <p className="text-xs font-black uppercase tracking-widest text-sky-300 mb-2">
-                  {userLocation.state} is not in the living knowledge base yet
+                  {userLocation.state} is not on the map yet
                 </p>
                 <p className="leading-relaxed">
-                  We do not have localized plants for {locationLabel(userLocation)} yet. Add your state for{' '}
-                  <strong className="text-white">${STATE_CONTRIBUTION_USD}</strong> in Hive credits — your field guide
-                  becomes available to everyone in the app.
+                  You can still search and browse the full Oregon &amp; Northern California library. Want localized
+                  plants for {locationLabel(userLocation)}? Add your state for{' '}
+                  <strong className="text-white">${STATE_CONTRIBUTION_USD}</strong> in Hive credits — that opens the
+                  region for everyone.
                 </p>
                 <button
                   type="button"

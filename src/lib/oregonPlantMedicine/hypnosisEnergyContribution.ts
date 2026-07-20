@@ -1,4 +1,4 @@
-import { BUILDER_PATH, HYPNOSIS_ENERGY_CONTRIBUTION_USD } from './branding';
+import { BUILDER_PATH } from './branding';
 
 /** Builder prompt for community hypnosis & energy research contributions. */
 export function buildAddHypnosisEnergyTopicPrompt(topicTitle?: string): string {
@@ -24,7 +24,7 @@ export function buildAddHypnosisEnergyTopicPrompt(topicTitle?: string): string {
     'Do NOT provide scripts for unsupervised deep regression or claims that frequencies cure disease.',
     'Frame everything as educational research. Include strong safety warnings.',
     '',
-    `Contributor fee: $${HYPNOSIS_ENERGY_CONTRIBUTION_USD} Hive credits to publish for the whole community.`,
+    'Contributor fee: free — open AiBhive Builder to publish for the whole community.',
   ].join('\n');
 }
 
@@ -34,7 +34,7 @@ export function builderUrlForHypnosisEnergyTopic(topicTitle?: string): string {
 
 export function hypnosisEnergyContributionSummary(topicTitle?: string): string {
   if (topicTitle) {
-    return `Add "${topicTitle}" research for $${HYPNOSIS_ENERGY_CONTRIBUTION_USD} in Hive credits.`;
+    return `Add "${topicTitle}" research free via AiBhive Builder.`;
   }
-  return `Add hypnosis & energy research to the living knowledge base for $${HYPNOSIS_ENERGY_CONTRIBUTION_USD} in Hive credits.`;
+  return 'Add hypnosis & energy research to the living knowledge base free via AiBhive Builder.';
 }
