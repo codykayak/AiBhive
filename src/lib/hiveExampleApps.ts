@@ -95,7 +95,7 @@ export const EXAMPLE_TOOLS = [
   },
   {
     id: EXAMPLE_APP_IDS.oregonPlantMedicine,
-    title: 'Oregon Plant Medicine',
-    sub: 'Eugene & Florence edible & medicinal plants',
+    title: 'Living Knowledge Plants and Medicine',
+    sub: 'Living knowledge base · plants & medicine',
   },
 ] as const;

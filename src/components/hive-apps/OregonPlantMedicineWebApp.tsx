@@ -19,6 +19,7 @@ import {
   Star,
   User as UserIcon,
   X,
+  PlusCircle,
 } from 'lucide-react';
 import { auth, googleProvider } from '../../firebase';
 import {
@@ -32,7 +33,17 @@ import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonP
 import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
 import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicineHero';
+import ContributeModal from './oregon-plant-medicine/ContributeModal';
+import LocationOnboardingModal from './oregon-plant-medicine/LocationOnboardingModal';
 import ProfileModal from './oregon-plant-medicine/ProfileModal';
+import { LIVING_KNOWLEDGE_APP_NAME, LIVING_KNOWLEDGE_TAGLINE, STATE_CONTRIBUTION_USD } from '../../lib/oregonPlantMedicine/branding';
+import {
+  isSupportedLocation,
+  locationLabel,
+  oregonRegionLabel,
+  type UserLocation,
+} from '../../lib/oregonPlantMedicine/regions';
+import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicine/userLocation';
 
 type Props = { expanded?: boolean };
 
@@ -259,7 +270,7 @@ function PlantDetail({
   );
 }
 
-/** Oregon Plant Medicine — private regional foraging & holistic herbal library. */
+/** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
 export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const [tab, setTab] = useState<Tab>('plants');
   const [query, setQuery] = useState('');
@@ -271,7 +282,33 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showContribute, setShowContribute] = useState(false);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
+  const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
+  const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
   const [authError, setAuthError] = useState('');
+
+  const regionSupported = userLocation ? isSupportedLocation(userLocation) : true;
+
+  useEffect(() => {
+    if (!userLocation || userLocation.stateId !== 'oregon') return;
+    if (userLocation.oregonRegion === 'eugene' || userLocation.oregonRegion === 'florence') {
+      setRegion(userLocation.oregonRegion);
+    }
+  }, [userLocation]);
+
+  const handleLocationComplete = useCallback((loc: UserLocation) => {
+    saveUserLocation(loc);
+    setUserLocation(loc);
+    setShowLocationModal(false);
+    if (loc.stateId === 'oregon') {
+      if (loc.oregonRegion === 'eugene' || loc.oregonRegion === 'florence') {
+        setRegion(loc.oregonRegion);
+      } else {
+        setRegion('all');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     return onAuthStateChanged(auth, (u) => {
@@ -312,6 +349,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   }, []);
 
   const filtered = useMemo(() => {
+    if (userLocation && !regionSupported) return [];
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
       if (!matchesRegion(p, region)) return false;
@@ -332,9 +370,10 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [query, region, useFilter, favoritesOnly, favorites]);
+  }, [query, region, useFilter, favoritesOnly, favorites, userLocation, regionSupported]);
 
   const edibleFiltered = useMemo(() => {
+    if (userLocation && !regionSupported) return [];
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
       if (p.uses !== 'edible' && p.uses !== 'both') return false;
@@ -354,7 +393,7 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [query, region, favoritesOnly, favorites]);
+  }, [query, region, favoritesOnly, favorites, userLocation, regionSupported]);
 
   const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
 
@@ -406,10 +445,47 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
 
   return (
     <div className={shellClass}>
-      <OregonPlantMedicineHero compact={!expanded} actions={authActions} />
+      <OregonPlantMedicineHero
+        compact={!expanded}
+        actions={authActions}
+        onContribute={() => setShowContribute(true)}
+      />
 
       <header className={`border-b border-emerald-500/20 ${expanded ? 'px-4 sm:px-8 py-4' : 'px-4 py-3'}`}>
         {authError ? <p className="text-xs text-red-300 mb-3">{authError}</p> : null}
+
+        <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4 mb-4 text-sm text-emerald-100/90 leading-relaxed flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-1">Living knowledge base</p>
+            <p>{LIVING_KNOWLEDGE_TAGLINE}</p>
+            {userLocation ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationModalStep('location');
+                  setShowLocationModal(true);
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {locationLabel(userLocation)}
+                {regionSupported && userLocation.stateId === 'oregon'
+                  ? ` · ${oregonRegionLabel(userLocation.oregonRegion)}`
+                  : !regionSupported
+                    ? ' · not in library yet'
+                    : ''}
+              </button>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowContribute(true)}
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-sm transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Contribute
+          </button>
+        </div>
 
         <nav className="flex gap-2 flex-wrap">
           {(
@@ -500,6 +576,34 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 Saved
               </button>
             </div>
+
+            {userLocation && !regionSupported ? (
+              <div className="rounded-xl border border-sky-500/35 bg-sky-500/10 p-5 mb-5 text-sm text-sky-100/90">
+                <p className="text-xs font-black uppercase tracking-widest text-sky-300 mb-2">
+                  {userLocation.state} is not in the living knowledge base yet
+                </p>
+                <p className="leading-relaxed">
+                  We do not have localized plants for {locationLabel(userLocation)} yet. Add your state for{' '}
+                  <strong className="text-white">${STATE_CONTRIBUTION_USD}</strong> in Hive credits — your field guide
+                  becomes available to everyone in the app.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocationModalStep('add-state');
+                    setShowLocationModal(true);
+                  }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold px-4 py-2.5 text-sm"
+                >
+                  Add {userLocation.state} — ${STATE_CONTRIBUTION_USD}
+                </button>
+              </div>
+            ) : userLocation && regionSupported ? (
+              <p className="text-xs text-emerald-400/90 mb-4">
+                Localized for {locationLabel(userLocation)}
+                {userLocation.oregonRegion !== 'all' ? ` · ${oregonRegionLabel(userLocation.oregonRegion)}` : ''}
+              </p>
+            ) : null}
 
             <p className="text-xs text-slate-500 mb-4">
               {plantsToShow.length} {tab === 'edibles' ? 'edible wild foods' : 'plants in library'}
@@ -656,6 +760,18 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
 
         {tab === 'guide' ? (
           <div className="space-y-6 text-sm text-slate-300 leading-relaxed max-w-3xl">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+              <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
+                {LIVING_KNOWLEDGE_APP_NAME}
+              </p>
+              <p className="text-emerald-100/90">
+                This is a <strong className="text-white">living knowledge base</strong> — starting in Oregon and open to
+                new states as contributors document local edibles and homeopathic remedies. Share photos on plant pages,
+                or tap <strong className="text-white">Contribute</strong> to publish new species and regions for
+                everyone.
+              </p>
+            </div>
+
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
               <p className="text-xs font-black uppercase tracking-widest text-amber-300 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" /> Important disclaimer
@@ -796,6 +912,22 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
           user={user}
           onClose={() => setShowProfile(false)}
           onSaved={(p) => setProfile(p)}
+        />
+      ) : null}
+      {showContribute ? (
+        <ContributeModal
+          onClose={() => setShowContribute(false)}
+          stateName={userLocation && !regionSupported ? userLocation.state : undefined}
+          city={userLocation?.city}
+        />
+      ) : null}
+      {showLocationModal ? (
+        <LocationOnboardingModal
+          initial={userLocation}
+          initialStep={locationModalStep}
+          onComplete={handleLocationComplete}
+          onClose={() => setShowLocationModal(false)}
+          requireSubmit={!userLocation}
         />
       ) : null}
     </div>

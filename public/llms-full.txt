@@ -32,11 +32,11 @@ Guided flow: describe the app in plain English, review a quote, approve, and Bhi
 
 ## Hive Apps store — https://aibhive.com/hive-apps
 
-Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, Oregon Plant Medicine (regional foraging library), and a mock real estate dashboard.
+Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, Living Knowledge Plants and Medicine (community plant living knowledge base), and a mock real estate dashboard.
 
-## Oregon Plant Medicine (Hive App demo) — https://aibhive.com/hive-apps/run/example-oregon-plant-medicine
+## Living Knowledge Plants and Medicine (Hive App demo) — https://aibhive.com/hive-apps/run/example-oregon-plant-medicine
 
-Private-reference style guide for edible and medicinal plants near Eugene and Florence, Oregon: searchable library, regional filters, Wikimedia-linked resources, field guide tab, and favorites stored locally in the browser.
+Community living knowledge base for edible, medicinal, and homeopathic wild plants — starting in Oregon (Eugene & Florence) and expandable to new states via contributor submissions through AiBhive Builder. Searchable library, regional filters, multi-photo ID, PDF guides, community photos/comments, Contribute flow (Hive credits), and favorites stored locally in the browser.
 
 ## AiBhive Pros — https://aibhive.com/pros
 
