@@ -6,6 +6,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { HYPNOSIS_ENERGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
 import { HYPNOSIS_ENERGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
+import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
 
@@ -54,6 +55,7 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
       onSignIn={onSignIn}
       onOpenPlant={onOpenPlant}
       onContribute={onContribute}
+      introVideo={SECTION_VIDEOS.hypnosis}
     />
   );
 }
