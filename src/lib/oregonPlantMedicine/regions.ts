@@ -23,7 +23,7 @@ const STATE_ALIASES: Record<string, { name: string; id: SupportedStateId | null 
   ca: { name: 'California', id: 'northern-california' },
   california: { name: 'California', id: 'northern-california' },
   'northern california': { name: 'Northern California', id: 'northern-california' },
-  'norcal': { name: 'Northern California', id: 'northern-california' },
+  norcal: { name: 'Northern California', id: 'northern-california' },
   wa: { name: 'Washington', id: null },
   washington: { name: 'Washington', id: null },
   id: { name: 'Idaho', id: null },
@@ -42,7 +42,7 @@ const COAST_CITIES = new Set([
 ]);
 
 const CASCADE_CITIES = new Set([
-  'bend', 'sisters', 'sunriver', 'la pine', 'madras', 'redmond', 'sisters', 'mckenzie bridge',
+  'bend', 'sisters', 'sunriver', 'la pine', 'madras', 'redmond', 'mckenzie bridge',
   'oakridge', 'crescent', 'chemult',
 ]);
 
@@ -76,7 +76,7 @@ const SACRAMENTO_CITIES = new Set([
 ]);
 
 const SHASTA_CITIES = new Set([
-  'mt shasta', 'mount shasta', 'weaverville', 'yreka', 'dunsmuir', 'mount shasta', 'mccloud',
+  'mt shasta', 'mount shasta', 'weaverville', 'yreka', 'dunsmuir', 'mccloud',
   'etna', 'fort jones',
 ]);
 
