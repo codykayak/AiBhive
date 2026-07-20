@@ -5,6 +5,8 @@ import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedic
 import type { ResearchTopicBase } from '../../../lib/oregonPlantMedicine/topicLibraryTypes';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
+import SectionIntroVideo from './SectionIntroVideo';
 import TopicCommunityPanel from './TopicCommunityPanel';
 
 export type ResearchLibraryTheme = {
@@ -37,6 +39,7 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
   onContribute: (topicTitle?: string) => void;
+  introVideo?: SectionVideo;
 };
 
 function TopicDetail<T extends ResearchTopicBase & { category: string }>({
@@ -219,6 +222,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onSignIn,
   onOpenPlant,
   onContribute,
+  introVideo,
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
@@ -238,8 +242,13 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
     <>
       <div className="space-y-5">
         <div className={`rounded-xl border ${theme.introBorder} ${theme.introBg} p-4 text-sm ${theme.introText} leading-relaxed`}>
-          <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
-          {introText}
+          <div className="flex flex-col-reverse sm:flex-row gap-4">
+            <div className="flex-1 min-w-0">
+              <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
+              {introText}
+            </div>
+            {introVideo ? <SectionIntroVideo video={introVideo} className="sm:ml-auto" /> : null}
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
