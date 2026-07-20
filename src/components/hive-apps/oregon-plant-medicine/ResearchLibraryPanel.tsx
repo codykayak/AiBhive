@@ -6,7 +6,8 @@ import type { ResearchTopicBase } from '../../../lib/oregonPlantMedicine/topicLi
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
-import SectionIntroVideo from './SectionIntroVideo';
+import GridSectionVideo from './GridSectionVideo';
+import ResearchTopicImage from './ResearchTopicImage';
 import TopicCommunityPanel from './TopicCommunityPanel';
 
 export type ResearchLibraryTheme = {
@@ -23,6 +24,8 @@ export type ResearchLibraryTheme = {
   contributeText: string;
   communityAccent: string;
   searchFocus: string;
+  videoAccent: string;
+  videoBorder: string;
 };
 
 type Props<T extends ResearchTopicBase & { category: string }> = {
@@ -39,7 +42,7 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
   onContribute: (topicTitle?: string) => void;
-  introVideo?: SectionVideo;
+  gridVideo?: SectionVideo;
 };
 
 function TopicDetail<T extends ResearchTopicBase & { category: string }>({
@@ -77,7 +80,11 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
         className={`bg-slate-950 border ${theme.detailBorder} rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl`}
       >
         <div className="relative">
-          <img src={topic.imageUrl} alt="" className="w-full h-44 sm:h-52 object-cover" />
+          <ResearchTopicImage
+            src={topic.imageUrl}
+            alt={topic.title}
+            className="w-full h-44 sm:h-52 object-cover"
+          />
           {topic.imageCredit ? (
             <p className="absolute bottom-2 left-3 right-12 text-[10px] text-white/75 bg-black/50 px-2 py-1 rounded pointer-events-none">
               {topic.imageCredit}
@@ -222,7 +229,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onSignIn,
   onOpenPlant,
   onContribute,
-  introVideo,
+  gridVideo,
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
@@ -242,13 +249,8 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
     <>
       <div className="space-y-5">
         <div className={`rounded-xl border ${theme.introBorder} ${theme.introBg} p-4 text-sm ${theme.introText} leading-relaxed`}>
-          <div className="flex flex-col-reverse sm:flex-row gap-4">
-            <div className="flex-1 min-w-0">
-              <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
-              {introText}
-            </div>
-            {introVideo ? <SectionIntroVideo video={introVideo} className="sm:ml-auto" /> : null}
-          </div>
+          <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
+          {introText}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -287,6 +289,13 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
         <p className="text-xs text-slate-500">{filtered.length} topics in library</p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {gridVideo ? (
+            <GridSectionVideo
+              video={gridVideo}
+              accentClass={theme.videoAccent}
+              borderClass={theme.videoBorder}
+            />
+          ) : null}
           {filtered.map((topic) => (
             <article
               key={topic.id}
@@ -297,9 +306,9 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
               className={`group rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden cursor-pointer transition-colors text-left ${theme.cardHover}`}
             >
               <div className="relative h-36 overflow-hidden">
-                <img
+                <ResearchTopicImage
                   src={topic.imageUrl}
-                  alt=""
+                  alt={topic.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>

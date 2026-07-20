@@ -1,34 +1,22 @@
 import type { AnimalHealthCategory, AnimalHealthTopic } from './animalHealthTypes';
+import { commonsImage } from './commonsImage';
 
-/**
- * Wikimedia Commons hero images shared across topics. Structured as thumbnail
- * URLs so cards stay lightweight on the research-lab grid.
- */
+/** Wikimedia Commons hero images for research topic cards. */
 const IMG = {
-  vet:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/US_Navy_100804-N-8848T-088_Lt._Cmdr._Erik_Johnson%2C_a_veterinarian_assigned_to_the_amphibious_assault_ship_USS_Peleliu_%28LHA_5%29%2C_examines_a_dog.jpg/640px-thumbnail.jpg',
-  dog:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Collage_of_Nine_Dogs.jpg/640px-Collage_of_Nine_Dogs.jpg',
-  cat:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/640px-Cat03.jpg',
-  firstAid:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Calendula_officinalis_-_flower_-_side_view_01.jpg/640px-Calendula_officinalis_-_flower_-_side_view_01.jpg',
-  essentialOils:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Essential_oils.jpg/640px-Essential_oils.jpg',
-  reiki:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Reiki_Treatment.jpg/640px-Reiki_Treatment.jpg',
-  horse:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Nokota_Horses_cropped.jpg/640px-Nokota_Horses_cropped.jpg',
-  livestock:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Cow_female_black_white.jpg/640px-Cow_female_black_white.jpg',
-  rawFeeding:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Raw_meat.jpg/640px-Raw_meat.jpg',
-  hemp:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Cannabis_sativa_leaf.jpg/640px-Cannabis_sativa_leaf.jpg',
-  bachFlowers:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Helianthemum_nummularium_04.jpg/640px-Helianthemum_nummularium_04.jpg',
-  emergency:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Emergency_department%2C_animal_hospital.jpg/640px-thumbnail.jpg',
+  vet: commonsImage(
+    'US Navy 100804-N-8848T-088 Lt. Cmdr. Erik Johnson, a veterinarian assigned to the amphibious assault ship USS Peleliu (LHA 5), examines a dog.jpg',
+  ),
+  dog: commonsImage('Collage of Nine Dogs.jpg'),
+  cat: commonsImage('Cat03.jpg'),
+  firstAid: commonsImage('Calendula officinalis - flower - side view 01.jpg'),
+  essentialOils: commonsImage('Essential oils.jpg'),
+  reiki: commonsImage('Reiki Treatment.jpg'),
+  horse: commonsImage('Nokota Horses cropped.jpg'),
+  livestock: commonsImage('Cow female black white.jpg'),
+  rawFeeding: commonsImage('Raw meat.jpg'),
+  hemp: commonsImage('Cannabis sativa leaf.jpg'),
+  bachFlowers: commonsImage('Helianthemum nummularium 04.jpg'),
+  emergency: commonsImage('Emergency department, animal hospital.jpg'),
 };
 
 export const ANIMAL_HEALTH_LIBRARY: AnimalHealthTopic[] = [

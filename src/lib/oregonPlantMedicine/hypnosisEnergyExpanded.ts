@@ -1,3 +1,5 @@
+import { commonsImage } from './commonsImage';
+
 type ExpandedFields = {
   imageUrl: string;
   imageCredit?: string;
@@ -5,24 +7,15 @@ type ExpandedFields = {
 };
 
 const W = {
-  meditation:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Meditation_%283390876077%29.jpg/640px-Meditation_%283390876077%29.jpg',
-  bowls:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Singing_bowls.jpg/640px-Singing_bowls.jpg',
-  reiki:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Reiki_Treatment.jpg/640px-Reiki_Treatment.jpg',
-  hypnosis:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Hypnotic_seance_%281887%29_by_Richard_Bergh.jpg/640px-Hypnotic_seance_%281887%29_by_Richard_Bergh.jpg',
-  yoga:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Yoga_at_sunset.jpg/640px-Yoga_at_sunset.jpg',
-  tuning:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Tuning_fork.jpg/640px-Tuning_fork.jpg',
-  sound:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Gong_-_Burmese.jpg/640px-Gong_-_Burmese.jpg',
-  library:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Edgar_Cayce.jpg/440px-Edgar_Cayce.jpg',
-  legal:
-    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Scales_of_justice.svg/640px-Scales_of_justice.svg.png',
+  meditation: commonsImage('Meditation (3390876077).jpg'),
+  bowls: commonsImage('Singing bowls.jpg'),
+  reiki: commonsImage('Reiki Treatment.jpg'),
+  hypnosis: commonsImage('Hypnotic seance (1887) by Richard Bergh.jpg'),
+  yoga: commonsImage('Yoga at sunset.jpg'),
+  tuning: commonsImage('Tuning fork.jpg'),
+  sound: commonsImage('Gong - Burmese.jpg'),
+  library: commonsImage('Edgar Cayce.jpg'),
+  legal: commonsImage('Scales of justice.svg'),
 };
 
 export const HYPNOSIS_TOPIC_EXPANDED: Record<string, ExpandedFields> = {
