@@ -1,4 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  signInWithPopup,
+  signInWithRedirect,
+  signOut,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth';
 import {
   AlertTriangle,
   Apple,
@@ -6,12 +13,15 @@ import {
   ExternalLink,
   FileText,
   Leaf,
+  LogOut,
   MapPin,
   Search,
   Sprout,
   Star,
+  User as UserIcon,
   X,
 } from 'lucide-react';
+import { auth, googleProvider } from '../../firebase';
 import { brandFor } from '../../lib/hiveAppBranding';
 import {
   EXTERNAL_RESOURCE_LIBRARY,
@@ -21,6 +31,9 @@ import {
 } from '../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedicine/types';
 import { getPdfGuidesForPlant, OREGON_PLANT_PDF_GUIDES } from '../../lib/oregonPlantMedicine/guidePdfs';
+import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
+import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
+import ProfileModal from './oregon-plant-medicine/ProfileModal';
 
 type Props = { expanded?: boolean };
 
@@ -118,7 +131,17 @@ function ImageGallery({ images, name }: { images: PlantImage[]; name: string }) 
   );
 }
 
-function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => void }) {
+function PlantDetail({
+  plant,
+  onClose,
+  user,
+  onSignIn,
+}: {
+  plant: PlantEntry;
+  onClose: () => void;
+  user: User | null;
+  onSignIn: () => void;
+}) {
   const images = allImages(plant);
 
   return (
@@ -215,6 +238,8 @@ function PlantDetail({ plant, onClose }: { plant: PlantEntry; onClose: () => voi
               ))}
             </div>
           </div>
+
+          <PlantCommunityPanel plantId={plant.id} user={user} onSignIn={onSignIn} />
         </div>
       </div>
     </div>
@@ -231,6 +256,48 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const [selected, setSelected] = useState<PlantEntry | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) setProfile(null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchMyProfile(user)
+      .then(setProfile)
+      .catch(() => undefined);
+  }, [user]);
+
+  const handleSignIn = useCallback(async () => {
+    setAuthError('');
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err: unknown) {
+      const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: string }).code) : '';
+      if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr: unknown) {
+          setAuthError(redirectErr instanceof Error ? redirectErr.message : 'Sign-in failed');
+          return;
+        }
+      }
+      setAuthError(err instanceof Error ? err.message : 'Sign-in failed');
+    }
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    await signOut(auth);
+    setProfile(null);
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -308,7 +375,41 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
               external guides and multi-photo ID.
             </p>
           </div>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            {user ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowProfile(true)}
+                  className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-500/20"
+                >
+                  {profile?.avatarUrl ? (
+                    <img src={profile.avatarUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-4 h-4" />
+                  )}
+                  {profile?.displayName || 'Profile'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSignOut()}
+                  className="flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300"
+                >
+                  <LogOut className="w-3 h-3" /> Sign out
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleSignIn()}
+                className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-bold text-white"
+              >
+                Sign in
+              </button>
+            )}
+          </div>
         </div>
+        {authError ? <p className="text-xs text-red-300 mt-2">{authError}</p> : null}
 
         <nav className="flex gap-2 mt-4 flex-wrap">
           {(
@@ -467,9 +568,8 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
                 Downloadable references for <strong className="text-white">Oregon law</strong>,{' '}
                 <strong className="text-white">wild mushroom identification</strong>, and{' '}
                 <strong className="text-white">PNW plant botany</strong>. They intentionally{' '}
-                <strong className="text-white">do not</strong> include psilocybin cultivation steps or DMT
-                extraction/concentration procedures — those are illegal to manufacture and unsafe without laboratory
-                controls.
+                <strong className="text-white">do not</strong> include psilocybin cultivation steps — educational
+                law and field-ID reference only.
               </p>
             </div>
 
@@ -683,7 +783,21 @@ export default function OregonPlantMedicineWebApp({ expanded }: Props) {
         ) : null}
       </div>
 
-      {selected ? <PlantDetail plant={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? (
+        <PlantDetail
+          plant={selected}
+          onClose={() => setSelected(null)}
+          user={user}
+          onSignIn={() => void handleSignIn()}
+        />
+      ) : null}
+      {showProfile && user ? (
+        <ProfileModal
+          user={user}
+          onClose={() => setShowProfile(false)}
+          onSaved={(p) => setProfile(p)}
+        />
+      ) : null}
     </div>
   );
 }

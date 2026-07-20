@@ -1285,11 +1285,6 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
         description: 'Wild PNW species, lookalikes, Oregon Measure 109 — not a cultivation manual.',
       },
       {
-        label: 'PDF — PNW Entheogen Botany (DMT-related plants)',
-        url: '/oregon-plant-medicine/guides/oregon-entheogen-botany-dmt-plants.pdf',
-        description: 'Reed canary grass botany and legal status — no extraction chemistry.',
-      },
-      {
         label: 'Oregon Psilocybin Services (OLCC)',
         url: 'https://www.oregon.gov/olcc/psilocybin',
         description: 'Oregon’s licensed psilocybin framework — not a wild-foraging permit.',

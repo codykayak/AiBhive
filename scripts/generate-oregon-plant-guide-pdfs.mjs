@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
-import { DMT_BOTANY_GUIDE_HTML, PSILOCYBIN_GUIDE_HTML } from './oregon-plant-guide-content.mjs';
+import { PSILOCYBIN_GUIDE_HTML } from './oregon-plant-guide-content.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, '../public/oregon-plant-medicine/guides');
@@ -18,11 +18,6 @@ const GUIDES = [
     id: 'oregon-psilocybin-law-id-safety',
     title: 'Oregon Psilocybin — Law, Safety & Field ID',
     html: PSILOCYBIN_GUIDE_HTML,
-  },
-  {
-    id: 'oregon-entheogen-botany-dmt-plants',
-    title: 'PNW Entheogen Botany — DMT Plants (Reference)',
-    html: DMT_BOTANY_GUIDE_HTML,
   },
 ];
 
