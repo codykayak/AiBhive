@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ImageIcon } from 'lucide-react';
+import { normalizeWikiImageUrl } from '../../../lib/oregonPlantMedicine/commonsImage';
 
 type Props = {
   src: string;
@@ -9,11 +10,11 @@ type Props = {
 
 /** Topic card image with graceful fallback when Commons/Wikimedia URLs fail. */
 export default function ResearchTopicImage({ src, alt, className }: Props) {
-  const [current, setCurrent] = useState(src);
+  const [current, setCurrent] = useState(() => normalizeWikiImageUrl(src));
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setCurrent(src);
+    setCurrent(normalizeWikiImageUrl(src));
     setFailed(false);
   }, [src]);
 

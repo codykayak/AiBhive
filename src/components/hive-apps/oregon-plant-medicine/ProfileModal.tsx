@@ -121,15 +121,13 @@ export default function ProfileModal({ user, onClose, onSaved }: Props) {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 ring-2 ring-emerald-500/40">
-                    <UserAvatar
-                      url={displayAvatarUrl}
-                      name={displayName || 'Forager'}
-                      className="w-full h-full rounded-full text-2xl"
-                      iconClassName="w-8 h-8"
-                      preferBlob
-                    />
-                  </div>
+                  <UserAvatar
+                    url={displayAvatarUrl}
+                    name={displayName || 'Forager'}
+                    className="w-20 h-20 rounded-full text-2xl ring-2 ring-emerald-500/40"
+                    iconClassName="w-8 h-8"
+                    preferBlob
+                  />
                   <div className="space-y-1">
                     <label className="inline-flex text-xs font-bold text-emerald-300 cursor-pointer hover:text-emerald-200">
                       <input

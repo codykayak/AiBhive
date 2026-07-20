@@ -16,8 +16,9 @@ import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import { HOLISTIC_LIBRARY } from '../../../lib/oregonPlantMedicine/holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
-import { SEED_COMMUNITY_POSTS } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
+import { EARTH_PLANT_MEDICINE_NAME } from '../../../lib/oregonPlantMedicine/branding';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { HolisticTopic } from '../../../lib/oregonPlantMedicine/holisticTypes';
 import type { HypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
@@ -39,6 +40,7 @@ type HomeTab =
 type Props = {
   onNavigate: (tab: HomeTab) => void;
   onOpenPlant: (plant: PlantEntry) => void;
+  onOpenPost: (post: SeedCommunityPost) => void;
 };
 
 type SectionTheme = {
@@ -176,11 +178,11 @@ function HomeHero() {
 
   return (
     <section className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-slate-950 mb-10">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center lg:gap-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.3fr)] lg:items-stretch lg:gap-6">
         <div className="px-6 sm:px-10 py-10 sm:py-12 lg:py-14">
           <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.25em] text-emerald-300 mb-4">
             <Leaf className="w-4 h-4" />
-            Oregon Plant Medicine
+            {EARTH_PLANT_MEDICINE_NAME}
           </p>
           <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] font-black text-white leading-[1.1] tracking-tight">
             Forage smarter.
@@ -199,35 +201,36 @@ function HomeHero() {
           </div>
         </div>
 
-        <div className="relative px-4 pb-8 sm:px-6 sm:pb-10 lg:px-8 lg:pb-0 lg:pt-10">
-          <div className="overflow-hidden rounded-2xl border border-emerald-500/25 bg-black shadow-xl shadow-black/40 ring-1 ring-white/5">
-            {src ? (
-              <video
-                ref={videoRef}
-                key={src}
-                className="aspect-video w-full object-contain bg-black"
-                src={src}
-                muted
-                playsInline
-                autoPlay
-                loop
-                preload="auto"
-                aria-label={video.title}
-                onError={() => {
-                  if (sourceIndex < video.sources.length - 1) setSourceIndex((i) => i + 1);
-                }}
-              />
-            ) : null}
-          </div>
-          {video.caption ? (
-            <p className="mt-3 text-center text-xs text-slate-500 lg:text-left">{video.caption}</p>
+        <div className="relative flex items-center px-2 sm:px-4 lg:px-6 py-4 lg:py-6">
+          {src ? (
+            <video
+              ref={videoRef}
+              key={src}
+              className="w-full min-h-[220px] sm:min-h-[280px] lg:min-h-[360px] rounded-2xl object-cover"
+              src={src}
+              muted
+              playsInline
+              autoPlay
+              loop
+              preload="auto"
+              aria-label={video.title}
+              onError={() => {
+                if (sourceIndex < video.sources.length - 1) setSourceIndex((i) => i + 1);
+              }}
+            />
           ) : null}
         </div>
       </div>
     </section>
   );
 }
-function CommunitySection({ onNavigate }: { onNavigate: (tab: HomeTab) => void }) {
+function CommunitySection({
+  onNavigate,
+  onOpenPost,
+}: {
+  onNavigate: (tab: HomeTab) => void;
+  onOpenPost: (post: SeedCommunityPost) => void;
+}) {
   const theme = THEMES.community;
   const posts = [...SEED_COMMUNITY_POSTS].sort((a, b) => b.upvoteCount - a.upvoteCount).slice(0, 3);
 
@@ -242,17 +245,24 @@ function CommunitySection({ onNavigate }: { onNavigate: (tab: HomeTab) => void }
           >
             <div className="relative h-36 overflow-hidden">
               {post.imageUrl ? (
-                <img
-                  src={post.imageUrl}
-                  alt=""
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
+                <button
+                  type="button"
+                  onClick={() => onOpenPost(post)}
+                  className="block w-full h-full text-left cursor-pointer"
+                  aria-label={`Open post by ${post.authorDisplayName}`}
+                >
+                  <img
+                    src={post.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </button>
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-sky-900/40 to-slate-900" />
               )}
-              <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient}`} />
-              <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-sky-200">
+              <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient} pointer-events-none`} />
+              <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-sky-200 pointer-events-none">
                 <ThumbsUp className="w-3 h-3" />
                 {post.upvoteCount}
               </span>
@@ -408,7 +418,7 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
   );
 }
 
-export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant }: Props) {
+export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpenPost }: Props) {
   const featuredPlants = ['stinging-nettle', 'oregon-grape', 'yarrow']
     .map((id) => PLANT_LIBRARY.find((p) => p.id === id))
     .filter((p): p is PlantEntry => !!p);
@@ -424,7 +434,7 @@ export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant }: Pro
     <div className="pb-8">
       <HomeHero />
 
-      <CommunitySection onNavigate={onNavigate} />
+      <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
 
       <PlantCardsSection tab="plants" plants={featuredPlants} onNavigate={onNavigate} onOpenPlant={onOpenPlant} />
 

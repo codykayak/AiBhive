@@ -4,19 +4,21 @@ import { commonsImage } from './commonsImage';
 /** Wikimedia Commons hero images for research topic cards. */
 const IMG = {
   vet: commonsImage(
-    'US Navy 100804-N-8848T-088 Lt. Cmdr. Erik Johnson, a veterinarian assigned to the amphibious assault ship USS Peleliu (LHA 5), examines a dog.jpg',
+    'Guantanamo dog handler comforts his partner during a veterinary exam.jpg',
   ),
   dog: commonsImage('Collage of Nine Dogs.jpg'),
   cat: commonsImage('Cat03.jpg'),
-  firstAid: commonsImage('Calendula officinalis - flower - side view 01.jpg'),
-  essentialOils: commonsImage('Essential oils.jpg'),
-  reiki: commonsImage('Reiki Treatment.jpg'),
+  firstAid: commonsImage('Calendula arvensis blossom.jpg'),
+  essentialOils: commonsImage('YlangYlangEssentialOil.png'),
+  reiki: commonsImage('Reiki-Hanko.JPG'),
   horse: commonsImage('Nokota Horses cropped.jpg'),
   livestock: commonsImage('Cow female black white.jpg'),
-  rawFeeding: commonsImage('Raw meat.jpg'),
+  rawFeeding: commonsImage('Raw_food.jpg'),
   hemp: commonsImage('Cannabis sativa leaf.jpg'),
-  bachFlowers: commonsImage('Helianthemum nummularium 04.jpg'),
-  emergency: commonsImage('Emergency department, animal hospital.jpg'),
+  bachFlowers: commonsImage('Bach flower remedies.jpg'),
+  emergency: commonsImage(
+    'Medical Department - Veterinary Corps - PREPARATION FOR THROWING MULE ON EMERGENCY TABLE - NARA - 45499585.jpg',
+  ),
 };
 
 export const ANIMAL_HEALTH_LIBRARY: AnimalHealthTopic[] = [

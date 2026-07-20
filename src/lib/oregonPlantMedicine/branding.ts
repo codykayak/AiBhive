@@ -3,6 +3,12 @@ export const LIVING_KNOWLEDGE_APP_NAME = 'Living Knowledge Plants and Medicine';
 
 export const LIVING_KNOWLEDGE_SHORT_NAME = 'Living Knowledge';
 
+/** Top-left brand line on the plant medicine home shell. */
+export const COMMUNITY_NAV_BRAND = 'Community Living Knowledgebase';
+
+/** Primary product name shown on the home hero and key headings. */
+export const EARTH_PLANT_MEDICINE_NAME = "Earth's Plant Medicine";
+
 export const LIVING_KNOWLEDGE_TAGLINE =
   'Pacific Northwest foraging field guide — wild plants, mushrooms, and protocols. The plant library is primary; holistic, hypnosis, and animal health are adjacent research libraries.';
 
@@ -11,7 +17,7 @@ export const PRIMARY_LIBRARY_HEADING = 'Plant library';
 export const ADJACENT_RESEARCH_HEADING = 'Adjacent research libraries';
 
 export const ADJACENT_RESEARCH_DESCRIPTION =
-  'Separate research tracks for holistic protocols, hypnosis & energy work, and animal health — alongside the core Oregon Plant Medicine field guide, not a replacement for it.';
+  'Separate research tracks for holistic protocols, hypnosis & energy work, and animal health — alongside the core plant field guide, not a replacement for it.';
 
 export const LIVING_KNOWLEDGE_HERO_LEAD =
   'Contribute your photos. Add to the states. Together, we document homeopathic remedies and edibles — growing one shared field guide for everyone.';
