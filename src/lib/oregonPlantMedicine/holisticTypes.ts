@@ -20,6 +20,11 @@ export type HolisticTopic = {
   title: string;
   category: HolisticCategory;
   summary: string;
+  /** Hero image for card grid */
+  imageUrl: string;
+  imageCredit?: string;
+  /** In-depth article body — target 250–500 words */
+  deepDive: string;
   /** Educational framing — not a diagnosis */
   whenPeopleExplore: string;
   approaches: string[];

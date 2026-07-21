@@ -1,5 +1,5 @@
 import type { User } from 'firebase/auth';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AlertTriangle, ExternalLink, PlusCircle, Search, Sprout, X } from 'lucide-react';
 import type { FeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
@@ -7,8 +7,11 @@ import type { ResearchTopicBase } from '../../../lib/oregonPlantMedicine/topicLi
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
+import type { AskAiContext } from './AskAiBhivePanel';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
 import GridSectionVideo from './GridSectionVideo';
+import { interleaveFeaturedTile } from './gridFeaturedInsert';
+import PostEngagementBar from './PostEngagementBar';
 import ResearchTopicImage from './ResearchTopicImage';
 import TopicCommunityPanel from './TopicCommunityPanel';
 
@@ -43,11 +46,22 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   user: User | null;
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
-  onContribute: (topicTitle?: string) => void;
+  onCreatePost: () => void;
+  onAskAi: (ctx: AskAiContext) => void;
   gridVideo?: SectionVideo;
-  /** Large featured essay shown above the topic grid */
   featuredEssay?: FeaturedEssay;
+  focusTopicId?: string | null;
+  onFocusTopicConsumed?: () => void;
 };
+
+function topicAskContext<T extends ResearchTopicBase>(topic: T, library: TopicLibraryId): AskAiContext {
+  return {
+    focusTitle: topic.title,
+    contextText: [topic.title, topic.summary, topic.deepDive, topic.whenPeopleExplore, ...topic.approaches].join('\n'),
+    library,
+    topicId: topic.id,
+  };
+}
 
 function TopicDetail<T extends ResearchTopicBase & { category: string }>({
   topic,
@@ -58,7 +72,8 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
   onSignIn,
   onClose,
   onOpenPlant,
-  onContribute,
+  onCreatePost,
+  onAskAi,
 }: {
   topic: T;
   library: TopicLibraryId;
@@ -68,7 +83,8 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
   onSignIn: () => void;
   onClose: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
-  onContribute: (topicTitle?: string) => void;
+  onCreatePost: () => void;
+  onAskAi: (ctx: AskAiContext) => void;
 }) {
   const relatedPlants = useMemo(
     () =>
@@ -206,12 +222,19 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
             accentClass={theme.communityAccent}
           />
 
+          <PostEngagementBar
+            target={{ kind: 'topic', library, topicId: topic.id }}
+            user={user}
+            onSignIn={onSignIn}
+            onAskAi={() => onAskAi(topicAskContext(topic, library))}
+          />
+
           <button
             type="button"
-            onClick={() => onContribute(topic.title)}
+            onClick={onCreatePost}
             className={`w-full mt-2 py-2.5 rounded-lg border ${theme.contributeBorder} ${theme.contributeText} text-xs font-bold hover:bg-white/5`}
           >
-            Expand this topic — contribute official research
+            Share a community post
           </button>
         </div>
       </div>
@@ -232,13 +255,23 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   user,
   onSignIn,
   onOpenPlant,
-  onContribute,
+  onCreatePost,
+  onAskAi,
   gridVideo,
   featuredEssay,
+  focusTopicId,
+  onFocusTopicConsumed,
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
   const [selected, setSelected] = useState<T | null>(null);
+
+  useEffect(() => {
+    if (!focusTopicId) return;
+    const topic = topics.find((t) => t.id === focusTopicId);
+    if (topic) setSelected(topic);
+    onFocusTopicConsumed?.();
+  }, [focusTopicId, topics, onFocusTopicConsumed]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -250,6 +283,55 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
     });
   }, [query, category, topics, matchesCategory]);
 
+  const topicCards = filtered.map((topic) => (
+    <article
+      key={topic.id}
+      role="button"
+      tabIndex={0}
+      onClick={() => setSelected(topic)}
+      onKeyDown={(e) => e.key === 'Enter' && setSelected(topic)}
+      className={`group rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden cursor-pointer transition-colors text-left flex flex-col ${theme.cardHover}`}
+    >
+      <div className="relative h-36 overflow-hidden">
+        <ResearchTopicImage
+          src={topic.imageUrl}
+          alt={topic.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+      </div>
+      <div className="p-3 flex-1 flex flex-col">
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${theme.categoryLabel}`}>
+          {categoryLabels[topic.category]}
+        </p>
+        <h3 className="font-bold text-white mt-1 leading-snug line-clamp-2">{topic.title}</h3>
+        <p className="text-xs text-slate-400 mt-2 line-clamp-3 flex-1">{topic.summary}</p>
+        <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+          <PostEngagementBar
+            target={{ kind: 'topic', library, topicId: topic.id }}
+            user={user}
+            onSignIn={onSignIn}
+            stopPropagation
+            onAskAi={() => onAskAi(topicAskContext(topic, library))}
+          />
+        </div>
+      </div>
+    </article>
+  ));
+
+  const gridItems = interleaveFeaturedTile(
+    topicCards,
+    featuredEssay ? (
+      <FeaturedEssayPanel
+        key="featured-essay"
+        essay={featuredEssay}
+        onOpenPlant={onOpenPlant}
+        user={user}
+        onSignIn={onSignIn}
+        onAskAi={onAskAi}
+      />
+    ) : null,
+  );
+
   return (
     <>
       <div className="space-y-5">
@@ -257,10 +339,6 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
           {introText}
         </div>
-
-        {featuredEssay ? (
-          <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
-        ) : null}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -287,11 +365,11 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           </select>
           <button
             type="button"
-            onClick={() => onContribute()}
+            onClick={onCreatePost}
             className={`inline-flex items-center justify-center gap-2 rounded-xl text-white font-bold px-4 py-2.5 text-sm shrink-0 ${theme.accentButton}`}
           >
             <PlusCircle className="w-4 h-4" />
-            Add research
+            Share a post
           </button>
         </div>
 
@@ -305,31 +383,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
               borderClass={theme.videoBorder}
             />
           ) : null}
-          {filtered.map((topic) => (
-            <article
-              key={topic.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => setSelected(topic)}
-              onKeyDown={(e) => e.key === 'Enter' && setSelected(topic)}
-              className={`group rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden cursor-pointer transition-colors text-left ${theme.cardHover}`}
-            >
-              <div className="relative h-36 overflow-hidden">
-                <ResearchTopicImage
-                  src={topic.imageUrl}
-                  alt={topic.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-3">
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${theme.categoryLabel}`}>
-                  {categoryLabels[topic.category]}
-                </p>
-                <h3 className="font-bold text-white mt-1 leading-snug line-clamp-2">{topic.title}</h3>
-                <p className="text-xs text-slate-400 mt-2 line-clamp-3">{topic.summary}</p>
-              </div>
-            </article>
-          ))}
+          {gridItems}
         </div>
       </div>
 
@@ -343,7 +397,8 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           onSignIn={onSignIn}
           onClose={() => setSelected(null)}
           onOpenPlant={onOpenPlant}
-          onContribute={onContribute}
+          onCreatePost={onCreatePost}
+          onAskAi={onAskAi}
         />
       ) : null}
     </>

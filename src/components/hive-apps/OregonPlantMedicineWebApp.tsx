@@ -37,7 +37,11 @@ import type { PlantEntry, PlantImage, PlantUse } from '../../lib/oregonPlantMedi
 import { getPdfGuidesForPlant } from '../../lib/oregonPlantMedicine/guidePdfs';
 import { fetchMyProfile, type PlantMedicineProfile } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import PlantCommunityPanel from './oregon-plant-medicine/PlantCommunityPanel';
-import PlantAskAiPanel from './oregon-plant-medicine/PlantAskAiPanel';
+import AskAiBhivePanel, { type AskAiContext } from './oregon-plant-medicine/AskAiBhivePanel';
+import PostEngagementBar from './oregon-plant-medicine/PostEngagementBar';
+import LivingKnowledgeSiteSearch from './oregon-plant-medicine/LivingKnowledgeSiteSearch';
+import CreateCommunityPostModal from './oregon-plant-medicine/CreateCommunityPostModal';
+import { interleaveFeaturedTile } from './oregon-plant-medicine/gridFeaturedInsert';
 import RegionalOfflinePackButton from './oregon-plant-medicine/RegionalOfflinePackButton';
 import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicineHero';
 import ContributeModal from './oregon-plant-medicine/ContributeModal';
@@ -48,13 +52,10 @@ import FullscreenImageViewer from './oregon-plant-medicine/FullscreenImageViewer
 import UserAvatar from './oregon-plant-medicine/UserAvatar';
 import HolisticRemediesPanel from './oregon-plant-medicine/HolisticRemediesPanel';
 import HolisticDisclaimerModal from './oregon-plant-medicine/HolisticDisclaimerModal';
-import HolisticContributeModal from './oregon-plant-medicine/HolisticContributeModal';
 import HypnosisEnergyPanel from './oregon-plant-medicine/HypnosisEnergyPanel';
 import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnergyDisclaimerModal';
-import HypnosisEnergyContributeModal from './oregon-plant-medicine/HypnosisEnergyContributeModal';
 import AnimalHealthPanel from './oregon-plant-medicine/AnimalHealthPanel';
 import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDisclaimerModal';
-import AnimalHealthContributeModal from './oregon-plant-medicine/AnimalHealthContributeModal';
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
@@ -63,7 +64,9 @@ import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
 import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
 import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
-import { getFeaturedEssay } from '../../lib/oregonPlantMedicine/featuredEssays';
+import { getFeaturedEssay, getFeaturedEssayById } from '../../lib/oregonPlantMedicine/featuredEssays';
+import type { SiteSearchResult } from '../../lib/oregonPlantMedicine/siteSearch';
+import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import {
   EARTH_PLANT_MEDICINE_NAME,
@@ -258,14 +261,12 @@ function PlantDetail({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onAskAi}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Ask AI AiBhive
-          </button>
+          <PostEngagementBar
+            target={{ kind: 'plant', plantId: plant.id }}
+            user={user}
+            onSignIn={onSignIn}
+            onAskAi={onAskAi}
+          />
 
           <DetailSection title="Habitat" text={plant.habitat} />
           <DetailSection title="Identification" text={plant.identification} />
@@ -357,23 +358,20 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const [selected, setSelected] = useState<PlantEntry | null>(null);
   const [selectedCommunityPost, setSelectedCommunityPost] = useState<CommunityPostView | null>(null);
-  const [askAiPlant, setAskAiPlant] = useState<PlantEntry | null>(null);
+  const [askAiContext, setAskAiContext] = useState<AskAiContext | null>(null);
+  const [showCreatePost, setShowCreatePost] = useState(false);
+  const [openEssayId, setOpenEssayId] = useState<string | null>(null);
+  const [focusTopic, setFocusTopic] = useState<{ library: TopicLibraryId; topicId: string } | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [showContribute, setShowContribute] = useState(false);
-  const [showHolisticContribute, setShowHolisticContribute] = useState(false);
-  const [holisticContributeTopic, setHolisticContributeTopic] = useState<string | undefined>();
+  const [showAddState, setShowAddState] = useState(false);
   const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
   const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
   const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
-  const [showHypnosisContribute, setShowHypnosisContribute] = useState(false);
-  const [hypnosisContributeTopic, setHypnosisContributeTopic] = useState<string | undefined>();
   const [hypnosisDisclaimerOpen, setHypnosisDisclaimerOpen] = useState(false);
   const [hypnosisAccepted, setHypnosisAccepted] = useState(() => hasAcceptedHypnosisEnergyDisclaimer());
   const [pendingHypnosisTab, setPendingHypnosisTab] = useState(false);
-  const [showAnimalContribute, setShowAnimalContribute] = useState(false);
-  const [animalContributeTopic, setAnimalContributeTopic] = useState<string | undefined>();
   const [animalDisclaimerOpen, setAnimalDisclaimerOpen] = useState(false);
   const [animalAccepted, setAnimalAccepted] = useState(() => hasAcceptedAnimalHealthDisclaimer());
   const [pendingAnimalTab, setPendingAnimalTab] = useState(false);
@@ -524,6 +522,62 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     setProfile(null);
   }, []);
 
+  const openAskAiForPlant = useCallback((plant: PlantEntry) => {
+    setAskAiContext({
+      focusTitle: plant.commonName,
+      contextText: [
+        plant.commonName,
+        plant.scientificName,
+        plant.habitat,
+        plant.identification,
+        plant.edibleNotes,
+        plant.medicinalNotes,
+        plant.holisticNotes,
+        plant.preparation,
+        ...(plant.safetyWarnings ?? []),
+        ...(plant.lookalikes ?? []),
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      plantId: plant.id,
+    });
+  }, []);
+
+  const openAskAi = useCallback((ctx: AskAiContext) => {
+    setAskAiContext(ctx);
+  }, []);
+
+  const handleSiteSearchSelect = useCallback(
+    (result: SiteSearchResult) => {
+      if (result.kind === 'plant') {
+        const plant = PLANT_LIBRARY.find((p) => p.id === result.id);
+        if (!plant) return;
+        selectTab(result.tab === 'edibles' ? 'edibles' : 'plants');
+        setSelected(plant);
+        return;
+      }
+      if (result.kind === 'essay') {
+        selectTab(result.tab === 'home' ? 'home' : result.tab);
+        setOpenEssayId(result.id);
+        return;
+      }
+      const libraryMap: Record<string, TopicLibraryId> = {
+        holistic: 'holistic',
+        hypnosis: 'hypnosis',
+        'animal-health': 'animal-health',
+      };
+      const library = libraryMap[result.kind];
+      if (library) {
+        selectTab(result.tab);
+        setFocusTopic({ library, topicId: result.id });
+      }
+    },
+    [selectTab],
+  );
+
+  const clearFocusTopic = useCallback(() => setFocusTopic(null), []);
+  const clearOpenEssay = useCallback(() => setOpenEssayId(null), []);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return PLANT_LIBRARY.filter((p) => {
@@ -627,7 +681,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       <OregonPlantMedicineHero
         compact={!expanded}
         actions={authActions}
-        onContribute={() => setShowContribute(true)}
+        onContribute={() => setShowCreatePost(true)}
       />
 
       <header className="border-b border-emerald-500/20">
@@ -680,7 +734,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             </div>
             <button
               type="button"
-              onClick={() => setShowContribute(true)}
+              onClick={() => setShowCreatePost(true)}
               className="hidden sm:inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -691,6 +745,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
 
         <div className={`${expanded ? 'px-4 sm:px-8 py-3' : 'px-4 py-2'}`}>
           {authError ? <p className="text-xs text-red-300 mb-2">{authError}</p> : null}
+          <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-3xl mb-3" />
           {tab !== 'home' && userLocation ? (
             <button
               type="button"
@@ -734,17 +789,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         {tab === 'plants' || tab === 'edibles' ? (
           <>
             {tab === 'edibles' ? (
-              <>
-                {ediblesFeaturedEssay ? (
-                  <div className="mb-5">
-                    <FeaturedEssayPanel
-                      essay={ediblesFeaturedEssay}
-                      onOpenPlant={(plant) => setSelected(plant)}
-                      spanGrid={false}
-                    />
-                  </div>
-                ) : null}
-                <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
+              <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
                   <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
                     Wild edible foods &amp; mushrooms
                   </p>
@@ -755,7 +800,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                     <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
                   </p>
                 </div>
-              </>
             ) : tab === 'plants' ? (
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 mb-5 text-sm text-emerald-100/90 leading-relaxed">
                 <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
@@ -868,7 +912,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   borderClass="border-lime-500/35 hover:border-lime-500/50"
                 />
               ) : null}
-              {plantsToShow.map((plant) => (
+              {interleaveFeaturedTile(
+                plantsToShow.map((plant) => (
                 <article
                   key={plant.id}
                   className={`group rounded-xl border bg-slate-900/60 overflow-hidden transition-colors cursor-pointer ${
@@ -923,32 +968,43 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                           {useLabel(plant.uses)}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAskAiPlant(plant);
-                        }}
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-300 hover:text-emerald-200"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Ask AI AiBhive
-                      </button>
+                      <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                        <PostEngagementBar
+                          target={{ kind: 'plant', plantId: plant.id }}
+                          user={user}
+                          onSignIn={() => void handleSignIn()}
+                          stopPropagation
+                          onAskAi={() => openAskAiForPlant(plant)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </article>
-              ))}
+                )),
+                tab === 'edibles' && ediblesFeaturedEssay ? (
+                  <FeaturedEssayPanel
+                    key="edibles-featured-essay"
+                    essay={ediblesFeaturedEssay}
+                    onOpenPlant={(plant) => setSelected(plant)}
+                    user={user}
+                    onSignIn={() => void handleSignIn()}
+                    onAskAi={openAskAi}
+                  />
+                ) : null,
+              )}
             </div>
           </>
         ) : null}
 
         {tab === 'holistic' && holisticAccepted ? (
           <HolisticRemediesPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
-            onContribute={(topicTitle) => {
-              setHolisticContributeTopic(topicTitle);
-              setShowHolisticContribute(true);
-            }}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'holistic' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
           />
         ) : null}
 
@@ -957,10 +1013,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             user={user}
             onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
-            onContribute={(topicTitle) => {
-              setHypnosisContributeTopic(topicTitle);
-              setShowHypnosisContribute(true);
-            }}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'hypnosis' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
           />
         ) : null}
 
@@ -969,10 +1025,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             user={user}
             onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
-            onContribute={(topicTitle) => {
-              setAnimalContributeTopic(topicTitle);
-              setShowAnimalContribute(true);
-            }}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'animal-health' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
           />
         ) : null}
 
@@ -1001,20 +1057,35 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           onClose={() => setSelected(null)}
           user={user}
           onSignIn={() => void handleSignIn()}
-          onAskAi={() => setAskAiPlant(selected)}
+          onAskAi={() => openAskAiForPlant(selected)}
         />
       ) : null}
-      {askAiPlant ? (
-        <PlantAskAiPanel
-          plant={askAiPlant}
+      {askAiContext ? (
+        <AskAiBhivePanel
+          context={askAiContext}
           user={user}
           onSignIn={() => void handleSignIn()}
-          onClose={() => setAskAiPlant(null)}
+          onClose={() => setAskAiContext(null)}
+        />
+      ) : null}
+      {openEssayId && getFeaturedEssayById(openEssayId) ? (
+        <FeaturedEssayPanel
+          essay={getFeaturedEssayById(openEssayId)!}
+          onOpenPlant={(plant) => setSelected(plant)}
+          user={user}
+          onSignIn={() => void handleSignIn()}
+          onAskAi={openAskAi}
+          startOpen
+          spanGrid={false}
+          onDetailClose={clearOpenEssay}
         />
       ) : null}
       {selectedCommunityPost ? (
         <CommunityPostModal
           post={selectedCommunityPost}
+          user={user}
+          onSignIn={() => void handleSignIn()}
+          onAskAi={openAskAi}
           onClose={() => setSelectedCommunityPost(null)}
           onOpenPlant={(plant) => setSelected(plant)}
         />
@@ -1026,38 +1097,18 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           onSaved={(p) => setProfile(p)}
         />
       ) : null}
-      {showContribute ? (
+      {showCreatePost ? (
+        <CreateCommunityPostModal
+          user={user}
+          onSignIn={() => void handleSignIn()}
+          onClose={() => setShowCreatePost(false)}
+          onCreated={() => setShowCreatePost(false)}
+        />
+      ) : null}
+      {showAddState ? (
         <ContributeModal
-          onClose={() => setShowContribute(false)}
+          onClose={() => setShowAddState(false)}
           stateName={userLocation && !regionSupported ? userLocation.state : undefined}
-          city={userLocation?.city}
-        />
-      ) : null}
-      {showHolisticContribute ? (
-        <HolisticContributeModal
-          topicTitle={holisticContributeTopic}
-          onClose={() => {
-            setShowHolisticContribute(false);
-            setHolisticContributeTopic(undefined);
-          }}
-        />
-      ) : null}
-      {showHypnosisContribute ? (
-        <HypnosisEnergyContributeModal
-          topicTitle={hypnosisContributeTopic}
-          onClose={() => {
-            setShowHypnosisContribute(false);
-            setHypnosisContributeTopic(undefined);
-          }}
-        />
-      ) : null}
-      {showAnimalContribute ? (
-        <AnimalHealthContributeModal
-          topicTitle={animalContributeTopic}
-          onClose={() => {
-            setShowAnimalContribute(false);
-            setAnimalContributeTopic(undefined);
-          }}
         />
       ) : null}
       {holisticDisclaimerOpen ? (

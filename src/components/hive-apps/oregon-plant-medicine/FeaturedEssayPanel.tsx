@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, ExternalLink, PlayCircle, Sprout, Star, X } from 'lucide-react';
+import type { User } from 'firebase/auth';
 import type { FeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import type { AskAiContext } from './AskAiBhivePanel';
+import PostEngagementBar from './PostEngagementBar';
 import ResearchTopicImage from './ResearchTopicImage';
 
 const ACCENT = {
@@ -82,10 +85,16 @@ function FeaturedEssayDetail({
   essay,
   onClose,
   onOpenPlant,
+  user,
+  onSignIn,
+  onAskAi,
 }: {
   essay: FeaturedEssay;
   onClose: () => void;
   onOpenPlant?: (plant: PlantEntry) => void;
+  user?: User | null;
+  onSignIn?: () => void;
+  onAskAi?: (ctx: AskAiContext) => void;
 }) {
   const theme = ACCENT[essay.accent];
   const relatedPlants = useMemo(
@@ -259,6 +268,24 @@ function FeaturedEssayDetail({
               </ul>
             </div>
           ) : null}
+
+          <PostEngagementBar
+            target={{ kind: 'essay', essayId: essay.id }}
+            user={user ?? null}
+            onSignIn={onSignIn ?? (() => {})}
+            onAskAi={
+              onAskAi
+                ? () =>
+                    onAskAi({
+                      focusTitle: essay.title,
+                      contextText: [essay.title, essay.summary, essay.deepDive, essay.whenPeopleExplore, ...essay.approaches].join(
+                        '\n',
+                      ),
+                      essayId: essay.id,
+                    })
+                : undefined
+            }
+          />
         </div>
       </div>
     </div>
@@ -270,11 +297,25 @@ type Props = {
   onOpenPlant?: (plant: PlantEntry) => void;
   /** When true, card spans two columns in a 3-col grid */
   spanGrid?: boolean;
+  user?: User | null;
+  onSignIn?: () => void;
+  onAskAi?: (ctx: AskAiContext) => void;
+  startOpen?: boolean;
+  onDetailClose?: () => void;
 };
 
 /** Large featured essay card + detail modal for Living Knowledge pages. */
-export default function FeaturedEssayPanel({ essay, onOpenPlant, spanGrid = true }: Props) {
-  const [open, setOpen] = useState(false);
+export default function FeaturedEssayPanel({
+  essay,
+  onOpenPlant,
+  spanGrid = true,
+  user,
+  onSignIn,
+  onAskAi,
+  startOpen = false,
+  onDetailClose,
+}: Props) {
+  const [open, setOpen] = useState(startOpen);
   const theme = ACCENT[essay.accent];
 
   return (
@@ -315,7 +356,17 @@ export default function FeaturedEssayPanel({ essay, onOpenPlant, spanGrid = true
       </article>
 
       {open ? (
-        <FeaturedEssayDetail essay={essay} onClose={() => setOpen(false)} onOpenPlant={onOpenPlant} />
+        <FeaturedEssayDetail
+          essay={essay}
+          onClose={() => {
+            setOpen(false);
+            onDetailClose?.();
+          }}
+          onOpenPlant={onOpenPlant}
+          user={user}
+          onSignIn={onSignIn}
+          onAskAi={onAskAi}
+        />
       ) : null}
     </>
   );
