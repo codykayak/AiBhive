@@ -4,6 +4,7 @@ import { verifyHiveAuth } from './hiveAuth.js';
 import {
   runPlantMedicineChat,
   runLivingKnowledgeChat,
+  runPlantPhotoIdentify,
   resolvePlantHiveUserId,
 } from './plantMedicineChat.js';
 import {
@@ -455,6 +456,33 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/living-knowledge-chat]', err);
       return res.status(500).json({ error: err.message || 'Chat failed' });
+    }
+  });
+
+  /** Paid Grok vision plant photo ID — Hive credits; returns candidates + dangerous lookalikes. */
+  app.post('/api/plant-medicine/identify', express.json({ limit: '8mb' }), async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const { message, context = '', attachment } = req.body || {};
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      const result = await runPlantPhotoIdentify(db, hiveUserId, {
+        message,
+        context,
+        attachment,
+        email: user.email,
+      });
+
+      if (!result.ok) {
+        const status = result.needPayment ? 402 : 400;
+        return res.status(status).json(result);
+      }
+
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/identify]', err);
+      return res.status(500).json({ error: err.message || 'Photo identify failed' });
     }
   });
 }

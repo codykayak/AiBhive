@@ -379,3 +379,101 @@ export async function sendPlantChat(
 }> {
   return sendLivingKnowledgeChat(user, opts);
 }
+
+export type PlantPhotoIdCandidate = {
+  kind: 'candidate' | 'lookalike';
+  commonName: string;
+  scientificName: string;
+  confidence: number;
+  confidenceLabel: 'high' | 'medium' | 'low' | string;
+  rationale?: string;
+  whyDangerous?: string;
+  plantId: string | null;
+  lookalikes?: string[];
+  safetyWarnings?: string[];
+  category?: string | null;
+  uses?: string | null;
+};
+
+export type PlantPhotoAttachment = {
+  base64: string;
+  mimeType: string;
+  previewUrl?: string;
+};
+
+/** Paid Grok vision plant photo ID — Hive credits required. */
+export async function sendPlantPhotoIdentify(
+  user: User,
+  opts: {
+    message?: string;
+    context?: string;
+    attachment: PlantPhotoAttachment;
+  },
+): Promise<{
+  reply: string;
+  candidates: PlantPhotoIdCandidate[];
+  dangerousLookalikes: PlantPhotoIdCandidate[];
+  certaintyNote?: string;
+  chargedUsd?: number;
+  creditBalanceUsd?: number;
+}> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/identify', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: opts.message || 'Identify this plant from the photo. Include dangerous look-alikes.',
+      context: opts.context || '',
+      attachment: {
+        base64: opts.attachment.base64,
+        mimeType: opts.attachment.mimeType || 'image/jpeg',
+      },
+    }),
+  });
+  const data = (await res.json()) as {
+    ok?: boolean;
+    reply?: string;
+    candidates?: PlantPhotoIdCandidate[];
+    dangerousLookalikes?: PlantPhotoIdCandidate[];
+    certaintyNote?: string;
+    error?: string;
+    needPayment?: boolean;
+    amountUsd?: number;
+    chargedUsd?: number;
+    account?: { creditBalanceUsd?: number };
+  };
+
+  if (res.status === 401) throw new Error(data.error || 'Sign in for photo plant ID');
+  if (res.status === 402 || data.needPayment) {
+    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+  }
+  if (!res.ok || !data.reply) throw new Error(data.error || 'Photo identify failed');
+
+  return {
+    reply: data.reply,
+    candidates: Array.isArray(data.candidates) ? data.candidates : [],
+    dangerousLookalikes: Array.isArray(data.dangerousLookalikes) ? data.dangerousLookalikes : [],
+    certaintyNote: data.certaintyNote,
+    chargedUsd: data.chargedUsd,
+    creditBalanceUsd: data.account?.creditBalanceUsd,
+  };
+}
+
+export async function fileToPlantPhotoAttachment(file: File): Promise<PlantPhotoAttachment> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read image'));
+    reader.readAsDataURL(file);
+  });
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error('Invalid image data');
+  return {
+    mimeType: match[1] || file.type || 'image/jpeg',
+    base64: match[2],
+    previewUrl: dataUrl,
+  };
+}
