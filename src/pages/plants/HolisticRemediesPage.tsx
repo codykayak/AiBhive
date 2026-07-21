@@ -2,8 +2,10 @@ import { SEO } from '../../components/SEO';
 import OregonPlantMedicineWebApp from '../../components/hive-apps/OregonPlantMedicineWebApp';
 import {
   HOLISTIC_REMEDIES_PATH,
+  HOLISTIC_SEO_DESCRIPTION,
   HOLISTIC_TAB_LABEL,
   LIVING_KNOWLEDGE_APP_NAME,
+  LIVING_KNOWLEDGE_SEO_KEYWORDS,
   PLANTS_PUBLIC_PATH,
 } from '../../lib/oregonPlantMedicine/branding';
 
@@ -13,13 +15,13 @@ export default function HolisticRemediesPage() {
     <div className="min-h-screen bg-[#070a0f]">
       <SEO
         title={`${HOLISTIC_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
-        description="Educational holistic remedies and protocols — Edgar Cayce traditions, gentle detox overviews, and safety notes. Cross-linked to wild plants and mushrooms. Not medical advice."
-        keywords="holistic remedies, Edgar Cayce, parasite cleanse overview, detox protocols, homeopathic education, Living Knowledge, AiBhive"
+        description={HOLISTIC_SEO_DESCRIPTION}
+        keywords={`holistic remedies, Edgar Cayce, parasite cleanse overview, detox protocols, PNW materia medica, ${LIVING_KNOWLEDGE_SEO_KEYWORDS}`}
         jsonLd={[
           {
             '@type': 'WebPage',
             name: HOLISTIC_TAB_LABEL,
-            description: 'Holistic remedies and protocols — educational living knowledge library.',
+            description: HOLISTIC_SEO_DESCRIPTION,
             url: `https://aibhive.com${HOLISTIC_REMEDIES_PATH}`,
             isPartOf: {
               '@type': 'WebApplication',

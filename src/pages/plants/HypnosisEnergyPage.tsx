@@ -3,7 +3,9 @@ import OregonPlantMedicineWebApp from '../../components/hive-apps/OregonPlantMed
 import {
   HYPNOSIS_ENERGY_PATH,
   HYPNOSIS_ENERGY_TAB_LABEL,
+  HYPNOSIS_SEO_DESCRIPTION,
   LIVING_KNOWLEDGE_APP_NAME,
+  LIVING_KNOWLEDGE_SEO_KEYWORDS,
   PLANTS_PUBLIC_PATH,
 } from '../../lib/oregonPlantMedicine/branding';
 
@@ -13,13 +15,13 @@ export default function HypnosisEnergyPage() {
     <div className="min-h-screen bg-[#070a0f]">
       <SEO
         title={`${HYPNOSIS_ENERGY_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
-        description="Educational hypnosis and energy work — past life regression, Edgar Cayce, Dolores Cannon QHHT, Reiki, chakras, tuning forks, singing bowls, and healing frequencies. Not therapy or medical advice."
-        keywords="hypnosis, past life regression, Dolores Cannon, QHHT, Edgar Cayce, Reiki, chakra, tuning forks, singing bowls, Solfeggio frequencies, Living Knowledge, AiBhive"
+        description={HYPNOSIS_SEO_DESCRIPTION}
+        keywords={`hypnosis, past life regression, Dolores Cannon, QHHT, Edgar Cayce, Reiki, chakra, Solfeggio frequencies, ${LIVING_KNOWLEDGE_SEO_KEYWORDS}`}
         jsonLd={[
           {
             '@type': 'WebPage',
             name: HYPNOSIS_ENERGY_TAB_LABEL,
-            description: 'Hypnosis and energy — educational living knowledge library.',
+            description: HYPNOSIS_SEO_DESCRIPTION,
             url: `https://aibhive.com${HYPNOSIS_ENERGY_PATH}`,
             isPartOf: {
               '@type': 'WebApplication',
