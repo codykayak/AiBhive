@@ -297,6 +297,8 @@ type Props = {
   onOpenPlant?: (plant: PlantEntry) => void;
   /** When true, card spans two columns in a 3-col grid */
   spanGrid?: boolean;
+  /** Stretch card to fill parent height (home hero beside stacked plant tiles) */
+  fillHeight?: boolean;
   user?: User | null;
   onSignIn?: () => void;
   onAskAi?: (ctx: AskAiContext) => void;
@@ -309,6 +311,7 @@ export default function FeaturedEssayPanel({
   essay,
   onOpenPlant,
   spanGrid = true,
+  fillHeight = false,
   user,
   onSignIn,
   onAskAi,
@@ -327,10 +330,18 @@ export default function FeaturedEssayPanel({
         onKeyDown={(e) => e.key === 'Enter' && setOpen(true)}
         className={`group relative rounded-2xl border bg-slate-900/70 overflow-hidden cursor-pointer transition-all text-left shadow-lg ${theme.border} ring-1 ${theme.ring} ${
           spanGrid ? 'sm:col-span-2 lg:col-span-2' : ''
-        }`}
+        } ${fillHeight ? 'h-full flex flex-col' : ''}`}
       >
-        <div className="grid sm:grid-cols-2 min-h-[220px]">
-          <div className="relative h-48 sm:h-auto overflow-hidden">
+        <div
+          className={`grid sm:grid-cols-2 ${
+            fillHeight ? 'flex-1 min-h-[260px] lg:min-h-0 lg:h-full' : 'min-h-[220px]'
+          }`}
+        >
+          <div
+            className={`relative overflow-hidden ${
+              fillHeight ? 'h-52 sm:h-full sm:min-h-[220px]' : 'h-48 sm:h-auto'
+            }`}
+          >
             <ResearchTopicImage
               src={essay.imageUrl}
               alt={essay.title}
@@ -344,12 +355,28 @@ export default function FeaturedEssayPanel({
               Featured
             </span>
           </div>
-          <div className="p-5 sm:p-6 flex flex-col justify-center">
+          <div
+            className={`p-5 sm:p-6 flex flex-col justify-center ${
+              fillHeight ? 'sm:p-7 lg:p-8' : ''
+            }`}
+          >
             <p className={`text-[10px] font-black uppercase tracking-widest ${theme.label}`}>
               {essay.categoryLabel}
             </p>
-            <h3 className="text-xl sm:text-2xl font-black text-white mt-1.5 leading-snug">{essay.title}</h3>
-            <p className="text-sm text-slate-400 mt-3 line-clamp-4 leading-relaxed">{essay.summary}</p>
+            <h3
+              className={`font-black text-white mt-1.5 leading-snug ${
+                fillHeight ? 'text-xl sm:text-2xl lg:text-[1.65rem]' : 'text-xl sm:text-2xl'
+              }`}
+            >
+              {essay.title}
+            </h3>
+            <p
+              className={`text-sm text-slate-400 mt-3 leading-relaxed ${
+                fillHeight ? 'line-clamp-4 lg:line-clamp-6' : 'line-clamp-4'
+              }`}
+            >
+              {essay.summary}
+            </p>
             <p className={`mt-4 text-xs font-bold ${theme.label}`}>Read full essay →</p>
           </div>
         </div>

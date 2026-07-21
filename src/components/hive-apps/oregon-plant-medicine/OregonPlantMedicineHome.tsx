@@ -290,12 +290,14 @@ function PlantCard({
   theme,
   onOpenPlant,
   className = '',
+  stretch = false,
 }: {
   plant: PlantEntry;
   tab: 'plants' | 'edibles';
   theme: SectionTheme;
   onOpenPlant: (plant: PlantEntry) => void;
   className?: string;
+  stretch?: boolean;
 }) {
   return (
     <button
@@ -303,9 +305,9 @@ function PlantCard({
       onClick={() => onOpenPlant(plant)}
       className={`group rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden text-left transition-all hover:-translate-y-0.5 shadow-lg ${theme.glow} ${
         tab === 'edibles' ? 'hover:border-lime-500/40' : 'hover:border-emerald-500/40'
-      } ${className}`}
+      } ${stretch ? 'h-full flex flex-col' : ''} ${className}`}
     >
-      <div className="relative h-36 overflow-hidden">
+      <div className={`relative overflow-hidden ${stretch ? 'flex-1 min-h-36' : 'h-36'}`}>
         <PlantPhoto
           src={plant.imageUrl}
           plantId={plant.id}
@@ -339,51 +341,51 @@ function PlantCardsSection({
 }) {
   const theme = THEMES[tab];
   const showFeatured = tab === 'plants' && !!featuredEssay;
-  const [sideA, sideB, remainder] = plants;
+  const [sideA, sideB] = plants;
 
   return (
     <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
       <SectionHeader theme={theme} tab={tab} onNavigate={onNavigate} />
 
       {showFeatured ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-          <div className="sm:col-span-2 lg:col-span-2 lg:row-span-2 lg:col-start-1 lg:row-start-1">
+        <>
+          <div className="flex flex-col gap-4 lg:hidden">
             <FeaturedEssayPanel
               key="home-featured"
               essay={featuredEssay}
               onOpenPlant={onOpenPlant}
               spanGrid={false}
             />
+            <div className="grid sm:grid-cols-2 gap-4">
+              {sideA ? (
+                <PlantCard plant={sideA} tab={tab} theme={theme} onOpenPlant={onOpenPlant} />
+              ) : null}
+              {sideB ? (
+                <PlantCard plant={sideB} tab={tab} theme={theme} onOpenPlant={onOpenPlant} />
+              ) : null}
+            </div>
           </div>
 
-          {sideA ? (
-            <PlantCard
-              plant={sideA}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="lg:col-start-3 lg:row-start-1"
-            />
-          ) : null}
-          {sideB ? (
-            <PlantCard
-              plant={sideB}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="lg:col-start-3 lg:row-start-2"
-            />
-          ) : null}
-          {remainder ? (
-            <PlantCard
-              plant={remainder}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-3"
-            />
-          ) : null}
-        </div>
+          <div className="hidden lg:grid lg:grid-cols-3 gap-4 items-stretch">
+            <div className="col-span-2 flex min-h-0">
+              <FeaturedEssayPanel
+                key="home-featured-wide"
+                essay={featuredEssay}
+                onOpenPlant={onOpenPlant}
+                spanGrid={false}
+                fillHeight
+              />
+            </div>
+            <div className="col-span-1 flex flex-col gap-4">
+              {sideA ? (
+                <PlantCard plant={sideA} tab={tab} theme={theme} onOpenPlant={onOpenPlant} stretch className="flex-1" />
+              ) : null}
+              {sideB ? (
+                <PlantCard plant={sideB} tab={tab} theme={theme} onOpenPlant={onOpenPlant} stretch className="flex-1" />
+              ) : null}
+            </div>
+          </div>
+        </>
       ) : (
         <div className="grid sm:grid-cols-3 gap-4 items-start">
           {plants.map((plant) => (
@@ -484,7 +486,7 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
 }
 
 export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpenPost }: Props) {
-  const featuredPlants = ['stinging-nettle', 'oregon-grape', 'yarrow']
+  const featuredPlants = ['stinging-nettle', 'oregon-grape']
     .map((id) => PLANT_LIBRARY.find((p) => p.id === id))
     .filter((p): p is PlantEntry => !!p);
 
