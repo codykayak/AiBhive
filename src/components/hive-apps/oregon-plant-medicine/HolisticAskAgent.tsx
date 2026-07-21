@@ -3,6 +3,8 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
   BookOpen,
+  Camera,
+  ImagePlus,
   Loader2,
   PlusCircle,
   Search,
@@ -20,9 +22,18 @@ import {
   type LivingKnowledgeScope,
 } from '../../../lib/oregonPlantMedicine/livingKnowledgeRag';
 import {
+  PlantCreditsError,
+  fileToPlantPhotoAttachment,
   sendLivingKnowledgeChat,
+  sendPlantPhotoIdentify,
   type PlantChatMessage,
+  type PlantPhotoAttachment,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
+import {
+  enrichPlantPhotoIdResult,
+  type PlantIdVisual,
+} from '../../../lib/oregonPlantMedicine/plantPhotoIdVisuals';
 
 type Accent = 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime';
 
@@ -32,7 +43,11 @@ type ChatMsg = {
   content: string;
   hits?: LivingKnowledgeHit[];
   contributeSuggested?: boolean;
-  source?: 'grok' | 'offline';
+  source?: 'grok' | 'offline' | 'grok-vision';
+  attachmentPreview?: string;
+  candidates?: PlantIdVisual[];
+  dangerousLookalikes?: PlantIdVisual[];
+  chargedUsd?: number;
 };
 
 const ACCENT: Record<
@@ -108,6 +123,12 @@ function kindLabel(hit: LivingKnowledgeHit): string {
   return 'Topic';
 }
 
+function confidenceTone(label: string) {
+  if (label === 'high') return 'border-emerald-400/50 bg-emerald-500/20 text-emerald-100';
+  if (label === 'medium') return 'border-amber-400/50 bg-amber-500/20 text-amber-100';
+  return 'border-slate-500/50 bg-slate-700/40 text-slate-200';
+}
+
 function renderMarkdownLite(text: string) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) => {
     const m = part.match(/^\*\*([^*]+)\*\*$/);
@@ -120,6 +141,74 @@ function renderMarkdownLite(text: string) {
     }
     return <span key={i}>{part}</span>;
   });
+}
+
+function PlantVisualCard({
+  item,
+  dangerous,
+  onOpen,
+}: {
+  item: PlantIdVisual;
+  dangerous?: boolean;
+  onOpen?: (plantId: string) => void;
+}) {
+  const imgs = [item.imageUrl, ...item.additionalImages.map((a) => a.url)].filter(Boolean) as string[];
+  return (
+    <div
+      className={`rounded-lg border overflow-hidden ${
+        dangerous ? 'border-rose-500/45 bg-rose-950/40' : 'border-slate-700 bg-slate-950/70'
+      }`}
+    >
+      {imgs[0] ? (
+        <div className="grid grid-cols-2 gap-0.5 bg-black/40">
+          {imgs.slice(0, 2).map((src) => (
+            <img key={src} src={src} alt={item.commonName} className="h-24 w-full object-cover" loading="lazy" />
+          ))}
+        </div>
+      ) : (
+        <div className="h-16 flex items-center justify-center text-[10px] text-slate-500 bg-slate-900">
+          No library photo yet
+        </div>
+      )}
+      <div className="p-2 space-y-1">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold text-white leading-tight">{item.commonName}</p>
+            {item.scientificName ? (
+              <p className="text-[10px] italic text-slate-400">{item.scientificName}</p>
+            ) : null}
+          </div>
+          {!dangerous ? (
+            <span
+              className={`shrink-0 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${confidenceTone(
+                item.confidenceLabel,
+              )}`}
+            >
+              {item.confidenceLabel} {Math.round((item.confidence || 0) * 100)}%
+            </span>
+          ) : (
+            <span className="shrink-0 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-rose-400/50 bg-rose-500/20 text-rose-100">
+              Look-alike
+            </span>
+          )}
+        </div>
+        {(item.rationale || item.whyDangerous) && (
+          <p className="text-[10px] text-slate-300 leading-snug line-clamp-3">
+            {item.whyDangerous || item.rationale}
+          </p>
+        )}
+        {item.plantId && onOpen ? (
+          <button
+            type="button"
+            onClick={() => onOpen(item.plantId!)}
+            className="text-[10px] font-bold text-emerald-300 hover:underline"
+          >
+            Open in library →
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 export default function HolisticAskAgent({
@@ -137,13 +226,20 @@ export default function HolisticAskAgent({
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [openSuggest, setOpenSuggest] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [attachment, setAttachment] = useState<PlantPhotoAttachment | null>(null);
+  const [creditsNeeded, setCreditsNeeded] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [identifyingPhoto, setIdentifyingPhoto] = useState(false);
 
   const suggestions = useMemo(() => suggestLivingKnowledgeTerms(query, scope, 8), [query, scope]);
+  const photoIdEnabled = scope === 'all' || scope === 'plants' || scope === 'edibles';
 
   useEffect(() => {
     onQueryChange?.(query);
@@ -175,28 +271,115 @@ export default function HolisticAskAgent({
     onContribute(q || undefined);
   };
 
+  const onPickFile = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const att = await fileToPlantPhotoAttachment(file);
+      setAttachment(att);
+      setError('');
+      setCreditsNeeded(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read photo');
+    }
+  };
+
+  const addCredits = async () => {
+    setCheckoutBusy(true);
+    try {
+      const url = await startLivingKnowledgeCreditsCheckout();
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Checkout failed');
+    } finally {
+      setCheckoutBusy(false);
+    }
+  };
+
   const send = useCallback(
     async (raw: string) => {
       const trimmed = raw.trim();
-      if (!trimmed || busy) return;
+      const pendingPhoto = attachment;
+      if ((!trimmed && !pendingPhoto) || busy) return;
 
-      const userMsg: ChatMsg = { id: uid(), role: 'user', content: trimmed };
+      if (pendingPhoto && !user) {
+        onSignIn?.();
+        setError('Sign in to use paid photo plant ID (Hive credits).');
+        return;
+      }
+
+      const userMsg: ChatMsg = {
+        id: uid(),
+        role: 'user',
+        content: trimmed || (pendingPhoto ? 'Identify this plant from my photo.' : ''),
+        attachmentPreview: pendingPhoto?.previewUrl,
+      };
       const next = [...messages, userMsg];
       setMessages(next);
       setQuery('');
       setOpenSuggest(false);
       setBusy(true);
       setError('');
+      setCreditsNeeded(false);
+      setAttachment(null);
 
       const priorUser = next.filter((m) => m.role === 'user').map((m) => m.content);
       const blendedQuery = priorUser.slice(-4).join(' ');
-      const retrieval = suggestLivingKnowledgeTerms(trimmed, scope, 5);
+      const retrieval = suggestLivingKnowledgeTerms(trimmed || blendedQuery, scope, 5);
       const blendedHits =
         retrieval.length > 0 ? retrieval : suggestLivingKnowledgeTerms(blendedQuery, scope, 5);
-
       const online = typeof navigator === 'undefined' ? true : navigator.onLine;
 
-      // Grok path (Diagnose-style): multi-turn history + optional clarifiers
+      // Paid photo plant ID (Diagnose-style vision)
+      if (pendingPhoto && user) {
+        setIdentifyingPhoto(true);
+        try {
+          const context = buildLivingKnowledgeContextBlocks(blendedHits);
+          const result = await sendPlantPhotoIdentify(user, {
+            message:
+              trimmed ||
+              'Identify this plant or mushroom from the photo. Rank confidence and list dangerous look-alikes.',
+            context,
+            attachment: pendingPhoto,
+          });
+          const visuals = enrichPlantPhotoIdResult({
+            candidates: result.candidates,
+            dangerousLookalikes: result.dangerousLookalikes,
+          });
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: uid(),
+              role: 'assistant',
+              content: result.reply,
+              hits: blendedHits,
+              candidates: visuals.candidates,
+              dangerousLookalikes: visuals.dangerousLookalikes,
+              contributeSuggested: visuals.candidates.length === 0,
+              source: 'grok-vision',
+              chargedUsd: result.chargedUsd,
+            },
+          ]);
+          setBusy(false);
+          setIdentifyingPhoto(false);
+          return;
+        } catch (err) {
+          setIdentifyingPhoto(false);
+          if (err instanceof PlantCreditsError) {
+            setCreditsNeeded(true);
+            setError(err.message);
+            setBusy(false);
+            return;
+          }
+          setError(err instanceof Error ? err.message : 'Photo ID failed — try again or ask in text.');
+          // fall through to text if they also typed
+          if (!trimmed) {
+            setBusy(false);
+            return;
+          }
+        }
+      }
+
+      // Grok text path (Diagnose-style): multi-turn history + optional clarifiers
       if (user && online) {
         try {
           const context = buildLivingKnowledgeContextBlocks(blendedHits);
@@ -235,7 +418,6 @@ export default function HolisticAskAgent({
         }
       }
 
-      // Offline / unsigned: local RAG + clarifying probes (Diagnose offlineConversation pattern)
       const offline = offlineLivingKnowledgeReply(trimmed, scope, {
         priorUserTexts: priorUser.slice(0, -1),
         signedIn: Boolean(user),
@@ -253,7 +435,7 @@ export default function HolisticAskAgent({
       ]);
       setBusy(false);
     },
-    [busy, messages, scope, user],
+    [attachment, busy, messages, onSignIn, scope, user],
   );
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
@@ -267,11 +449,12 @@ export default function HolisticAskAgent({
         </p>
         <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
           Powered by Grok · may ask a clarifying follow-up · library RAG works offline without payment
+          {photoIdEnabled ? ' · photo plant ID is a paid Hive-credits feature' : ''}
         </p>
       </div>
 
       {messages.length > 0 ? (
-        <div className={`rounded-xl border ${theme.border} bg-slate-950/80 max-h-80 overflow-y-auto p-3 space-y-2.5`}>
+        <div className={`rounded-xl border ${theme.border} bg-slate-950/80 max-h-[28rem] overflow-y-auto p-3 space-y-2.5`}>
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -281,10 +464,57 @@ export default function HolisticAskAgent({
             >
               {msg.role === 'assistant' ? (
                 <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${theme.badge}`}>
-                  {msg.source === 'grok' ? 'Grok · Living Knowledge' : 'Offline library'}
+                  {msg.source === 'grok-vision'
+                    ? 'Grok Vision · Photo ID'
+                    : msg.source === 'grok'
+                      ? 'Grok · Living Knowledge'
+                      : 'Offline library'}
+                  {typeof msg.chargedUsd === 'number' && msg.chargedUsd > 0
+                    ? ` · $${msg.chargedUsd.toFixed(3)} credits`
+                    : ''}
                 </p>
               ) : null}
+              {msg.attachmentPreview ? (
+                <img
+                  src={msg.attachmentPreview}
+                  alt="Attached plant"
+                  className="mb-2 max-h-40 rounded-lg border border-white/10 object-cover"
+                />
+              ) : null}
               <div>{renderMarkdownLite(msg.content)}</div>
+
+              {msg.candidates && msg.candidates.length > 0 ? (
+                <div className="mt-3 space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                    Identification matches
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {msg.candidates.map((c, i) => (
+                      <PlantVisualCard key={`${c.plantId || c.commonName}_${i}`} item={c} onOpen={onOpenPlant} />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {msg.dangerousLookalikes && msg.dangerousLookalikes.length > 0 ? (
+                <div className="mt-3 space-y-1.5">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-rose-300 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Dangerous look-alikes
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {msg.dangerousLookalikes.map((c, i) => (
+                      <PlantVisualCard
+                        key={`danger_${c.plantId || c.commonName}_${i}`}
+                        item={c}
+                        dangerous
+                        onOpen={onOpenPlant}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               {msg.hits && msg.hits.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {msg.hits.slice(0, 4).map((hit) => (
@@ -306,7 +536,7 @@ export default function HolisticAskAgent({
           {busy ? (
             <div className={`flex items-center gap-2 text-xs ${theme.badge}`}>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Grok is thinking…
+              {identifyingPhoto ? 'Grok is identifying your photo…' : 'Grok is thinking…'}
             </div>
           ) : null}
           <div ref={bottomRef} />
@@ -326,6 +556,41 @@ export default function HolisticAskAgent({
           >
             <PlusCircle className="w-3.5 h-3.5" />
             Contribute to the community
+          </button>
+        </div>
+      ) : null}
+
+      {creditsNeeded ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+          <p className="text-xs text-amber-100/90">
+            Photo plant ID uses Hive credits (like Diagnose photo). Add credits to continue.
+          </p>
+          <button
+            type="button"
+            disabled={checkoutBusy}
+            onClick={() => void addCredits()}
+            className="inline-flex items-center gap-2 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/40 text-amber-50 font-bold text-xs px-3 py-2 disabled:opacity-50"
+          >
+            {checkoutBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            Add Hive credits
+          </button>
+        </div>
+      ) : null}
+
+      {attachment ? (
+        <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-2">
+          <img src={attachment.previewUrl} alt="Pending plant photo" className="h-14 w-14 rounded-lg object-cover" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white">Photo ready for ID</p>
+            <p className="text-[10px] text-amber-200/90">Paid Grok vision · returns confidence + dangerous look-alikes</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAttachment(null)}
+            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/5"
+            aria-label="Remove photo"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       ) : null}
@@ -352,23 +617,69 @@ export default function HolisticAskAgent({
             if (e.key === 'Escape') setOpenSuggest(false);
           }}
           placeholder={
-            messages.length > 0 && lastAssistant && looksLikeLivingKnowledgeClarifier(lastAssistant.content)
-              ? 'Reply to Grok’s follow-up…'
-              : placeholder
+            attachment
+              ? 'Optional note about the plant (habitat, region)…'
+              : messages.length > 0 && lastAssistant && looksLikeLivingKnowledgeClarifier(lastAssistant.content)
+                ? 'Reply to Grok’s follow-up…'
+                : placeholder
           }
-          className={`w-full pl-10 pr-28 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none ${theme.focus}`}
+          className={`w-full pl-10 pr-36 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none ${theme.focus}`}
         />
-        <button
-          type="button"
-          onClick={() => void send(query)}
-          disabled={busy || !query.trim()}
-          className={`absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50 ${theme.button}`}
-        >
-          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-          Ask
-        </button>
+        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {photoIdEnabled ? (
+            <>
+              <button
+                type="button"
+                title="Take photo (paid ID)"
+                onClick={() => {
+                  if (!user && onSignIn) onSignIn();
+                  cameraRef.current?.click();
+                }}
+                className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                title="Upload plant photo (paid ID)"
+                onClick={() => {
+                  if (!user && onSignIn) onSignIn();
+                  fileRef.current?.click();
+                }}
+                className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                <ImagePlus className="w-4 h-4" />
+              </button>
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void send(query)}
+            disabled={busy || (!query.trim() && !attachment)}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50 ${theme.button}`}
+          >
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Ask
+          </button>
+        </div>
 
-        {openSuggest && suggestions.length > 0 && messages.length === 0 ? (
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => void onPickFile(e.target.files?.[0] || null)}
+        />
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => void onPickFile(e.target.files?.[0] || null)}
+        />
+
+        {openSuggest && suggestions.length > 0 && messages.length === 0 && !attachment ? (
           <ul
             id={listId}
             role="listbox"
@@ -409,7 +720,7 @@ export default function HolisticAskAgent({
           onClick={onSignIn}
           className={`text-[11px] font-semibold ${theme.badge} hover:underline`}
         >
-          Sign in so Grok can ask clarifying follow-ups (free)
+          Sign in so Grok can ask clarifying follow-ups{photoIdEnabled ? ' and run paid photo ID' : ''} (text is free)
         </button>
       ) : null}
       {messages.length > 0 ? (
