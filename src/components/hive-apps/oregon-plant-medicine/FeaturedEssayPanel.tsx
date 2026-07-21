@@ -333,21 +333,25 @@ export default function FeaturedEssayPanel({
         } ${fillHeight ? 'h-full flex flex-col' : ''}`}
       >
         <div
-          className={`grid sm:grid-cols-2 ${
-            fillHeight ? 'flex-1 min-h-[260px] lg:min-h-0 lg:h-full' : 'min-h-[220px]'
-          }`}
+          className={
+            fillHeight
+              ? 'flex flex-col flex-1 min-h-0 h-full'
+              : 'grid sm:grid-cols-2 min-h-[220px]'
+          }
         >
           <div
-            className={`relative overflow-hidden ${
-              fillHeight ? 'h-52 sm:h-full sm:min-h-[220px]' : 'h-48 sm:h-auto'
-            }`}
+            className={
+              fillHeight
+                ? 'relative flex-[1.15] min-h-[200px] overflow-hidden'
+                : 'relative h-48 sm:h-auto overflow-hidden'
+            }
           >
             <ResearchTopicImage
               src={essay.imageUrl}
               alt={essay.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent sm:bg-gradient-to-r sm:from-transparent sm:to-slate-950/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
             <span
               className={`absolute top-3 left-3 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${theme.badge}`}
             >
