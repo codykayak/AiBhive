@@ -329,12 +329,13 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       const user = await requireAuth(req, res);
       if (!user) return;
 
-      const { message, context, scope = 'all' } = req.body || {};
+      const { message, context = '', scope = 'all', history = [] } = req.body || {};
       const hiveUserId = resolvePlantHiveUserId(user.uid);
       const result = await runLivingKnowledgeChat(db, hiveUserId, {
         message,
         context,
         scope,
+        history,
         email: user.email,
       });
 

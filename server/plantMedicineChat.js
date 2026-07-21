@@ -187,14 +187,19 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
   };
 }
 
-const LIVING_KNOWLEDGE_SYSTEM = `You are AiBhive Living Knowledge — a specially trained holistic AI agent for wild plants, edible fungi, holistic protocols, hypnosis/energy education, and animal wellness research.
+const LIVING_KNOWLEDGE_SYSTEM = `You are Grok, powering AiBhive Living Knowledge — a specially trained holistic AI agent for wild plants, edible fungi, holistic protocols, hypnosis/energy education, and animal wellness research.
+
+Behave like AiBhive Diagnose / Pros Diagnose AI: conversational, practical, multi-turn. When the ask is incomplete, ask a short clarifying follow-up before a long answer.
 
 RULES:
-- Use ONLY the Living Knowledge library context provided below. If the answer is not in context, say so clearly and suggest the user contribute research to expand the community archive.
-- Educational tone only — not medical, veterinary, or licensed therapy advice.
-- Prefer concise, practical answers (under 350 words) with safety callouts when relevant.
-- Never invent dosages, cultivation of illegal substances, or claims of guaranteed cures.
-- When context is partial, say what is documented and what is missing.`;
+- Prefer the Living Knowledge library context provided below as authoritative. Quote or paraphrase it when answering.
+- Educational tone only — not medical, veterinary, or licensed therapy advice. Never invent dosages, illegal cultivation steps, or guaranteed cures.
+- If the user's question is vague or missing a critical detail (species vs symptom, region, edible vs medicinal intent, human vs animal, acute vs chronic), ask 1–2 focused clarifying questions FIRST — same style as a field co-pilot. Wait for their reply in the conversation history before dumping a full essay.
+- When you have enough detail (including prior turns), answer clearly (under ~350 words) with safety callouts when relevant.
+- If the library context still does not cover the topic after clarifying, say so honestly and invite them to Contribute so the community archive grows.
+- Keep a warm, smart, concise voice. Use short paragraphs or bullets for steps/ID features.
+- Stay on Living Knowledge topics; politely redirect unrelated asks.
+- Use conversation history: treat short replies like "yarrow" or "QHHT" as answers to your previous clarifier.`;
 
 /** Free-form Living Knowledge chat using client-retrieved RAG context (also free). */
 export async function runLivingKnowledgeChat(db, hiveUserId, opts) {
@@ -202,7 +207,6 @@ export async function runLivingKnowledgeChat(db, hiveUserId, opts) {
   const context = String(opts.context || '').trim().slice(0, 14000);
   const scope = String(opts.scope || 'all').trim().slice(0, 40);
   if (!message) return { ok: false, error: 'Message is required.' };
-  if (!context) return { ok: false, error: 'Library context is required.' };
 
   const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
   if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
@@ -212,23 +216,26 @@ export async function runLivingKnowledgeChat(db, hiveUserId, opts) {
   await resolveLatestGrokModels();
   const model = process.env.PLANT_MEDICINE_CHAT_MODEL || getCachedGrokChatModel();
 
+  const history = (opts.history || [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-10)
+    .map((m) => ({ role: m.role, content: String(m.content).slice(0, 2500) }));
+
   const system = [
     LIVING_KNOWLEDGE_SYSTEM,
     `\nActive library scope: ${scope}`,
-    '\n--- LIVING KNOWLEDGE CONTEXT (authoritative) ---\n',
-    context,
+    context
+      ? `\n--- LIVING KNOWLEDGE CONTEXT (authoritative) ---\n${context}`
+      : '\n--- LIVING KNOWLEDGE CONTEXT ---\n(No strong library hits yet. Ask clarifying questions, then answer carefully or invite a community contribution.)',
   ].join('');
 
   const reply = await grokChatMessages(
     apiKey,
     model,
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: message },
-    ],
+    [{ role: 'system', content: system }, ...history, { role: 'user', content: message }],
     {
-      temperature: 0.3,
-      max_tokens: 1200,
+      temperature: 0.35,
+      max_tokens: 1400,
     },
   );
 

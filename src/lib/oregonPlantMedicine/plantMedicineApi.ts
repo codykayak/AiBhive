@@ -228,13 +228,14 @@ export async function sendPlantChat(
   };
 }
 
-/** Free Living Knowledge holistic agent — uses client RAG context; optional online enhancement. */
+/** Free Living Knowledge holistic agent — Grok + client RAG context; supports multi-turn history. */
 export async function sendLivingKnowledgeChat(
   user: User,
   opts: {
     message: string;
     context: string;
     scope?: string;
+    history?: PlantChatMessage[];
   },
 ): Promise<{
   reply: string;
@@ -252,6 +253,7 @@ export async function sendLivingKnowledgeChat(
       message: opts.message,
       context: opts.context,
       scope: opts.scope ?? 'all',
+      history: opts.history ?? [],
     }),
   });
   const data = (await res.json()) as {

@@ -414,3 +414,96 @@ export function rememberContributeSeed(query: string, scope: LivingKnowledgeScop
     /* ignore */
   }
 }
+
+/** Diagnose-style: greetings / empty asks get a clarifying probe (short species names are NOT vague). */
+export function isVagueLivingKnowledgeAsk(text: string): boolean {
+  const t = text.trim().toLowerCase();
+  if (!t) return true;
+  if (t.length <= 2) return true;
+  if (/^(hi|hey|hello|help|yo|sup|thanks|thank you|ok|okay|test|hola)[!.?\s]*$/.test(t)) return true;
+  if (/^(good morning|good afternoon|what'?s up|how are you)[!.?\s]*$/.test(t)) return true;
+  if (/^(what can you do|who are you|help me|how do you work)[!.?\s]*$/.test(t)) return true;
+  return false;
+}
+
+export function looksLikeLivingKnowledgeClarifier(reply: string): boolean {
+  const t = reply.trim();
+  if (!t.includes('?')) return false;
+  return /could you|which |what (are you|kind|type|part|outcome)|are you (looking|asking|exploring)|tell me (a bit|more)|before I|clarify|name the|habitat|symptom|species/i.test(
+    t,
+  );
+}
+
+export function buildLivingKnowledgeClarifier(scope: LivingKnowledgeScope, text: string): string {
+  const probes: Record<LivingKnowledgeScope, string> = {
+    all: 'Happy to help. What are you looking for — a wild plant/mushroom ID, a holistic protocol, hypnosis/energy topic, or animal wellness research? Name the species or symptom if you can.',
+    plants:
+      'I can help from the plant library. Which species (common or Latin name), or describe the leaf/flower/habitat and your region (e.g. Willamette Valley vs coast)?',
+    edibles:
+      'For edibles & fungi: are you asking about a wild food ID, harvest season, look-alikes, or cultivated mycelium/meat alternatives? Name the plant or mushroom if you know it.',
+    holistic:
+      'For holistic protocols: what are you exploring — detox, digestion, sleep/nervines, Cayce traditions, or something else? Any plants already in mind?',
+    hypnosis:
+      'For hypnosis & energy: past-life regression / QHHT, clinical hypnotherapy, Reiki/chakras, or sound frequencies? What outcome are you hoping to understand?',
+    'animal-health':
+      'For animal wellness: dog, cat, horse, or livestock? Gut, skin, anxiety, nutrition, or energy modalities — and is this educational research or an emergency (go to a vet for emergencies)?',
+  };
+  const base = probes[scope] || probes.all;
+  if (/id|identify|look|mushroom|plant/i.test(text)) {
+    return `${base}\n\nIf this is an ID question, also tell me: habitat (woods, dunes, yard), season, and any look-alike worries.`;
+  }
+  return base;
+}
+
+export function offlineLivingKnowledgeReply(
+  query: string,
+  scope: LivingKnowledgeScope,
+  opts?: { priorUserTexts?: string[]; signedIn?: boolean },
+): { reply: string; hits: LivingKnowledgeHit[]; contributeSuggested: boolean; isClarifier: boolean } {
+  const prior = (opts?.priorUserTexts || []).filter(Boolean);
+  const isFollowUp = prior.length > 0;
+
+  if (!isFollowUp && isVagueLivingKnowledgeAsk(query)) {
+    return {
+      reply: buildLivingKnowledgeClarifier(scope, query),
+      hits: [],
+      contributeSuggested: false,
+      isClarifier: true,
+    };
+  }
+
+  // Blend prior turns so short clarifier answers ("yarrow", "QHHT") still retrieve.
+  const searchQuery = isFollowUp ? `${prior.slice(-3).join(' ')} ${query}`.trim() : query;
+  const local = answerLivingKnowledgeQuery(searchQuery, scope);
+  if (!local.documented) {
+    // First miss: ask one Diagnose-style clarifier before hard-pushing contribute.
+    if (!isFollowUp) {
+      return {
+        reply: `${local.answer}\n\nTo help me search better: are you asking about a specific plant/fungus name, a body system (gut, sleep, skin), or a modality (Cayce, QHHT, Reiki)?`,
+        hits: local.hits,
+        contributeSuggested: true,
+        isClarifier: true,
+      };
+    }
+    return {
+      reply: local.answer,
+      hits: local.hits,
+      contributeSuggested: true,
+      isClarifier: false,
+    };
+  }
+
+  const grokNudge =
+    opts?.signedIn === false
+      ? '\n\n(Offline library — sign in online so Grok can ask clarifying follow-ups like Diagnose.)'
+      : opts?.signedIn
+        ? ''
+        : '\n\n(Offline library answer — sign in online for Grok follow-ups.)';
+
+  return {
+    reply: `${local.answer}${grokNudge}`,
+    hits: local.hits,
+    contributeSuggested: local.contributeSuggested,
+    isClarifier: false,
+  };
+}
