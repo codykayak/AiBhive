@@ -2,7 +2,8 @@ import { SEO } from '../../components/SEO';
 import OregonPlantMedicineWebApp from '../../components/hive-apps/OregonPlantMedicineWebApp';
 import {
   LIVING_KNOWLEDGE_APP_NAME,
-  LIVING_KNOWLEDGE_TAGLINE,
+  LIVING_KNOWLEDGE_SEO_DESCRIPTION,
+  LIVING_KNOWLEDGE_SEO_KEYWORDS,
   PLANTS_PUBLIC_PATH,
 } from '../../lib/oregonPlantMedicine/branding';
 
@@ -12,14 +13,14 @@ export default function PlantsPage() {
     <div className="min-h-screen bg-[#070a0f]">
       <SEO
         title={`${LIVING_KNOWLEDGE_APP_NAME} — Wild Edibles & Homeopathic Plants | AiBhive`}
-        description={`${LIVING_KNOWLEDGE_TAGLINE} Browse wild edibles, medicinal plants, and mushrooms across Oregon and Northern California — ID photos, look-alikes, and safety notes.`}
-        keywords="Oregon wild edibles, Northern California foraging, edible mushrooms, medicinal plants, homeopathic remedies, plant identification, AiBhive"
+        description={LIVING_KNOWLEDGE_SEO_DESCRIPTION}
+        keywords={LIVING_KNOWLEDGE_SEO_KEYWORDS}
         type="WebApplication"
         jsonLd={[
           {
             '@type': 'WebApplication',
             name: LIVING_KNOWLEDGE_APP_NAME,
-            description: LIVING_KNOWLEDGE_TAGLINE,
+            description: LIVING_KNOWLEDGE_SEO_DESCRIPTION,
             url: `https://aibhive.com${PLANTS_PUBLIC_PATH}`,
             applicationCategory: 'ReferenceApplication',
             operatingSystem: 'Web',

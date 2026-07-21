@@ -743,27 +743,29 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           </div>
         </nav>
 
-        <div className={`${expanded ? 'px-4 sm:px-8 py-3' : 'px-4 py-2'}`}>
-          {authError ? <p className="text-xs text-red-300 mb-2">{authError}</p> : null}
-          <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-3xl mb-3" />
-          {tab !== 'home' && userLocation ? (
-            <button
-              type="button"
-              onClick={() => {
-                setLocationModalStep('location');
-                setShowLocationModal(true);
-              }}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              {locationLabel(userLocation)}
-              {regionSupported && userLocation.stateId
-                ? ` · ${subRegionLabel(userLocation.subRegion)}`
-                : !regionSupported
-                  ? ' · not in library yet'
-                  : ''}
-            </button>
-          ) : null}
+        <div className="border-b border-emerald-500/10 bg-slate-950/70">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
+            {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
+            <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
+            {tab !== 'home' && userLocation ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationModalStep('location');
+                  setShowLocationModal(true);
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                {locationLabel(userLocation)}
+                {regionSupported && userLocation.stateId
+                  ? ` · ${subRegionLabel(userLocation.subRegion)}`
+                  : !regionSupported
+                    ? ' · not in library yet'
+                    : ''}
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -774,6 +776,13 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onNavigate={(id) => selectTab(id)}
             onOpenPlant={(plant) => setSelected(plant)}
             onOpenPost={(post) => setSelectedCommunityPost(post)}
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onCreatePost={() => setShowCreatePost(true)}
+            onOpenTopic={(library, topicId) => {
+              selectTab(library);
+              setFocusTopic({ library, topicId });
+            }}
           />
         ) : null}
 

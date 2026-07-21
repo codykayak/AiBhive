@@ -417,8 +417,8 @@
   {
     "id": "example-oregon-plant-medicine",
     "title": "Living Knowledge Plants and Medicine",
-    "tagline": "Living knowledge base for wild plants",
-    "summary": "A community living knowledge base for edible, medicinal, and homeopathic plants — searchable library with 3+ ID photos per species, PDF guides, and contributor-driven state expansions starting in Oregon.",
+    "tagline": "PNW foraging field guide & research libraries",
+    "summary": "Community living knowledge base — 178+ wild plants and mushrooms with ID photos, site search, community posts, featured essays, and adjacent holistic, hypnosis, and animal health libraries across Oregon and Northern California.",
     "theme": "green",
     "icon": "leaf",
     "category": "guides",
@@ -430,12 +430,12 @@
         "title": "Living Knowledge Plants and Medicine",
         "type": "info",
         "config": {
-          "body": "Open the full interactive living knowledge base with search, regional filters, favorites, community photos, and contributor tools.",
+          "body": "Open the full interactive living knowledge base — plant field guide plus holistic, hypnosis, and animal health research libraries.",
           "bullets": [
-            "120+ wild foods and mushrooms across Oregon and Northern California",
-            "Living knowledge base: contribute photos, plants, and new states",
-            "Multi-photo ID, PDF guides, and community field notes",
-            "Expand to new states via AiBhive Builder — $3 in Hive credits"
+            "178+ wild plants and mushrooms with three ID photos, look-alikes, and harvest notes",
+            "Site search, community posts, comments, upvotes, and featured long-form essays",
+            "Holistic remedies (35+ topics), hypnosis & energy, and animal health libraries",
+            "Free browsing and search; Hive credits for Ask AiBhive and $3 state map expansion"
           ],
           "links": [
             { "label": "Open Living Knowledge Plants and Medicine", "url": "https://aibhive.com/plants" }
