@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { User } from 'firebase/auth';
 import {
   Check,
@@ -8,6 +9,7 @@ import {
   ExternalLink,
   Loader2,
   Megaphone,
+  Plus,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
@@ -17,9 +19,11 @@ import {
   approvePost,
   buildPlatformPostUrl,
   copyPostBundle,
+  createCompany,
   formatPostDate,
   generatePost,
   getWorkflow,
+  listCompanies,
   listPosts,
   markPosted,
   nextSevenDateKeys,
@@ -28,8 +32,7 @@ import {
   sendTestSms,
   shortDayLabel,
   updateCaptions,
-  updateConfig,
-  updateProfile,
+  updateCompany,
   GROK_TEXT_MODELS,
   GROK_IMAGE_MODELS,
   GEMINI_TEXT_MODELS,
@@ -39,8 +42,8 @@ import {
   type PipelineStep,
   type PlatformId,
   type PublishStatusEntry,
+  type SocialCompany,
   type SocialPost,
-  type UserAutoSocialProfile,
   type WorkflowStep,
 } from '../../lib/autoSocialApi';
 
@@ -172,17 +175,98 @@ function PublishStatusRow({
   );
 }
 
+function CompanyProviderCard({
+  label,
+  enabled,
+  textModel,
+  imageModel,
+  apiKeyHint,
+  serverKeyNote,
+  textModels,
+  imageModels,
+  onSave,
+}: {
+  label: string;
+  enabled: boolean;
+  textModel: string;
+  imageModel: string;
+  apiKeyHint: string;
+  serverKeyNote?: boolean;
+  textModels: Array<{ id: string; label: string }>;
+  imageModels: Array<{ id: string; label: string }>;
+  onSave: (patch: Record<string, unknown>) => void;
+}) {
+  const [apiKey, setApiKey] = useState(apiKeyHint);
+  return (
+    <div className="rounded-xl border border-white/10 p-4 space-y-3">
+      <label className="flex items-center justify-between gap-3 cursor-pointer">
+        <span className="text-sm font-medium text-white">{label}</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onSave({ enabled: e.target.checked })}
+          className="rounded"
+        />
+      </label>
+      {serverKeyNote && (
+        <p className="text-xs text-slate-500">Leave API key blank to use the server Gemini key.</p>
+      )}
+      <label className="block">
+        <span className="text-xs text-slate-500 mb-1 block">API key</span>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          onBlur={() => {
+            if (apiKey && !apiKey.includes('••••')) onSave({ apiKey });
+          }}
+          placeholder={serverKeyNote ? 'Optional' : 'Required'}
+          className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="block">
+          <span className="text-xs text-slate-500 mb-1 block">Text model</span>
+          <select
+            value={textModel}
+            onChange={(e) => onSave({ textModel: e.target.value })}
+            className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+          >
+            {textModels.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-xs text-slate-500 mb-1 block">Image model</span>
+          <select
+            value={imageModel}
+            onChange={(e) => onSave({ imageModel: e.target.value })}
+            className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+          >
+            {imageModels.map((m) => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
+
 function PostCard({
   post,
   user,
-  config,
+  companyId,
+  company,
   isToday,
   onRefresh,
   onToast,
 }: {
   post: SocialPost;
   user: User;
-  config: AutoSocialConfig | null;
+  companyId: string;
+  company: SocialCompany | null;
   isToday: boolean;
   onRefresh: () => void;
   onToast: (msg: string) => void;
@@ -195,7 +279,7 @@ function PostCard({
 
   const pl = PLATFORMS.find((p) => p.id === platform) || PLATFORMS[0];
   const p = post[platform] || {};
-  const links = config?.socialLinks || { facebook: '', instagram: '', x: '' };
+  const links = company?.socialLinks || { facebook: '', instagram: '', x: '' };
 
   useEffect(() => {
     setCaption(post[platform]?.caption || '');
@@ -241,7 +325,7 @@ function PostCard({
   async function handlePublish(platforms: Array<'facebook' | 'instagram'>) {
     setActing(true);
     try {
-      await publishPost(user, post.id, platforms);
+      await publishPost(user, companyId, post.id, platforms);
       onToast(platforms.length > 1 ? 'Published to Facebook & Instagram' : `Published to ${platforms[0]}`);
       onRefresh();
     } catch (e) {
@@ -378,7 +462,7 @@ function PostCard({
             <button
               type="button"
               disabled={acting}
-              onClick={() => doAction(() => approvePost(user, post.id), 'Approved')}
+              onClick={() => doAction(() => approvePost(user, companyId, post.id), 'Approved')}
               className="px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 text-sm"
             >
               Approve
@@ -386,7 +470,7 @@ function PostCard({
             <button
               type="button"
               disabled={acting}
-              onClick={() => doAction(() => rejectPost(user, post.id), 'Rejected')}
+              onClick={() => doAction(() => rejectPost(user, companyId, post.id), 'Rejected')}
               className="px-4 py-2 rounded-lg border border-white/10 text-slate-400 text-sm"
             >
               Reject
@@ -425,7 +509,7 @@ function PostCard({
           <button
             type="button"
             disabled={acting}
-            onClick={() => doAction(() => markPosted(user, post.id), 'Marked posted')}
+            onClick={() => doAction(() => markPosted(user, companyId, post.id), 'Marked posted')}
             className="px-4 py-2 rounded-lg border border-white/10 text-slate-400 text-sm"
           >
             Mark as posted (manual)
@@ -445,101 +529,69 @@ function PostCard({
 }
 
 export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [companies, setCompanies] = useState<SocialCompany[]>([]);
+  const activeCompanyId = searchParams.get('company') || companies[0]?.id || 'aibhive';
+  const activeCompany = companies.find((c) => c.id === activeCompanyId) || null;
+
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [pipeline, setPipeline] = useState<PipelineStep[]>([]);
   const [config, setConfig] = useState<AutoSocialConfig | null>(null);
-  const [models, setModels] = useState<{ text: string; image: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [savingConfig, setSavingConfig] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  const [notifyPhone, setNotifyPhone] = useState('');
-  const [notifyEnabled, setNotifyEnabled] = useState(true);
-  const [socialLinks, setSocialLinks] = useState({ facebook: '', instagram: '', x: '' });
-
-  const [profile, setProfile] = useState<UserAutoSocialProfile | null>(null);
-  const [primaryProvider, setPrimaryProvider] = useState<'grok' | 'gemini'>('gemini');
-  const [grokEnabled, setGrokEnabled] = useState(false);
-  const [geminiEnabled, setGeminiEnabled] = useState(true);
-  const [grokTextModel, setGrokTextModel] = useState('grok-3-mini');
-  const [grokImageModel, setGrokImageModel] = useState('grok-imagine-image-quality');
-  const [geminiTextModel, setGeminiTextModel] = useState('gemini-2.5-flash');
-  const [geminiImageModel, setGeminiImageModel] = useState('gemini-2.5-flash-image');
-  const [grokKeyInput, setGrokKeyInput] = useState('');
-  const [geminiKeyInput, setGeminiKeyInput] = useState('');
+  const [savingCompany, setSavingCompany] = useState(false);
+  const [addingCompany, setAddingCompany] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState('');
 
   const [weekDates] = useState(() => nextSevenDateKeys());
   const [dayPrompts, setDayPrompts] = useState<Record<string, DayPromptEntry>>({});
   const [generatingDate, setGeneratingDate] = useState<string | null>(null);
-
-  const [fbPageId, setFbPageId] = useState('');
-  const [fbAccessToken, setFbAccessToken] = useState('');
-  const [igAccountId, setIgAccountId] = useState('');
-  const [igAccessToken, setIgAccessToken] = useState('');
-  const [autoPublishOnApprove, setAutoPublishOnApprove] = useState(false);
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   }, []);
 
+  const selectCompany = useCallback((companyId: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', 'auto-social');
+    next.set('company', companyId);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
+      const companiesRes = await listCompanies(user);
+      const companyList = companiesRes.companies || [];
+      setCompanies(companyList);
+      const companyId = searchParams.get('company') || companyList[0]?.id || 'aibhive';
+
       const [listRes, workflowRes] = await Promise.all([
-        listPosts(user, 30),
-        getWorkflow(user),
+        listPosts(user, companyId, 30),
+        getWorkflow(user, companyId),
       ]);
       setPosts(listRes.posts || []);
       setPipeline(workflowRes.pipeline || []);
       setConfig(workflowRes.config);
-      setModels(workflowRes.models);
-      setNotifyPhone(workflowRes.config.notifyPhone || '');
-      setNotifyEnabled(workflowRes.config.notifyEnabled !== false);
-      setSocialLinks(workflowRes.config.socialLinks || { facebook: '', instagram: '', x: '' });
-
-      const p = workflowRes.profile;
-      if (p) {
-        setProfile(p);
-        setPrimaryProvider(p.primaryProvider);
-        setGrokEnabled(p.providers.grok.enabled);
-        setGeminiEnabled(p.providers.gemini.enabled);
-        setGrokTextModel(p.providers.grok.textModel);
-        setGrokImageModel(p.providers.grok.imageModel);
-        setGeminiTextModel(p.providers.gemini.textModel);
-        setGeminiImageModel(p.providers.gemini.imageModel);
-        setGrokKeyInput(p.providers.grok.apiKey.set ? p.providers.grok.apiKey.hint : '');
-        setGeminiKeyInput(p.providers.gemini.apiKey.set ? p.providers.gemini.apiKey.hint : '');
-        setDayPrompts(p.dayPrompts || {});
-        setFbPageId(p.socialApiKeys?.facebook.pageId || '');
-        setFbAccessToken(
-          p.socialApiKeys?.facebook.accessToken.set
-            ? p.socialApiKeys.facebook.accessToken.hint
-            : '',
-        );
-        setIgAccountId(p.socialApiKeys?.instagram.accountId || '');
-        setIgAccessToken(
-          p.socialApiKeys?.instagram.accessToken.set
-            ? p.socialApiKeys.instagram.accessToken.hint
-            : '',
-        );
-        setAutoPublishOnApprove(!!p.autoPublishOnApprove);
+      const company = workflowRes.company;
+      if (company) {
+        setDayPrompts(company.dayPrompts || {});
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load Auto Social');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, searchParams]);
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, activeCompanyId]);
 
   useEffect(() => {
     if (!posts.some((p) => p.status === 'generating')) return undefined;
@@ -558,7 +610,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
     setError('');
     showToast(force ? 'Regenerating… 2–4 min' : 'Generating… 2–4 min');
     try {
-      const res = await generatePost(user, force, date);
+      const res = await generatePost(user, activeCompanyId, force, date);
       if (res.skipped) showToast(res.reason === 'already_exists' ? 'Already exists — use Regenerate' : 'Already in progress');
       else showToast(date ? `Post for ${shortDayLabel(date)} ready` : 'Post bundle ready');
       await refresh();
@@ -572,61 +624,48 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
     }
   }
 
-  async function handleSaveProfile() {
-    setSavingProfile(true);
+  async function handleSaveCompany(patch: Record<string, unknown>, message = 'Company saved') {
+    setSavingCompany(true);
     try {
-      const promptsToSave: Record<string, DayPromptEntry> = {};
-      for (const dateKey of weekDates) {
-        const entry = dayPrompts[dateKey];
-        if (entry?.prompt?.trim()) {
-          promptsToSave[dateKey] = entry;
-        } else {
-          promptsToSave[dateKey] = { prompt: '', provider: 'default' };
-        }
-      }
-      const body: Record<string, unknown> = {
-        primaryProvider,
-        providers: {
-          grok: {
-            enabled: grokEnabled,
-            textModel: grokTextModel,
-            imageModel: grokImageModel,
-          },
-          gemini: {
-            enabled: geminiEnabled,
-            textModel: geminiTextModel,
-            imageModel: geminiImageModel,
-          },
-        },
-        dayPrompts: promptsToSave,
-        autoPublishOnApprove,
-        socialApiKeys: {
-          facebook: { pageId: fbPageId },
-          instagram: { accountId: igAccountId },
-        },
-      };
-      if (grokKeyInput && !grokKeyInput.includes('••••')) {
-        (body.providers as { grok: { apiKey: string } }).grok.apiKey = grokKeyInput;
-      }
-      if (geminiKeyInput && !geminiKeyInput.includes('••••')) {
-        (body.providers as { gemini: { apiKey: string } }).gemini.apiKey = geminiKeyInput;
-      }
-      if (fbAccessToken && !fbAccessToken.includes('••••')) {
-        (body.socialApiKeys as { facebook: { accessToken: string } }).facebook.accessToken =
-          fbAccessToken;
-      }
-      if (igAccessToken && !igAccessToken.includes('••••')) {
-        (body.socialApiKeys as { instagram: { accessToken: string } }).instagram.accessToken =
-          igAccessToken;
-      }
-      await updateProfile(user, body);
-      showToast('Profile saved');
+      await updateCompany(user, activeCompanyId, patch);
+      showToast(message);
       await refresh();
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Save failed');
     } finally {
-      setSavingProfile(false);
+      setSavingCompany(false);
     }
+  }
+
+  async function handleAddCompany() {
+    const name = newCompanyName.trim();
+    if (!name) return;
+    setAddingCompany(true);
+    try {
+      const res = await createCompany(user, name);
+      setNewCompanyName('');
+      selectCompany(res.company.id);
+      showToast(`Created ${res.company.name}`);
+      await refresh();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Could not create company');
+    } finally {
+      setAddingCompany(false);
+    }
+  }
+
+  async function handleSaveWeekPrompts() {
+    const promptsToSave: Record<string, DayPromptEntry> = {};
+    for (const dateKey of weekDates) {
+      const entry = dayPrompts[dateKey];
+      if (entry?.prompt?.trim()) promptsToSave[dateKey] = entry;
+      else promptsToSave[dateKey] = { prompt: '', provider: 'default' };
+    }
+    await handleSaveCompany({ dayPrompts: promptsToSave }, 'Week prompts saved');
+  }
+
+  async function toggleAutoGenerate(enabled: boolean) {
+    await handleSaveCompany({ autoGenerateEnabled: enabled }, enabled ? 'Daily auto-generate ON' : 'Daily auto-generate OFF');
   }
 
   function updateDayPrompt(dateKey: string, patch: Partial<DayPromptEntry>) {
@@ -639,19 +678,6 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
       }
       return { ...prev, [dateKey]: next };
     });
-  }
-
-  async function handleSaveConfig() {
-    setSavingConfig(true);
-    try {
-      await updateConfig(user, { notifyPhone, notifyEnabled, socialLinks });
-      showToast('Settings saved');
-      await refresh();
-    } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Save failed');
-    } finally {
-      setSavingConfig(false);
-    }
   }
 
   const stats = useMemo(() => {
@@ -681,15 +707,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
             Auto Social
           </h2>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Daily AI pipeline: research → captions → images → review → post. Grok/Gemini settings, week-ahead prompts, and social API keys are saved per Google account.
-            {profile && (
-              <span className="block mt-1 text-xs text-slate-500">
-                Active provider: <strong className="text-bee-amber">{primaryProvider}</strong>
-                {profile.serverGeminiAvailable && !profile.providers.gemini.apiKey.set && (
-                  <span> · Gemini can use server key</span>
-                )}
-              </span>
-            )}
+            Manage daily social posts per company. Each tab has its own brand, AI providers, schedule, and post queue.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -698,7 +716,7 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
             onClick={() => setShowSettings((v) => !v)}
             className="px-4 py-2 rounded-xl border border-white/10 text-slate-300 text-sm hover:bg-white/5"
           >
-            Settings
+            {showSettings ? 'Hide settings' : 'Company settings'}
           </button>
           <button
             type="button"
@@ -733,10 +751,85 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-bee-amber/30 bg-bee-amber/5 px-4 py-3 text-sm text-slate-300">
-        <strong className="text-bee-amber">Where to find this:</strong> Auto Social lives at{' '}
-        <code className="text-xs bg-black/30 px-1.5 py-0.5 rounded">/admin?tab=auto-social</code>.
-        The old <code className="text-xs bg-black/30 px-1.5 py-0.5 rounded">/autoposter</code> link now redirects here.
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+        {companies.map((company) => (
+          <button
+            key={company.id}
+            type="button"
+            onClick={() => selectCompany(company.id)}
+            className={cn(
+              'px-4 py-2 rounded-t-lg text-sm font-medium border-b-2 transition-colors',
+              company.id === activeCompanyId
+                ? 'border-bee-amber text-bee-amber bg-bee-amber/10'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-white/5',
+            )}
+          >
+            {company.name}
+            {company.autoGenerateEnabled && (
+              <span className="ml-2 text-[10px] uppercase text-green-400">Auto</span>
+            )}
+          </button>
+        ))}
+        <div className="flex items-center gap-1 ml-1">
+          <input
+            value={newCompanyName}
+            onChange={(e) => setNewCompanyName(e.target.value)}
+            placeholder="New company"
+            className="px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white w-28"
+          />
+          <button
+            type="button"
+            disabled={addingCompany || !newCompanyName.trim()}
+            onClick={handleAddCompany}
+            className="p-2 rounded-lg border border-white/10 text-slate-300 hover:bg-white/5 disabled:opacity-40"
+            title="Add company tab"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {activeCompany && (
+        <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input
+                type="checkbox"
+                checked={activeCompany.autoGenerateEnabled}
+                onChange={(e) => toggleAutoGenerate(e.target.checked)}
+                className="rounded"
+              />
+              Daily auto-generate
+            </label>
+            <span className="text-xs text-slate-500">
+              {activeCompany.autoGenerateEnabled
+                ? `Runs ~${activeCompany.scheduleHour}:00 AM PT`
+                : 'Manual generate only'}
+            </span>
+            <span className="text-xs text-slate-500">
+              Text: <strong className="text-slate-300">{activeCompany.textProvider}</strong>
+              {' · '}
+              Image: <strong className="text-slate-300">{activeCompany.imageProvider}</strong>
+            </span>
+          </div>
+          <label className="text-xs text-slate-400 flex items-center gap-2">
+            Schedule hour (PT)
+            <select
+              value={activeCompany.scheduleHour}
+              onChange={(e) => handleSaveCompany({ scheduleHour: Number(e.target.value) })}
+              className="px-2 py-1 rounded bg-black/40 border border-white/10 text-white"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>{i}:00</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-bee-amber/20 bg-bee-amber/5 px-4 py-3 text-sm text-slate-300">
+        <strong className="text-bee-amber">{activeCompany?.name || 'Company'}:</strong> research one article → write FB/IG/X captions → generate images → you review & publish.
+        Use <strong className="text-white">week prompts</strong> below to steer each day&apos;s topic.
       </div>
 
       <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-4">
@@ -814,217 +907,137 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
         </div>
         <button
           type="button"
-          disabled={savingProfile}
-          onClick={handleSaveProfile}
+          disabled={savingCompany}
+          onClick={handleSaveWeekPrompts}
           className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm hover:bg-white/5 disabled:opacity-50"
         >
-          {savingProfile ? 'Saving…' : 'Save week prompts'}
+          {savingCompany ? 'Saving…' : 'Save week prompts'}
         </button>
       </section>
 
-      <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-white">AI providers (saved to your profile)</h3>
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span>Primary:</span>
-            <select
-              value={primaryProvider}
-              onChange={(e) => setPrimaryProvider(e.target.value as 'grok' | 'gemini')}
-              className="px-2 py-1 rounded-lg bg-black/40 border border-white/10 text-white text-xs"
-            >
-              <option value="grok">Grok</option>
-              <option value="gemini">Gemini</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-white/10 p-4 space-y-3">
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="text-sm font-medium text-white">Grok (xAI)</span>
-              <input
-                type="checkbox"
-                checked={grokEnabled}
-                onChange={(e) => setGrokEnabled(e.target.checked)}
-                className="rounded"
-              />
-            </label>
-            <p className="text-xs text-slate-500">
-              Grok generates the article research, captions, and images when enabled.
-            </p>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">xAI API key</span>
-              <input
-                type="password"
-                value={grokKeyInput}
-                onChange={(e) => setGrokKeyInput(e.target.value)}
-                placeholder="xai-..."
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
+      {showSettings && activeCompany && (
+        <>
+          <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-5">
+            <h3 className="text-sm font-semibold text-white">AI providers for {activeCompany.name}</h3>
+            <div className="grid sm:grid-cols-2 gap-4">
               <label className="block">
-                <span className="text-xs text-slate-500 mb-1 block">Text model</span>
+                <span className="text-xs text-slate-500 mb-1 block">Text generation</span>
                 <select
-                  value={grokTextModel}
-                  onChange={(e) => setGrokTextModel(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                  value={activeCompany.textProvider}
+                  onChange={(e) => handleSaveCompany({ textProvider: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
                 >
-                  {GROK_TEXT_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
+                  <option value="gemini">Gemini</option>
+                  <option value="grok">Grok</option>
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs text-slate-500 mb-1 block">Image model</span>
+                <span className="text-xs text-slate-500 mb-1 block">Image generation</span>
                 <select
-                  value={grokImageModel}
-                  onChange={(e) => setGrokImageModel(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
+                  value={activeCompany.imageProvider}
+                  onChange={(e) => handleSaveCompany({ imageProvider: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
                 >
-                  {GROK_IMAGE_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
+                  <option value="gemini">Gemini</option>
+                  <option value="grok">Grok</option>
                 </select>
               </label>
             </div>
-          </div>
 
-          <div className="rounded-xl border border-white/10 p-4 space-y-3">
-            <label className="flex items-center justify-between gap-3 cursor-pointer">
-              <span className="text-sm font-medium text-white">Gemini (Google)</span>
-              <input
-                type="checkbox"
-                checked={geminiEnabled}
-                onChange={(e) => setGeminiEnabled(e.target.checked)}
-                className="rounded"
+            <div className="grid lg:grid-cols-2 gap-4">
+              <CompanyProviderCard
+                label="Grok (xAI)"
+                enabled={activeCompany.providers.grok.enabled}
+                textModel={activeCompany.providers.grok.textModel}
+                imageModel={activeCompany.providers.grok.imageModel}
+                apiKeyHint={activeCompany.providers.grok.apiKey.hint}
+                textModels={GROK_TEXT_MODELS}
+                imageModels={GROK_IMAGE_MODELS}
+                onSave={(patch) => handleSaveCompany({ providers: { grok: patch } })}
               />
-            </label>
-            <p className="text-xs text-slate-500">
-              Gemini generates article, captions, and images. Leave key blank to use the server key on Cloud Run.
-            </p>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">Gemini API key (optional)</span>
-              <input
-                type="password"
-                value={geminiKeyInput}
-                onChange={(e) => setGeminiKeyInput(e.target.value)}
-                placeholder={profile?.serverGeminiAvailable ? 'Using server key if blank' : 'AIza...'}
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              <CompanyProviderCard
+                label="Gemini (Google)"
+                enabled={activeCompany.providers.gemini.enabled}
+                textModel={activeCompany.providers.gemini.textModel}
+                imageModel={activeCompany.providers.gemini.imageModel}
+                apiKeyHint={activeCompany.providers.gemini.apiKey.hint}
+                serverKeyNote={activeCompany.serverGeminiAvailable}
+                textModels={GEMINI_TEXT_MODELS}
+                imageModels={GEMINI_IMAGE_MODELS}
+                onSave={(patch) => handleSaveCompany({ providers: { gemini: patch } })}
               />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="block">
-                <span className="text-xs text-slate-500 mb-1 block">Text model</span>
-                <select
-                  value={geminiTextModel}
-                  onChange={(e) => setGeminiTextModel(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
-                >
-                  {GEMINI_TEXT_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs text-slate-500 mb-1 block">Image model</span>
-                <select
-                  value={geminiImageModel}
-                  onChange={(e) => setGeminiImageModel(e.target.value)}
-                  className="w-full px-2 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white"
-                >
-                  {GEMINI_IMAGE_MODELS.map((m) => (
-                    <option key={m.id} value={m.id}>{m.label}</option>
-                  ))}
-                </select>
-              </label>
             </div>
-          </div>
-        </div>
+          </section>
 
-        <button
-          type="button"
-          disabled={savingProfile}
-          onClick={handleSaveProfile}
-          className="px-4 py-2 rounded-lg bg-bee-amber text-bee-black font-semibold text-sm disabled:opacity-50"
-        >
-          {savingProfile ? 'Saving…' : 'Save AI provider profile'}
-        </button>
-      </section>
+          <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-4">
+            <h3 className="text-sm font-semibold text-white">Brand & knowledge</h3>
+            <label className="block">
+              <span className="text-xs text-slate-500 mb-1 block">Website URL</span>
+              <input
+                defaultValue={activeCompany.siteUrl}
+                onBlur={(e) => e.target.value !== activeCompany.siteUrl && handleSaveCompany({ siteUrl: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-slate-500 mb-1 block">Brand voice</span>
+              <textarea
+                defaultValue={activeCompany.brandVoice}
+                onBlur={(e) => e.target.value !== activeCompany.brandVoice && handleSaveCompany({ brandVoice: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs text-slate-500 mb-1 block">Knowledge base (injected into captions)</span>
+              <textarea
+                defaultValue={activeCompany.knowledge}
+                onBlur={(e) => e.target.value !== activeCompany.knowledge && handleSaveCompany({ knowledge: e.target.value })}
+                rows={5}
+                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+              />
+            </label>
+          </section>
 
-      <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-4">
-        <div>
-          <h3 className="text-sm font-semibold text-white">Facebook & Instagram API keys</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Required for auto-posting. After saving keys, use Post to Facebook/Instagram on each post — or enable auto-publish on approve below.
-          </p>
-        </div>
-        <label className="flex items-center gap-3 cursor-pointer rounded-xl border border-white/10 p-4">
-          <input
-            type="checkbox"
-            checked={autoPublishOnApprove}
-            onChange={(e) => setAutoPublishOnApprove(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm text-slate-300">
-            Auto-publish to Facebook & Instagram when I click Approve
-          </span>
-        </label>
-        <div className="grid lg:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-white/10 p-4 space-y-3">
-            <p className="text-sm font-medium text-white">Facebook</p>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">Page ID</span>
-              <input
-                value={fbPageId}
-                onChange={(e) => setFbPageId(e.target.value)}
-                placeholder="1234567890"
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">Page access token</span>
-              <input
-                type="password"
-                value={fbAccessToken}
-                onChange={(e) => setFbAccessToken(e.target.value)}
-                placeholder="EAA..."
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-          </div>
-          <div className="rounded-xl border border-white/10 p-4 space-y-3">
-            <p className="text-sm font-medium text-white">Instagram</p>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">Business account ID</span>
-              <input
-                value={igAccountId}
-                onChange={(e) => setIgAccountId(e.target.value)}
-                placeholder="178414..."
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs text-slate-500 mb-1 block">Access token</span>
-              <input
-                type="password"
-                value={igAccessToken}
-                onChange={(e) => setIgAccessToken(e.target.value)}
-                placeholder="IGQ..."
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-          </div>
-        </div>
-        <button
-          type="button"
-          disabled={savingProfile}
-          onClick={handleSaveProfile}
-          className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm hover:bg-white/5 disabled:opacity-50"
-        >
-          {savingProfile ? 'Saving…' : 'Save social API keys'}
-        </button>
-      </section>
+          <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-4">
+            <h3 className="text-sm font-semibold text-white">Social links & SMS</h3>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {(['facebook', 'instagram', 'x'] as const).map((key) => (
+                <label key={key} className="block">
+                  <span className="text-xs text-slate-500 capitalize mb-1 block">{key} URL</span>
+                  <input
+                    defaultValue={activeCompany.socialLinks[key]}
+                    onBlur={(e) => {
+                      if (e.target.value !== activeCompany.socialLinks[key]) {
+                        handleSaveCompany({ socialLinks: { ...activeCompany.socialLinks, [key]: e.target.value } });
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="flex-grow max-w-xs">
+                <span className="text-xs text-slate-500 mb-1 block">SMS phone (E.164)</span>
+                <input
+                  defaultValue={activeCompany.notifyPhone}
+                  onBlur={(e) => e.target.value !== activeCompany.notifyPhone && handleSaveCompany({ notifyPhone: e.target.value })}
+                  placeholder="+1..."
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => sendTestSms(user, activeCompanyId, activeCompany.notifyPhone).then(() => showToast('Test SMS sent')).catch((e) => showToast(e.message))}
+                className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm"
+              >
+                Test SMS
+              </button>
+            </div>
+          </section>
+        </>
+      )}
 
       <div className="grid grid-cols-3 gap-3 max-w-lg">
         {[
@@ -1049,65 +1062,6 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
         </section>
       )}
 
-      {showSettings && (
-        <section className="rounded-2xl border border-white/10 p-5 bg-black/20 space-y-4">
-          <h3 className="text-sm font-semibold text-white">Social profiles & notifications</h3>
-          <p className="text-xs text-slate-400">
-            Add your profile or page URLs. &quot;Open Facebook/Instagram/X&quot; uses these links. X also pre-fills the tweet text.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {(['facebook', 'instagram', 'x'] as const).map((key) => (
-              <label key={key} className="block">
-                <span className="text-xs text-slate-500 capitalize mb-1 block">{key} profile URL</span>
-                <input
-                  value={socialLinks[key]}
-                  onChange={(e) => setSocialLinks((s) => ({ ...s, [key]: e.target.value }))}
-                  placeholder={key === 'x' ? 'https://twitter.com/yourhandle' : `https://${key}.com/...`}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-                />
-              </label>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex-grow max-w-xs">
-              <span className="text-xs text-slate-500 mb-1 block">SMS phone (E.164)</span>
-              <input
-                value={notifyPhone}
-                onChange={(e) => setNotifyPhone(e.target.value)}
-                placeholder="+1..."
-                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-sm text-white"
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-400">
-              <input
-                type="checkbox"
-                checked={notifyEnabled}
-                onChange={(e) => setNotifyEnabled(e.target.checked)}
-                className="rounded"
-              />
-              Daily SMS at 7 AM PT
-            </label>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={savingConfig}
-              onClick={handleSaveConfig}
-              className="px-4 py-2 rounded-lg bg-bee-amber text-bee-black font-semibold text-sm"
-            >
-              {savingConfig ? 'Saving…' : 'Save settings'}
-            </button>
-            <button
-              type="button"
-              onClick={() => sendTestSms(user, notifyPhone).then(() => showToast('Test SMS sent')).catch((e) => showToast(e.message))}
-              className="px-4 py-2 rounded-lg border border-white/10 text-slate-300 text-sm"
-            >
-              Test SMS
-            </button>
-          </div>
-        </section>
-      )}
-
       {error && (
         <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">{error}</div>
       )}
@@ -1127,8 +1081,9 @@ export default function AutoSocialPanel({ user }: AutoSocialPanelProps) {
               <PostCard
                 post={post}
                 user={user}
-                config={config}
-                isToday={post.date === today || post.id === today}
+                companyId={activeCompanyId}
+                company={activeCompany}
+                isToday={post.date === today || post.id.endsWith(`_${today}`)}
                 onRefresh={refresh}
                 onToast={showToast}
               />

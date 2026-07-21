@@ -108,8 +108,40 @@ export interface PublishStatusEntry {
   error?: string;
 }
 
+export interface SocialCompany {
+  id: string;
+  name: string;
+  sortOrder: number;
+  autoGenerateEnabled: boolean;
+  scheduleHour: number;
+  siteUrl: string;
+  brandVoice: string;
+  imageStyle: string;
+  knowledge: string;
+  topics: Array<{ slug: string; title: string; angle: string; siteLink: string }>;
+  textProvider: 'grok' | 'gemini';
+  imageProvider: 'grok' | 'gemini';
+  providers: {
+    grok: ProviderSettings;
+    gemini: ProviderSettings;
+  };
+  socialLinks: SocialLinks;
+  notifyPhone: string;
+  notifyEnabled: boolean;
+  dayPrompts?: Record<string, DayPromptEntry>;
+  autoPublishOnApprove?: boolean;
+  socialApiKeys?: {
+    facebook: SocialApiKeyFields;
+    instagram: SocialApiKeyFields;
+  };
+  serverGeminiAvailable?: boolean;
+  updatedAt?: string | null;
+}
+
 export interface SocialPost {
   id: string;
+  companyId?: string;
+  companyName?: string;
   date: string;
   status: string;
   topic?: { slug?: string; title?: string; angle?: string; siteLink?: string };
@@ -126,7 +158,7 @@ export interface SocialPost {
   imagePrompt?: string;
   imageHeadline?: string;
   workflowLog?: WorkflowStep[];
-  modelsUsed?: { provider?: string; text?: string; image?: string };
+  modelsUsed?: { provider?: string; textProvider?: string; imageProvider?: string; text?: string; image?: string };
   provider?: string;
   publishStatus?: {
     facebook?: PublishStatusEntry;
@@ -151,18 +183,39 @@ async function autoSocialRequest<T>(
   });
 }
 
-export const listPosts = (user: User, limit = 30) =>
-  autoSocialRequest<{ posts: SocialPost[]; stats: unknown }>(user, 'GET', {
-    query: { action: 'list', limit: String(limit) },
+export const listCompanies = (user: User) =>
+  autoSocialRequest<{ companies: SocialCompany[] }>(user, 'GET', { query: { action: 'companies' } });
+
+export const getCompany = (user: User, companyId: string) =>
+  autoSocialRequest<{ company: SocialCompany }>(user, 'GET', {
+    query: { action: 'company', companyId },
   });
 
-export const getWorkflow = (user: User) =>
+export const createCompany = (user: User, name: string) =>
+  autoSocialRequest<{ company: SocialCompany }>(user, 'POST', {
+    body: { action: 'createCompany', name },
+  });
+
+export const updateCompany = (user: User, companyId: string, updates: Record<string, unknown>) =>
+  autoSocialRequest<{ company: SocialCompany }>(user, 'POST', {
+    body: { action: 'updateCompany', companyId, ...updates },
+  });
+
+export const deleteCompanyApi = (user: User, companyId: string) =>
+  autoSocialRequest(user, 'POST', { body: { action: 'deleteCompany', companyId } });
+
+export const listPosts = (user: User, companyId: string, limit = 30) =>
+  autoSocialRequest<{ posts: SocialPost[]; stats: unknown; companyId: string }>(user, 'GET', {
+    query: { action: 'list', companyId, limit: String(limit) },
+  });
+
+export const getWorkflow = (user: User, companyId: string) =>
   autoSocialRequest<{
     pipeline: PipelineStep[];
     config: AutoSocialConfig;
+    company: SocialCompany | null;
     profile: UserAutoSocialProfile | null;
-    models: { text: string; image: string };
-  }>(user, 'GET', { query: { action: 'workflow' } });
+  }>(user, 'GET', { query: { action: 'workflow', companyId } });
 
 export const getProfile = (user: User) =>
   autoSocialRequest<{ profile: UserAutoSocialProfile }>(user, 'GET', {
@@ -179,23 +232,23 @@ export const getConfig = (user: User) =>
     query: { action: 'config' },
   });
 
-export const generatePost = (user: User, force = false, date?: string) =>
+export const generatePost = (user: User, companyId: string, force = false, date?: string) =>
   autoSocialRequest<{ post: SocialPost; skipped?: boolean; reason?: string }>(user, 'POST', {
-    body: { action: 'generate', force, ...(date ? { date } : {}) },
+    body: { action: 'generate', companyId, force, ...(date ? { date } : {}) },
   });
 
-export const approvePost = (user: User, postId: string) =>
-  autoSocialRequest(user, 'POST', { body: { action: 'approve', postId } });
+export const approvePost = (user: User, companyId: string, postId: string) =>
+  autoSocialRequest(user, 'POST', { body: { action: 'approve', companyId, postId } });
 
-export const rejectPost = (user: User, postId: string) =>
-  autoSocialRequest(user, 'POST', { body: { action: 'reject', postId } });
+export const rejectPost = (user: User, companyId: string, postId: string) =>
+  autoSocialRequest(user, 'POST', { body: { action: 'reject', companyId, postId } });
 
-export const markPosted = (user: User, postId: string) =>
-  autoSocialRequest(user, 'POST', { body: { action: 'markPosted', postId } });
+export const markPosted = (user: User, companyId: string, postId: string) =>
+  autoSocialRequest(user, 'POST', { body: { action: 'markPosted', companyId, postId } });
 
-export const publishPost = (user: User, postId: string, platforms: Array<'facebook' | 'instagram'>) =>
+export const publishPost = (user: User, companyId: string, postId: string, platforms: Array<'facebook' | 'instagram'>) =>
   autoSocialRequest<{ post: SocialPost }>(user, 'POST', {
-    body: { action: 'publish', postId, platforms },
+    body: { action: 'publish', companyId, postId, platforms },
   });
 
 export const updateCaptions = (
@@ -209,8 +262,8 @@ export const updateConfig = (user: User, config: Partial<AutoSocialConfig>) =>
     body: { action: 'updateConfig', ...config },
   });
 
-export const sendTestSms = (user: User, phone: string) =>
-  autoSocialRequest(user, 'POST', { body: { action: 'testSms', phone } });
+export const sendTestSms = (user: User, companyId: string, phone: string) =>
+  autoSocialRequest(user, 'POST', { body: { action: 'testSms', companyId, phone } });
 
 export function copyPostBundle(post: SocialPost, platform: PlatformId) {
   const p = post[platform];

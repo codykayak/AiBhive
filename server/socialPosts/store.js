@@ -5,6 +5,17 @@ const POSTS_COLLECTION = 'socialPosts';
 const CONFIG_DOC = 'socialConfig/settings';
 const LOCK_TTL_MS = 12 * 60 * 1000;
 
+export function postDocId(companyId, dateKey) {
+  return `${companyId}_${dateKey}`;
+}
+
+export function parsePostDocId(docId) {
+  const match = String(docId).match(/^(.+)_(\d{4}-\d{2}-\d{2})$/);
+  if (match) return { companyId: match[1], dateKey: match[2] };
+  if (/^\d{4}-\d{2}-\d{2}$/.test(docId)) return { companyId: 'aibhive', dateKey: docId };
+  return { companyId: 'aibhive', dateKey: docId };
+}
+
 let firestoreDb = null;
 let mediaBucket = null;
 
@@ -48,18 +59,40 @@ export async function saveConfig(updates) {
   return getConfig();
 }
 
-export async function getPostByDate(dateKey) {
-  const snap = await db().collection(POSTS_COLLECTION).doc(dateKey).get();
+export async function getPostByDate(companyId, dateKey) {
+  const id = postDocId(companyId, dateKey);
+  let snap = await db().collection(POSTS_COLLECTION).doc(id).get();
+  if (!snap.exists && companyId === 'aibhive') {
+    snap = await db().collection(POSTS_COLLECTION).doc(dateKey).get();
+  }
   return snap.exists ? { id: snap.id, ...snap.data() } : null;
 }
 
-export async function listPosts(limit = 30) {
+export async function listPosts(companyId, limit = 30) {
   const snap = await db()
     .collection(POSTS_COLLECTION)
+    .where('companyId', '==', companyId)
     .orderBy('createdAt', 'desc')
     .limit(limit)
     .get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  if (!snap.empty) {
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
+
+  // Legacy posts without companyId field (AiBhive only)
+  if (companyId === 'aibhive') {
+    const legacy = await db()
+      .collection(POSTS_COLLECTION)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+    return legacy.docs
+      .map((d) => ({ id: d.id, ...d.data() }))
+      .filter((p) => !p.companyId || p.companyId === 'aibhive');
+  }
+
+  return [];
 }
 
 export async function savePost(postId, data) {
@@ -97,8 +130,9 @@ export async function patchPostCaptions(postId, updates) {
   return { id: updated.id, ...updated.data() };
 }
 
-export async function acquireGenerationLock(dateKey) {
-  const ref = db().collection(POSTS_COLLECTION).doc(dateKey);
+export async function acquireGenerationLock(companyId, dateKey) {
+  const id = postDocId(companyId, dateKey);
+  const ref = db().collection(POSTS_COLLECTION).doc(id);
   const snap = await ref.get();
   const existing = snap.exists ? snap.data() : null;
 
@@ -106,12 +140,13 @@ export async function acquireGenerationLock(dateKey) {
     const started = existing.generationStartedAt?.toDate?.() || new Date(0);
     const age = Date.now() - started.getTime();
     if (age < LOCK_TTL_MS) {
-      return { acquired: false, reason: 'in_progress', post: { id: dateKey, ...existing } };
+      return { acquired: false, reason: 'in_progress', post: { id, ...existing } };
     }
   }
 
   await ref.set(
     {
+      companyId,
       date: dateKey,
       status: 'generating',
       generationStartedAt: Timestamp.now(),
@@ -123,9 +158,9 @@ export async function acquireGenerationLock(dateKey) {
   return { acquired: true, post: existing };
 }
 
-export async function uploadSocialImage(postId, platform, buffer, contentType = 'image/png') {
+export async function uploadSocialImage(companyId, postId, platform, buffer, contentType = 'image/png') {
   if (!mediaBucket) throw new Error('Media bucket not configured.');
-  const path = `social-posts/${postId}/${platform}.png`;
+  const path = `social-posts/${companyId}/${postId}/${platform}.png`;
   const file = mediaBucket.file(path);
   const downloadToken = randomUUID();
 

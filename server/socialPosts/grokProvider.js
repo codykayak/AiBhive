@@ -198,7 +198,7 @@ KNOWLEDGE BASE:
 ${knowledge}
 
 PLATFORMS:
-${platformSpecs}
+${formatPlatformSpecsForPrompt(platformSpecs)}
 
 Return ONLY valid JSON:
 {
@@ -211,7 +211,13 @@ Return ONLY valid JSON:
 }`;
 
   const raw = await grokChat(apiKey, textModel, prompt);
-  return extractJson(raw);
+  return { captions: extractJson(raw), raw };
+}
+
+export function formatPlatformSpecsForPrompt(platformSpecs) {
+  return Object.entries(platformSpecs)
+    .map(([id, spec]) => `${id}: ${spec.captionGuide} (limit ~${spec.charLimit} chars)`)
+    .join('\n');
 }
 
 export async function grokGeneratePlatformImage(apiKey, imageModel, imagePrompt, brand, aspectHint) {
