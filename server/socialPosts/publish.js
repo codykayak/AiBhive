@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import { getSocialApiCredentials } from './userProfile.js';
-import { getPostByDate, savePost } from './store.js';
+import { getCompanySocialCredentials } from './companies.js';
+import { getPostByDate, parsePostDocId, savePost } from './store.js';
 
 const GRAPH_API = 'https://graph.facebook.com/v21.0';
 
@@ -118,8 +118,8 @@ export async function publishToInstagram(post, credentials) {
   };
 }
 
-export async function publishSocialPost(post, userProfile, platforms = ['facebook', 'instagram']) {
-  const keys = getSocialApiCredentials(userProfile);
+export async function publishSocialPost(post, company, platforms = ['facebook', 'instagram']) {
+  const keys = getCompanySocialCredentials(company);
   const results = {};
 
   for (const platform of platforms) {
@@ -141,11 +141,12 @@ export async function publishSocialPost(post, userProfile, platforms = ['faceboo
   return results;
 }
 
-export async function publishAndSavePost(postId, userProfile, platforms) {
-  const post = await getPostByDate(postId);
+export async function publishAndSavePost(postId, company, platforms) {
+  const { companyId, dateKey } = parsePostDocId(postId);
+  const post = await getPostByDate(company?.id || companyId, dateKey);
   if (!post) throw new Error('Post not found.');
 
-  const results = await publishSocialPost(post, userProfile, platforms);
+  const results = await publishSocialPost(post, company, platforms);
   const publishStatus = { ...(post.publishStatus || {}), ...results };
 
   const requested = platforms.filter((p) => p === 'facebook' || p === 'instagram');
