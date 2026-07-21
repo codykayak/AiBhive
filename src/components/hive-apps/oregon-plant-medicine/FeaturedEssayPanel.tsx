@@ -330,19 +330,19 @@ export default function FeaturedEssayPanel({
         onKeyDown={(e) => e.key === 'Enter' && setOpen(true)}
         className={`group relative rounded-2xl border bg-slate-900/70 overflow-hidden cursor-pointer transition-all text-left shadow-lg ${theme.border} ring-1 ${theme.ring} ${
           spanGrid ? 'sm:col-span-2 lg:col-span-2' : ''
-        } ${fillHeight ? 'h-full flex flex-col' : ''}`}
+        } ${fillHeight ? 'h-full w-full flex flex-col' : ''}`}
       >
         <div
           className={
             fillHeight
-              ? 'flex flex-col flex-1 min-h-0 h-full'
+              ? 'grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0 h-full'
               : 'grid sm:grid-cols-2 min-h-[220px]'
           }
         >
           <div
             className={
               fillHeight
-                ? 'relative flex-[1.15] min-h-[200px] overflow-hidden'
+                ? 'relative min-h-[200px] md:min-h-0 md:h-full overflow-hidden'
                 : 'relative h-48 sm:h-auto overflow-hidden'
             }
           >
@@ -360,8 +360,8 @@ export default function FeaturedEssayPanel({
             </span>
           </div>
           <div
-            className={`p-5 sm:p-6 flex flex-col justify-center ${
-              fillHeight ? 'sm:p-7 lg:p-8' : ''
+            className={`p-5 sm:p-6 flex flex-col justify-center min-h-0 ${
+              fillHeight ? 'h-full md:p-7' : ''
             }`}
           >
             <p className={`text-[10px] font-black uppercase tracking-widest ${theme.label}`}>

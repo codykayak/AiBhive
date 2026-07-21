@@ -743,10 +743,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           </div>
         </nav>
 
-        <div className={`${expanded ? 'px-4 sm:px-8 py-3' : 'px-4 py-2'}`}>
-          {authError ? <p className="text-xs text-red-300 mb-2 max-w-3xl mx-auto w-full">{authError}</p> : null}
-          <div className="max-w-6xl mx-auto flex flex-col items-center w-full">
-            <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="w-full max-w-3xl mb-3" />
+        <div className="border-b border-emerald-500/10 bg-slate-950/70">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
+            {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
+            <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
             {tab !== 'home' && userLocation ? (
               <button
                 type="button"
@@ -754,7 +754,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   setLocationModalStep('location');
                   setShowLocationModal(true);
                 }}
-                className="self-center sm:self-start inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
               >
                 <MapPin className="w-3.5 h-3.5" />
                 {locationLabel(userLocation)}

@@ -351,41 +351,67 @@ function PlantCardsSection({
   const [sideA, sideB] = plants;
 
   return (
-    <section className={showFeatured ? 'mb-10' : `rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
+    <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
       <SectionHeader theme={theme} tab={tab} onNavigate={onNavigate} />
 
       {showFeatured ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-2 gap-4 lg:min-h-[420px]">
-          <div className="sm:col-span-2 lg:col-span-2 lg:row-span-2 min-h-[280px] lg:min-h-0 flex">
+        <>
+          <div className="hidden lg:flex gap-4 items-stretch min-h-[440px]">
+            <div className="flex-[3] min-w-0 flex">
+              <FeaturedEssayPanel
+                key="home-featured-desktop"
+                essay={featuredEssay}
+                onOpenPlant={onOpenPlant}
+                spanGrid={false}
+                fillHeight
+              />
+            </div>
+            <div className="flex-[2] min-w-0 flex flex-col gap-4">
+              {sideA ? (
+                <PlantCard
+                  plant={sideA}
+                  tab={tab}
+                  theme={theme}
+                  onOpenPlant={onOpenPlant}
+                  stretch
+                  className="flex-1 min-h-0"
+                />
+              ) : null}
+              {sideB ? (
+                <PlantCard
+                  plant={sideB}
+                  tab={tab}
+                  theme={theme}
+                  onOpenPlant={onOpenPlant}
+                  stretch
+                  className="flex-1 min-h-0"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          <div className="lg:hidden space-y-4">
             <FeaturedEssayPanel
-              key="home-featured"
+              key="home-featured-mobile"
               essay={featuredEssay}
               onOpenPlant={onOpenPlant}
               spanGrid={false}
-              fillHeight
             />
+            {plants.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                {plants.slice(0, 2).map((plant) => (
+                  <PlantCard
+                    key={plant.id}
+                    plant={plant}
+                    tab={tab}
+                    theme={theme}
+                    onOpenPlant={onOpenPlant}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
-          {sideA ? (
-            <PlantCard
-              plant={sideA}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              stretch
-              className="h-full min-h-[168px] lg:col-start-3 lg:row-start-1"
-            />
-          ) : null}
-          {sideB ? (
-            <PlantCard
-              plant={sideB}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              stretch
-              className="h-full min-h-[168px] lg:col-start-3 lg:row-start-2"
-            />
-          ) : null}
-        </div>
+        </>
       ) : (
         <div className="grid sm:grid-cols-3 gap-4 items-start">
           {plants.map((plant) => (
