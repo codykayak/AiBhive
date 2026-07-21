@@ -8,7 +8,7 @@ function parseApiError(text: string, status: number): string {
     return json.error ?? text;
   } catch {
     if (text.includes('Payload Too Large') || status === 413) {
-      return 'Upload too large — try fewer pages per batch.';
+      return 'Photo upload too large — the app will compress images automatically; try again or use a smaller photo.';
     }
     if (text.trimStart().startsWith('<!')) {
       return `Request failed (${status}). If this persists, restart the dev server.`;

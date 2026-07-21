@@ -117,11 +117,29 @@ function serializePost(id, d) {
     title: d.title || null,
     text: d.text || '',
     imageUrl: d.imageUrl || null,
+    imageUrls: Array.isArray(d.imageUrls) ? d.imageUrls.filter(Boolean) : d.imageUrl ? [d.imageUrl] : [],
     status: d.status,
     upvoteCount: d.upvoteCount || 0,
     createdAt: d.createdAt?.toDate?.()?.toISOString?.() || d.createdAt || null,
     viewerHasUpvoted: !!d.viewerHasUpvoted,
   };
+}
+
+async function resolvePostMediaUrls(gcsBucket, post) {
+  if (!gcsBucket) return post;
+  if (post.authorAvatarUrl) {
+    post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+  }
+  if (post.imageUrls?.length) {
+    post.imageUrls = await Promise.all(
+      post.imageUrls.map((url) => resolvePlantMedicineMediaUrl(gcsBucket, url)),
+    );
+    post.imageUrl = post.imageUrls[0] || null;
+  } else if (post.imageUrl) {
+    post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
+    post.imageUrls = [post.imageUrl];
+  }
+  return post;
 }
 
 export async function getProfile(db, uid, gcsBucket = null) {
@@ -165,13 +183,8 @@ export async function listPostsForPlant(db, plantId, { type, viewerUid, gcsBucke
     posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
   }
   if (gcsBucket) {
-    for (const post of posts) {
-      if (post.authorAvatarUrl) {
-        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
-      }
-      if (post.imageUrl) {
-        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
-      }
+    for (let i = 0; i < posts.length; i += 1) {
+      posts[i] = await resolvePostMediaUrls(gcsBucket, posts[i]);
     }
   }
   posts.sort((a, b) => {
@@ -204,13 +217,8 @@ export async function listPostsForTopic(db, library, topicId, { type, viewerUid,
     posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
   }
   if (gcsBucket) {
-    for (const post of posts) {
-      if (post.authorAvatarUrl) {
-        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
-      }
-      if (post.imageUrl) {
-        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
-      }
+    for (let i = 0; i < posts.length; i += 1) {
+      posts[i] = await resolvePostMediaUrls(gcsBucket, posts[i]);
     }
   }
   posts.sort((a, b) => {
@@ -234,13 +242,8 @@ export async function listCommunityFeed(db, { viewerUid, gcsBucket, limit = 50 }
     posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
   }
   if (gcsBucket) {
-    for (const post of posts) {
-      if (post.authorAvatarUrl) {
-        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
-      }
-      if (post.imageUrl) {
-        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
-      }
+    for (let i = 0; i < posts.length; i += 1) {
+      posts[i] = await resolvePostMediaUrls(gcsBucket, posts[i]);
     }
   }
   posts.sort((a, b) => {
@@ -281,14 +284,20 @@ export async function createPost(
 export async function createFeedPost(
   db,
   FieldValue,
-  { author, title, text, imageUrl, plantId },
+  { author, title, text, imageUrl, imageUrls, plantId },
   gcsBucket = null,
 ) {
   const trimmedTitle = clip(title, 120);
   if (!trimmedTitle) throw new Error('Title is required.');
 
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
-  const hasImage = !!imageUrl;
+  const urls = Array.isArray(imageUrls)
+    ? imageUrls.filter(Boolean).slice(0, 5)
+    : imageUrl
+      ? [imageUrl]
+      : [];
+  const primaryImage = urls[0] || null;
+  const hasImage = urls.length > 0;
   const status = hasImage ? 'pending' : 'approved';
   const ref = db.collection(POSTS).doc();
   const now = new Date();
@@ -300,7 +309,8 @@ export async function createFeedPost(
     type: 'feed',
     title: trimmedTitle,
     text: clip(text, 2000),
-    imageUrl: imageUrl || null,
+    imageUrl: primaryImage,
+    imageUrls: urls,
     status,
     upvoteCount: 0,
     createdAt: now,
@@ -413,13 +423,8 @@ export async function listPostsForEssay(db, essayId, { type, viewerUid, gcsBucke
     posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
   }
   if (gcsBucket) {
-    for (const post of posts) {
-      if (post.authorAvatarUrl) {
-        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
-      }
-      if (post.imageUrl) {
-        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
-      }
+    for (let i = 0; i < posts.length; i += 1) {
+      posts[i] = await resolvePostMediaUrls(gcsBucket, posts[i]);
     }
   }
   posts.sort((a, b) => {
@@ -563,7 +568,7 @@ export async function moderatePost(db, postId, status) {
 export async function uploadPlantMedicineImage(gcsBucket, { uid, kind, buffer, mimeType }) {
   if (!gcsBucket) throw new Error('Media storage not configured');
   if (!buffer?.length) throw new Error('Empty file');
-  if (buffer.length > 8 * 1024 * 1024) throw new Error('Image too large (max 8MB)');
+  if (buffer.length > 12 * 1024 * 1024) throw new Error('Image too large (max 12MB after compression)');
 
   const ext = String(mimeType).includes('png') ? 'png' : String(mimeType).includes('webp') ? 'webp' : 'jpg';
   const safeKind = kind === 'avatar' ? 'avatars' : 'photos';

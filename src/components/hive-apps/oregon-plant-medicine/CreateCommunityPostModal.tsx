@@ -2,7 +2,11 @@ import type { User } from 'firebase/auth';
 import { useMemo, useState } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
-import { createFeedPost, uploadPlantImage } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import {
+  PLANT_IMAGE_MAX_COUNT,
+  formatPlantImageSize,
+} from '../../../lib/oregonPlantMedicine/compressPlantImage';
+import { createFeedPost, uploadPlantImages } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 
 type Props = {
   user: User | null;
@@ -11,13 +15,14 @@ type Props = {
   onCreated: () => void;
 };
 
+type PendingPhoto = { file: File; previewUrl: string };
+
 export default function CreateCommunityPostModal({ user, onClose, onSignIn, onCreated }: Props) {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [plantId, setPlantId] = useState('');
   const [plantQuery, setPlantQuery] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<PendingPhoto[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -29,10 +34,33 @@ export default function CreateCommunityPostModal({ user, onClose, onSignIn, onCr
     ).slice(0, 8);
   }, [plantQuery]);
 
-  const onPickFile = (picked: File | null) => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setFile(picked);
-    setPreviewUrl(picked ? URL.createObjectURL(picked) : null);
+  const addFiles = (list: FileList | null) => {
+    if (!list?.length) return;
+    const remaining = PLANT_IMAGE_MAX_COUNT - photos.length;
+    if (remaining <= 0) {
+      setError(`You can attach up to ${PLANT_IMAGE_MAX_COUNT} photos per post.`);
+      return;
+    }
+    const next: PendingPhoto[] = [];
+    for (const file of Array.from(list).slice(0, remaining)) {
+      if (!file.type.startsWith('image/')) continue;
+      next.push({ file, previewUrl: URL.createObjectURL(file) });
+    }
+    if (!next.length) {
+      setError('Please choose image files (JPEG, PNG, or HEIC).');
+      return;
+    }
+    setError('');
+    setPhotos((prev) => [...prev, ...next]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => {
+      const copy = [...prev];
+      const [removed] = copy.splice(index, 1);
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return copy;
+    });
   };
 
   const submit = async () => {
@@ -48,14 +76,19 @@ export default function CreateCommunityPostModal({ user, onClose, onSignIn, onCr
     setSubmitting(true);
     setError('');
     try {
-      let imageUrl: string | undefined;
-      if (file) {
-        imageUrl = await uploadPlantImage(user, file, 'photo');
+      let imageUrls: string[] | undefined;
+      if (photos.length > 0) {
+        imageUrls = await uploadPlantImages(
+          user,
+          photos.map((p) => p.file),
+          'photo',
+        );
       }
       await createFeedPost(user, {
         title: trimmedTitle,
         text: text.trim(),
-        imageUrl,
+        imageUrls,
+        imageUrl: imageUrls?.[0],
         plantId: plantId || undefined,
       });
       onCreated();
@@ -91,32 +124,48 @@ export default function CreateCommunityPostModal({ user, onClose, onSignIn, onCr
 
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Photo <span className="text-slate-600 font-semibold normal-case tracking-normal">(optional)</span>
+              Photos{' '}
+              <span className="text-slate-600 font-semibold normal-case tracking-normal">
+                (optional · up to {PLANT_IMAGE_MAX_COUNT})
+              </span>
             </label>
-            <label className="mt-1.5 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 px-4 py-6 cursor-pointer hover:border-sky-500/40">
-              {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="w-full max-h-48 object-cover rounded-lg" />
-              ) : (
-                <>
-                  <ImagePlus className="w-8 h-8 text-sky-400/80" />
-                  <span className="text-xs text-slate-400">Tap to upload a field photo</span>
-                </>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
-            {previewUrl ? (
-              <button
-                type="button"
-                onClick={() => onPickFile(null)}
-                className="mt-2 text-xs text-slate-500 hover:text-slate-300"
-              >
-                Remove photo
-              </button>
+            {photos.length > 0 ? (
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {photos.map((photo, index) => (
+                  <div key={photo.previewUrl} className="relative rounded-xl overflow-hidden border border-slate-700">
+                    <img src={photo.previewUrl} alt="" className="w-full h-28 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+                      aria-label="Remove photo"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                    <p className="absolute bottom-0 inset-x-0 bg-black/55 text-[10px] text-slate-300 px-2 py-0.5 truncate">
+                      {formatPlantImageSize(photo.file.size)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {photos.length < PLANT_IMAGE_MAX_COUNT ? (
+              <label className="mt-1.5 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 px-4 py-6 cursor-pointer hover:border-sky-500/40">
+                <ImagePlus className="w-8 h-8 text-sky-400/80" />
+                <span className="text-xs text-slate-400 text-center">
+                  Tap to add field photos — phone-size images are compressed automatically
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={(e) => {
+                    addFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </label>
             ) : null}
           </div>
 
@@ -170,7 +219,7 @@ export default function CreateCommunityPostModal({ user, onClose, onSignIn, onCr
           </div>
 
           {error ? <p className="text-xs text-red-300">{error}</p> : null}
-          {file ? (
+          {photos.length > 0 ? (
             <p className="text-[10px] text-amber-300/90">
               Posts with photos are reviewed before they appear in the feed.
             </p>

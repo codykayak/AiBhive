@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth';
 import { adminFetch, adminJson } from '../adminApi';
+import { compressPlantImageFile } from './compressPlantImage';
 
 export type PlantMedicineProfile = {
   uid: string;
@@ -24,6 +25,7 @@ export type PlantMedicinePost = {
   title?: string | null;
   text: string;
   imageUrl: string | null;
+  imageUrls?: string[];
   status: string;
   upvoteCount: number;
   createdAt: string | null;
@@ -57,16 +59,29 @@ export async function uploadPlantImage(
   file: File,
   kind: 'avatar' | 'photo',
 ): Promise<string> {
-  const buffer = await file.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
-  const base64 = btoa(binary);
+  const compressed = await compressPlantImageFile(file);
   const data = await adminJson<{ url: string }>('/api/plant-medicine/upload', user, {
     method: 'POST',
-    body: JSON.stringify({ base64, mimeType: file.type || 'image/jpeg', kind }),
+    body: JSON.stringify({
+      base64: compressed.base64,
+      mimeType: compressed.mimeType,
+      kind,
+    }),
   });
+  URL.revokeObjectURL(compressed.previewUrl);
   return data.url;
+}
+
+export async function uploadPlantImages(
+  user: User,
+  files: File[],
+  kind: 'avatar' | 'photo' = 'photo',
+): Promise<string[]> {
+  const urls: string[] = [];
+  for (const file of files) {
+    urls.push(await uploadPlantImage(user, file, kind));
+  }
+  return urls;
 }
 
 export async function fetchCommunityFeed(user: User | null): Promise<PlantMedicinePost[]> {
@@ -111,7 +126,7 @@ export function createPlantPost(
 
 export function createFeedPost(
   user: User,
-  body: { title: string; text?: string; imageUrl?: string; plantId?: string },
+  body: { title: string; text?: string; imageUrl?: string; imageUrls?: string[]; plantId?: string },
 ): Promise<PlantMedicinePost> {
   return adminJson('/api/plant-medicine/feed/posts', user, {
     method: 'POST',
@@ -463,17 +478,15 @@ export async function sendPlantPhotoIdentify(
 }
 
 export async function fileToPlantPhotoAttachment(file: File): Promise<PlantPhotoAttachment> {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.onerror = () => reject(new Error('Could not read image'));
-    reader.readAsDataURL(file);
-  });
-  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) throw new Error('Invalid image data');
+  const compressed = await compressPlantImageFile(file);
   return {
-    mimeType: match[1] || file.type || 'image/jpeg',
-    base64: match[2],
-    previewUrl: dataUrl,
+    mimeType: compressed.mimeType,
+    base64: compressed.base64,
+    previewUrl: compressed.previewUrl,
   };
+}
+
+export function postImageUrls(post: Pick<PlantMedicinePost, 'imageUrl' | 'imageUrls'>): string[] {
+  if (post.imageUrls?.length) return post.imageUrls;
+  return post.imageUrl ? [post.imageUrl] : [];
 }

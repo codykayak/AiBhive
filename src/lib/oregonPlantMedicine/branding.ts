@@ -9,6 +9,9 @@ export const COMMUNITY_NAV_BRAND = 'Community Living Knowledgebase';
 /** Primary product name shown on the home hero and key headings. */
 export const EARTH_PLANT_MEDICINE_NAME = "Earth's Plant Medicine";
 
+/** Plants tab — Ask AI / field guide hero beside the agent panel. */
+export const PLANT_ASK_GUIDE_IMAGE = '/oregon-plant-medicine/edible-plant-id-ask-ai-aibhive-guide.jpg';
+
 export const LIVING_KNOWLEDGE_TAGLINE =
   'Pacific Northwest foraging field guide — wild plants, mushrooms, and protocols. The plant library is primary; holistic, hypnosis, and animal health are adjacent research libraries.';
 

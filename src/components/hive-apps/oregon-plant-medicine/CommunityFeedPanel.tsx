@@ -4,6 +4,7 @@ import { Loader2, MapPin, PenSquare, Sprout, ThumbsUp, Users } from 'lucide-reac
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import {
   fetchCommunityFeed,
+  postImageUrls,
   togglePostUpvote,
   type PlantMedicinePost,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
@@ -72,6 +73,11 @@ function FeedCard({
   const location = seed ? post.locationLabel : null;
   const plantLabel = seed ? post.plantCommonName : plant?.commonName;
   const title = feedTitle(post);
+  const images = seed
+    ? post.imageUrl
+      ? [post.imageUrl]
+      : []
+    : postImageUrls(post as PlantMedicinePost);
 
   return (
     <article className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
@@ -110,15 +116,30 @@ function FeedCard({
         </div>
       </div>
 
-      {post.imageUrl ? (
+      {images.length > 0 ? (
         <button type="button" onClick={() => onOpenPost(post)} className="block w-full text-left">
-          <PlantPhoto
-            src={post.imageUrl}
-            plantId={post.plantId ?? undefined}
-            scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
-            alt={plantLabel ?? 'Community foraging photo'}
-            className="w-full max-h-72 object-cover"
-          />
+          {images.length === 1 ? (
+            <PlantPhoto
+              src={images[0]!}
+              plantId={post.plantId ?? undefined}
+              scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
+              alt={plantLabel ?? 'Community foraging photo'}
+              className="w-full max-h-72 object-cover"
+            />
+          ) : (
+            <div className="grid gap-0.5 grid-cols-2">
+              {images.slice(0, 4).map((src, i) => (
+                <PlantPhoto
+                  key={`${src}_${i}`}
+                  src={src}
+                  plantId={post.plantId ?? undefined}
+                  scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
+                  alt={plantLabel ?? 'Community foraging photo'}
+                  className={`w-full object-cover ${images.length === 2 ? 'max-h-56' : 'h-36'}`}
+                />
+              ))}
+            </div>
+          )}
         </button>
       ) : null}
 
