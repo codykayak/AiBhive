@@ -9,14 +9,20 @@ import {
 import {
   createPost,
   createFeedPost,
+  createEssayPost,
+  createThreadComment,
   createTopicPost,
   deletePost,
+  getContentEngagement,
   getProfile,
   listPendingPosts,
   listCommunityFeed,
+  listPostsForEssay,
   listPostsForPlant,
   listPostsForTopic,
+  listThreadComments,
   moderatePost,
+  toggleContentUpvote,
   toggleUpvote,
   uploadPlantMedicineImage,
   upsertProfile,
@@ -26,6 +32,7 @@ import {
 const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
 const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health)$/;
 const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
+const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|essay)$/;
 
 function requireAuth(req, res) {
   return verifyHiveAuth(req).then((user) => {
@@ -266,6 +273,102 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     }
   });
 
+  app.get('/api/plant-medicine/content/:kind/:contentId/engagement', async (req, res) => {
+    try {
+      const kind = String(req.params.kind || '');
+      const contentId = String(req.params.contentId || '');
+      if (!CONTENT_KIND_RE.test(kind)) return res.status(400).json({ error: 'Invalid content kind' });
+      const viewer = await verifyHiveAuth(req);
+      const engagement = await getContentEngagement(db, kind, contentId, viewer?.uid);
+      return res.json({ engagement });
+    } catch (err) {
+      console.error('[plant-medicine/engagement GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load engagement' });
+    }
+  });
+
+  app.post('/api/plant-medicine/content/:kind/:contentId/upvote', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const kind = String(req.params.kind || '');
+      const contentId = String(req.params.contentId || '');
+      if (!CONTENT_KIND_RE.test(kind)) return res.status(400).json({ error: 'Invalid content kind' });
+      const result = await toggleContentUpvote(db, kind, contentId, user.uid);
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/content upvote]', err);
+      return res.status(400).json({ error: err.message || 'Upvote failed' });
+    }
+  });
+
+  app.get('/api/plant-medicine/essays/:essayId/posts', async (req, res) => {
+    try {
+      const essayId = String(req.params.essayId || '');
+      if (!TOPIC_ID_RE.test(essayId)) return res.status(400).json({ error: 'Invalid essay id' });
+      const type = req.query.type === 'comment' || req.query.type === 'photo' ? req.query.type : undefined;
+      const viewer = await verifyHiveAuth(req);
+      const posts = await listPostsForEssay(db, essayId, { type, viewerUid: viewer?.uid, gcsBucket });
+      return res.json({ posts });
+    } catch (err) {
+      console.error('[plant-medicine/essay-posts GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load posts' });
+    }
+  });
+
+  app.post('/api/plant-medicine/essays/:essayId/posts', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const essayId = String(req.params.essayId || '');
+      if (!TOPIC_ID_RE.test(essayId)) return res.status(400).json({ error: 'Invalid essay id' });
+      const { type, text, imageUrl } = req.body || {};
+      if (type !== 'comment' && type !== 'photo') {
+        return res.status(400).json({ error: 'type must be comment or photo' });
+      }
+      if (type === 'comment' && !String(text || '').trim()) {
+        return res.status(400).json({ error: 'Comment text required' });
+      }
+      const post = await createEssayPost(
+        db,
+        FieldValue,
+        { essayId, author: user, type, text, imageUrl },
+        gcsBucket,
+      );
+      return res.status(201).json({ post });
+    } catch (err) {
+      console.error('[plant-medicine/essay-posts POST]', err);
+      return res.status(500).json({ error: err.message || 'Failed to create post' });
+    }
+  });
+
+  app.get('/api/plant-medicine/posts/:postId/comments', async (req, res) => {
+    try {
+      const threadPostId = String(req.params.postId || '');
+      const viewer = await verifyHiveAuth(req);
+      const posts = await listThreadComments(db, threadPostId, { viewerUid: viewer?.uid, gcsBucket });
+      return res.json({ posts });
+    } catch (err) {
+      console.error('[plant-medicine/thread GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load comments' });
+    }
+  });
+
+  app.post('/api/plant-medicine/posts/:postId/comments', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const threadPostId = String(req.params.postId || '');
+      const { text } = req.body || {};
+      if (!String(text || '').trim()) return res.status(400).json({ error: 'Comment text required' });
+      const post = await createThreadComment(db, { threadPostId, author: user, text }, gcsBucket);
+      return res.status(201).json({ post });
+    } catch (err) {
+      console.error('[plant-medicine/thread POST]', err);
+      return res.status(500).json({ error: err.message || 'Failed to post comment' });
+    }
+  });
+
   app.get('/api/plant-medicine/admin/pending', async (req, res) => {
     try {
       const user = await requireAuth(req, res);
@@ -302,12 +405,17 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       const user = await requireAuth(req, res);
       if (!user) return;
 
-      const { plantId, message, history = [] } = req.body || {};
+      const { plantId, essayId, library, topicId, message, history = [], contextText, focusTitle } = req.body || {};
       const hiveUserId = resolvePlantHiveUserId(user.uid);
       const result = await runPlantMedicineChat(db, hiveUserId, {
         plantId,
+        essayId,
+        library,
+        topicId,
         message,
         history,
+        contextText,
+        focusTitle,
         email: user.email,
       });
 

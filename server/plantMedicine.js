@@ -5,6 +5,7 @@
 
 const PROFILES = 'plant_medicine_profiles';
 const POSTS = 'plant_medicine_posts';
+const CONTENT_ENGAGEMENT = 'plant_medicine_content_engagement';
 
 const TOPIC_LIBRARIES = new Set(['hypnosis', 'holistic', 'animal-health']);
 const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
@@ -105,6 +106,8 @@ function serializePost(id, d) {
   return {
     id,
     plantId: d.plantId || null,
+    essayId: d.essayId || null,
+    threadPostId: d.threadPostId || null,
     library: d.library || null,
     topicId: d.topicId || null,
     authorUid: d.authorUid,
@@ -330,6 +333,174 @@ export async function createTopicPost(
     text: clip(text, type === 'comment' ? 2000 : 500),
     imageUrl: imageUrl || null,
     status,
+    upvoteCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ref.set(payload);
+  return serializePost(ref.id, { ...payload, viewerHasUpvoted: false });
+}
+
+function contentEngagementDocId(kind, id) {
+  return `${kind}:${id}`;
+}
+
+async function countCommentsForContent(db, kind, id) {
+  let q = db.collection(POSTS).where('status', '==', 'approved').where('type', '==', 'comment');
+  if (kind === 'plant') q = q.where('plantId', '==', id);
+  else if (kind === 'essay') q = q.where('essayId', '==', id);
+  else if (TOPIC_LIBRARIES.has(kind)) q = q.where('library', '==', kind).where('topicId', '==', id);
+  else return 0;
+  const snap = await q.limit(200).get();
+  return snap.size;
+}
+
+export async function getContentEngagement(db, kind, id, viewerUid = null) {
+  const ref = db.collection(CONTENT_ENGAGEMENT).doc(contentEngagementDocId(kind, id));
+  const snap = await ref.get();
+  const data = snap.exists ? snap.data() : {};
+  let viewerHasUpvoted = false;
+  if (viewerUid) {
+    const vote = await ref.collection('votes').doc(viewerUid).get();
+    viewerHasUpvoted = vote.exists;
+  }
+  const commentCount = await countCommentsForContent(db, kind, id);
+  return {
+    upvoteCount: data.upvoteCount || 0,
+    commentCount,
+    viewerHasUpvoted,
+  };
+}
+
+export async function toggleContentUpvote(db, kind, id, uid) {
+  const ref = db.collection(CONTENT_ENGAGEMENT).doc(contentEngagementDocId(kind, id));
+  const voteRef = ref.collection('votes').doc(uid);
+
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const cur = snap.exists ? snap.data() : { upvoteCount: 0 };
+    const voteSnap = await tx.get(voteRef);
+    let delta = 0;
+    if (voteSnap.exists) {
+      tx.delete(voteRef);
+      delta = -1;
+    } else {
+      tx.set(voteRef, { createdAt: new Date() });
+      delta = 1;
+    }
+    const next = Math.max(0, (cur.upvoteCount || 0) + delta);
+    if (snap.exists) tx.update(ref, { upvoteCount: next, updatedAt: new Date() });
+    else tx.set(ref, { kind, contentId: id, upvoteCount: next, updatedAt: new Date() });
+    return { upvoteCount: next, viewerHasUpvoted: delta > 0 };
+  });
+}
+
+export async function listPostsForEssay(db, essayId, { type, viewerUid, gcsBucket = null } = {}) {
+  if (!TOPIC_ID_RE.test(essayId)) throw new Error('Invalid essay id');
+
+  let q = db.collection(POSTS).where('essayId', '==', essayId).where('status', '==', 'approved');
+  if (type) q = q.where('type', '==', type);
+  const snap = await q.limit(100).get();
+
+  const posts = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    let viewerHasUpvoted = false;
+    if (viewerUid) {
+      const vote = await doc.ref.collection('votes').doc(viewerUid).get();
+      viewerHasUpvoted = vote.exists;
+    }
+    posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
+  }
+  if (gcsBucket) {
+    for (const post of posts) {
+      if (post.authorAvatarUrl) {
+        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+      }
+      if (post.imageUrl) {
+        post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
+      }
+    }
+  }
+  posts.sort((a, b) => {
+    if (b.upvoteCount !== a.upvoteCount) return b.upvoteCount - a.upvoteCount;
+    return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+  });
+  return posts;
+}
+
+export async function createEssayPost(
+  db,
+  FieldValue,
+  { essayId, author, type, text, imageUrl },
+  gcsBucket = null,
+) {
+  if (!TOPIC_ID_RE.test(essayId)) throw new Error('Invalid essay id');
+
+  const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
+  const status = type === 'comment' ? 'approved' : 'pending';
+  const ref = db.collection(POSTS).doc();
+  const now = new Date();
+  const payload = {
+    essayId,
+    authorUid: author.uid,
+    authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Researcher',
+    authorAvatarUrl: profile.avatarUrl || null,
+    type,
+    text: clip(text, type === 'comment' ? 2000 : 500),
+    imageUrl: imageUrl || null,
+    status,
+    upvoteCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await ref.set(payload);
+  return serializePost(ref.id, { ...payload, viewerHasUpvoted: false });
+}
+
+export async function listThreadComments(db, threadPostId, { viewerUid, gcsBucket = null } = {}) {
+  const snap = await db
+    .collection(POSTS)
+    .where('threadPostId', '==', threadPostId)
+    .where('status', '==', 'approved')
+    .where('type', '==', 'comment')
+    .limit(100)
+    .get();
+
+  const posts = [];
+  for (const doc of snap.docs) {
+    const data = doc.data();
+    let viewerHasUpvoted = false;
+    if (viewerUid) {
+      const vote = await doc.ref.collection('votes').doc(viewerUid).get();
+      viewerHasUpvoted = vote.exists;
+    }
+    posts.push(serializePost(doc.id, { ...data, viewerHasUpvoted }));
+  }
+  if (gcsBucket) {
+    for (const post of posts) {
+      if (post.authorAvatarUrl) {
+        post.authorAvatarUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.authorAvatarUrl);
+      }
+    }
+  }
+  posts.sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  return posts;
+}
+
+export async function createThreadComment(db, { threadPostId, author, text }, gcsBucket = null) {
+  const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
+  const ref = db.collection(POSTS).doc();
+  const now = new Date();
+  const payload = {
+    threadPostId,
+    authorUid: author.uid,
+    authorDisplayName: profile.displayName || author.email?.split('@')[0] || 'Forager',
+    authorAvatarUrl: profile.avatarUrl || null,
+    type: 'comment',
+    text: clip(text, 2000),
+    imageUrl: null,
+    status: 'approved',
     upvoteCount: 0,
     createdAt: now,
     updatedAt: now,

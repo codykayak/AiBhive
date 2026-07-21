@@ -1,9 +1,12 @@
-import { AlertTriangle, MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
+import { AlertTriangle, MapPin, Sprout, X } from 'lucide-react';
+import type { User } from 'firebase/auth';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadges';
 import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import type { AskAiContext } from './AskAiBhivePanel';
+import PostEngagementBar from './PostEngagementBar';
 import PlantPhoto from './PlantImage';
 import UserAvatar from './UserAvatar';
 
@@ -11,6 +14,9 @@ export type CommunityPostView = PlantMedicinePost | SeedCommunityPost;
 
 type Props = {
   post: CommunityPostView;
+  user: User | null;
+  onSignIn: () => void;
+  onAskAi?: (ctx: AskAiContext) => void;
   onClose: () => void;
   onOpenPlant?: (plant: PlantEntry) => void;
 };
@@ -34,12 +40,13 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props) {
+export default function CommunityPostModal({ post, user, onSignIn, onAskAi, onClose, onOpenPlant }: Props) {
   const seed = isSeed(post);
   const plant = post.plantId ? PLANT_LIBRARY.find((p) => p.id === post.plantId) : undefined;
   const plantLabel = seed ? post.plantCommonName : plant?.commonName;
   const location = seed ? post.locationLabel : null;
   const title = postTitle(post);
+  const focusTitle = title ?? plantLabel ?? 'Community post';
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -104,25 +111,44 @@ export default function CommunityPostModal({ post, onClose, onOpenPlant }: Props
             </div>
           ) : null}
 
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 px-2.5 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10">
-              <ThumbsUp className="w-3.5 h-3.5" />
-              {post.upvoteCount}
-            </span>
-            {plant && plantLabel && onOpenPlant ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenPlant(plant);
-                  onClose();
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
-              >
-                <Sprout className="w-3.5 h-3.5" />
-                View {plantLabel} in library
-              </button>
-            ) : null}
-          </div>
+          {!seed ? (
+            <PostEngagementBar
+              target={{
+                kind: 'post',
+                postId: post.id,
+                upvoteCount: post.upvoteCount,
+                viewerHasUpvoted: post.viewerHasUpvoted,
+              }}
+              user={user}
+              onSignIn={onSignIn}
+              onAskAi={
+                onAskAi
+                  ? () =>
+                      onAskAi({
+                        focusTitle,
+                        contextText: [focusTitle, post.text ?? '', plantLabel ?? ''].filter(Boolean).join('\n'),
+                        plantId: post.plantId ?? undefined,
+                      })
+                  : undefined
+              }
+            />
+          ) : (
+            <p className="text-xs text-slate-500">Community highlight — sign in on a live post to comment and upvote.</p>
+          )}
+
+          {plant && plantLabel && onOpenPlant ? (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenPlant(plant);
+                onClose();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200"
+            >
+              <Sprout className="w-3.5 h-3.5" />
+              View {plantLabel} in library
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

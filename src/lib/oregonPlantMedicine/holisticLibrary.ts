@@ -1,6 +1,7 @@
 import type { HolisticCategory, HolisticTopic } from './holisticTypes';
+import { applyHolisticExpanded } from './holisticExpanded';
 
-export const HOLISTIC_LIBRARY: HolisticTopic[] = [
+const HOLISTIC_LIBRARY_BASE = [
   {
     id: 'parasite-cleanse-overview',
     title: 'Parasite cleanse — educational overview',
@@ -805,6 +806,8 @@ export const HOLISTIC_LIBRARY: HolisticTopic[] = [
     ],
   },
 ];
+
+export const HOLISTIC_LIBRARY: HolisticTopic[] = applyHolisticExpanded(HOLISTIC_LIBRARY_BASE);
 
 export const HOLISTIC_CATEGORY_ORDER: HolisticCategory[] = [
   'detox',

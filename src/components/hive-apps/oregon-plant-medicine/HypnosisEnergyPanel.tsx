@@ -9,6 +9,7 @@ import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssay
 import { HYPNOSIS_ENERGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import type { AskAiContext } from './AskAiBhivePanel';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
 
 const HYPNOSIS_THEME = {
@@ -33,10 +34,23 @@ type Props = {
   user: User | null;
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
-  onContribute: (topicTitle?: string) => void;
+  onCreatePost: () => void;
+  onAskAi: (ctx: AskAiContext) => void;
+  onContribute?: (query?: string) => void;
+  focusTopicId?: string | null;
+  onFocusTopicConsumed?: () => void;
 };
 
-export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onContribute }: Props) {
+export default function HypnosisEnergyPanel({
+  user,
+  onSignIn,
+  onOpenPlant,
+  onCreatePost,
+  onAskAi,
+  onContribute,
+  focusTopicId,
+  onFocusTopicConsumed,
+}: Props) {
   return (
     <ResearchLibraryPanel
       library="hypnosis"
@@ -57,11 +71,15 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
       user={user}
       onSignIn={onSignIn}
       onOpenPlant={onOpenPlant}
+      onCreatePost={onCreatePost}
+      onAskAi={onAskAi}
       onContribute={onContribute}
-      gridVideo={SECTION_VIDEOS.hypnosis}
-      featuredEssay={getFeaturedEssay('hypnosis')}
       askScope="hypnosis"
       askAccent="cyan"
+      focusTopicId={focusTopicId}
+      onFocusTopicConsumed={onFocusTopicConsumed}
+      gridVideo={SECTION_VIDEOS.hypnosis}
+      featuredEssay={getFeaturedEssay('hypnosis')}
     />
   );
 }

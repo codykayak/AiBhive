@@ -3,12 +3,12 @@
   CLAW XBOX PREMIUM — Cronus Zen GPC Script for Xbox (Turtle Beach / Claw)
 ================================================================================
   Platform : Xbox Series X|S / Xbox One
-  Layout   : Default Xbox — no button remapping (LB/RB pass through untouched)
+  Layout   : Claw — LB aims (ADS), LT opens mod menu with START
   Game     : Call of Duty (MW / Warzone / BO6 / BO7)
 
   ── IN-GAME SETTINGS ────────────────────────────────────────────────────────
-  • Set your button layout in-game to match however you play (Tactical, Default, etc.)
-  • This script does NOT remap bumpers or triggers — your layout stays native
+  • Match your in-game layout (Tactical Flipped / Bumper Jumper, etc.)
+  • LB must be ADS in-game — this script detects aim on LB, not LT
 
   ── MOD MENU (Zen OLED) — use anytime Cronus is plugged in ─────────────────
   Open Menu     : Hold LT (left trigger) + press START
@@ -25,11 +25,17 @@
   Hold RS + D-Pad UP/DOWN        = Anti-Recoil vertical ±1
   Hold RS + D-Pad LEFT/RIGHT     = Anti-Recoil horizontal ±1
   Hold RS + VIEW                 = Save AR values
+  Hold VIEW + D-Pad UP / DOWN    = Weapon profile 1 / 2
 
-  ── L3 (LEFT STICK CLICK) — CLAW LAYOUT ─────────────────────────────────────
-  Physical L3 is blocked — a faulty stick cannot toggle sprint/breath in-game.
-  Hold Breath: hold LB (left bumper) while ADS (LT) — script simulates L3.
+  ── L3 (LEFT STICK CLICK) ───────────────────────────────────────────────────
+  Physical L3 is blocked — a faulty stick cannot randomly toggle sprint/breath.
+  Hold Breath: while ADS (LB), script holds L3 for you (like stick click).
   Sprint: Auto Run simulates L3 when pushing the stick forward (hip-fire).
+
+  ── WEAPON PROFILES ─────────────────────────────────────────────────────────
+  Profile 1 (primary) and Profile 2 (secondary) each have AR Vertical/Horizontal.
+  Switch in-game: Hold VIEW + D-Pad UP (Profile 1) or DOWN (Profile 2).
+  Edit both profiles in the Anti-Recoil menu (press A on Anti-Recoil).
 
   ── DEFAULTS ────────────────────────────────────────────────────────────────
   Anti-Recoil ON (low recoil) | Polar AA ON | Hold Breath ON | Auto Run ON
@@ -37,14 +43,13 @@
 ================================================================================
 */
 
-// ── BUTTON DEFINES (standard Xbox — no remapping) ───────────────────────────
+// ── BUTTON DEFINES (claw layout — LB ADS) ───────────────────────────────────
 define FIRE_BTN     = XB1_RT;
-define ADS_BTN      = XB1_LT;
+define ADS_BTN      = XB1_LB;
 define MENU_HOLD    = XB1_LT;
 define MENU_BTN     = XB1_MENU;  // START button
 define CROUCH_BTN   = XB1_RS;
 define SPRINT_BTN   = XB1_LS;
-define BREATH_BTN   = XB1_LB;
 define RX           = XB1_RX;
 define RY           = XB1_RY;
 define LX           = XB1_LX;
@@ -64,6 +69,12 @@ int mod_hipfire_aa    = 1;
 
 int AR_vertical       = 18;
 int AR_horizontal     = 2;
+int AR_vertical_p2    = 14;
+int AR_horizontal_p2  = 0;
+int ar_vert_active    = 18;
+int ar_horiz_active   = 2;
+int weapon_profile    = 0;
+int profile_msg_time  = 0;
 int AA_radius         = 12;
 int AA_speed          = 18;
 int Move_boost_val    = 15;
@@ -119,8 +130,12 @@ const string SPLASH_L1    = "Press LT+START";
 const string SPLASH_L2    = "to enter menu";
 const string NO_EDIT1     = "No values to";
 const string NO_EDIT2     = "edit for mod";
-const string LBL_AR_VERT  = "AR Vertical";
-const string LBL_AR_HORZ  = "AR Horizont";
+const string LBL_AR_VERT  = "P1 AR Vert";
+const string LBL_AR_HORZ  = "P1 AR Horiz";
+const string LBL_AR_VERT2 = "P2 AR Vert";
+const string LBL_AR_HORZ2 = "P2 AR Horiz";
+const string PROF1_TXT    = "PROFILE 1";
+const string PROF2_TXT    = "PROFILE 2";
 const string LBL_AA_RAD   = "AA Radius";
 const string LBL_AA_SPD   = "AA Speed";
 const string LBL_SLIDE    = "Slide Delay";
@@ -130,8 +145,8 @@ const uint8 Options[]  = { 1, 1, 0, 0, 1, 0, 0, 1, 0 };
 const uint8 EditVal[]  = { 1, 1, 0, 0, 1, 0, 0, 1, 0 };
 
 const uint8 OptRange[][] = {
-    { 0, 1 }, { 2, 3 }, { 0, 0 }, { 0, 0 }, { 4, 4 },
-    { 0, 0 }, { 0, 0 }, { 5, 5 }, { 0, 0 }
+    { 0, 3 }, { 4, 5 }, { 0, 0 }, { 0, 0 }, { 6, 6 },
+    { 0, 0 }, { 0, 0 }, { 7, 7 }, { 0, 0 }
 };
 
 const int16 ValRange[][] = {
@@ -170,6 +185,8 @@ init {
     AA_speed         = get_pvar(SPVAR_13, 1, 50, 18);
     Move_boost_val   = get_pvar(SPVAR_14, 5, 30, 15);
     Slide_delay      = get_pvar(SPVAR_15, 40, 120, 75);
+    unpack_profile_pvar(get_pvar(SPVAR_16, 0, 199199, 14050));
+    update_active_ar_profile();
 }
 
 main {
@@ -201,6 +218,11 @@ main {
     if(show_msg_time) {
         show_msg_time -= get_rtime();
         if(show_msg_time <= 0) cls_oled(0);
+    }
+
+    if(profile_msg_time) {
+        profile_msg_time -= get_rtime();
+        if(profile_msg_time <= 0) cls_oled(0);
     }
 
     // Menu runs at VM default speed for stable navigation
@@ -308,17 +330,35 @@ main {
 
             if(mod_hair_trigger && get_ival(ADS_BTN) > 20) set_val(ADS_BTN, 100);
 
+            update_active_ar_profile();
+
             // Block broken / stuck physical L3; only script may press sprint/breath
             set_val(SPRINT_BTN, 0);
 
-            // Claw sprint: simulate L3 on forward stick (hip-fire, LB not held)
-            if(mod_auto_run && get_val(LY) < SPRINT_STICK_THR && !get_ival(ADS_BTN) && !get_ival(BREATH_BTN)) {
+            // Sprint: simulate L3 on forward stick (hip-fire only)
+            if(mod_auto_run && get_val(LY) < SPRINT_STICK_THR && get_val(ADS_BTN) <= 20) {
                 set_val(SPRINT_BTN, 100);
             }
 
-            // Claw hold breath: LB while ADS simulates L3 (replaces stick click)
-            if(mod_hold_breath && get_ival(ADS_BTN) && get_ival(BREATH_BTN)) {
+            // Hold breath: simulate L3 while ADS (replaces stick click for attachments)
+            if(mod_hold_breath && get_val(ADS_BTN) > 20) {
                 set_val(SPRINT_BTN, 100);
+            }
+
+            // Weapon profile switch (in-game)
+            if(get_ival(XB1_VIEW) && event_press(XB1_UP)) {
+                weapon_profile = 0;
+                update_active_ar_profile();
+                show_profile_flash();
+                save_settings();
+                set_val(XB1_UP, 0);
+            }
+            if(get_ival(XB1_VIEW) && event_press(XB1_DOWN)) {
+                weapon_profile = 1;
+                update_active_ar_profile();
+                show_profile_flash();
+                save_settings();
+                set_val(XB1_DOWN, 0);
             }
 
             if(mod_move_boost && get_val(SPRINT_BTN) && get_val(LY) < -10) {
@@ -330,10 +370,10 @@ main {
                 if(abs(get_ival(RY)) > AR_Release || abs(get_ival(RX)) > AR_Release) combo_stop(AntiRecoil);
 
                 if(get_ival(CROUCH_BTN)) {
-                    if(event_press(XB1_UP))    AR_vertical++;
-                    if(event_press(XB1_DOWN))  AR_vertical--;
-                    if(event_press(XB1_LEFT))  AR_horizontal--;
-                    if(event_press(XB1_RIGHT)) AR_horizontal++;
+                    if(event_press(XB1_UP))    adjust_active_ar_vertical(1);
+                    if(event_press(XB1_DOWN))  adjust_active_ar_vertical(-1);
+                    if(event_press(XB1_LEFT))  adjust_active_ar_horizontal(-1);
+                    if(event_press(XB1_RIGHT)) adjust_active_ar_horizontal(1);
                     set_val(XB1_UP, 0); set_val(XB1_DOWN, 0);
                     set_val(XB1_LEFT, 0); set_val(XB1_RIGHT, 0);
                     if(event_press(XB1_VIEW)) save_settings();
@@ -356,8 +396,8 @@ main {
 }
 
 combo AntiRecoil {
-    set_val(RY, clamp(get_ival(RY) + AR_vertical, -100, 100));
-    set_val(RX, clamp(get_ival(RX) + AR_horizontal, -100, 100));
+    set_val(RY, clamp(get_ival(RY) + ar_vert_active, -100, 100));
+    set_val(RX, clamp(get_ival(RX) + ar_horiz_active, -100, 100));
 }
 
 combo SlideCancel {
@@ -415,6 +455,47 @@ function reset_menu_timeout() {
     MenuTimeOut = menu_time_active;
 }
 
+function update_active_ar_profile() {
+    if(weapon_profile == 0) {
+        ar_vert_active = AR_vertical;
+        ar_horiz_active = AR_horizontal;
+    } else {
+        ar_vert_active = AR_vertical_p2;
+        ar_horiz_active = AR_horizontal_p2;
+    }
+}
+
+function pack_profile_pvar() {
+    return weapon_profile * 100000 + AR_vertical_p2 * 1000 + (AR_horizontal_p2 + 50);
+}
+
+function unpack_profile_pvar(packed) {
+    weapon_profile = packed / 100000;
+    packed = packed % 100000;
+    AR_vertical_p2 = packed / 1000;
+    AR_horizontal_p2 = (packed % 1000) - 50;
+}
+
+function show_profile_flash() {
+    cls_oled(0);
+    if(weapon_profile == 0) print(center_x(sizeof(PROF1_TXT) - 1, OLED_FONT_MEDIUM_WIDTH), 18, OLED_FONT_MEDIUM, 1, PROF1_TXT[0]);
+    else                    print(center_x(sizeof(PROF2_TXT) - 1, OLED_FONT_MEDIUM_WIDTH), 18, OLED_FONT_MEDIUM, 1, PROF2_TXT[0]);
+    profile_msg_time = 1500;
+    combo_run(MENU_OPEN_RUMBLE);
+}
+
+function adjust_active_ar_vertical(delta) {
+    if(weapon_profile == 0) AR_vertical = clamp(AR_vertical + delta, ValRange[0][0], ValRange[0][1]);
+    else AR_vertical_p2 = clamp(AR_vertical_p2 + delta, ValRange[0][0], ValRange[0][1]);
+    update_active_ar_profile();
+}
+
+function adjust_active_ar_horizontal(delta) {
+    if(weapon_profile == 0) AR_horizontal = clamp(AR_horizontal + delta, ValRange[1][0], ValRange[1][1]);
+    else AR_horizontal_p2 = clamp(AR_horizontal_p2 + delta, ValRange[1][0], ValRange[1][1]);
+    update_active_ar_profile();
+}
+
 function run_polar_aa() {
     aa_actual_x = get_ival(RX);
     aa_actual_y = get_ival(RY);
@@ -467,7 +548,6 @@ function draw_menu_border() {
 }
 
 function draw_splash_screen() {
-  int sx;
   cls_oled(0);
 
   // Outer frame
@@ -496,9 +576,16 @@ function draw_splash_screen() {
   line_oled(97, 28, 85, 16, 1, 1);
 
   // Decorative scan ticks along the divider
-  for(sx = 10; sx <= 118; sx += 12) {
-    line_oled(sx, 22, sx, 24, 1, 1);
-  }
+  line_oled(10, 22, 10, 24, 1, 1);
+  line_oled(22, 22, 22, 24, 1, 1);
+  line_oled(34, 22, 34, 24, 1, 1);
+  line_oled(46, 22, 46, 24, 1, 1);
+  line_oled(58, 22, 58, 24, 1, 1);
+  line_oled(70, 22, 70, 24, 1, 1);
+  line_oled(82, 22, 82, 24, 1, 1);
+  line_oled(94, 22, 94, 24, 1, 1);
+  line_oled(106, 22, 106, 24, 1, 1);
+  line_oled(118, 22, 118, 24, 1, 1);
 
   print(center_x(sizeof(TITLE) - 1, OLED_FONT_MEDIUM_WIDTH), 30, OLED_FONT_MEDIUM, 1, TITLE[0]);
   print(center_x(sizeof(SPLASH_L1) - 1, OLED_FONT_SMALL_WIDTH), 46, OLED_FONT_SMALL, 1, SPLASH_L1[0]);
@@ -558,21 +645,25 @@ function clamp_toggle(val, dir) {
 function get_edit_value(idx) {
     if(idx == 0) return AR_vertical;
     if(idx == 1) return AR_horizontal;
-    if(idx == 2) return AA_radius;
-    if(idx == 3) return AA_speed;
-    if(idx == 4) return Slide_delay;
-    if(idx == 5) return Move_boost_val;
+    if(idx == 2) return AR_vertical_p2;
+    if(idx == 3) return AR_horizontal_p2;
+    if(idx == 4) return AA_radius;
+    if(idx == 5) return AA_speed;
+    if(idx == 6) return Slide_delay;
+    if(idx == 7) return Move_boost_val;
     return 0;
 }
 
 function display_edit_screen(var_idx) {
     line_oled(1, 18, 127, 18, 1, 1);
-    if(var_idx == 0) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_VERT[0]);
-    if(var_idx == 1) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_HORZ[0]);
-    if(var_idx == 2) print(center_x(9, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_RAD[0]);
-    if(var_idx == 3) print(center_x(8, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_SPD[0]);
-    if(var_idx == 4) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_SLIDE[0]);
-    if(var_idx == 5) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_MOVE[0]);
+    if(var_idx == 0) print(center_x(10, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_VERT[0]);
+    if(var_idx == 1) print(center_x(10, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_HORZ[0]);
+    if(var_idx == 2) print(center_x(10, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_VERT2[0]);
+    if(var_idx == 3) print(center_x(10, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AR_HORZ2[0]);
+    if(var_idx == 4) print(center_x(9, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_RAD[0]);
+    if(var_idx == 5) print(center_x(8, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_AA_SPD[0]);
+    if(var_idx == 6) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_SLIDE[0]);
+    if(var_idx == 7) print(center_x(11, OLED_FONT_SMALL_WIDTH), 2, OLED_FONT_SMALL, 1, LBL_MOVE[0]);
     edit_display_val = get_edit_value(var_idx);
     print_number(edit_display_val, find_digits(edit_display_val), center_x(find_digits(edit_display_val), OLED_FONT_MEDIUM_WIDTH), 28, OLED_FONT_MEDIUM);
 }
@@ -588,10 +679,13 @@ function edit_value(var_idx) {
 function change_var(idx, delta) {
     if(idx == 0) AR_vertical    = clamp(AR_vertical    + delta, ValRange[0][0], ValRange[0][1]);
     if(idx == 1) AR_horizontal  = clamp(AR_horizontal  + delta, ValRange[1][0], ValRange[1][1]);
-    if(idx == 2) AA_radius      = clamp(AA_radius      + delta, ValRange[2][0], ValRange[2][1]);
-    if(idx == 3) AA_speed       = clamp(AA_speed       + delta, ValRange[3][0], ValRange[3][1]);
-    if(idx == 4) Slide_delay    = clamp(Slide_delay    + delta, ValRange[4][0], ValRange[4][1]);
-    if(idx == 5) Move_boost_val = clamp(Move_boost_val + delta, ValRange[5][0], ValRange[5][1]);
+    if(idx == 2) AR_vertical_p2 = clamp(AR_vertical_p2 + delta, ValRange[0][0], ValRange[0][1]);
+    if(idx == 3) AR_horizontal_p2 = clamp(AR_horizontal_p2 + delta, ValRange[1][0], ValRange[1][1]);
+    if(idx == 4) AA_radius      = clamp(AA_radius      + delta, ValRange[2][0], ValRange[2][1]);
+    if(idx == 5) AA_speed       = clamp(AA_speed       + delta, ValRange[3][0], ValRange[3][1]);
+    if(idx == 6) Slide_delay    = clamp(Slide_delay    + delta, ValRange[4][0], ValRange[4][1]);
+    if(idx == 7) Move_boost_val = clamp(Move_boost_val + delta, ValRange[5][0], ValRange[5][1]);
+    update_active_ar_profile();
     blink_led(TRUE);
     display_EDIT = TRUE;
 }
@@ -658,4 +752,5 @@ function save_settings() {
     set_pvar(SPVAR_13, AA_speed);
     set_pvar(SPVAR_14, Move_boost_val);
     set_pvar(SPVAR_15, Slide_delay);
+    set_pvar(SPVAR_16, pack_profile_pvar());
 }

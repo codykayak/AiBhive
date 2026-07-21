@@ -13,6 +13,8 @@ export type PlantMedicineProfile = {
 export type PlantMedicinePost = {
   id: string;
   plantId: string | null;
+  essayId?: string | null;
+  threadPostId?: string | null;
   library: 'hypnosis' | 'holistic' | 'animal-health' | null;
   topicId: string | null;
   authorUid: string;
@@ -165,6 +167,83 @@ export function createTopicPost(
   ).then((d) => (d as { post: PlantMedicinePost }).post);
 }
 
+export type ContentEngagementKind = 'plant' | 'holistic' | 'hypnosis' | 'animal-health' | 'essay';
+
+export type ContentEngagement = {
+  upvoteCount: number;
+  commentCount: number;
+  viewerHasUpvoted: boolean;
+};
+
+export async function fetchContentEngagement(
+  kind: ContentEngagementKind,
+  contentId: string,
+  user: User | null,
+): Promise<ContentEngagement> {
+  const headers: HeadersInit = {};
+  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  const res = await fetch(
+    `/api/plant-medicine/content/${encodeURIComponent(kind)}/${encodeURIComponent(contentId)}/engagement`,
+    { headers },
+  );
+  if (!res.ok) throw new Error('Failed to load engagement');
+  const data = (await res.json()) as { engagement: ContentEngagement };
+  return data.engagement;
+}
+
+export function toggleContentUpvote(
+  user: User,
+  kind: ContentEngagementKind,
+  contentId: string,
+): Promise<{ upvoteCount: number; viewerHasUpvoted: boolean }> {
+  return adminJson(
+    `/api/plant-medicine/content/${encodeURIComponent(kind)}/${encodeURIComponent(contentId)}/upvote`,
+    user,
+    { method: 'POST' },
+  );
+}
+
+export async function fetchEssayPosts(
+  essayId: string,
+  user: User | null,
+  type?: 'comment' | 'photo',
+): Promise<PlantMedicinePost[]> {
+  const params = type ? `?type=${type}` : '';
+  const headers: HeadersInit = {};
+  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  const res = await fetch(`/api/plant-medicine/essays/${encodeURIComponent(essayId)}/posts${params}`, { headers });
+  if (!res.ok) throw new Error('Failed to load essay posts');
+  const data = (await res.json()) as { posts: PlantMedicinePost[] };
+  return data.posts;
+}
+
+export function createEssayPost(
+  user: User,
+  essayId: string,
+  body: { type: 'comment' | 'photo'; text?: string; imageUrl?: string },
+): Promise<PlantMedicinePost> {
+  return adminJson(`/api/plant-medicine/essays/${encodeURIComponent(essayId)}/posts`, user, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  }).then((d) => (d as { post: PlantMedicinePost }).post);
+}
+
+export async function fetchThreadComments(postId: string, user: User | null): Promise<PlantMedicinePost[]> {
+  const headers: HeadersInit = {};
+  if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`;
+  const res = await fetch(`/api/plant-medicine/posts/${encodeURIComponent(postId)}/comments`, { headers });
+  if (!res.ok) throw new Error('Failed to load comments');
+  const data = (await res.json()) as { posts: PlantMedicinePost[] };
+  return data.posts;
+}
+
+export function createThreadComment(user: User, postId: string, text: string): Promise<PlantMedicinePost> {
+  return adminJson(`/api/plant-medicine/posts/${encodeURIComponent(postId)}/comments`, user, {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  }).then((d) => (d as { post: PlantMedicinePost }).post);
+}
+
 export type PlantChatMessage = {
   role: 'user' | 'assistant';
   content: string;
@@ -180,6 +259,112 @@ export class PlantCreditsError extends Error {
   }
 }
 
+/**
+ * Living Knowledge chat:
+ * - HolisticAskAgent (Diagnose-style): pass `context` + optional `scope` → free `/living-knowledge-chat`
+ * - Ask AiBhive / plant focus: pass plantId / essayId / library / topicId / contextText → `/chat`
+ * Both support multi-turn `history`.
+ */
+export async function sendLivingKnowledgeChat(
+  user: User,
+  opts: {
+    message: string;
+    history?: PlantChatMessage[];
+    /** Client RAG blocks for HolisticAskAgent */
+    context?: string;
+    scope?: string;
+    plantId?: string;
+    essayId?: string;
+    library?: TopicLibraryId;
+    topicId?: string;
+    contextText?: string;
+    focusTitle?: string;
+  },
+): Promise<{
+  reply: string;
+  chargedUsd?: number;
+  creditBalanceUsd?: number;
+}> {
+  const token = await user.getIdToken();
+
+  // HolisticAskAgent path — client-supplied RAG context
+  if (typeof opts.context === 'string') {
+    const res = await fetch('/api/plant-medicine/living-knowledge-chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: opts.message,
+        context: opts.context,
+        scope: opts.scope ?? 'all',
+        history: opts.history ?? [],
+      }),
+    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      reply?: string;
+      error?: string;
+      needPayment?: boolean;
+      amountUsd?: number;
+      chargedUsd?: number;
+      account?: { creditBalanceUsd?: number };
+    };
+
+    if (res.status === 401) throw new Error(data.error || 'Sign in for online enhancement');
+    if (res.status === 402 || data.needPayment) {
+      throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+    }
+    if (!res.ok || !data.reply) throw new Error(data.error || 'Living Knowledge chat failed');
+
+    return {
+      reply: data.reply,
+      chargedUsd: data.chargedUsd,
+      creditBalanceUsd: data.account?.creditBalanceUsd,
+    };
+  }
+
+  const res = await fetch('/api/plant-medicine/chat', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: opts.message,
+      history: opts.history ?? [],
+      plantId: opts.plantId,
+      essayId: opts.essayId,
+      library: opts.library,
+      topicId: opts.topicId,
+      contextText: opts.contextText,
+      focusTitle: opts.focusTitle,
+    }),
+  });
+  const data = (await res.json()) as {
+    ok?: boolean;
+    reply?: string;
+    error?: string;
+    needPayment?: boolean;
+    amountUsd?: number;
+    chargedUsd?: number;
+    account?: { creditBalanceUsd?: number };
+  };
+
+  if (res.status === 401) throw new Error(data.error || 'Sign in to use Ask AiBhive');
+  if (res.status === 402 || data.needPayment) {
+    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+  }
+  if (!res.ok || !data.reply) throw new Error(data.error || 'Ask AiBhive request failed');
+
+  return {
+    reply: data.reply,
+    chargedUsd: data.chargedUsd,
+    creditBalanceUsd: data.account?.creditBalanceUsd,
+  };
+}
+
 export async function sendPlantChat(
   user: User,
   opts: {
@@ -192,89 +377,5 @@ export async function sendPlantChat(
   chargedUsd?: number;
   creditBalanceUsd?: number;
 }> {
-  const token = await user.getIdToken();
-  const res = await fetch('/api/plant-medicine/chat', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      plantId: opts.plantId,
-      message: opts.message,
-      history: opts.history ?? [],
-    }),
-  });
-  const data = (await res.json()) as {
-    ok?: boolean;
-    reply?: string;
-    error?: string;
-    needPayment?: boolean;
-    amountUsd?: number;
-    chargedUsd?: number;
-    account?: { creditBalanceUsd?: number };
-  };
-
-  if (res.status === 401) throw new Error(data.error || 'Sign in to use Ask AI');
-  if (res.status === 402 || data.needPayment) {
-    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
-  }
-  if (!res.ok || !data.reply) throw new Error(data.error || 'Ask AI request failed');
-
-  return {
-    reply: data.reply,
-    chargedUsd: data.chargedUsd,
-    creditBalanceUsd: data.account?.creditBalanceUsd,
-  };
-}
-
-/** Free Living Knowledge holistic agent — Grok + client RAG context; supports multi-turn history. */
-export async function sendLivingKnowledgeChat(
-  user: User,
-  opts: {
-    message: string;
-    context: string;
-    scope?: string;
-    history?: PlantChatMessage[];
-  },
-): Promise<{
-  reply: string;
-  chargedUsd?: number;
-  creditBalanceUsd?: number;
-}> {
-  const token = await user.getIdToken();
-  const res = await fetch('/api/plant-medicine/living-knowledge-chat', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message: opts.message,
-      context: opts.context,
-      scope: opts.scope ?? 'all',
-      history: opts.history ?? [],
-    }),
-  });
-  const data = (await res.json()) as {
-    ok?: boolean;
-    reply?: string;
-    error?: string;
-    needPayment?: boolean;
-    amountUsd?: number;
-    chargedUsd?: number;
-    account?: { creditBalanceUsd?: number };
-  };
-
-  if (res.status === 401) throw new Error(data.error || 'Sign in for online enhancement');
-  if (res.status === 402 || data.needPayment) {
-    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
-  }
-  if (!res.ok || !data.reply) throw new Error(data.error || 'Living Knowledge chat failed');
-
-  return {
-    reply: data.reply,
-    chargedUsd: data.chargedUsd,
-    creditBalanceUsd: data.account?.creditBalanceUsd,
-  };
+  return sendLivingKnowledgeChat(user, opts);
 }
