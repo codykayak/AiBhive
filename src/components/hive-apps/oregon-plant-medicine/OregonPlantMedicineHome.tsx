@@ -25,7 +25,6 @@ import type { HolisticTopic } from '../../../lib/oregonPlantMedicine/holisticTyp
 import type { HypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
 import type { AnimalHealthTopic } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
-import { interleaveFeaturedTile } from './gridFeaturedInsert';
 import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
@@ -285,6 +284,46 @@ function CommunitySection({
   );
 }
 
+function PlantCard({
+  plant,
+  tab,
+  theme,
+  onOpenPlant,
+  className = '',
+}: {
+  plant: PlantEntry;
+  tab: 'plants' | 'edibles';
+  theme: SectionTheme;
+  onOpenPlant: (plant: PlantEntry) => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenPlant(plant)}
+      className={`group rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden text-left transition-all hover:-translate-y-0.5 shadow-lg ${theme.glow} ${
+        tab === 'edibles' ? 'hover:border-lime-500/40' : 'hover:border-emerald-500/40'
+      } ${className}`}
+    >
+      <div className="relative h-36 overflow-hidden">
+        <PlantPhoto
+          src={plant.imageUrl}
+          plantId={plant.id}
+          scientificName={plant.scientificName}
+          alt={plant.commonName}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient}`} />
+      </div>
+      <div className="p-4">
+        <p className={`text-[10px] font-bold uppercase tracking-wider ${theme.accent}`}>{plant.scientificName}</p>
+        <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
+        <p className="text-xs text-slate-500 mt-1 line-clamp-2">{plant.habitat}</p>
+      </div>
+    </button>
+  );
+}
+
 function PlantCardsSection({
   tab,
   plants,
@@ -299,43 +338,59 @@ function PlantCardsSection({
   featuredEssay?: ReturnType<typeof getFeaturedEssay>;
 }) {
   const theme = THEMES[tab];
+  const showFeatured = tab === 'plants' && !!featuredEssay;
+  const [sideA, sideB, remainder] = plants;
 
   return (
     <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
       <SectionHeader theme={theme} tab={tab} onNavigate={onNavigate} />
-      <div className="grid sm:grid-cols-3 gap-4">
-        {interleaveFeaturedTile(
-          plants.map((plant) => (
-          <button
-            key={plant.id}
-            type="button"
-            onClick={() => onOpenPlant(plant)}
-            className={`group rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden text-left transition-all hover:-translate-y-0.5 shadow-lg ${theme.glow} ${
-              tab === 'edibles' ? 'hover:border-lime-500/40' : 'hover:border-emerald-500/40'
-            }`}
-          >
-            <div className="relative h-40 overflow-hidden">
-              <PlantPhoto
-                src={plant.imageUrl}
-                plantId={plant.id}
-                scientificName={plant.scientificName}
-                alt={plant.commonName}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient}`} />
-            </div>
-            <div className="p-4">
-              <p className={`text-[10px] font-bold uppercase tracking-wider ${theme.accent}`}>{plant.scientificName}</p>
-              <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
-              <p className="text-xs text-slate-500 mt-1 line-clamp-2">{plant.habitat}</p>
-            </div>
-          </button>
-          )),
-          tab === 'plants' && featuredEssay ? (
-            <FeaturedEssayPanel key="home-featured" essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
-          ) : null,
-        )}
-      </div>
+
+      {showFeatured ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+          <div className="sm:col-span-2 lg:col-span-2 lg:row-span-2 lg:col-start-1 lg:row-start-1">
+            <FeaturedEssayPanel
+              key="home-featured"
+              essay={featuredEssay}
+              onOpenPlant={onOpenPlant}
+              spanGrid={false}
+            />
+          </div>
+
+          {sideA ? (
+            <PlantCard
+              plant={sideA}
+              tab={tab}
+              theme={theme}
+              onOpenPlant={onOpenPlant}
+              className="lg:col-start-3 lg:row-start-1"
+            />
+          ) : null}
+          {sideB ? (
+            <PlantCard
+              plant={sideB}
+              tab={tab}
+              theme={theme}
+              onOpenPlant={onOpenPlant}
+              className="lg:col-start-3 lg:row-start-2"
+            />
+          ) : null}
+          {remainder ? (
+            <PlantCard
+              plant={remainder}
+              tab={tab}
+              theme={theme}
+              onOpenPlant={onOpenPlant}
+              className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-3"
+            />
+          ) : null}
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-3 gap-4 items-start">
+          {plants.map((plant) => (
+            <PlantCard key={plant.id} plant={plant} tab={tab} theme={theme} onOpenPlant={onOpenPlant} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
