@@ -14,7 +14,6 @@ import {
   HeartPulse,
   LogOut,
   MapPin,
-  Search,
   Sparkles,
   Sprout,
   Star,
@@ -68,6 +67,7 @@ import { getFeaturedEssay, getFeaturedEssayById } from '../../lib/oregonPlantMed
 import type { SiteSearchResult } from '../../lib/oregonPlantMedicine/siteSearch';
 import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
+import HolisticAskAgent from './oregon-plant-medicine/HolisticAskAgent';
 import {
   EARTH_PLANT_MEDICINE_NAME,
   HOLISTIC_REMEDIES_PATH,
@@ -366,6 +366,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showAddState, setShowAddState] = useState(false);
+  const [showContribute, setShowContribute] = useState(false);
+  const [contributeSeedQuery, setContributeSeedQuery] = useState<string | undefined>();
   const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
   const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
   const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
@@ -813,25 +815,34 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
               </div>
             ) : null}
 
+            <div className="mb-4">
+              <HolisticAskAgent
+                scope={tab === 'edibles' ? 'edibles' : 'plants'}
+                accent={tab === 'edibles' ? 'lime' : 'emerald'}
+                placeholder={
+                  tab === 'edibles'
+                    ? 'Ask about berries, mycelium, chanterelles, wild greens…'
+                    : 'Ask about plants, Latin names, look-alikes, harvest…'
+                }
+                onQueryChange={setQuery}
+                user={user}
+                onSignIn={() => void handleSignIn()}
+                onContribute={(topicTitle) => {
+                  setContributeSeedQuery(topicTitle);
+                  setShowContribute(true);
+                }}
+                onOpenPlant={(plantId) => {
+                  const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                  if (plant) setSelected(plant);
+                }}
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={
-                    tab === 'edibles'
-                      ? 'Search berries, chanterelles, greens, morels…'
-                      : 'Search plants, Latin names, habitat…'
-                  }
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none focus:border-emerald-500/50"
-                />
-              </div>
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value as RegionFilter)}
-                className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+                className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
               >
                 {REGION_FILTER_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -1003,6 +1014,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
+            onContribute={(topicTitle) => {
+              setContributeSeedQuery(topicTitle);
+              setShowContribute(true);
+            }}
             focusTopicId={focusTopic?.library === 'holistic' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1015,6 +1030,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
+            onContribute={(topicTitle) => {
+              setContributeSeedQuery(topicTitle);
+              setShowContribute(true);
+            }}
             focusTopicId={focusTopic?.library === 'hypnosis' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1027,6 +1046,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
+            onContribute={(topicTitle) => {
+              setContributeSeedQuery(topicTitle);
+              setShowContribute(true);
+            }}
             focusTopicId={focusTopic?.library === 'animal-health' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1109,6 +1132,18 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         <ContributeModal
           onClose={() => setShowAddState(false)}
           stateName={userLocation && !regionSupported ? userLocation.state : undefined}
+          city={userLocation?.city}
+        />
+      ) : null}
+      {showContribute ? (
+        <ContributeModal
+          onClose={() => {
+            setShowContribute(false);
+            setContributeSeedQuery(undefined);
+          }}
+          stateName={userLocation && !regionSupported ? userLocation.state : undefined}
+          city={userLocation?.city}
+          seedQuery={contributeSeedQuery}
         />
       ) : null}
       {holisticDisclaimerOpen ? (

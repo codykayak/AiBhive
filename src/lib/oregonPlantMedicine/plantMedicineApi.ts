@@ -259,11 +259,20 @@ export class PlantCreditsError extends Error {
   }
 }
 
+/**
+ * Living Knowledge chat:
+ * - HolisticAskAgent (Diagnose-style): pass `context` + optional `scope` → free `/living-knowledge-chat`
+ * - Ask AiBhive / plant focus: pass plantId / essayId / library / topicId / contextText → `/chat`
+ * Both support multi-turn `history`.
+ */
 export async function sendLivingKnowledgeChat(
   user: User,
   opts: {
     message: string;
     history?: PlantChatMessage[];
+    /** Client RAG blocks for HolisticAskAgent */
+    context?: string;
+    scope?: string;
     plantId?: string;
     essayId?: string;
     library?: TopicLibraryId;
@@ -277,6 +286,45 @@ export async function sendLivingKnowledgeChat(
   creditBalanceUsd?: number;
 }> {
   const token = await user.getIdToken();
+
+  // HolisticAskAgent path — client-supplied RAG context
+  if (typeof opts.context === 'string') {
+    const res = await fetch('/api/plant-medicine/living-knowledge-chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: opts.message,
+        context: opts.context,
+        scope: opts.scope ?? 'all',
+        history: opts.history ?? [],
+      }),
+    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      reply?: string;
+      error?: string;
+      needPayment?: boolean;
+      amountUsd?: number;
+      chargedUsd?: number;
+      account?: { creditBalanceUsd?: number };
+    };
+
+    if (res.status === 401) throw new Error(data.error || 'Sign in for online enhancement');
+    if (res.status === 402 || data.needPayment) {
+      throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+    }
+    if (!res.ok || !data.reply) throw new Error(data.error || 'Living Knowledge chat failed');
+
+    return {
+      reply: data.reply,
+      chargedUsd: data.chargedUsd,
+      creditBalanceUsd: data.account?.creditBalanceUsd,
+    };
+  }
+
   const res = await fetch('/api/plant-medicine/chat', {
     method: 'POST',
     headers: {
