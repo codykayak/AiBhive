@@ -7,6 +7,7 @@ import {
 import { ANIMAL_HEALTH_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
 import { ANIMAL_HEALTH_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import type { AskAiContext } from './AskAiBhivePanel';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
 
 const ANIMAL_THEME = {
@@ -29,10 +30,21 @@ type Props = {
   user: User | null;
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
-  onContribute: (topicTitle?: string) => void;
+  onCreatePost: () => void;
+  onAskAi: (ctx: AskAiContext) => void;
+  focusTopicId?: string | null;
+  onFocusTopicConsumed?: () => void;
 };
 
-export default function AnimalHealthPanel({ user, onSignIn, onOpenPlant, onContribute }: Props) {
+export default function AnimalHealthPanel({
+  user,
+  onSignIn,
+  onOpenPlant,
+  onCreatePost,
+  onAskAi,
+  focusTopicId,
+  onFocusTopicConsumed,
+}: Props) {
   return (
     <ResearchLibraryPanel
       library="animal-health"
@@ -53,7 +65,10 @@ export default function AnimalHealthPanel({ user, onSignIn, onOpenPlant, onContr
       user={user}
       onSignIn={onSignIn}
       onOpenPlant={onOpenPlant}
-      onContribute={onContribute}
+      onCreatePost={onCreatePost}
+      onAskAi={onAskAi}
+      focusTopicId={focusTopicId}
+      onFocusTopicConsumed={onFocusTopicConsumed}
     />
   );
 }

@@ -12,8 +12,8 @@ import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelReso
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FEATURE_ID = 'plant_medicine_chat';
 const PLANT_CHAT_RAW_COST = 0.006;
-/** Community field guide chat is free — only builder/state map additions use credits. */
-const PLANT_CHAT_FREE = true;
+/** Ask AiBhive uses Hive credits — only paid feature besides adding states. */
+const PLANT_CHAT_FREE = false;
 
 let ragIndex = null;
 
@@ -79,25 +79,43 @@ export function buildPlantRagContext(plantId) {
     .join('\n');
 }
 
-const SYSTEM_PROMPT = `You are AiBhive Plant Guide — the Living Knowledge assistant for wild plants and mushrooms in Oregon and Northern California.
+const SYSTEM_PROMPT = `You are AiBhive Living Knowledge — the research assistant for wild plants, mushrooms, holistic protocols, hypnosis & energy work, and animal health in our community library.
 
 RULES:
-- Stay STRICTLY on topic: foraging ID, habitat, look-alikes, preparation, medicinal/edible uses, harvest timing, and safety for the species in context.
-- Use ONLY the plant library context provided below. If the answer is not in context, say you are not sure and recommend expert confirmation or a field guide.
-- ALWAYS mention toxic look-alikes when discussing edibility.
+- Stay STRICTLY on topic for the focus article or species in context.
+- Use ONLY the library context provided below. If the answer is not in context, say you are not sure and recommend expert confirmation.
+- For foraging: ALWAYS mention toxic look-alikes when discussing edibility.
 - Never encourage eating anything without 100% ID. Never give psilocybin cultivation steps.
-- Be warm, concise, and practical — like an experienced PNW forager.
-- If asked about unrelated topics, politely redirect to plants/mushrooms/foraging.
-- Prefer bullet points for ID features. Keep answers under 300 words unless the user asks for detail.`;
+- For health topics: educational only — not medical or veterinary advice.
+- Be warm, concise, and practical. Prefer bullet points. Keep answers under 300 words unless the user asks for detail.`;
 
 export async function runPlantMedicineChat(db, hiveUserId, opts) {
   const message = String(opts.message || '').trim().slice(0, 2000);
   const plantId = String(opts.plantId || '').trim();
-  if (!message) return { ok: false, error: 'Message is required.' };
-  if (!plantId) return { ok: false, error: 'Plant id is required.' };
+  const essayId = String(opts.essayId || '').trim();
+  const library = String(opts.library || '').trim();
+  const topicId = String(opts.topicId || '').trim();
+  const contextText = String(opts.contextText || '').trim();
+  const focusTitle = String(opts.focusTitle || '').trim();
 
-  const plantContext = buildPlantRagContext(plantId);
-  if (!plantContext) return { ok: false, error: 'Plant not found in library.' };
+  if (!message) return { ok: false, error: 'Message is required.' };
+
+  let libraryContext = null;
+  let focusLabel = focusTitle;
+
+  if (plantId) {
+    libraryContext = buildPlantRagContext(plantId);
+    if (!libraryContext) return { ok: false, error: 'Plant not found in library.' };
+    const plant = getPlantRagEntry(plantId);
+    focusLabel = plant?.commonName || focusTitle;
+  } else if (contextText) {
+    libraryContext = contextText.slice(0, 12000);
+  } else {
+    return { ok: false, error: 'No library context for this item.' };
+  }
+
+  if (!focusLabel && essayId) focusLabel = essayId;
+  if (!focusLabel && topicId) focusLabel = topicId;
 
   const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
   if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
@@ -128,12 +146,12 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
     .slice(-8)
     .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
 
-  const plant = getPlantRagEntry(plantId);
+  const plant = plantId ? getPlantRagEntry(plantId) : null;
   const system = [
     SYSTEM_PROMPT,
-    `\nCurrent species focus: ${plant.commonName} (${plant.scientificName})`,
-    '\n--- PLANT LIBRARY CONTEXT (authoritative) ---\n',
-    plantContext.slice(0, 12000),
+    focusLabel ? `\nCurrent focus: ${focusLabel}` : '',
+    '\n--- LIBRARY CONTEXT (authoritative) ---\n',
+    libraryContext,
   ].join('');
 
   const messages = [
@@ -156,7 +174,7 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
     const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
       rawCostUsd: PLANT_CHAT_RAW_COST,
       feature: FEATURE_ID,
-      summary: `Plant guide: ${plant.commonName}`,
+      summary: `Living Knowledge: ${focusLabel || plant?.commonName || 'chat'}`,
       email: opts.email,
     });
 

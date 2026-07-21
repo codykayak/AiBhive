@@ -25,6 +25,7 @@ import type { HolisticTopic } from '../../../lib/oregonPlantMedicine/holisticTyp
 import type { HypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
 import type { AnimalHealthTopic } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
+import { interleaveFeaturedTile } from './gridFeaturedInsert';
 import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
@@ -289,11 +290,13 @@ function PlantCardsSection({
   plants,
   onNavigate,
   onOpenPlant,
+  featuredEssay,
 }: {
   tab: 'plants' | 'edibles';
   plants: PlantEntry[];
   onNavigate: (tab: HomeTab) => void;
   onOpenPlant: (plant: PlantEntry) => void;
+  featuredEssay?: ReturnType<typeof getFeaturedEssay>;
 }) {
   const theme = THEMES[tab];
 
@@ -301,7 +304,8 @@ function PlantCardsSection({
     <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
       <SectionHeader theme={theme} tab={tab} onNavigate={onNavigate} />
       <div className="grid sm:grid-cols-3 gap-4">
-        {plants.map((plant) => (
+        {interleaveFeaturedTile(
+          plants.map((plant) => (
           <button
             key={plant.id}
             type="button"
@@ -326,7 +330,11 @@ function PlantCardsSection({
               <p className="text-xs text-slate-500 mt-1 line-clamp-2">{plant.habitat}</p>
             </div>
           </button>
-        ))}
+          )),
+          tab === 'plants' && featuredEssay ? (
+            <FeaturedEssayPanel key="home-featured" essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
+          ) : null,
+        )}
       </div>
     </section>
   );
@@ -437,15 +445,15 @@ export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpe
     <div className="pb-8">
       <HomeHero />
 
-      {featuredEssay ? (
-        <section className="px-0 sm:px-0 mb-8">
-          <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
-        </section>
-      ) : null}
-
       <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
 
-      <PlantCardsSection tab="plants" plants={featuredPlants} onNavigate={onNavigate} onOpenPlant={onOpenPlant} />
+      <PlantCardsSection
+        tab="plants"
+        plants={featuredPlants}
+        onNavigate={onNavigate}
+        onOpenPlant={onOpenPlant}
+        featuredEssay={featuredEssay}
+      />
 
       <PlantCardsSection tab="edibles" plants={featuredEdibles} onNavigate={onNavigate} onOpenPlant={onOpenPlant} />
 
