@@ -32,11 +32,30 @@ Guided flow: describe the app in plain English, review a quote, approve, and Bhi
 
 ## Hive Apps store — https://aibhive.com/hive-apps
 
-Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, Living Knowledge Plants and Medicine (community plant living knowledge base), and a mock real estate dashboard.
+Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, and a mock real estate dashboard. Living Knowledge Plants and Medicine is also listed at https://aibhive.com/plants (canonical URL; legacy hive runner redirects).
 
 ## Living Knowledge Plants and Medicine — https://aibhive.com/plants
 
-Community living knowledge base for edible wild plants, mushrooms, and homeopathic remedies across Oregon and Northern California — searchable library, regional filters, multi-photo ID, PDF guides, community photos/comments, Contribute flow (Hive credits), and favorites stored locally in the browser. Public URL: aibhive.com/plants (legacy hive runner redirects here).
+Community living knowledge base for edible wild plants, mushrooms, and adjacent research libraries across Oregon and Northern California. **Not the main AiBhive product** — a free-to-browse public field guide indexed for search and AI discovery.
+
+### Core plant library
+- **178+ species** with three ID photos each, habitat notes, toxic look-alikes, harvest and preparation ideas, regional filters (Oregon coast, Willamette Valley, Northern California), and downloadable PDF field guides.
+- **Site search** across plants, edibles, holistic topics, hypnosis/energy, animal health, featured essays, and community posts.
+- **Community feed** — member posts with photos, comments, and upvotes on plants, essays, and research topics.
+- **Featured essays** — long-form Grok-authored pieces (e.g. foraging philosophy, plant intelligence) embedded in home and library grids.
+- **Living Knowledge Ask agent** — offline RAG answers from the bundled library; optional Grok enhancement; photo plant ID via vision (Hive credits).
+- **Ask AiBhive** — paid per-question Grok chat with library context (Hive credits). Browsing, search, and community posts stay free.
+- **Contribute** — community post form for field notes; **$3 Hive credits** to add a new US state to the regional map.
+
+### Adjacent research libraries (same app, separate tabs)
+- **Holistic remedies & protocols** — https://aibhive.com/plants/holistic-remedies-and-protocols — 35+ topics with deep-dive articles, images, Edgar Cayce–inspired remedies, detox overviews, safety warnings. Educational only; not medical advice.
+- **Hypnosis & energy** — https://aibhive.com/plants/hypnosis-and-energy — past life regression, Edgar Cayce, Dolores Cannon QHHT, clinical hypnotherapy, Reiki, chakras, tuning forks, Solfeggio frequencies. Not therapy or medical care.
+- **Animal health** — https://aibhive.com/plants/animal-health — holistic veterinary education for dogs, cats, horses, livestock. Not veterinary advice.
+
+### URLs and redirects
+- Canonical home: `https://aibhive.com/plants`
+- Legacy runner `/hive-apps/run/example-oregon-plant-medicine` redirects to `/plants`
+- Brand names used in UI: “Living Knowledge Plants and Medicine”, “Earth's Plant Medicine” (hero), “Community Living Knowledgebase” (nav)
 
 ## AiBhive Pros — https://aibhive.com/pros
 

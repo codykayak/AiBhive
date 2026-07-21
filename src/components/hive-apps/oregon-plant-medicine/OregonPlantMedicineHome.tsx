@@ -24,7 +24,10 @@ import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { HolisticTopic } from '../../../lib/oregonPlantMedicine/holisticTypes';
 import type { HypnosisEnergyTopic } from '../../../lib/oregonPlantMedicine/hypnosisEnergyTypes';
 import type { AnimalHealthTopic } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
+import type { User } from 'firebase/auth';
+import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
+import HolisticAskAgent from './HolisticAskAgent';
 import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
@@ -43,6 +46,10 @@ type Props = {
   onNavigate: (tab: HomeTab) => void;
   onOpenPlant: (plant: PlantEntry) => void;
   onOpenPost: (post: SeedCommunityPost) => void;
+  user?: User | null;
+  onSignIn?: () => void;
+  onCreatePost?: () => void;
+  onOpenTopic?: (library: TopicLibraryId, topicId: string) => void;
 };
 
 type SectionTheme = {
@@ -290,12 +297,14 @@ function PlantCard({
   theme,
   onOpenPlant,
   className = '',
+  stretch = false,
 }: {
   plant: PlantEntry;
   tab: 'plants' | 'edibles';
   theme: SectionTheme;
   onOpenPlant: (plant: PlantEntry) => void;
   className?: string;
+  stretch?: boolean;
 }) {
   return (
     <button
@@ -303,9 +312,9 @@ function PlantCard({
       onClick={() => onOpenPlant(plant)}
       className={`group rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden text-left transition-all hover:-translate-y-0.5 shadow-lg ${theme.glow} ${
         tab === 'edibles' ? 'hover:border-lime-500/40' : 'hover:border-emerald-500/40'
-      } ${className}`}
+      } ${stretch ? 'h-full flex flex-col' : ''} ${className}`}
     >
-      <div className="relative h-36 overflow-hidden">
+      <div className={`relative overflow-hidden ${stretch ? 'flex-1 min-h-36' : 'h-36'}`}>
         <PlantPhoto
           src={plant.imageUrl}
           plantId={plant.id}
@@ -339,51 +348,70 @@ function PlantCardsSection({
 }) {
   const theme = THEMES[tab];
   const showFeatured = tab === 'plants' && !!featuredEssay;
-  const [sideA, sideB, remainder] = plants;
+  const [sideA, sideB] = plants;
 
   return (
     <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
       <SectionHeader theme={theme} tab={tab} onNavigate={onNavigate} />
 
       {showFeatured ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-          <div className="sm:col-span-2 lg:col-span-2 lg:row-span-2 lg:col-start-1 lg:row-start-1">
+        <>
+          <div className="hidden lg:flex gap-4 items-stretch min-h-[440px]">
+            <div className="flex-[3] min-w-0 flex">
+              <FeaturedEssayPanel
+                key="home-featured-desktop"
+                essay={featuredEssay}
+                onOpenPlant={onOpenPlant}
+                spanGrid={false}
+                fillHeight
+              />
+            </div>
+            <div className="flex-[2] min-w-0 flex flex-col gap-4">
+              {sideA ? (
+                <PlantCard
+                  plant={sideA}
+                  tab={tab}
+                  theme={theme}
+                  onOpenPlant={onOpenPlant}
+                  stretch
+                  className="flex-1 min-h-0"
+                />
+              ) : null}
+              {sideB ? (
+                <PlantCard
+                  plant={sideB}
+                  tab={tab}
+                  theme={theme}
+                  onOpenPlant={onOpenPlant}
+                  stretch
+                  className="flex-1 min-h-0"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          <div className="lg:hidden space-y-4">
             <FeaturedEssayPanel
-              key="home-featured"
+              key="home-featured-mobile"
               essay={featuredEssay}
               onOpenPlant={onOpenPlant}
               spanGrid={false}
             />
+            {plants.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                {plants.slice(0, 2).map((plant) => (
+                  <PlantCard
+                    key={plant.id}
+                    plant={plant}
+                    tab={tab}
+                    theme={theme}
+                    onOpenPlant={onOpenPlant}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
-
-          {sideA ? (
-            <PlantCard
-              plant={sideA}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="lg:col-start-3 lg:row-start-1"
-            />
-          ) : null}
-          {sideB ? (
-            <PlantCard
-              plant={sideB}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="lg:col-start-3 lg:row-start-2"
-            />
-          ) : null}
-          {remainder ? (
-            <PlantCard
-              plant={remainder}
-              tab={tab}
-              theme={theme}
-              onOpenPlant={onOpenPlant}
-              className="sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-3"
-            />
-          ) : null}
-        </div>
+        </>
       ) : (
         <div className="grid sm:grid-cols-3 gap-4 items-start">
           {plants.map((plant) => (
@@ -483,8 +511,16 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
   );
 }
 
-export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpenPost }: Props) {
-  const featuredPlants = ['stinging-nettle', 'oregon-grape', 'yarrow']
+export default function OregonPlantMedicineHome({
+  onNavigate,
+  onOpenPlant,
+  onOpenPost,
+  user,
+  onSignIn,
+  onCreatePost,
+  onOpenTopic,
+}: Props) {
+  const featuredPlants = ['stinging-nettle', 'oregon-grape']
     .map((id) => PLANT_LIBRARY.find((p) => p.id === id))
     .filter((p): p is PlantEntry => !!p);
 
@@ -499,6 +535,22 @@ export default function OregonPlantMedicineHome({ onNavigate, onOpenPlant, onOpe
   return (
     <div className="pb-8">
       <HomeHero />
+
+      <div className="mb-8">
+        <HolisticAskAgent
+          scope="all"
+          accent="emerald"
+          placeholder="Ask about plants, mushrooms, holistic topics, animal health — or upload a photo to ID…"
+          user={user}
+          onSignIn={onSignIn}
+          onContribute={() => onCreatePost?.()}
+          onOpenPlant={(plantId) => {
+            const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+            if (plant) onOpenPlant(plant);
+          }}
+          onOpenTopic={(topicId, library) => onOpenTopic?.(library, topicId)}
+        />
+      </div>
 
       <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
 

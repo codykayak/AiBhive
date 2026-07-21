@@ -87,9 +87,17 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Meeting Burn demo](https://aibhive.com/hive-apps/run/example-meeting-burn): Live meeting cost clock
 - [Focus Reactor demo](https://aibhive.com/hive-apps/run/example-focus-reactor): Deep-work particle focus timer
 - [House Flip Calculator demo](https://aibhive.com/hive-apps/run/example-house-flip): ARV, rehab, profit charts
-- [Living Knowledge Plants and Medicine](https://aibhive.com/plants): community living knowledge base for wild edibles, mushrooms, and homeopathic plants across Oregon and Northern California
 - [Get started / pricing quote](https://aibhive.com/get-started): Instant quotes for transcription, translation, voice cloning
 - [Book consultation](https://aibhive.com/book-consultation): Strategy call for custom agentic workflows
+
+## Living Knowledge Plants and Medicine (community field guide)
+
+Secondary public app — Pacific Northwest foraging and adjacent research libraries. Free to browse, search, and post; Hive credits for Ask AiBhive and opening new states on the map ($3).
+
+- [Living Knowledge Plants and Medicine](https://aibhive.com/plants): 178+ wild plants and mushrooms — ID photos, look-alikes, regional filters, site search, community posts, featured essays, PDF field guides
+- [Holistic remedies & protocols](https://aibhive.com/plants/holistic-remedies-and-protocols): 35+ educational topics — Edgar Cayce, detox, nervines, PNW materia medica (not medical advice)
+- [Hypnosis & energy](https://aibhive.com/plants/hypnosis-and-energy): Regression, QHHT, Reiki, chakras, Solfeggio frequencies (not therapy)
+- [Animal health](https://aibhive.com/plants/animal-health): Dogs, cats, horses, livestock — holistic vet education (not veterinary advice)
 
 ## Optional
 

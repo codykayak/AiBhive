@@ -12,6 +12,22 @@ export const EARTH_PLANT_MEDICINE_NAME = "Earth's Plant Medicine";
 export const LIVING_KNOWLEDGE_TAGLINE =
   'Pacific Northwest foraging field guide — wild plants, mushrooms, and protocols. The plant library is primary; holistic, hypnosis, and animal health are adjacent research libraries.';
 
+/** Meta description for /plants and AI corpus summaries. */
+export const LIVING_KNOWLEDGE_SEO_DESCRIPTION =
+  'Living Knowledge Plants and Medicine — 178+ Oregon and Northern California wild plants and mushrooms with ID photos, look-alikes, and harvest notes. Site search, community posts, featured essays, holistic protocols, hypnosis and energy research, and animal health libraries. Free to browse; Hive credits for Ask AiBhive and opening new states on the map.';
+
+export const LIVING_KNOWLEDGE_SEO_KEYWORDS =
+  'Living Knowledge, Oregon wild edibles, Northern California foraging, edible mushrooms, medicinal plants, plant identification, holistic remedies, Edgar Cayce, hypnosis QHHT, Reiki, animal health, community foraging, AiBhive';
+
+export const HOLISTIC_SEO_DESCRIPTION =
+  '35+ educational holistic remedy topics — PNW materia medica, Edgar Cayce traditions, detox overviews, nervines, and safety notes with deep-dive articles, site search, community posts, and featured essays. Cross-linked to the plant library. Not medical advice.';
+
+export const HYPNOSIS_SEO_DESCRIPTION =
+  'Hypnosis and energy work library — past life regression, Edgar Cayce, Dolores Cannon QHHT, clinical hypnotherapy, Reiki, chakras, Solfeggio frequencies, and community contributions with comments and featured essays. Not therapy or medical advice.';
+
+export const ANIMAL_HEALTH_SEO_DESCRIPTION =
+  'Holistic animal health education for dogs, cats, horses, and livestock — gut health, herbs, CBD, Reiki, nutrition debates, and community notes with upvotes and comments. Not veterinary advice.';
+
 export const PRIMARY_LIBRARY_HEADING = 'Plant library';
 
 export const ADJACENT_RESEARCH_HEADING = 'Adjacent research libraries';
