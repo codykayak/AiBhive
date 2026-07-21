@@ -774,11 +774,15 @@ app.post('/api/hive/social-hunter/research', express.json(), async (req, res) =>
   }
 });
 
-// Default JSON parser — skip multipart OCR upload (multer handles that route).
+// Default JSON parser — skip routes with their own body parsers (multer / large JSON).
 const defaultJsonParser = express.json({ limit: '2mb' });
+const plantMedicineUploadJson = express.json({ limit: '12mb' });
 app.use((req, res, next) => {
   if (req.method === 'POST' && req.path === '/api/homework/ocr-ingest') {
     return next();
+  }
+  if (req.method === 'POST' && req.path === '/api/plant-medicine/upload') {
+    return plantMedicineUploadJson(req, res, next);
   }
   return defaultJsonParser(req, res, next);
 });

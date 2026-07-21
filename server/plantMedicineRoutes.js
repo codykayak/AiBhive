@@ -118,7 +118,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     try {
       const user = await requireAuth(req, res);
       if (!user) return;
-      const { title, text, imageUrl, plantId } = req.body || {};
+      const { title, text, imageUrl, imageUrls, plantId } = req.body || {};
       if (plantId && !PLANT_ID_RE.test(String(plantId))) {
         return res.status(400).json({ error: 'Invalid plant id' });
       }
@@ -130,6 +130,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
           title,
           text,
           imageUrl,
+          imageUrls,
           plantId: plantId || null,
         },
         gcsBucket,

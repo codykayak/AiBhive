@@ -70,6 +70,7 @@ import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import HolisticAskAgent from './oregon-plant-medicine/HolisticAskAgent';
 import {
   EARTH_PLANT_MEDICINE_NAME,
+  PLANT_ASK_GUIDE_IMAGE,
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
   HYPNOSIS_ENERGY_PATH,
@@ -810,76 +811,136 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   </p>
                 </div>
             ) : tab === 'plants' ? (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 mb-5 text-sm text-emerald-100/90 leading-relaxed">
-                <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
-                  Primary field guide
-                </p>
-                <p>
-                  {EARTH_PLANT_MEDICINE_NAME} centers on this plant &amp; mushroom library — foraging IDs, regions, look-alikes,
-                  and harvest notes. Holistic protocols, hypnosis, and animal health live under adjacent research libraries
-                  in the nav.
-                </p>
+              <div className="mb-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)] lg:items-start">
+                <div className="space-y-4 min-w-0">
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100/90 leading-relaxed">
+                    <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
+                      Primary field guide
+                    </p>
+                    <p>
+                      {EARTH_PLANT_MEDICINE_NAME} centers on this plant &amp; mushroom library — foraging IDs, regions,
+                      look-alikes, and harvest notes. Holistic protocols, hypnosis, and animal health live under adjacent
+                      research libraries in the nav.
+                    </p>
+                  </div>
+
+                  <HolisticAskAgent
+                    scope="plants"
+                    accent="emerald"
+                    placeholder="Ask about plants, Latin names, look-alikes, harvest…"
+                    onQueryChange={setQuery}
+                    user={user}
+                    onSignIn={() => void handleSignIn()}
+                    onContribute={() => setShowCreatePost(true)}
+                    onOpenPlant={(plantId) => {
+                      const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                      if (plant) setSelected(plant);
+                    }}
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value as RegionFilter)}
+                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
+                    >
+                      {REGION_FILTER_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={useFilter}
+                      onChange={(e) => setUseFilter(e.target.value as UseFilter)}
+                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+                    >
+                      <option value="all">All uses</option>
+                      <option value="edible">Edible</option>
+                      <option value="medicinal">Medicinal</option>
+                      <option value="both">Edible &amp; medicinal</option>
+                      <option value="hallucinogenic">Hallucinogenic</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setFavoritesOnly((v) => !v)}
+                      className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
+                        favoritesOnly
+                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                          : 'border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
+                      Saved
+                    </button>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block sticky top-24">
+                  <img
+                    src={PLANT_ASK_GUIDE_IMAGE}
+                    alt="Edible plant identification and Ask AI field guide"
+                    className="w-full rounded-2xl border border-emerald-500/25 shadow-xl shadow-emerald-950/40 object-cover"
+                    loading="lazy"
+                  />
+                </div>
+
+                <img
+                  src={PLANT_ASK_GUIDE_IMAGE}
+                  alt=""
+                  aria-hidden
+                  className="lg:hidden w-full max-w-sm mx-auto rounded-2xl border border-emerald-500/25 object-cover"
+                  loading="lazy"
+                />
               </div>
             ) : null}
 
-            <div className="mb-4">
-              <HolisticAskAgent
-                scope={tab === 'edibles' ? 'edibles' : 'plants'}
-                accent={tab === 'edibles' ? 'lime' : 'emerald'}
-                placeholder={
-                  tab === 'edibles'
-                    ? 'Ask about berries, mycelium, chanterelles, wild greens…'
-                    : 'Ask about plants, Latin names, look-alikes, harvest…'
-                }
-                onQueryChange={setQuery}
-                user={user}
-                onSignIn={() => void handleSignIn()}
-                onContribute={() => setShowCreatePost(true)}
-                onOpenPlant={(plantId) => {
-                  const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
-                  if (plant) setSelected(plant);
-                }}
-              />
-            </div>
+            {tab === 'edibles' ? (
+              <div className="mb-4">
+                <HolisticAskAgent
+                  scope="edibles"
+                  accent="lime"
+                  placeholder="Ask about berries, mycelium, chanterelles, wild greens…"
+                  onQueryChange={setQuery}
+                  user={user}
+                  onSignIn={() => void handleSignIn()}
+                  onContribute={() => setShowCreatePost(true)}
+                  onOpenPlant={(plantId) => {
+                    const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                    if (plant) setSelected(plant);
+                  }}
+                />
+              </div>
+            ) : null}
 
-            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value as RegionFilter)}
-                className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
-              >
-                {REGION_FILTER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              {tab === 'plants' ? (
+            {tab === 'edibles' ? (
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
                 <select
-                  value={useFilter}
-                  onChange={(e) => setUseFilter(e.target.value as UseFilter)}
-                  className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value as RegionFilter)}
+                  className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
                 >
-                  <option value="all">All uses</option>
-                  <option value="edible">Edible</option>
-                  <option value="medicinal">Medicinal</option>
-                  <option value="both">Edible &amp; medicinal</option>
-                  <option value="hallucinogenic">Hallucinogenic</option>
+                  {REGION_FILTER_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setFavoritesOnly((v) => !v)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
-                  favoritesOnly
-                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                    : 'border-slate-700 text-slate-400'
-                }`}
-              >
-                <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
-                Saved
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setFavoritesOnly((v) => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
+                    favoritesOnly
+                      ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                      : 'border-slate-700 text-slate-400'
+                  }`}
+                >
+                  <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
+                  Saved
+                </button>
+              </div>
+            ) : null}
+
 
             {userLocation && !regionSupported ? (
               <div className="rounded-xl border border-sky-500/35 bg-sky-500/10 p-5 mb-5 text-sm text-sky-100/90">
