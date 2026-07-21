@@ -186,3 +186,64 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
     },
   };
 }
+
+const LIVING_KNOWLEDGE_SYSTEM = `You are AiBhive Living Knowledge — a specially trained holistic AI agent for wild plants, edible fungi, holistic protocols, hypnosis/energy education, and animal wellness research.
+
+RULES:
+- Use ONLY the Living Knowledge library context provided below. If the answer is not in context, say so clearly and suggest the user contribute research to expand the community archive.
+- Educational tone only — not medical, veterinary, or licensed therapy advice.
+- Prefer concise, practical answers (under 350 words) with safety callouts when relevant.
+- Never invent dosages, cultivation of illegal substances, or claims of guaranteed cures.
+- When context is partial, say what is documented and what is missing.`;
+
+/** Free-form Living Knowledge chat using client-retrieved RAG context (also free). */
+export async function runLivingKnowledgeChat(db, hiveUserId, opts) {
+  const message = String(opts.message || '').trim().slice(0, 2000);
+  const context = String(opts.context || '').trim().slice(0, 14000);
+  const scope = String(opts.scope || 'all').trim().slice(0, 40);
+  if (!message) return { ok: false, error: 'Message is required.' };
+  if (!context) return { ok: false, error: 'Library context is required.' };
+
+  const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+  if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
+
+  await ensureHiveUser(db, hiveUserId);
+
+  await resolveLatestGrokModels();
+  const model = process.env.PLANT_MEDICINE_CHAT_MODEL || getCachedGrokChatModel();
+
+  const system = [
+    LIVING_KNOWLEDGE_SYSTEM,
+    `\nActive library scope: ${scope}`,
+    '\n--- LIVING KNOWLEDGE CONTEXT (authoritative) ---\n',
+    context,
+  ].join('');
+
+  const reply = await grokChatMessages(
+    apiKey,
+    model,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: message },
+    ],
+    {
+      temperature: 0.3,
+      max_tokens: 1200,
+    },
+  );
+
+  if (!reply) return { ok: false, error: 'No response from Hive AI.' };
+
+  const account = await getHiveAccount(db, hiveUserId);
+  return {
+    ok: true,
+    reply,
+    source: 'grok',
+    model,
+    chargedUsd: 0,
+    account: {
+      creditBalanceUsd: account.creditBalanceUsd,
+      usage: account.usage,
+    },
+  };
+}

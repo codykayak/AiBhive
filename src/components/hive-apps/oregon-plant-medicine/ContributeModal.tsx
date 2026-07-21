@@ -19,9 +19,11 @@ type Props = {
   onClose: () => void;
   stateName?: string;
   city?: string;
+  /** Unanswered Ask-agent query — seeds Builder so the library grows */
+  seedQuery?: string;
 };
 
-export default function ContributeModal({ onClose, stateName, city }: Props) {
+export default function ContributeModal({ onClose, stateName, city, seedQuery }: Props) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,11 +39,14 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
     }
   };
 
+  const seed = seedQuery?.trim();
   const builderHref = stateName
     ? builderUrlForState(stateName, city)
     : '/hive-apps/build?q=' +
       encodeURIComponent(
-        'Add new plants to Living Knowledge Plants and Medicine — same fields as the Oregon library (habitat, ID photos, look-alikes, edible/medicinal notes).',
+        seed
+          ? `Add Living Knowledge research answering: "${seed}". Follow plant/topic models in src/lib/oregonPlantMedicine/. Educational tone, safety warnings, cross-links. Contributor is expanding the shared archive so this answer becomes part of the library for everyone.`
+          : 'Add new plants to Living Knowledge Plants and Medicine — same fields as the Oregon library (habitat, ID photos, look-alikes, edible/medicinal notes).',
       );
 
   return (
@@ -68,12 +73,23 @@ export default function ContributeModal({ onClose, stateName, city }: Props) {
             Contribute to the living knowledge base
           </h2>
           <p className="text-sm text-slate-300 mt-2 leading-relaxed">
-            Browse and search the library for free. Adding a new state to the map costs Hive credits; adding plants and
-            edibles uses Builder credits because those entries are deep and AI-assisted.
+            Browse and ask the holistic AI agent for free (offline library RAG). When something is missing, your
+            contribution expands Living Knowledge for everyone. Adding a new state to the map costs Hive credits.
           </p>
         </div>
 
         <div className="p-5 sm:p-6 space-y-4 text-sm text-slate-300 leading-relaxed">
+          {seed ? (
+            <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Spreading living knowledge</p>
+              <p className="mt-1.5 text-amber-50/90 leading-relaxed">
+                Your unanswered question becomes a community seed:{' '}
+                <strong className="text-white">&ldquo;{seed}&rdquo;</strong>. Publishing it adds the answer to the
+                library so the next person finds it instantly.
+              </p>
+            </div>
+          ) : null}
+
           <div className="flex gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-4">
             <Leaf className="w-5 h-5 text-emerald-300 shrink-0 mt-0.5" />
             <div>

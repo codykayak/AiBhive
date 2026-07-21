@@ -1,7 +1,11 @@
 import express from 'express';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyHiveAuth } from './hiveAuth.js';
-import { runPlantMedicineChat, resolvePlantHiveUserId } from './plantMedicineChat.js';
+import {
+  runPlantMedicineChat,
+  runLivingKnowledgeChat,
+  resolvePlantHiveUserId,
+} from './plantMedicineChat.js';
 import {
   createPost,
   createFeedPost,
@@ -315,6 +319,32 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       return res.json(result);
     } catch (err) {
       console.error('[plant-medicine/chat]', err);
+      return res.status(500).json({ error: err.message || 'Chat failed' });
+    }
+  });
+
+  /** Holistic / Living Knowledge free-form chat — client supplies RAG context; free; no credits. */
+  app.post('/api/plant-medicine/living-knowledge-chat', express.json({ limit: '1mb' }), async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const { message, context, scope = 'all' } = req.body || {};
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      const result = await runLivingKnowledgeChat(db, hiveUserId, {
+        message,
+        context,
+        scope,
+        email: user.email,
+      });
+
+      if (!result.ok) {
+        return res.status(400).json(result);
+      }
+
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/living-knowledge-chat]', err);
       return res.status(500).json({ error: err.message || 'Chat failed' });
     }
   });

@@ -1,7 +1,8 @@
 import type { User } from 'firebase/auth';
 import { useMemo, useState, type ReactNode } from 'react';
-import { AlertTriangle, ExternalLink, PlusCircle, Search, Sprout, X } from 'lucide-react';
+import { AlertTriangle, ExternalLink, PlusCircle, Sprout, X } from 'lucide-react';
 import type { FeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
+import type { LivingKnowledgeScope } from '../../../lib/oregonPlantMedicine/livingKnowledgeRag';
 import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import type { ResearchTopicBase } from '../../../lib/oregonPlantMedicine/topicLibraryTypes';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
@@ -9,6 +10,7 @@ import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
 import GridSectionVideo from './GridSectionVideo';
+import HolisticAskAgent from './HolisticAskAgent';
 import ResearchTopicImage from './ResearchTopicImage';
 import TopicCommunityPanel from './TopicCommunityPanel';
 
@@ -47,6 +49,9 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   gridVideo?: SectionVideo;
   /** Large featured essay shown above the topic grid */
   featuredEssay?: FeaturedEssay;
+  /** Living Knowledge ask-agent scope (defaults from library id) */
+  askScope?: LivingKnowledgeScope;
+  askAccent?: 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime';
 };
 
 function TopicDetail<T extends ResearchTopicBase & { category: string }>({
@@ -235,10 +240,13 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onContribute,
   gridVideo,
   featuredEssay,
+  askScope,
+  askAccent = 'cyan',
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
   const [selected, setSelected] = useState<T | null>(null);
+  const agentScope: LivingKnowledgeScope = askScope ?? library;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -262,21 +270,30 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           <FeaturedEssayPanel essay={featuredEssay} onOpenPlant={onOpenPlant} spanGrid={false} />
         ) : null}
 
+        <HolisticAskAgent
+          scope={agentScope}
+          accent={askAccent}
+          placeholder={searchPlaceholder}
+          onQueryChange={setQuery}
+          user={user}
+          onSignIn={onSignIn}
+          onContribute={onContribute}
+          onOpenPlant={(plantId) => {
+            const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+            if (plant) onOpenPlant(plant);
+          }}
+          onOpenTopic={(topicId, topicLibrary) => {
+            if (topicLibrary !== library) return;
+            const topic = topics.find((t) => t.id === topicId);
+            if (topic) setSelected(topic);
+          }}
+        />
+
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={searchPlaceholder}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none ${theme.searchFocus}`}
-            />
-          </div>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+            className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
           >
             <option value="all">All categories</option>
             {categoryOrder.map((c) => (

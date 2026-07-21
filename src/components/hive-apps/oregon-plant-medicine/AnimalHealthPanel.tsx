@@ -23,6 +23,8 @@ const ANIMAL_THEME = {
   contributeText: 'text-rose-200',
   communityAccent: 'text-rose-300',
   searchFocus: 'focus:border-rose-500/50',
+  videoAccent: 'text-rose-300',
+  videoBorder: 'border-rose-500/35 hover:border-rose-500/50',
 };
 
 type Props = {
@@ -54,6 +56,8 @@ export default function AnimalHealthPanel({ user, onSignIn, onOpenPlant, onContr
       onSignIn={onSignIn}
       onOpenPlant={onOpenPlant}
       onContribute={onContribute}
+      askScope="animal-health"
+      askAccent="rose"
     />
   );
 }

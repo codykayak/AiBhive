@@ -60,6 +60,8 @@ export default function HypnosisEnergyPanel({ user, onSignIn, onOpenPlant, onCon
       onContribute={onContribute}
       gridVideo={SECTION_VIDEOS.hypnosis}
       featuredEssay={getFeaturedEssay('hypnosis')}
+      askScope="hypnosis"
+      askAccent="cyan"
     />
   );
 }

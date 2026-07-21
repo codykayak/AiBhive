@@ -227,3 +227,52 @@ export async function sendPlantChat(
     creditBalanceUsd: data.account?.creditBalanceUsd,
   };
 }
+
+/** Free Living Knowledge holistic agent — uses client RAG context; optional online enhancement. */
+export async function sendLivingKnowledgeChat(
+  user: User,
+  opts: {
+    message: string;
+    context: string;
+    scope?: string;
+  },
+): Promise<{
+  reply: string;
+  chargedUsd?: number;
+  creditBalanceUsd?: number;
+}> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/living-knowledge-chat', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message: opts.message,
+      context: opts.context,
+      scope: opts.scope ?? 'all',
+    }),
+  });
+  const data = (await res.json()) as {
+    ok?: boolean;
+    reply?: string;
+    error?: string;
+    needPayment?: boolean;
+    amountUsd?: number;
+    chargedUsd?: number;
+    account?: { creditBalanceUsd?: number };
+  };
+
+  if (res.status === 401) throw new Error(data.error || 'Sign in for online enhancement');
+  if (res.status === 402 || data.needPayment) {
+    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+  }
+  if (!res.ok || !data.reply) throw new Error(data.error || 'Living Knowledge chat failed');
+
+  return {
+    reply: data.reply,
+    chargedUsd: data.chargedUsd,
+    creditBalanceUsd: data.account?.creditBalanceUsd,
+  };
+}
