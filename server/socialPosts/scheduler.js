@@ -1,9 +1,10 @@
-import { runScheduledSocialPost } from './generator.js';
+import { generateDailySocialPost } from './generator.js';
+import { listCompanies } from './companies.js';
 import { getPostByDate } from './store.js';
 import { todayDateKey } from './topics.js';
 
 const CHECK_MS = 15 * 60 * 1000;
-let lastRunDate = null;
+const lastRunByCompany = new Map();
 let running = false;
 
 function pacificHourAndMinute() {
@@ -21,24 +22,33 @@ function pacificHourAndMinute() {
 async function tick() {
   if (running) return;
   const { hour, minute } = pacificHourAndMinute();
-  const scheduleHour = Number(process.env.AUTOPOSTER_SCHEDULE_HOUR || 7);
-  if (hour !== scheduleHour || minute > 14) return;
+  if (minute > 14) return;
+
+  const companies = (await listCompanies()).filter((c) => c.autoGenerateEnabled);
+  const due = companies.filter((c) => (c.scheduleHour ?? 7) === hour);
+  if (!due.length) return;
 
   const today = todayDateKey();
-  if (lastRunDate === today) return;
-
-  const existing = await getPostByDate(today);
-  if (existing?.status === 'generating') return;
-  if (existing?.facebook?.caption && !['failed', 'rejected'].includes(existing.status)) {
-    lastRunDate = today;
-    return;
-  }
-
   running = true;
   try {
-    console.log('[autoposter-scheduler] Running daily job for', today);
-    await runScheduledSocialPost();
-    lastRunDate = today;
+    for (const company of due) {
+      if (lastRunByCompany.get(company.id) === today) continue;
+
+      const existing = await getPostByDate(company.id, today);
+      if (existing?.status === 'generating') continue;
+      if (existing?.facebook?.caption && !['failed', 'rejected'].includes(existing.status)) {
+        lastRunByCompany.set(company.id, today);
+        continue;
+      }
+
+      console.log('[autoposter-scheduler] Running daily job for', company.id, today);
+      await generateDailySocialPost({
+        companyId: company.id,
+        company,
+        generatedBy: 'scheduler',
+      });
+      lastRunByCompany.set(company.id, today);
+    }
   } catch (e) {
     console.error('[autoposter-scheduler] failed:', e);
   } finally {
@@ -46,13 +56,13 @@ async function tick() {
   }
 }
 
-/** In-process scheduler — runs when Cloud Run instance is alive at 7 AM PT. */
+/** In-process scheduler — runs when Cloud Run instance is alive at each company's schedule hour (PT). */
 export function startAutoposterScheduler() {
   if (process.env.DISABLE_AUTOPOSTER_SCHEDULER === 'true') {
     console.log('[autoposter-scheduler] Disabled via DISABLE_AUTOPOSTER_SCHEDULER');
     return;
   }
-  console.log('[autoposter-scheduler] Started (checks every 15 min, 7 AM Pacific)');
+  console.log('[autoposter-scheduler] Started (checks every 15 min, per-company schedule PT)');
   setInterval(() => {
     tick().catch((e) => console.error('[autoposter-scheduler] tick error:', e));
   }, CHECK_MS);

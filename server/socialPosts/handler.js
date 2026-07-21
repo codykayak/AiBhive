@@ -1,4 +1,12 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import {
+  createCompany,
+  deleteCompany,
+  getCompany,
+  listCompanies,
+  saveCompany,
+  sanitizeCompany,
+} from './companies.js';
 import { generateDailySocialPost, resendPostNotification } from './generator.js';
 import { sendTestSms } from './notify.js';
 import { publishAndSavePost } from './publish.js';
@@ -6,6 +14,7 @@ import {
   getConfig,
   getPostByDate,
   listPosts,
+  parsePostDocId,
   patchPostCaptions,
   saveConfig,
   savePost,
@@ -31,15 +40,33 @@ function computeStats(posts) {
     else if (status === 'posted') counts.posted += 1;
     else if (status === 'failed') counts.failed += 1;
     else if (status === 'generating') counts.generating += 1;
-    if (p.date === today || p.id === today) todayPost = p;
+    if (p.date === today || p.id?.endsWith(`_${today}`)) todayPost = p;
   }
 
   return { counts, today, todayPost: todayPost ? serializePost(todayPost) : null };
 }
 
+function resolveCompanyId(req) {
+  return req.query?.companyId || req.body?.companyId || 'aibhive';
+}
+
 export async function handleSocialPostsRequest(req, authUser) {
   if (req.method === 'GET') {
     const action = req.query?.action || 'list';
+
+    if (action === 'companies') {
+      const companies = await listCompanies();
+      return {
+        status: 200,
+        data: { companies: companies.map(sanitizeCompany) },
+      };
+    }
+
+    if (action === 'company' && req.query?.companyId) {
+      const company = await getCompany(req.query.companyId);
+      if (!company) return { status: 404, data: { error: 'Company not found.' } };
+      return { status: 200, data: { company: sanitizeCompany(company) } };
+    }
 
     if (action === 'profile' && authUser?.uid) {
       const profile = await getUserProfile(authUser.uid);
@@ -47,12 +74,13 @@ export async function handleSocialPostsRequest(req, authUser) {
     }
 
     if (action === 'list') {
+      const companyId = resolveCompanyId(req);
       const limit = Math.min(Number(req.query?.limit) || 30, 100);
-      const posts = await listPosts(limit);
+      const posts = await listPosts(companyId, limit);
       const serialized = posts.map(serializePost);
       return {
         status: 200,
-        data: { posts: serialized, stats: computeStats(posts) },
+        data: { posts: serialized, stats: computeStats(posts), companyId },
       };
     }
 
@@ -62,7 +90,9 @@ export async function handleSocialPostsRequest(req, authUser) {
     }
 
     if (action === 'workflow') {
+      const companyId = resolveCompanyId(req);
       const config = await getConfig();
+      const company = await getCompany(companyId);
       const profile = authUser?.uid
         ? sanitizeUserProfile(await getUserProfile(authUser.uid))
         : null;
@@ -71,17 +101,16 @@ export async function handleSocialPostsRequest(req, authUser) {
         data: {
           pipeline: WORKFLOW_PIPELINE,
           config,
+          company: company ? sanitizeCompany(company) : null,
           profile,
-          models: {
-            text: config.textModel || process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-            image: config.imageModel || process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
-          },
         },
       };
     }
 
     if (action === 'get' && req.query?.postId) {
-      const post = await getPostByDate(req.query.postId);
+      const companyId = resolveCompanyId(req);
+      const { dateKey } = parsePostDocId(req.query.postId);
+      const post = await getPostByDate(companyId, dateKey);
       if (!post) {
         return { status: 404, data: { error: 'Post not found.' } };
       }
@@ -96,18 +125,37 @@ export async function handleSocialPostsRequest(req, authUser) {
   }
 
   const { action, postId, updates, force } = req.body ?? {};
+  const companyId = resolveCompanyId(req);
+
+  if (action === 'createCompany') {
+    const company = await createCompany({ name: req.body?.name });
+    return { status: 200, data: { company: sanitizeCompany(company) } };
+  }
+
+  if (action === 'updateCompany' && companyId) {
+    const { action: _a, companyId: _c, ...patch } = req.body ?? {};
+    const company = await saveCompany(companyId, patch);
+    return { status: 200, data: { company: sanitizeCompany(company) } };
+  }
+
+  if (action === 'deleteCompany' && companyId) {
+    await deleteCompany(companyId);
+    return { status: 200, data: { ok: true } };
+  }
 
   if (action === 'generate') {
-    const userProfile = authUser?.uid ? await getUserProfile(authUser.uid) : null;
+    const company = await getCompany(companyId);
+    if (!company) return { status: 404, data: { error: 'Company not found.' } };
     const dateStr = req.body?.date;
     const date = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
       ? new Date(`${dateStr}T12:00:00`)
       : undefined;
     const result = await generateDailySocialPost({
+      companyId,
+      company,
       date,
       force: !!force,
       generatedBy: 'manual',
-      userProfile,
     });
     return {
       status: 200,
@@ -125,11 +173,9 @@ export async function handleSocialPostsRequest(req, authUser) {
       approvedAt: Timestamp.now(),
     });
 
-    if (authUser?.uid) {
-      const profile = await getUserProfile(authUser.uid);
-      if (profile.autoPublishOnApprove) {
-        post = await publishAndSavePost(postId, profile, ['facebook', 'instagram']);
-      }
+    const company = await getCompany(post.companyId || companyId);
+    if (company?.autoPublishOnApprove) {
+      post = await publishAndSavePost(postId, company, ['facebook', 'instagram']);
     }
 
     return { status: 200, data: { post: serializePost(post) } };
@@ -154,32 +200,34 @@ export async function handleSocialPostsRequest(req, authUser) {
   }
 
   if (action === 'resendNotify' && postId) {
-    const post = await resendPostNotification(postId);
+    const post = await resendPostNotification(postId, companyId);
     return { status: 200, data: { post: serializePost(post) } };
   }
 
   if (action === 'testSms') {
     const config = await getConfig();
-    const phone = req.body?.phone || config.notifyPhone;
+    const company = await getCompany(companyId);
+    const phone = req.body?.phone || company?.notifyPhone || config.notifyPhone;
     const result = await sendTestSms(phone);
     return { status: 200, data: { ok: true, result } };
   }
 
   if (action === 'updateProfile' && authUser?.uid) {
-    const { action: _a, ...updates } = req.body ?? {};
-    const profile = await saveUserProfile(authUser.uid, authUser.email, updates);
+    const { action: _a, ...profileUpdates } = req.body ?? {};
+    const profile = await saveUserProfile(authUser.uid, authUser.email, profileUpdates);
     return { status: 200, data: { profile: sanitizeUserProfile(profile) } };
   }
 
-  if (action === 'publish' && postId && authUser?.uid) {
-    const profile = await getUserProfile(authUser.uid);
+  if (action === 'publish' && postId) {
+    const company = await getCompany(companyId);
+    if (!company) return { status: 404, data: { error: 'Company not found.' } };
     const platforms = Array.isArray(req.body?.platforms)
       ? req.body.platforms.filter((p) => p === 'facebook' || p === 'instagram')
       : ['facebook', 'instagram'];
     if (!platforms.length) {
       return { status: 400, data: { error: 'Specify platforms: facebook and/or instagram.' } };
     }
-    const post = await publishAndSavePost(postId, profile, platforms);
+    const post = await publishAndSavePost(postId, company, platforms);
     return { status: 200, data: { post: serializePost(post) } };
   }
 
