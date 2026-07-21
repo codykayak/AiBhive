@@ -1,4 +1,5 @@
 # Squash-merge Cursor Cloud Agent PRs automatically.
+# First syncs main-fixed into the PR branch to reduce conflicts (see AGENTS.md).
 # Branches must match cursor/* (see AGENTS.md). Draft PRs are skipped until marked ready.
 name: Auto-merge cursor agent PRs
 
@@ -12,25 +13,108 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: auto-merge-${{ github.event.pull_request.number }}
+  group: cursor-pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  squash-merge:
+  sync-main-fixed:
     if: |
       github.event.pull_request.draft == false &&
-      startsWith(github.event.pull_request.head.ref, 'cursor/')
+      startsWith(github.event.pull_request.head.ref, 'cursor/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      conflict: ${{ steps.sync.outputs.conflict }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Sync main-fixed into PR branch
+        id: sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin main-fixed
+
+          if git merge-base --is-ancestor origin/main-fixed HEAD; then
+            echo "PR branch already includes main-fixed."
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          prior=$(gh pr list --head "$BRANCH" --state merged --json number -q 'length' || echo 0)
+          if [ "${prior:-0}" -gt 0 ]; then
+            echo "::warning::Branch $BRANCH was used in $prior merged PR(s). Reusing a branch after squash-merge is the most common cause of conflicts."
+          fi
+
+          if git merge origin/main-fixed --no-edit -m "chore: sync main-fixed into $BRANCH"; then
+            git push origin "HEAD:$BRANCH"
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort || true
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment on sync conflict
+        if: steps.sync.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body "## Merge conflict with \`main-fixed\`
+
+          This usually happens when the same \`cursor/*\` branch was **reused after a squash merge**. Squash merge rewrites history on \`main-fixed\`, so old branch commits no longer line up with production.
+
+          **Quick fix** — reset the branch to current \`main-fixed\`, then re-apply your changes:
+
+          \`\`\`bash
+          git fetch origin main-fixed
+          git checkout ${BRANCH}
+          git reset --hard origin/main-fixed
+          # re-apply edits, commit, then:
+          git push --force-with-lease
+          \`\`\`
+
+          **Preferred** — use a **new branch per PR** (never reuse after merge):
+
+          \`\`\`bash
+          ./scripts/cursor-fresh-branch.sh my-feature-name
+          \`\`\`
+
+          See \`AGENTS.md\` → Branch hygiene."
+
+  squash-merge:
+    needs: sync-main-fixed
+    if: |
+      github.event.pull_request.draft == false &&
+      startsWith(github.event.pull_request.head.ref, 'cursor/') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.sync-main-fixed.outputs.conflict != 'true'
     runs-on: ubuntu-latest
     steps:
+      - name: Update PR branch via GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/update-branch" \
+            -X PUT -f merge_method=merge 2>/dev/null || true
+
       - name: Wait for mergeable PR (GitHub computes async)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           pr="${{ github.event.pull_request.number }}"
           repo="${{ github.repository }}"
-          for i in $(seq 1 12); do
+          for i in $(seq 1 18); do
             state=$(gh pr view "$pr" --repo "$repo" --json state,mergeable -q '.state + " " + (.mergeable|tostring)')
-            echo "PR #$pr: $state (attempt $i/12)"
+            echo "PR #$pr: $state (attempt $i/18)"
             if echo "$state" | grep -q '^MERGED'; then
               echo "Already merged."
               exit 0
@@ -39,7 +123,8 @@ jobs:
               break
             fi
             if echo "$state" | grep -q 'OPEN false$'; then
-              echo "PR has merge conflicts — skipping auto-merge."
+              echo "PR still has merge conflicts — skipping auto-merge."
+              gh pr comment "$pr" --repo "$repo" --body "Auto-merge skipped: conflicts remain after syncing \`main-fixed\`. See the sync comment above or \`AGENTS.md\` → Branch hygiene." || true
               exit 1
             fi
             sleep 5
