@@ -24,6 +24,8 @@ const ANIMAL_THEME = {
   contributeText: 'text-rose-200',
   communityAccent: 'text-rose-300',
   searchFocus: 'focus:border-rose-500/50',
+  videoAccent: 'text-rose-300',
+  videoBorder: 'border-rose-500/35 hover:border-rose-500/50',
 };
 
 type Props = {
@@ -67,6 +69,8 @@ export default function AnimalHealthPanel({
       onOpenPlant={onOpenPlant}
       onCreatePost={onCreatePost}
       onAskAi={onAskAi}
+      askScope="animal-health"
+      askAccent="rose"
       focusTopicId={focusTopicId}
       onFocusTopicConsumed={onFocusTopicConsumed}
     />

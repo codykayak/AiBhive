@@ -71,6 +71,8 @@ export default function HypnosisEnergyPanel({
       onOpenPlant={onOpenPlant}
       onCreatePost={onCreatePost}
       onAskAi={onAskAi}
+      askScope="hypnosis"
+      askAccent="cyan"
       focusTopicId={focusTopicId}
       onFocusTopicConsumed={onFocusTopicConsumed}
       gridVideo={SECTION_VIDEOS.hypnosis}

@@ -49,6 +49,8 @@ const STARTER_PROMPTS = [
   'When is the best time to harvest?',
 ];
 
+const FREE_CHAT_NOTE = 'Plant guide chat is free — powered by Living Knowledge RAG.';
+
 export default function PlantAskAiPanel({ plant, user, onSignIn, onClose }: Props) {
   const [messages, setMessages] = useState<StoredMessage[]>(() => loadSession(plant.id));
   const [input, setInput] = useState('');
@@ -154,7 +156,7 @@ export default function PlantAskAiPanel({ plant, user, onSignIn, onClose }: Prop
               <p>
                 Plant-focused AI trained on our Living Knowledge library for{' '}
                 <strong className="text-white">{plant.commonName}</strong> — identification, look-alikes,
-                preparation, and safety. Uses Hive credits like the rest of AiBhive.
+                preparation, and safety. {FREE_CHAT_NOTE}
               </p>
               <div className="flex flex-wrap gap-2 mt-3">
                 {STARTER_PROMPTS.map((prompt) => (
