@@ -41,7 +41,6 @@ type Props = {
   onOpenPlant: (plant: PlantEntry) => void;
   onCreatePost: () => void;
   onAskAi: (ctx: AskAiContext) => void;
-  onContribute?: (query?: string) => void;
   focusTopicId?: string | null;
   onFocusTopicConsumed?: () => void;
 };
@@ -241,7 +240,6 @@ export default function HolisticRemediesPanel({
   onOpenPlant,
   onCreatePost,
   onAskAi,
-  onContribute,
   focusTopicId,
   onFocusTopicConsumed,
 }: Props) {
@@ -345,7 +343,7 @@ export default function HolisticRemediesPanel({
           onQueryChange={setQuery}
           user={user}
           onSignIn={onSignIn}
-          onContribute={onContribute ?? (() => onCreatePost())}
+          onContribute={() => onCreatePost()}
           onOpenPlant={(plantId) => {
             const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
             if (plant) onOpenPlant(plant);

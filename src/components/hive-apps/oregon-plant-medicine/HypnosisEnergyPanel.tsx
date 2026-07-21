@@ -36,7 +36,6 @@ type Props = {
   onOpenPlant: (plant: PlantEntry) => void;
   onCreatePost: () => void;
   onAskAi: (ctx: AskAiContext) => void;
-  onContribute?: (query?: string) => void;
   focusTopicId?: string | null;
   onFocusTopicConsumed?: () => void;
 };
@@ -47,7 +46,6 @@ export default function HypnosisEnergyPanel({
   onOpenPlant,
   onCreatePost,
   onAskAi,
-  onContribute,
   focusTopicId,
   onFocusTopicConsumed,
 }: Props) {
@@ -73,7 +71,6 @@ export default function HypnosisEnergyPanel({
       onOpenPlant={onOpenPlant}
       onCreatePost={onCreatePost}
       onAskAi={onAskAi}
-      onContribute={onContribute}
       askScope="hypnosis"
       askAccent="cyan"
       focusTopicId={focusTopicId}

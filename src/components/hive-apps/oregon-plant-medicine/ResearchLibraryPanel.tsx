@@ -50,8 +50,6 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onOpenPlant: (plant: PlantEntry) => void;
   onCreatePost: () => void;
   onAskAi: (ctx: AskAiContext) => void;
-  /** Seed Builder / contribute flow from HolisticAskAgent unanswered queries */
-  onContribute?: (query?: string) => void;
   gridVideo?: SectionVideo;
   featuredEssay?: FeaturedEssay;
   focusTopicId?: string | null;
@@ -264,7 +262,6 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onOpenPlant,
   onCreatePost,
   onAskAi,
-  onContribute,
   gridVideo,
   featuredEssay,
   focusTopicId,
@@ -358,7 +355,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           onQueryChange={setQuery}
           user={user}
           onSignIn={onSignIn}
-          onContribute={onContribute ?? (() => onCreatePost())}
+          onContribute={() => onCreatePost()}
           onOpenPlant={(plantId) => {
             const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
             if (plant) onOpenPlant(plant);

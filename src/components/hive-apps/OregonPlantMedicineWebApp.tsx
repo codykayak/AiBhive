@@ -366,8 +366,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [profile, setProfile] = useState<PlantMedicineProfile | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showAddState, setShowAddState] = useState(false);
-  const [showContribute, setShowContribute] = useState(false);
-  const [contributeSeedQuery, setContributeSeedQuery] = useState<string | undefined>();
   const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
   const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
   const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
@@ -827,10 +825,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                 onQueryChange={setQuery}
                 user={user}
                 onSignIn={() => void handleSignIn()}
-                onContribute={(topicTitle) => {
-                  setContributeSeedQuery(topicTitle);
-                  setShowContribute(true);
-                }}
+                onContribute={() => setShowCreatePost(true)}
                 onOpenPlant={(plantId) => {
                   const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
                   if (plant) setSelected(plant);
@@ -1014,10 +1009,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
-            onContribute={(topicTitle) => {
-              setContributeSeedQuery(topicTitle);
-              setShowContribute(true);
-            }}
             focusTopicId={focusTopic?.library === 'holistic' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1030,10 +1021,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
-            onContribute={(topicTitle) => {
-              setContributeSeedQuery(topicTitle);
-              setShowContribute(true);
-            }}
             focusTopicId={focusTopic?.library === 'hypnosis' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1046,10 +1033,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onOpenPlant={(plant) => setSelected(plant)}
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
-            onContribute={(topicTitle) => {
-              setContributeSeedQuery(topicTitle);
-              setShowContribute(true);
-            }}
             focusTopicId={focusTopic?.library === 'animal-health' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
@@ -1132,18 +1115,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         <ContributeModal
           onClose={() => setShowAddState(false)}
           stateName={userLocation && !regionSupported ? userLocation.state : undefined}
-          city={userLocation?.city}
-        />
-      ) : null}
-      {showContribute ? (
-        <ContributeModal
-          onClose={() => {
-            setShowContribute(false);
-            setContributeSeedQuery(undefined);
-          }}
-          stateName={userLocation && !regionSupported ? userLocation.state : undefined}
-          city={userLocation?.city}
-          seedQuery={contributeSeedQuery}
         />
       ) : null}
       {holisticDisclaimerOpen ? (

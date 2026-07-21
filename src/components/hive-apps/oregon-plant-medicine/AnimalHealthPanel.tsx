@@ -34,7 +34,6 @@ type Props = {
   onOpenPlant: (plant: PlantEntry) => void;
   onCreatePost: () => void;
   onAskAi: (ctx: AskAiContext) => void;
-  onContribute?: (query?: string) => void;
   focusTopicId?: string | null;
   onFocusTopicConsumed?: () => void;
 };
@@ -45,7 +44,6 @@ export default function AnimalHealthPanel({
   onOpenPlant,
   onCreatePost,
   onAskAi,
-  onContribute,
   focusTopicId,
   onFocusTopicConsumed,
 }: Props) {
@@ -71,7 +69,6 @@ export default function AnimalHealthPanel({
       onOpenPlant={onOpenPlant}
       onCreatePost={onCreatePost}
       onAskAi={onAskAi}
-      onContribute={onContribute}
       askScope="animal-health"
       askAccent="rose"
       focusTopicId={focusTopicId}
