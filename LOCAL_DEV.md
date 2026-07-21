@@ -94,11 +94,11 @@ Without GCP credentials the **frontend still loads**, but admin/homework APIs an
 
 **Test locally first, then PR.**
 
-1. Work on a branch: `cursor/<name>-ee8d`
+1. **Fresh branch from `main-fixed`:** `./scripts/cursor-fresh-branch.sh my-feature` (see `AGENTS.md` → Branch hygiene — **one branch per PR**).
 2. Run `npm run dev:start` and verify in the browser
 3. Run `npm run build`
 4. Commit and push when you’re happy
-5. Open a PR to `main-fixed` — `cursor/*` agent PRs are **auto squash-merged** by GitHub Actions (see `.github/workflows/auto-merge-cursor-prs.yml`)
+5. Open a PR to `main-fixed` — `cursor/*` agent PRs are **auto-synced with `main-fixed` and squash-merged** by GitHub Actions (see `.github/workflows/auto-merge-cursor-prs.yml`)
 
 Cloud agents: local smoke test → build → push → open PR → auto-merge (no manual approval step).
 
