@@ -34,9 +34,9 @@ import {
 } from './plantMedicine.js';
 
 const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
-const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health)$/;
+const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health|herbs|supplements)$/;
 const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
-const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|essay)$/;
+const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|herbs|supplements|essay)$/;
 
 function requireAuth(req, res) {
   return verifyHiveAuth(req).then((user) => {

@@ -100,3 +100,27 @@ export const ANIMAL_HEALTH_PATH = `${PLANTS_PUBLIC_PATH}/${ANIMAL_HEALTH_SLUG}`;
 export const ANIMAL_HEALTH_TAB_LABEL = 'Animal Health';
 
 export const ANIMAL_HEALTH_TAB_SHORT_LABEL = 'Animal Health';
+
+/** Canonical URL segment for herbs materia medica (full path below). */
+export const HERBS_SLUG = 'herbs';
+
+export const HERBS_PATH = `${PLANTS_PUBLIC_PATH}/${HERBS_SLUG}`;
+
+export const HERBS_TAB_LABEL = 'Herbs';
+
+export const HERBS_TAB_SHORT_LABEL = 'Herbs';
+
+export const HERBS_SEO_DESCRIPTION =
+  'Herbs library — Western herbalism, Chinese medicine (TCM), Ayurveda, and Pacific Northwest materia medica with in-depth summaries, traditional uses, safety warnings, and community notes. Not medical advice.';
+
+/** Canonical URL segment for supplements education (full path below). */
+export const SUPPLEMENTS_SLUG = 'supplements';
+
+export const SUPPLEMENTS_PATH = `${PLANTS_PUBLIC_PATH}/${SUPPLEMENTS_SLUG}`;
+
+export const SUPPLEMENTS_TAB_LABEL = 'Supplements';
+
+export const SUPPLEMENTS_TAB_SHORT_LABEL = 'Supplements';
+
+export const SUPPLEMENTS_SEO_DESCRIPTION =
+  'Supplements library — vitamins, minerals, omega-3, probiotics, and specialty compounds with evidence summaries, dosing context, drug interaction notes, and quality guidance. Not medical advice.';

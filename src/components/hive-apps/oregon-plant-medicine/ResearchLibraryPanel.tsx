@@ -56,7 +56,9 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onFocusTopicConsumed?: () => void;
   /** Living Knowledge ask-agent scope (defaults from library id) */
   askScope?: LivingKnowledgeScope;
-  askAccent?: 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime';
+  askAccent?: 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime' | 'amber' | 'teal';
+  /** Text-only cards (e.g. supplements) — no hero images in grid or detail. */
+  hideImages?: boolean;
 };
 
 function topicAskContext<T extends ResearchTopicBase>(topic: T, library: TopicLibraryId): AskAiContext {
@@ -79,6 +81,7 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
   onOpenPlant,
   onCreatePost,
   onAskAi,
+  hideImages = false,
 }: {
   topic: T;
   library: TopicLibraryId;
@@ -90,6 +93,7 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
   onOpenPlant: (plant: PlantEntry) => void;
   onCreatePost: () => void;
   onAskAi: (ctx: AskAiContext) => void;
+  hideImages?: boolean;
 }) {
   const relatedPlants = useMemo(
     () =>
@@ -104,32 +108,50 @@ function TopicDetail<T extends ResearchTopicBase & { category: string }>({
       <div
         className={`bg-slate-950 border ${theme.detailBorder} rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl`}
       >
-        <div className="relative">
-          <ResearchTopicImage
-            src={topic.imageUrl}
-            alt={topic.title}
-            className="w-full h-44 sm:h-52 object-cover"
-          />
-          {topic.imageCredit ? (
-            <p className="absolute bottom-2 left-3 right-12 text-[10px] text-white/75 bg-black/50 px-2 py-1 rounded pointer-events-none">
-              {topic.imageCredit}
+        {hideImages ? (
+          <div className="flex items-center justify-between gap-3 p-4 border-b border-white/10">
+            <p className={`text-[10px] font-black uppercase tracking-widest ${theme.categoryLabel}`}>
+              {categoryLabels[topic.category]}
             </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/80"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-full bg-black/60 text-white hover:bg-black/80 shrink-0"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="relative">
+            <ResearchTopicImage
+              src={topic.imageUrl}
+              alt={topic.title}
+              className="w-full h-44 sm:h-52 object-cover"
+            />
+            {topic.imageCredit ? (
+              <p className="absolute bottom-2 left-3 right-12 text-[10px] text-white/75 bg-black/50 px-2 py-1 rounded pointer-events-none">
+                {topic.imageCredit}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/80"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
-        <div className="p-5 border-b border-white/10">
-          <p className={`text-[10px] font-black uppercase tracking-widest ${theme.categoryLabel}`}>
-            {categoryLabels[topic.category]}
-          </p>
-          <h2 className="text-xl font-black text-white mt-1">{topic.title}</h2>
+        <div className={`p-5 border-b border-white/10 ${hideImages ? 'pt-0' : ''}`}>
+          {hideImages ? null : (
+            <p className={`text-[10px] font-black uppercase tracking-widest ${theme.categoryLabel}`}>
+              {categoryLabels[topic.category]}
+            </p>
+          )}
+          <h2 className={`text-xl font-black text-white ${hideImages ? '' : 'mt-1'}`}>{topic.title}</h2>
         </div>
 
         <div className="p-5 space-y-4 text-sm text-slate-300 leading-relaxed">
@@ -268,6 +290,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onFocusTopicConsumed,
   askScope,
   askAccent = 'cyan',
+  hideImages = false,
 }: Props<T>) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
@@ -300,13 +323,15 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
       onKeyDown={(e) => e.key === 'Enter' && setSelected(topic)}
       className={`group rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden cursor-pointer transition-colors text-left flex flex-col ${theme.cardHover}`}
     >
-      <div className="relative h-36 overflow-hidden">
-        <ResearchTopicImage
-          src={topic.imageUrl}
-          alt={topic.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-      </div>
+      {hideImages ? null : (
+        <div className="relative h-36 overflow-hidden">
+          <ResearchTopicImage
+            src={topic.imageUrl}
+            alt={topic.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+      )}
       <div className="p-3 flex-1 flex flex-col">
         <p className={`text-[10px] font-bold uppercase tracking-wider ${theme.categoryLabel}`}>
           {categoryLabels[topic.category]}
@@ -416,6 +441,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           onOpenPlant={onOpenPlant}
           onCreatePost={onCreatePost}
           onAskAi={onAskAi}
+          hideImages={hideImages}
         />
       ) : null}
     </>

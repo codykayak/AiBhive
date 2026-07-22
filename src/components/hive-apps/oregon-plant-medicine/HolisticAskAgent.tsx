@@ -40,7 +40,7 @@ import {
   type PlantIdVisual,
 } from '../../../lib/oregonPlantMedicine/plantPhotoIdVisuals';
 
-type Accent = 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime';
+type Accent = 'emerald' | 'violet' | 'cyan' | 'rose' | 'lime' | 'amber' | 'teal';
 
 type ChatMsg = {
   id: string;
@@ -103,6 +103,24 @@ const ACCENT: Record<
     chip: 'border-lime-500/30 bg-lime-500/10 text-lime-100 hover:bg-lime-500/20',
     soft: 'bg-lime-500/10 border-lime-500/25',
     bubble: 'bg-lime-600/25 border-lime-500/25 text-lime-50',
+  },
+  amber: {
+    border: 'border-amber-500/35',
+    focus: 'focus:border-amber-500/55',
+    badge: 'text-amber-300',
+    button: 'bg-amber-600 hover:bg-amber-500',
+    chip: 'border-amber-500/30 bg-amber-500/10 text-amber-100 hover:bg-amber-500/20',
+    soft: 'bg-amber-500/10 border-amber-500/25',
+    bubble: 'bg-amber-600/25 border-amber-500/25 text-amber-50',
+  },
+  teal: {
+    border: 'border-teal-500/35',
+    focus: 'focus:border-teal-500/55',
+    badge: 'text-teal-300',
+    button: 'bg-teal-600 hover:bg-teal-500',
+    chip: 'border-teal-500/30 bg-teal-500/10 text-teal-100 hover:bg-teal-500/20',
+    soft: 'bg-teal-500/10 border-teal-500/25',
+    bubble: 'bg-teal-600/25 border-teal-500/25 text-teal-50',
   },
 };
 

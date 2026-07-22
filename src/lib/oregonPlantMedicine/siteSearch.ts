@@ -1,14 +1,18 @@
 import { ANIMAL_HEALTH_LIBRARY } from './animalHealthLibrary';
 import { FEATURED_ESSAYS } from './featuredEssays';
+import { HERBS_LIBRARY } from './herbsLibrary';
 import { HOLISTIC_LIBRARY } from './holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
 import { PLANT_LIBRARY } from './plantLibrary';
+import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
 
 export type SiteSearchResultKind =
   | 'plant'
   | 'holistic'
   | 'hypnosis'
   | 'animal-health'
+  | 'herbs'
+  | 'supplements'
   | 'essay'
   | 'tab';
 
@@ -17,7 +21,7 @@ export type SiteSearchResult = {
   kind: SiteSearchResultKind;
   title: string;
   subtitle: string;
-  tab: 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'community' | 'home';
+  tab: 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'community' | 'home';
   haystack: string;
 };
 
@@ -44,13 +48,12 @@ export function buildSiteSearchIndex(): SiteSearchResult[] {
   const results: SiteSearchResult[] = [];
 
   for (const p of PLANT_LIBRARY) {
-    const isEdible = p.uses === 'edible' || p.uses === 'both';
     results.push({
       id: p.id,
       kind: 'plant',
       title: p.commonName,
       subtitle: p.scientificName,
-      tab: isEdible ? 'edibles' : 'plants',
+      tab: 'plants',
       haystack: plantHay(p),
     });
   }
@@ -88,6 +91,28 @@ export function buildSiteSearchIndex(): SiteSearchResult[] {
     });
   }
 
+  for (const t of HERBS_LIBRARY) {
+    results.push({
+      id: t.id,
+      kind: 'herbs',
+      title: t.title,
+      subtitle: 'Herbs',
+      tab: 'herbs',
+      haystack: [t.title, t.summary, t.deepDive, t.whenPeopleExplore, ...t.approaches].join(' '),
+    });
+  }
+
+  for (const t of SUPPLEMENTS_LIBRARY) {
+    results.push({
+      id: t.id,
+      kind: 'supplements',
+      title: t.title,
+      subtitle: 'Supplements',
+      tab: 'supplements',
+      haystack: [t.title, t.summary, t.deepDive, t.whenPeopleExplore, ...t.approaches].join(' '),
+    });
+  }
+
   for (const e of FEATURED_ESSAYS) {
     results.push({
       id: e.id,
@@ -99,8 +124,8 @@ export function buildSiteSearchIndex(): SiteSearchResult[] {
           ? 'holistic'
           : e.page === 'hypnosis'
             ? 'hypnosis'
-            : e.page === 'edibles'
-              ? 'edibles'
+            : e.page === 'edibles' || e.page === 'plants-home'
+              ? 'plants'
               : 'home',
       haystack: [e.title, e.summary, e.deepDive, e.whenPeopleExplore, ...e.approaches].join(' '),
     });

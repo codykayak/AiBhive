@@ -219,7 +219,7 @@ export function deletePlantPost(user: User, postId: string): Promise<void> {
   });
 }
 
-export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health';
+export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements';
 
 export async function fetchTopicPosts(
   library: TopicLibraryId,

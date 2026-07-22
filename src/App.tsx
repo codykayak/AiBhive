@@ -57,6 +57,8 @@ const PlantsPage = lazy(() => import('./pages/plants/PlantsPage'));
 const HolisticRemediesPage = lazy(() => import('./pages/plants/HolisticRemediesPage'));
 const HypnosisEnergyPage = lazy(() => import('./pages/plants/HypnosisEnergyPage'));
 const AnimalHealthPage = lazy(() => import('./pages/plants/AnimalHealthPage'));
+const HerbsPage = lazy(() => import('./pages/plants/HerbsPage'));
+const SupplementsPage = lazy(() => import('./pages/plants/SupplementsPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
@@ -180,6 +182,8 @@ function AnimatedRoutes() {
             <Route path="/plants/holistic-remedies-and-protocols" element={<HolisticRemediesPage />} />
             <Route path="/plants/hypnosis-and-energy" element={<HypnosisEnergyPage />} />
             <Route path="/plants/animal-health" element={<AnimalHealthPage />} />
+            <Route path="/plants/herbs" element={<HerbsPage />} />
+            <Route path="/plants/supplements" element={<SupplementsPage />} />
             <Route path="/plants" element={<PlantsPage />} />
             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />
             <Route

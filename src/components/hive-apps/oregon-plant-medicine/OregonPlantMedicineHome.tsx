@@ -2,6 +2,7 @@ import {
   Apple,
   ArrowRight,
   ChevronRight,
+  FlaskConical,
   HeartPulse,
   Leaf,
   MessageCircle,
@@ -16,6 +17,8 @@ import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import { HOLISTIC_LIBRARY } from '../../../lib/oregonPlantMedicine/holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnosisEnergyLibrary';
 import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
+import { HERBS_LIBRARY } from '../../../lib/oregonPlantMedicine/herbsLibrary';
+import { SUPPLEMENTS_LIBRARY } from '../../../lib/oregonPlantMedicine/supplementsLibrary';
 import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { applySeedVotes, loadSeedVotes, sortFeedByUpvotes, toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
@@ -39,10 +42,11 @@ import { useEffect, useMemo, useState } from 'react';
 type HomeTab =
   | 'community'
   | 'plants'
-  | 'edibles'
   | 'holistic'
   | 'hypnosis'
-  | 'animal-health';
+  | 'animal-health'
+  | 'herbs'
+  | 'supplements';
 
 type Props = {
   onNavigate: (tab: HomeTab) => void;
@@ -68,7 +72,7 @@ type SectionTheme = {
   glow: string;
 };
 
-const THEMES: Record<HomeTab, SectionTheme> = {
+const THEMES: Record<HomeTab | 'edibles', SectionTheme> = {
   community: {
     icon: Users,
     label: 'Community',
@@ -141,6 +145,30 @@ const THEMES: Record<HomeTab, SectionTheme> = {
     button: 'bg-rose-600 hover:bg-rose-500',
     glow: 'shadow-rose-500/10',
   },
+  herbs: {
+    icon: Leaf,
+    label: 'Herbs',
+    headline: 'Materia medica — East & West',
+    blurb:
+      'TCM, Ayurveda, Western herbalism, and PNW roots — what each herb is explored for, with safety notes and deep dives.',
+    gradient: 'from-amber-950/80 via-slate-950/40 to-transparent',
+    border: 'border-amber-500/25',
+    accent: 'text-amber-300',
+    button: 'bg-amber-600 hover:bg-amber-500',
+    glow: 'shadow-amber-500/10',
+  },
+  supplements: {
+    icon: FlaskConical,
+    label: 'Supplements',
+    headline: 'Vitamins, minerals & compounds',
+    blurb:
+      'Evidence summaries for vitamin D, magnesium, omega-3, probiotics, and more — dosing context and interaction cautions.',
+    gradient: 'from-teal-950/80 via-slate-950/40 to-transparent',
+    border: 'border-teal-500/25',
+    accent: 'text-teal-300',
+    button: 'bg-teal-600 hover:bg-teal-500',
+    glow: 'shadow-teal-500/10',
+  },
 };
 
 function plantForTopic(relatedPlantIds: string[]): PlantEntry | undefined {
@@ -155,10 +183,12 @@ function SectionHeader({
   theme,
   tab,
   onNavigate,
+  navigateTab,
 }: {
   theme: SectionTheme;
-  tab: HomeTab;
+  tab: HomeTab | 'edibles';
   onNavigate: (tab: HomeTab) => void;
+  navigateTab?: HomeTab;
 }) {
   const Icon = theme.icon;
   return (
@@ -173,7 +203,7 @@ function SectionHeader({
       </div>
       <button
         type="button"
-        onClick={() => onNavigate(tab)}
+        onClick={() => onNavigate(navigateTab ?? (tab === 'edibles' ? 'plants' : tab))}
         className={`inline-flex items-center gap-2 shrink-0 rounded-xl ${theme.button} text-white font-bold text-sm px-5 py-2.5 transition-colors shadow-lg ${theme.glow}`}
       >
         View more
@@ -500,14 +530,16 @@ function HolisticCardsSection({ onNavigate }: { onNavigate: (tab: HomeTab) => vo
   );
 }
 
-function ResearchCardsSection<T extends { id: string; title: string; summary: string; imageUrl: string }>({
+function ResearchCardsSection<T extends { id: string; title: string; summary: string; imageUrl?: string }>({
   tab,
   topics,
   onNavigate,
+  hideImages = false,
 }: {
-  tab: 'hypnosis' | 'animal-health';
+  tab: 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
   topics: T[];
   onNavigate: (tab: HomeTab) => void;
+  hideImages?: boolean;
 }) {
   const theme = THEMES[tab];
 
@@ -519,17 +551,27 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
           <article
             key={topic.id}
             className={`group rounded-xl border border-slate-800 bg-slate-950/60 overflow-hidden transition-all hover:-translate-y-0.5 shadow-lg ${theme.glow} ${
-              tab === 'hypnosis' ? 'hover:border-cyan-500/40' : 'hover:border-rose-500/40'
+              tab === 'hypnosis'
+                ? 'hover:border-cyan-500/40'
+                : tab === 'herbs'
+                  ? 'hover:border-amber-500/40'
+                  : tab === 'supplements'
+                    ? 'hover:border-teal-500/40'
+                    : 'hover:border-rose-500/40'
             }`}
           >
-            <div className="relative h-36 overflow-hidden">
-              <ResearchTopicImage
-                src={topic.imageUrl}
-                alt={topic.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient}`} />
-            </div>
+            {hideImages ? (
+              <div className={`h-2 bg-gradient-to-r ${theme.gradient}`} />
+            ) : (
+              <div className="relative h-36 overflow-hidden">
+                <ResearchTopicImage
+                  src={topic.imageUrl || ''}
+                  alt={topic.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient}`} />
+              </div>
+            )}
             <div className="p-4">
               <h3 className="font-bold text-white text-sm leading-snug">{topic.title}</h3>
               <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">{topic.summary}</p>
@@ -562,6 +604,8 @@ export default function OregonPlantMedicineHome({
 
   const hypnosisTopics = HYPNOSIS_ENERGY_LIBRARY.slice(0, 3) as HypnosisEnergyTopic[];
   const animalTopics = ANIMAL_HEALTH_LIBRARY.slice(0, 3) as AnimalHealthTopic[];
+  const herbsTopics = HERBS_LIBRARY.slice(0, 3);
+  const supplementsTopics = SUPPLEMENTS_LIBRARY.slice(0, 3);
   const featuredEssay = getFeaturedEssay('plants-home');
 
   return (
@@ -610,6 +654,10 @@ export default function OregonPlantMedicineHome({
       <ResearchCardsSection tab="hypnosis" topics={hypnosisTopics} onNavigate={onNavigate} />
 
       <ResearchCardsSection tab="animal-health" topics={animalTopics} onNavigate={onNavigate} />
+
+      <ResearchCardsSection tab="herbs" topics={herbsTopics} onNavigate={onNavigate} />
+
+      <ResearchCardsSection tab="supplements" topics={supplementsTopics} onNavigate={onNavigate} hideImages />
 
       <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/80 to-violet-500/10 p-6 sm:p-8 text-center">
         <MessageCircle className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
