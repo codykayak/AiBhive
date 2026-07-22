@@ -360,6 +360,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const [selected, setSelected] = useState<PlantEntry | null>(null);
   const [selectedCommunityPost, setSelectedCommunityPost] = useState<CommunityPostView | null>(null);
+  const [seedVotesVersion, setSeedVotesVersion] = useState(0);
   const [askAiContext, setAskAiContext] = useState<AskAiContext | null>(null);
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [openEssayId, setOpenEssayId] = useState<string | null>(null);
@@ -384,6 +385,22 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
   const [authError, setAuthError] = useState('');
+
+  const bumpSeedVotes = useCallback(() => {
+    setSeedVotesVersion((v) => v + 1);
+  }, []);
+
+  const handleCommunityUpvoteChange = useCallback(
+    (postId: string, result: { upvoteCount: number; viewerHasUpvoted: boolean }, isSeed: boolean) => {
+      if (isSeed) bumpSeedVotes();
+      setSelectedCommunityPost((prev) =>
+        prev && prev.id === postId
+          ? { ...prev, upvoteCount: result.upvoteCount, viewerHasUpvoted: result.viewerHasUpvoted }
+          : prev,
+      );
+    },
+    [bumpSeedVotes],
+  );
 
   const regionSupported = userLocation ? isSupportedLocation(userLocation) : true;
   const userId = user?.uid ?? null;
@@ -797,6 +814,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             user={user}
             onSignIn={() => void handleSignIn()}
             onCreatePost={() => setShowCreatePost(true)}
+            seedVotesVersion={seedVotesVersion}
+            onSeedUpvoteChange={bumpSeedVotes}
             onOpenTopic={(library, topicId) => {
               selectTab(library);
               setFocusTopic({ library, topicId });
@@ -810,6 +829,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onSignIn={() => void handleSignIn()}
             onOpenPlant={(plant) => setSelected(plant)}
             onOpenPost={(post) => setSelectedCommunityPost(post)}
+            seedVotesVersion={seedVotesVersion}
+            onSeedUpvoteChange={bumpSeedVotes}
           />
         ) : null}
 
@@ -888,6 +909,14 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                       <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
                       Saved
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePost(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-lime-600 hover:bg-lime-500 text-white font-bold px-4 py-2.5 text-sm shrink-0"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      Share a post
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -924,6 +953,14 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                     >
                       <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
                       Saved
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePost(true)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-sm shrink-0"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      Share a post
                     </button>
                   </div>
                 )
@@ -1157,6 +1194,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           onAskAi={openAskAi}
           onClose={() => setSelectedCommunityPost(null)}
           onOpenPlant={(plant) => setSelected(plant)}
+          onUpvoteChange={handleCommunityUpvoteChange}
         />
       ) : null}
       {showProfile && user ? (

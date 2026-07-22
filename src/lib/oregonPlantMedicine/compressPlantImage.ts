@@ -5,7 +5,7 @@ const MAX_HEIGHT = 2048;
 const JPEG_QUALITY = 0.85;
 /** Target ~1.5MB raw file before base64 (~2MB JSON) — typical cell-phone photo after resize. */
 const MAX_BYTES = 1_500_000;
-/** Tighter cap for Grok vision (jpg/png only, faster upload). */
+/** Tighter cap for Bhive Credits photo ID (jpg/png only, faster upload). */
 const VISION_MAX_BYTES = 900_000;
 const VISION_MAX_WIDTH = 1536;
 const VISION_MAX_HEIGHT = 1536;
@@ -72,7 +72,7 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Compress a user-selected image for plant-medicine uploads and Grok photo ID.
+ * Compress a user-selected image for plant-medicine uploads and Bhive Credits photo ID.
  * Skips re-encoding tiny files that are already small JPEGs.
  */
 export async function compressPlantImageFile(
