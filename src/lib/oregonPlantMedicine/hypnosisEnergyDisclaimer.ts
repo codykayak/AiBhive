@@ -1,3 +1,5 @@
+import { hasStoredDisclaimer, storeDisclaimerAcceptance } from './disclaimerStorage';
+
 export const HYPNOSIS_ENERGY_DISCLAIMER_VERSION = 'v1';
 
 export const HYPNOSIS_ENERGY_DISCLAIMER_STORAGE_KEY = 'living_knowledge_hypnosis_energy_disclaimer_v1';
@@ -32,15 +34,10 @@ export const HYPNOSIS_ENERGY_DISCLAIMER_SECTIONS = [
   },
 ] as const;
 
-export function hasAcceptedHypnosisEnergyDisclaimer(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(HYPNOSIS_ENERGY_DISCLAIMER_STORAGE_KEY) === HYPNOSIS_ENERGY_DISCLAIMER_VERSION;
-  } catch {
-    return false;
-  }
+export function hasAcceptedHypnosisEnergyDisclaimer(uid?: string | null): boolean {
+  return hasStoredDisclaimer(HYPNOSIS_ENERGY_DISCLAIMER_STORAGE_KEY, HYPNOSIS_ENERGY_DISCLAIMER_VERSION, uid);
 }
 
-export function acceptHypnosisEnergyDisclaimer(): void {
-  localStorage.setItem(HYPNOSIS_ENERGY_DISCLAIMER_STORAGE_KEY, HYPNOSIS_ENERGY_DISCLAIMER_VERSION);
+export function acceptHypnosisEnergyDisclaimer(uid?: string | null): void {
+  storeDisclaimerAcceptance(HYPNOSIS_ENERGY_DISCLAIMER_STORAGE_KEY, HYPNOSIS_ENERGY_DISCLAIMER_VERSION, uid);
 }

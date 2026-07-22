@@ -1,0 +1,19 @@
+{
+  "name": "AiBhive Plant ID and Holistic Remedies",
+  "short_name": "Plant ID",
+  "description": "Pacific Northwest wild plant identification, edibles, mushrooms, and holistic research libraries.",
+  "start_url": "/plants",
+  "scope": "/plants",
+  "display": "standalone",
+  "background_color": "#070a0f",
+  "theme_color": "#059669",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -451,32 +451,47 @@ export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
     process.env.GROK_DIAGNOSE_VISION_MODEL ||
     getCachedGrokVisionModel();
 
-  const catalog = buildPhotoIdCatalogContext(100);
+  const catalog = buildPhotoIdCatalogContext(50);
   const system = [
     PLANT_PHOTO_ID_SYSTEM,
     '\n--- LIVING KNOWLEDGE PLANT CATALOG (prefer these IDs when they fit) ---\n',
     catalog,
-    context ? `\n--- EXTRA CLIENT RAG CONTEXT ---\n${context}` : '',
+    context ? `\n--- EXTRA CLIENT RAG CONTEXT ---\n${context.slice(0, 4000)}` : '',
   ].join('');
+
+  const rawMime = String(attachment.mimeType || 'image/jpeg').toLowerCase();
+  const visionMime = rawMime.includes('png') ? 'image/png' : 'image/jpeg';
 
   const userContent = buildGrokUserContent(message, {
     base64,
-    mimeType: attachment.mimeType || 'image/jpeg',
+    mimeType: visionMime,
   });
 
-  const reply = await grokChatMessages(
-    apiKey,
-    model,
-    [
-      { role: 'system', content: system },
-      { role: 'user', content: userContent },
-    ],
-    {
-      temperature: 0.2,
-      max_tokens: 2200,
-      vision: true,
-    },
-  );
+  let reply;
+  try {
+    reply = await grokChatMessages(
+      apiKey,
+      model,
+      [
+        { role: 'system', content: system.slice(0, 12000) },
+        { role: 'user', content: userContent },
+      ],
+      {
+        temperature: 0.2,
+        max_tokens: 2200,
+        vision: true,
+      },
+    );
+  } catch (err) {
+    console.error('[plant-medicine/identify] Grok vision failed:', err?.message || err, { model });
+    return {
+      ok: false,
+      error:
+        err?.message ||
+        'Grok could not read this photo — try a clearer JPEG/PNG in good light, or ask in text.',
+      code: 'grok_vision_failed',
+    };
+  }
 
   if (!reply) return { ok: false, error: 'No response from Hive AI.' };
 
