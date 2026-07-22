@@ -118,6 +118,10 @@ function serializePost(id, d) {
     text: d.text || '',
     imageUrl: d.imageUrl || null,
     imageUrls: Array.isArray(d.imageUrls) ? d.imageUrls.filter(Boolean) : d.imageUrl ? [d.imageUrl] : [],
+    videoUrl: d.videoUrl || null,
+    feedCategory: d.feedCategory || null,
+    aiTags: Array.isArray(d.aiTags) ? d.aiTags.filter(Boolean).slice(0, 12) : [],
+    aiEnriched: !!d.aiEnriched,
     status: d.status,
     upvoteCount: d.upvoteCount || 0,
     createdAt: d.createdAt?.toDate?.()?.toISOString?.() || d.createdAt || null,
@@ -138,6 +142,9 @@ async function resolvePostMediaUrls(gcsBucket, post) {
   } else if (post.imageUrl) {
     post.imageUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.imageUrl);
     post.imageUrls = [post.imageUrl];
+  }
+  if (post.videoUrl) {
+    post.videoUrl = await resolvePlantMedicineMediaUrl(gcsBucket, post.videoUrl);
   }
   return post;
 }
@@ -284,7 +291,7 @@ export async function createPost(
 export async function createFeedPost(
   db,
   FieldValue,
-  { author, title, text, imageUrl, imageUrls, plantId },
+  { author, title, text, imageUrl, imageUrls, videoUrl, plantId, feedCategory, aiTags, aiEnriched },
   gcsBucket = null,
 ) {
   const trimmedTitle = clip(title, 120);
@@ -297,8 +304,8 @@ export async function createFeedPost(
       ? [imageUrl]
       : [];
   const primaryImage = urls[0] || null;
-  const hasImage = urls.length > 0;
-  const status = hasImage ? 'pending' : 'approved';
+  const hasMedia = urls.length > 0 || !!videoUrl;
+  const status = hasMedia ? 'pending' : 'approved';
   const ref = db.collection(POSTS).doc();
   const now = new Date();
   const payload = {
@@ -311,6 +318,10 @@ export async function createFeedPost(
     text: clip(text, 2000),
     imageUrl: primaryImage,
     imageUrls: urls,
+    videoUrl: videoUrl || null,
+    feedCategory: feedCategory === 'plants' || feedCategory === 'edibles' ? feedCategory : null,
+    aiTags: Array.isArray(aiTags) ? aiTags.filter(Boolean).slice(0, 12) : [],
+    aiEnriched: !!aiEnriched,
     status,
     upvoteCount: 0,
     createdAt: now,
@@ -568,14 +579,30 @@ export async function moderatePost(db, postId, status) {
 export async function uploadPlantMedicineImage(gcsBucket, { uid, kind, buffer, mimeType }) {
   if (!gcsBucket) throw new Error('Media storage not configured');
   if (!buffer?.length) throw new Error('Empty file');
-  if (buffer.length > 12 * 1024 * 1024) throw new Error('Image too large (max 12MB after compression)');
 
-  const ext = String(mimeType).includes('png') ? 'png' : String(mimeType).includes('webp') ? 'webp' : 'jpg';
-  const safeKind = kind === 'avatar' ? 'avatars' : 'photos';
-  const path = `plant-medicine/${safeKind}/${uid}-${Date.now()}.${ext}`;
+  const mime = String(mimeType || 'image/jpeg').toLowerCase();
+  const isVideo = mime.startsWith('video/');
+  const maxBytes = isVideo ? 50 * 1024 * 1024 : 12 * 1024 * 1024;
+  if (buffer.length > maxBytes) {
+    throw new Error(isVideo ? 'Video too large (max 50MB)' : 'Image too large (max 12MB after compression)');
+  }
+
+  let ext = 'jpg';
+  let contentType = mime || 'image/jpeg';
+  if (isVideo) {
+    ext = mime.includes('webm') ? 'webm' : 'mp4';
+    contentType = mime.includes('webm') ? 'video/webm' : 'video/mp4';
+  } else if (mime.includes('png')) {
+    ext = 'png';
+  } else if (mime.includes('webp')) {
+    ext = 'webp';
+  }
+
+  const folder = kind === 'avatar' ? 'avatars' : isVideo ? 'videos' : 'photos';
+  const path = `plant-medicine/${folder}/${uid}-${Date.now()}.${ext}`;
   const file = gcsBucket.file(path);
   await file.save(buffer, {
-    contentType: mimeType || 'image/jpeg',
+    contentType,
     resumable: false,
     metadata: { cacheControl: 'public, max-age=31536000' },
   });

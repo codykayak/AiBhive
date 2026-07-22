@@ -26,6 +26,10 @@ export type PlantMedicinePost = {
   text: string;
   imageUrl: string | null;
   imageUrls?: string[];
+  videoUrl?: string | null;
+  feedCategory?: 'plants' | 'edibles' | null;
+  aiTags?: string[];
+  aiEnriched?: boolean;
   status: string;
   upvoteCount: number;
   createdAt: string | null;
@@ -57,19 +61,39 @@ export function saveProfile(
 export async function uploadPlantImage(
   user: User,
   file: File,
-  kind: 'avatar' | 'photo',
+  kind: 'avatar' | 'photo' | 'video' = 'photo',
 ): Promise<string> {
-  const compressed = await compressPlantImageFile(file);
+  let base64: string;
+  let mimeType: string;
+  let uploadKind: 'avatar' | 'photo' | 'video' = kind;
+
+  if (kind === 'video' || file.type.startsWith('video/')) {
+    const { readVideoFile } = await import('./plantMediaUpload');
+    const video = await readVideoFile(file);
+    base64 = video.base64;
+    mimeType = video.mimeType;
+    uploadKind = 'video';
+  } else {
+    const compressed = await compressPlantImageFile(file);
+    base64 = compressed.base64;
+    mimeType = compressed.mimeType;
+    uploadKind = kind === 'avatar' ? 'avatar' : 'photo';
+    URL.revokeObjectURL(compressed.previewUrl);
+  }
+
   const data = await adminJson<{ url: string }>('/api/plant-medicine/upload', user, {
     method: 'POST',
     body: JSON.stringify({
-      base64: compressed.base64,
-      mimeType: compressed.mimeType,
-      kind,
+      base64,
+      mimeType,
+      kind: uploadKind,
     }),
   });
-  URL.revokeObjectURL(compressed.previewUrl);
   return data.url;
+}
+
+export async function uploadPlantVideo(user: User, file: File): Promise<string> {
+  return uploadPlantImage(user, file, 'video');
 }
 
 export async function uploadPlantImages(
@@ -126,12 +150,59 @@ export function createPlantPost(
 
 export function createFeedPost(
   user: User,
-  body: { title: string; text?: string; imageUrl?: string; imageUrls?: string[]; plantId?: string },
+  body: {
+    title: string;
+    text?: string;
+    imageUrl?: string;
+    imageUrls?: string[];
+    videoUrl?: string;
+    plantId?: string;
+    feedCategory?: 'plants' | 'edibles';
+    aiTags?: string[];
+    aiEnriched?: boolean;
+  },
 ): Promise<PlantMedicinePost> {
   return adminJson('/api/plant-medicine/feed/posts', user, {
     method: 'POST',
     body: JSON.stringify(body),
   }).then((d) => (d as { post: PlantMedicinePost }).post);
+}
+
+export type CommunityPostEnrichment = {
+  suggestedTitle: string | null;
+  captionAppend: string;
+  identificationTags: string[];
+  suggestedPlantId: string | null;
+  isToxic: boolean;
+  safetyNote: string;
+  chargedUsd?: number;
+};
+
+export async function enrichCommunityPost(
+  user: User,
+  body: {
+    title?: string;
+    text?: string;
+    plantId?: string;
+    feedCategory?: 'plants' | 'edibles';
+    attachment?: { base64: string; mimeType: string };
+  },
+): Promise<CommunityPostEnrichment> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/feed/enrich', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json()) as CommunityPostEnrichment & { error?: string; needPayment?: boolean };
+  if (res.status === 402 || data.needPayment) {
+    throw new Error(data.error || 'Add Bhive Credits to run research on your post.');
+  }
+  if (!res.ok) throw new Error(data.error || 'Bhive research failed');
+  return data;
 }
 
 export function togglePostUpvote(

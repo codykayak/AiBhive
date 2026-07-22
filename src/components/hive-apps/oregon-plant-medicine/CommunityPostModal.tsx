@@ -86,6 +86,10 @@ export default function CommunityPostModal({
   const location = seed ? post.locationLabel : null;
   const title = postTitle(post);
   const focusTitle = title ?? plantLabel ?? 'Community post';
+  const livePost = seed ? null : (post as PlantMedicinePost);
+  const videoUrl = livePost?.videoUrl;
+  const aiTags = livePost?.aiTags;
+  const isToxicPost = aiTags?.some((t) => /toxic|poison|deadly|danger/i.test(t));
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -122,6 +126,10 @@ export default function CommunityPostModal({
           </div>
         </div>
 
+        {videoUrl ? (
+          <video src={videoUrl} controls className="w-full max-h-[min(52vh,420px)] bg-black" />
+        ) : null}
+
         {post.imageUrl ? (
           <PlantPhoto
             src={post.imageUrl}
@@ -135,6 +143,28 @@ export default function CommunityPostModal({
         <div className="p-4 space-y-4">
           {post.text ? (
             <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{post.text}</p>
+          ) : null}
+
+          {aiTags && aiTags.length > 0 ? (
+            <div
+              className={`rounded-xl border p-3 ${
+                isToxicPost ? 'border-rose-500/40 bg-rose-950/40' : 'border-sky-500/30 bg-sky-500/10'
+              }`}
+            >
+              <p className="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-2">
+                Bhive identification tags
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {aiTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-white/15 bg-black/20 px-2 py-0.5 text-[10px] font-bold text-sky-100"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           ) : null}
 
           {plant?.lookalikes && plant.lookalikes.length > 0 ? (
