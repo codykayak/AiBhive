@@ -7,6 +7,8 @@ import {
   runPlantPhotoIdentify,
   resolvePlantHiveUserId,
 } from './plantMedicineChat.js';
+import { isHiveBillingExempt } from './hiveAdmin.js';
+import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
 import {
   createPost,
   createFeedPost,
@@ -55,6 +57,36 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/profile/me]', err);
       return res.status(500).json({ error: err.message || 'Failed to load profile' });
+    }
+  });
+
+  app.get('/api/plant-medicine/billing-status', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      await ensureHiveUser(db, hiveUserId);
+      await db.collection('hive_users').doc(hiveUserId).set(
+        {
+          email: user.email || null,
+          firebaseUid: user.uid,
+          product: 'plant_medicine',
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+
+      const adminExempt = await isHiveBillingExempt(db, { userId: hiveUserId, email: user.email });
+      const account = await getHiveAccount(db, hiveUserId);
+      return res.json({
+        hiveUserId,
+        adminExempt,
+        account,
+      });
+    } catch (err) {
+      console.error('[plant-medicine/billing-status]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load billing status' });
     }
   });
 

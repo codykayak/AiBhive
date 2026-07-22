@@ -28,6 +28,7 @@ import type { User } from 'firebase/auth';
 import type { TopicLibraryId } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
 import HolisticAskAgent from './HolisticAskAgent';
+import LivingKnowledgeAskWithGuide from './LivingKnowledgeAskWithGuide';
 import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
@@ -536,21 +537,25 @@ export default function OregonPlantMedicineHome({
     <div className="pb-8">
       <HomeHero />
 
-      <div className="mb-8">
-        <HolisticAskAgent
-          scope="all"
-          accent="emerald"
-          placeholder="Ask about plants, mushrooms, holistic topics, animal health — or upload a photo to ID…"
-          user={user}
-          onSignIn={onSignIn}
-          onContribute={() => onCreatePost?.()}
-          onOpenPlant={(plantId) => {
-            const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
-            if (plant) onOpenPlant(plant);
-          }}
-          onOpenTopic={(topicId, library) => onOpenTopic?.(library, topicId)}
-        />
-      </div>
+      <LivingKnowledgeAskWithGuide
+        className="mb-8"
+        accent="emerald"
+        askAgent={
+          <HolisticAskAgent
+            scope="all"
+            accent="emerald"
+            placeholder="Ask about plants, mushrooms, holistic topics, animal health — or upload a photo to ID…"
+            user={user}
+            onSignIn={onSignIn}
+            onContribute={() => onCreatePost?.()}
+            onOpenPlant={(plantId) => {
+              const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+              if (plant) onOpenPlant(plant);
+            }}
+            onOpenTopic={(topicId, library) => onOpenTopic?.(library, topicId)}
+          />
+        }
+      />
 
       <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
 

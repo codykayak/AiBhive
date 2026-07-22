@@ -68,9 +68,9 @@ import type { SiteSearchResult } from '../../lib/oregonPlantMedicine/siteSearch'
 import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicineApi';
 import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import HolisticAskAgent from './oregon-plant-medicine/HolisticAskAgent';
+import LivingKnowledgeAskWithGuide from './oregon-plant-medicine/LivingKnowledgeAskWithGuide';
 import {
   EARTH_PLANT_MEDICINE_NAME,
-  PLANT_ASK_GUIDE_IMAGE,
   HOLISTIC_REMEDIES_PATH,
   HOLISTIC_TAB_SHORT_LABEL,
   HYPNOSIS_ENERGY_PATH,
@@ -798,21 +798,22 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
 
         {tab === 'plants' || tab === 'edibles' ? (
           <>
-            {tab === 'edibles' ? (
-              <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 mb-5 text-sm text-lime-100/90 leading-relaxed">
-                  <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
-                    Wild edible foods &amp; mushrooms
-                  </p>
-                  <p>
-                    Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
-                    <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
-                    preparation ideas.{' '}
-                    <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
-                  </p>
-                </div>
-            ) : tab === 'plants' ? (
-              <div className="mb-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,340px)] lg:items-start">
-                <div className="space-y-4 min-w-0">
+            <LivingKnowledgeAskWithGuide
+              accent={tab === 'edibles' ? 'lime' : 'emerald'}
+              intro={
+                tab === 'edibles' ? (
+                  <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 text-sm text-lime-100/90 leading-relaxed">
+                    <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
+                      Wild edible foods &amp; mushrooms
+                    </p>
+                    <p>
+                      Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
+                      <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
+                      preparation ideas.{' '}
+                      <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
+                    </p>
+                  </div>
+                ) : (
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100/90 leading-relaxed">
                     <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
                       Primary field guide
@@ -823,21 +824,55 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                       research libraries in the nav.
                     </p>
                   </div>
-
-                  <HolisticAskAgent
-                    scope="plants"
-                    accent="emerald"
-                    placeholder="Ask about plants, Latin names, look-alikes, harvest…"
-                    onQueryChange={setQuery}
-                    user={user}
-                    onSignIn={() => void handleSignIn()}
-                    onContribute={() => setShowCreatePost(true)}
-                    onOpenPlant={(plantId) => {
-                      const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
-                      if (plant) setSelected(plant);
-                    }}
-                  />
-
+                )
+              }
+              askAgent={
+                <HolisticAskAgent
+                  scope={tab === 'edibles' ? 'edibles' : 'plants'}
+                  accent={tab === 'edibles' ? 'lime' : 'emerald'}
+                  placeholder={
+                    tab === 'edibles'
+                      ? 'Ask about berries, mycelium, chanterelles, wild greens…'
+                      : 'Ask about plants, Latin names, look-alikes, harvest…'
+                  }
+                  onQueryChange={setQuery}
+                  user={user}
+                  onSignIn={() => void handleSignIn()}
+                  onContribute={() => setShowCreatePost(true)}
+                  onOpenPlant={(plantId) => {
+                    const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                    if (plant) setSelected(plant);
+                  }}
+                />
+              }
+              filters={
+                tab === 'edibles' ? (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={region}
+                      onChange={(e) => setRegion(e.target.value as RegionFilter)}
+                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
+                    >
+                      {REGION_FILTER_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setFavoritesOnly((v) => !v)}
+                      className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
+                        favoritesOnly
+                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                          : 'border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
+                      Saved
+                    </button>
+                  </div>
+                ) : (
                   <div className="flex flex-col sm:flex-row gap-3">
                     <select
                       value={region}
@@ -874,73 +909,9 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                       Saved
                     </button>
                   </div>
-                </div>
-
-                <div className="hidden lg:block sticky top-24">
-                  <img
-                    src={PLANT_ASK_GUIDE_IMAGE}
-                    alt="Edible plant identification and Ask AI field guide"
-                    className="w-full rounded-2xl border border-emerald-500/25 shadow-xl shadow-emerald-950/40 object-cover"
-                    loading="lazy"
-                  />
-                </div>
-
-                <img
-                  src={PLANT_ASK_GUIDE_IMAGE}
-                  alt=""
-                  aria-hidden
-                  className="lg:hidden w-full max-w-sm mx-auto rounded-2xl border border-emerald-500/25 object-cover"
-                  loading="lazy"
-                />
-              </div>
-            ) : null}
-
-            {tab === 'edibles' ? (
-              <div className="mb-4">
-                <HolisticAskAgent
-                  scope="edibles"
-                  accent="lime"
-                  placeholder="Ask about berries, mycelium, chanterelles, wild greens…"
-                  onQueryChange={setQuery}
-                  user={user}
-                  onSignIn={() => void handleSignIn()}
-                  onContribute={() => setShowCreatePost(true)}
-                  onOpenPlant={(plantId) => {
-                    const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
-                    if (plant) setSelected(plant);
-                  }}
-                />
-              </div>
-            ) : null}
-
-            {tab === 'edibles' ? (
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <select
-                  value={region}
-                  onChange={(e) => setRegion(e.target.value as RegionFilter)}
-                  className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
-                >
-                  {REGION_FILTER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setFavoritesOnly((v) => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
-                    favoritesOnly
-                      ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                      : 'border-slate-700 text-slate-400'
-                  }`}
-                >
-                  <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
-                  Saved
-                </button>
-              </div>
-            ) : null}
-
+                )
+              }
+            />
 
             {userLocation && !regionSupported ? (
               <div className="rounded-xl border border-sky-500/35 bg-sky-500/10 p-5 mb-5 text-sm text-sky-100/90">
