@@ -9,11 +9,14 @@ import {
 type Props = {
   onAccepted: () => void;
   onCancel?: () => void;
+  /** Read-only view from footer link — no acceptance gate. */
+  reviewOnly?: boolean;
+  userId?: string | null;
 };
 
 /** Required gate before viewing holistic remedies content. */
-export default function HolisticDisclaimerModal({ onAccepted, onCancel }: Props) {
-  const [agreed, setAgreed] = useState(false);
+export default function HolisticDisclaimerModal({ onAccepted, onCancel, reviewOnly = false, userId }: Props) {
+  const [agreed, setAgreed] = useState(reviewOnly);
 
   return (
     <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-sm">
@@ -55,35 +58,47 @@ export default function HolisticDisclaimerModal({ onAccepted, onCancel }: Props)
             </section>
           ))}
 
-          <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/60 p-4 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-1 rounded border-slate-600 accent-amber-500"
-            />
-            <span className="text-sm text-slate-200">
-              I understand this is educational research only. I will not use it as medical advice or to diagnose or
-              treat illness without a qualified provider.
-            </span>
-          </label>
+          {reviewOnly ? (
+            <button
+              type="button"
+              onClick={onAccepted}
+              className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm"
+            >
+              Close
+            </button>
+          ) : (
+            <>
+              <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/60 p-4 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-1 rounded border-slate-600 accent-amber-500"
+                />
+                <span className="text-sm text-slate-200">
+                  I understand this is educational research only. I will not use it as medical advice or to diagnose or
+                  treat illness without a qualified provider.
+                </span>
+              </label>
 
-          <button
-            type="button"
-            disabled={!agreed}
-            onClick={() => {
-              acceptHolisticDisclaimer();
-              onAccepted();
-            }}
-            className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm"
-          >
-            I agree — open Holistic Remedies &amp; Protocols
-          </button>
+              <button
+                type="button"
+                disabled={!agreed}
+                onClick={() => {
+                  acceptHolisticDisclaimer(userId);
+                  onAccepted();
+                }}
+                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm"
+              >
+                I agree — open Holistic Remedies &amp; Protocols
+              </button>
 
-          <p className="text-[10px] text-slate-500 flex items-center gap-1.5 justify-center">
-            <FileText className="w-3 h-3" />
-            You only need to accept once on this device.
-          </p>
+              <p className="text-[10px] text-slate-500 flex items-center gap-1.5 justify-center">
+                <FileText className="w-3 h-3" />
+                You only need to accept once per account.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

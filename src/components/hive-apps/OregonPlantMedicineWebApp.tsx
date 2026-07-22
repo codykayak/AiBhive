@@ -58,6 +58,7 @@ import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDis
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
+import LivingKnowledgeAppBar from './oregon-plant-medicine/LivingKnowledgeAppBar';
 import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
 import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
@@ -368,12 +369,15 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [showProfile, setShowProfile] = useState(false);
   const [showAddState, setShowAddState] = useState(false);
   const [holisticDisclaimerOpen, setHolisticDisclaimerOpen] = useState(false);
+  const [holisticDisclaimerReview, setHolisticDisclaimerReview] = useState(false);
   const [holisticAccepted, setHolisticAccepted] = useState(() => hasAcceptedHolisticDisclaimer());
   const [pendingHolisticTab, setPendingHolisticTab] = useState(false);
   const [hypnosisDisclaimerOpen, setHypnosisDisclaimerOpen] = useState(false);
+  const [hypnosisDisclaimerReview, setHypnosisDisclaimerReview] = useState(false);
   const [hypnosisAccepted, setHypnosisAccepted] = useState(() => hasAcceptedHypnosisEnergyDisclaimer());
   const [pendingHypnosisTab, setPendingHypnosisTab] = useState(false);
   const [animalDisclaimerOpen, setAnimalDisclaimerOpen] = useState(false);
+  const [animalDisclaimerReview, setAnimalDisclaimerReview] = useState(false);
   const [animalAccepted, setAnimalAccepted] = useState(() => hasAcceptedAnimalHealthDisclaimer());
   const [pendingAnimalTab, setPendingAnimalTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
@@ -382,25 +386,36 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [authError, setAuthError] = useState('');
 
   const regionSupported = userLocation ? isSupportedLocation(userLocation) : true;
+  const userId = user?.uid ?? null;
+
+  useEffect(() => {
+    setHolisticAccepted(hasAcceptedHolisticDisclaimer(userId));
+    setHypnosisAccepted(hasAcceptedHypnosisEnergyDisclaimer(userId));
+    setAnimalAccepted(hasAcceptedAnimalHealthDisclaimer(userId));
+  }, [userId]);
 
   useEffect(() => {
     setTab(initialTab);
-    if (initialTab === 'holistic' && !hasAcceptedHolisticDisclaimer()) {
+    if (initialTab === 'holistic' && !hasAcceptedHolisticDisclaimer(userId)) {
+      setHolisticDisclaimerReview(false);
       setHolisticDisclaimerOpen(true);
       setPendingHolisticTab(true);
     }
-    if (initialTab === 'hypnosis' && !hasAcceptedHypnosisEnergyDisclaimer()) {
+    if (initialTab === 'hypnosis' && !hasAcceptedHypnosisEnergyDisclaimer(userId)) {
+      setHypnosisDisclaimerReview(false);
       setHypnosisDisclaimerOpen(true);
       setPendingHypnosisTab(true);
     }
-    if (initialTab === 'animal-health' && !hasAcceptedAnimalHealthDisclaimer()) {
+    if (initialTab === 'animal-health' && !hasAcceptedAnimalHealthDisclaimer(userId)) {
+      setAnimalDisclaimerReview(false);
       setAnimalDisclaimerOpen(true);
       setPendingAnimalTab(true);
     }
-  }, [initialTab]);
+  }, [initialTab, userId]);
 
   const openHolisticTab = useCallback(() => {
     if (!holisticAccepted) {
+      setHolisticDisclaimerReview(false);
       setPendingHolisticTab(true);
       setHolisticDisclaimerOpen(true);
       return;
@@ -413,6 +428,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
 
   const openHypnosisTab = useCallback(() => {
     if (!hypnosisAccepted) {
+      setHypnosisDisclaimerReview(false);
       setPendingHypnosisTab(true);
       setHypnosisDisclaimerOpen(true);
       return;
@@ -425,6 +441,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
 
   const openAnimalHealthTab = useCallback(() => {
     if (!animalAccepted) {
+      setAnimalDisclaimerReview(false);
       setPendingAnimalTab(true);
       setAnimalDisclaimerOpen(true);
       return;
@@ -807,7 +824,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                       Wild edible foods &amp; mushrooms
                     </p>
                     <p>
-                      Berries, greens, roots, and fungi across Oregon and Northern California — each entry includes{' '}
+                      Berries, greens, roots, and fungi across Oregon, Washington, and Northern California — each entry includes{' '}
                       <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
                       preparation ideas.{' '}
                       <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
@@ -1084,16 +1101,21 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         {tab === 'guide' ? <FieldGuidePanel /> : null}
       </div>
 
+      <LivingKnowledgeAppBar user={user} onSignIn={() => void handleSignIn()} />
+
       <LivingKnowledgeFooter
         activeView={footerView}
         onNavigate={navigateFooter}
         onShowHolisticDisclaimer={() => {
+          setHolisticDisclaimerReview(true);
           setHolisticDisclaimerOpen(true);
         }}
         onShowHypnosisDisclaimer={() => {
+          setHypnosisDisclaimerReview(true);
           setHypnosisDisclaimerOpen(true);
         }}
         onShowAnimalDisclaimer={() => {
+          setAnimalDisclaimerReview(true);
           setAnimalDisclaimerOpen(true);
         }}
       />
@@ -1160,8 +1182,11 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       ) : null}
       {holisticDisclaimerOpen ? (
         <HolisticDisclaimerModal
+          reviewOnly={holisticDisclaimerReview}
+          userId={userId}
           onCancel={() => {
             setHolisticDisclaimerOpen(false);
+            setHolisticDisclaimerReview(false);
             setPendingHolisticTab(false);
             if (tab === 'holistic' && !holisticAccepted) {
               setTab('plants');
@@ -1171,9 +1196,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             }
           }}
           onAccepted={() => {
-            setHolisticAccepted(true);
+            if (!holisticDisclaimerReview) setHolisticAccepted(true);
             setHolisticDisclaimerOpen(false);
-            if (pendingHolisticTab) {
+            setHolisticDisclaimerReview(false);
+            if (pendingHolisticTab && !holisticDisclaimerReview) {
               setPendingHolisticTab(false);
               setTab('holistic');
               if (expanded && typeof window !== 'undefined') {
@@ -1185,8 +1211,11 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       ) : null}
       {hypnosisDisclaimerOpen ? (
         <HypnosisEnergyDisclaimerModal
+          reviewOnly={hypnosisDisclaimerReview}
+          userId={userId}
           onCancel={() => {
             setHypnosisDisclaimerOpen(false);
+            setHypnosisDisclaimerReview(false);
             setPendingHypnosisTab(false);
             if (tab === 'hypnosis' && !hypnosisAccepted) {
               setTab('plants');
@@ -1196,9 +1225,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             }
           }}
           onAccepted={() => {
-            setHypnosisAccepted(true);
+            if (!hypnosisDisclaimerReview) setHypnosisAccepted(true);
             setHypnosisDisclaimerOpen(false);
-            if (pendingHypnosisTab) {
+            setHypnosisDisclaimerReview(false);
+            if (pendingHypnosisTab && !hypnosisDisclaimerReview) {
               setPendingHypnosisTab(false);
               setTab('hypnosis');
               if (expanded && typeof window !== 'undefined') {
@@ -1210,8 +1240,11 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       ) : null}
       {animalDisclaimerOpen ? (
         <AnimalHealthDisclaimerModal
+          reviewOnly={animalDisclaimerReview}
+          userId={userId}
           onCancel={() => {
             setAnimalDisclaimerOpen(false);
+            setAnimalDisclaimerReview(false);
             setPendingAnimalTab(false);
             if (tab === 'animal-health' && !animalAccepted) {
               setTab('plants');
@@ -1221,9 +1254,10 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             }
           }}
           onAccepted={() => {
-            setAnimalAccepted(true);
+            if (!animalDisclaimerReview) setAnimalAccepted(true);
             setAnimalDisclaimerOpen(false);
-            if (pendingAnimalTab) {
+            setAnimalDisclaimerReview(false);
+            if (pendingAnimalTab && !animalDisclaimerReview) {
               setPendingAnimalTab(false);
               setTab('animal-health');
               if (expanded && typeof window !== 'undefined') {

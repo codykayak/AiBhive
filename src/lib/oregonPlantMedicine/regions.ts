@@ -5,7 +5,7 @@ import { regionFilterLabel } from './regionCatalog';
 
 export type OregonSubRegion = 'eugene' | 'florence' | 'all';
 
-export type SupportedStateId = 'oregon' | 'northern-california';
+export type SupportedStateId = 'oregon' | 'northern-california' | 'washington';
 
 export type UserLocation = {
   city: string;
@@ -24,8 +24,8 @@ const STATE_ALIASES: Record<string, { name: string; id: SupportedStateId | null 
   california: { name: 'California', id: 'northern-california' },
   'northern california': { name: 'Northern California', id: 'northern-california' },
   norcal: { name: 'Northern California', id: 'northern-california' },
-  wa: { name: 'Washington', id: null },
-  washington: { name: 'Washington', id: null },
+  wa: { name: 'Washington', id: 'washington' },
+  washington: { name: 'Washington', id: 'washington' },
   id: { name: 'Idaho', id: null },
   idaho: { name: 'Idaho', id: null },
 };
@@ -85,6 +85,26 @@ const NORTH_COAST_CA_CITIES = new Set([
   'willits', 'ukiah',
 ]);
 
+const PUGET_SOUND_CITIES = new Set([
+  'seattle', 'tacoma', 'bellevue', 'everett', 'redmond', 'kirkland', 'kent', 'renton', 'bellingham',
+  'olympia', 'spokane', 'vancouver', 'federal way', 'auburn', 'marysville', 'lakewood', 'kenmore',
+  'shoreline', 'bothell', 'sammamish', 'issaquah', 'mount vernon', 'anacortes',
+]);
+
+const OLYMPIC_COAST_CITIES = new Set([
+  'port angeles', 'forks', 'quilcene', 'sequim', 'port townsend', 'hoquiam', 'aberdeen', 'westport',
+]);
+
+const WA_CASCADE_CITIES = new Set([
+  'leavenworth', 'wenatchee', 'cle elum', 'snoqualmie', 'north bend', 'enumclaw', 'packwood',
+  'stevens pass', 'white pass',
+]);
+
+const WA_EASTERN_CITIES = new Set([
+  'spokane', 'yakima', 'tri-cities', 'kennewick', 'richland', 'pasco', 'walla walla', 'pullman',
+  'colville', 'omak',
+]);
+
 export function normalizeStateInput(raw: string): { displayName: string; stateId: SupportedStateId | null } {
   const key = raw.trim().toLowerCase().replace(/\./g, '');
   if (!key) return { displayName: '', stateId: null };
@@ -133,6 +153,18 @@ export function resolveSubRegion(city: string, stateId: SupportedStateId | null)
     return 'ca-all';
   }
 
+  if (stateId === 'washington') {
+    if (OLYMPIC_COAST_CITIES.has(c)) return 'wa-olympic-coast';
+    if (PUGET_SOUND_CITIES.has(c)) return 'wa-puget-sound';
+    if (WA_CASCADE_CITIES.has(c)) return 'wa-cascades';
+    if (WA_EASTERN_CITIES.has(c)) return 'wa-eastern';
+    if (/\b(puget|sound|seattle)\b/.test(c)) return 'wa-puget-sound';
+    if (/\b(olympic|peninsula|forks)\b/.test(c)) return 'wa-olympic-coast';
+    if (/\b(cascade|snoqualmie|leavenworth)\b/.test(c)) return 'wa-cascades';
+    if (/\b(eastern|spokane|yakima|palouse)\b/.test(c)) return 'wa-eastern';
+    return 'wa-all';
+  }
+
   return 'all';
 }
 
@@ -167,5 +199,5 @@ export function subRegionLabel(filter: RegionFilter): string {
 }
 
 export function isSupportedLocation(loc: UserLocation): boolean {
-  return loc.stateId === 'oregon' || loc.stateId === 'northern-california';
+  return loc.stateId === 'oregon' || loc.stateId === 'northern-california' || loc.stateId === 'washington';
 }

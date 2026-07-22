@@ -1568,7 +1568,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
   {
     id: 'edible-wild-foods',
-    title: 'Edible Wild Foods — Oregon & Northern California',
+    title: 'Edible Wild Foods — Oregon, Washington & Northern California',
     description: 'Fruit, greens, mushrooms, seaweed, and preparation references for PNW foragers.',
     links: [
       {
