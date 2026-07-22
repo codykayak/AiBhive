@@ -11,6 +11,10 @@ Two tracks so we can keep developing without burning CI on every push.
 
 Badge check: top-right version should match `public/mobile-releases.json` → `shippedNativeVersion`.
 
+### v1.8.2 — Plant ID & Washington library (#349)
+
+Native bump for Living Knowledge footer (credits + APK download), Washington state support, and PWA install manifest. Triggers **Build Android APK** on merge to `main-fixed`.
+
 ## Developer workflow
 
 ### 1. Day-to-day feature work (no APK)
