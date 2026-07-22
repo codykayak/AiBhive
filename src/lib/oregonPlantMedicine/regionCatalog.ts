@@ -108,8 +108,8 @@ function appendWashingtonRegions(regions: PlantRegion[]): PlantRegion[] {
     out.add('wa-olympic-coast');
     out.add('wa-puget-sound');
   }
-  if (hasORCascades) out.add('wa-cascades');
-  if (hasORWillamette || hasORPortland) out.add('wa-puget-sound');
+  if (hasORCascades || regions.includes('or-klamath')) out.add('wa-cascades');
+  if (hasORWillamette || hasORPortland || regions.includes('or-rogue')) out.add('wa-puget-sound');
   if (hasOREast) out.add('wa-eastern');
   return [...out];
 }

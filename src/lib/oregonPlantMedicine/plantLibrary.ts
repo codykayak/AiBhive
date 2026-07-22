@@ -1628,6 +1628,21 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
         url: 'https://www.psms.org/',
         description: 'Puget Sound Mycological Society resources applicable to Oregon fungi.',
       },
+      {
+        label: 'Washington Native Plant Society',
+        url: 'https://www.wnps.org/',
+        description: 'Washington native plant ID, ethics, and chapter field trips.',
+      },
+      {
+        label: 'WSU Extension — Gardening & foraging',
+        url: 'https://extension.wsu.edu/gardening/',
+        description: 'Washington State University food safety and wild harvest guidance.',
+      },
+      {
+        label: 'Washington Poison Center',
+        url: 'https://www.wapc.org/',
+        description: '1-800-222-1222 — plant and mushroom exposure emergencies in Washington.',
+      },
     ],
   },
   {

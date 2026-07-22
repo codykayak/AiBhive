@@ -936,7 +936,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   {userLocation.state} is not on the map yet
                 </p>
                 <p className="leading-relaxed">
-                  You can still search and browse the full Oregon &amp; Northern California library. Want localized
+                  You can still search and browse the full Oregon, Washington &amp; Northern California library. Want localized
                   plants for {locationLabel(userLocation)}? Add your state for{' '}
                   <strong className="text-white">${STATE_CONTRIBUTION_USD}</strong> in Hive credits — that opens the
                   region for everyone.
