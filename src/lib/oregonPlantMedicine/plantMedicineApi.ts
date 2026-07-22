@@ -490,3 +490,24 @@ export function postImageUrls(post: Pick<PlantMedicinePost, 'imageUrl' | 'imageU
   if (post.imageUrls?.length) return post.imageUrls;
   return post.imageUrl ? [post.imageUrl] : [];
 }
+
+export type PlantMedicineBillingStatus = {
+  hiveUserId: string;
+  adminExempt: boolean;
+  account?: {
+    creditBalanceUsd?: number;
+    planId?: string;
+    usage?: { monthlyUsageUsd?: number; monthlyAllowanceUsd?: number };
+  };
+};
+
+export async function fetchPlantMedicineBillingStatus(user: User): Promise<PlantMedicineBillingStatus | null> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/billing-status', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) return null;
+  const data = (await res.json()) as PlantMedicineBillingStatus & { error?: string };
+  if (!res.ok) throw new Error(data.error || 'Could not load billing status');
+  return data;
+}

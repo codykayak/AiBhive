@@ -23,6 +23,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/livingKnowledgeRag';
 import {
   PlantCreditsError,
+  fetchPlantMedicineBillingStatus,
   fileToPlantPhotoAttachment,
   sendLivingKnowledgeChat,
   sendPlantPhotoIdentify,
@@ -237,13 +238,33 @@ export default function HolisticAskAgent({
   const [creditsNeeded, setCreditsNeeded] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [identifyingPhoto, setIdentifyingPhoto] = useState(false);
+  const [adminExempt, setAdminExempt] = useState(false);
 
   const suggestions = useMemo(() => suggestLivingKnowledgeTerms(query, scope, 8), [query, scope]);
   const photoIdEnabled = scope === 'all' || scope === 'plants' || scope === 'edibles';
+  const photoIdFreeForUser = adminExempt;
 
   useEffect(() => {
     onQueryChange?.(query);
   }, [query, onQueryChange]);
+
+  useEffect(() => {
+    if (!user) {
+      setAdminExempt(false);
+      return;
+    }
+    let cancelled = false;
+    void fetchPlantMedicineBillingStatus(user)
+      .then((status) => {
+        if (!cancelled) setAdminExempt(!!status?.adminExempt);
+      })
+      .catch(() => {
+        if (!cancelled) setAdminExempt(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -449,7 +470,11 @@ export default function HolisticAskAgent({
         </p>
         <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
           Powered by Grok · may ask a clarifying follow-up · library RAG works offline without payment
-          {photoIdEnabled ? ' · photo plant ID is a paid Hive-credits feature' : ''}
+          {photoIdEnabled
+            ? photoIdFreeForUser
+              ? ' · admin account — photo plant ID is free'
+              : ' · photo plant ID is a paid Hive-credits feature'
+            : ''}
         </p>
       </div>
 
@@ -560,7 +585,7 @@ export default function HolisticAskAgent({
         </div>
       ) : null}
 
-      {creditsNeeded ? (
+      {creditsNeeded && !adminExempt ? (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
           <p className="text-xs text-amber-100/90">
             Photo plant ID uses Hive credits (like Diagnose photo). Add credits to continue.
@@ -582,7 +607,11 @@ export default function HolisticAskAgent({
           <img src={attachment.previewUrl} alt="Pending plant photo" className="h-14 w-14 rounded-lg object-cover" />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-white">Photo ready for ID</p>
-            <p className="text-[10px] text-amber-200/90">Paid Grok vision · returns confidence + dangerous look-alikes</p>
+            <p className="text-[10px] text-amber-200/90">
+              {photoIdFreeForUser
+                ? 'Admin account — Grok vision plant ID at no charge'
+                : 'Paid Grok vision · returns confidence + dangerous look-alikes'}
+            </p>
           </div>
           <button
             type="button"
@@ -630,7 +659,7 @@ export default function HolisticAskAgent({
             <>
               <button
                 type="button"
-                title="Take photo (paid ID)"
+                title={photoIdFreeForUser ? 'Take photo for ID' : 'Take photo (paid ID)'}
                 onClick={() => {
                   if (!user && onSignIn) onSignIn();
                   cameraRef.current?.click();
@@ -641,7 +670,7 @@ export default function HolisticAskAgent({
               </button>
               <button
                 type="button"
-                title="Upload plant photo (paid ID)"
+                title={photoIdFreeForUser ? 'Upload plant photo for ID' : 'Upload plant photo (paid ID)'}
                 onClick={() => {
                   if (!user && onSignIn) onSignIn();
                   fileRef.current?.click();
@@ -720,7 +749,13 @@ export default function HolisticAskAgent({
           onClick={onSignIn}
           className={`text-[11px] font-semibold ${theme.badge} hover:underline`}
         >
-          Sign in so Grok can ask clarifying follow-ups{photoIdEnabled ? ' and run paid photo ID' : ''} (text is free)
+          Sign in so Grok can ask clarifying follow-ups
+          {photoIdEnabled
+            ? photoIdFreeForUser
+              ? ' and run photo ID for free'
+              : ' and run paid photo ID'
+            : ''}{' '}
+          (text is free)
         </button>
       ) : null}
       {messages.length > 0 ? (
