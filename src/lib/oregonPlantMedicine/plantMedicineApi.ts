@@ -477,8 +477,11 @@ export async function sendPlantPhotoIdentify(
   };
 }
 
-export async function fileToPlantPhotoAttachment(file: File): Promise<PlantPhotoAttachment> {
-  const compressed = await compressPlantImageFile(file);
+export async function fileToPlantPhotoAttachment(
+  file: File,
+  opts?: { forVision?: boolean },
+): Promise<PlantPhotoAttachment> {
+  const compressed = await compressPlantImageFile(file, opts);
   return {
     mimeType: compressed.mimeType,
     base64: compressed.base64,

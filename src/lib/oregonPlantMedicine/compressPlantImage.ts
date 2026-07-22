@@ -5,6 +5,10 @@ const MAX_HEIGHT = 2048;
 const JPEG_QUALITY = 0.85;
 /** Target ~1.5MB raw file before base64 (~2MB JSON) — typical cell-phone photo after resize. */
 const MAX_BYTES = 1_500_000;
+/** Tighter cap for Grok vision (jpg/png only, faster upload). */
+const VISION_MAX_BYTES = 900_000;
+const VISION_MAX_WIDTH = 1536;
+const VISION_MAX_HEIGHT = 1536;
 
 export type CompressedPlantImage = {
   file: File;
@@ -39,11 +43,16 @@ function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
   });
 }
 
-async function encodeJpeg(img: HTMLImageElement, quality: number): Promise<Blob> {
+async function encodeJpeg(
+  img: HTMLImageElement,
+  quality: number,
+  maxWidth = MAX_WIDTH,
+  maxHeight = MAX_HEIGHT,
+): Promise<Blob> {
   const canvas = document.createElement('canvas');
   let width = img.width;
   let height = img.height;
-  const scale = Math.min(1, MAX_WIDTH / width, MAX_HEIGHT / height);
+  const scale = Math.min(1, maxWidth / width, maxHeight / height);
   width = Math.max(1, Math.round(width * scale));
   height = Math.max(1, Math.round(height * scale));
   canvas.width = width;
@@ -66,12 +75,20 @@ async function blobToBase64(blob: Blob): Promise<string> {
  * Compress a user-selected image for plant-medicine uploads and Grok photo ID.
  * Skips re-encoding tiny files that are already small JPEGs.
  */
-export async function compressPlantImageFile(file: File): Promise<CompressedPlantImage> {
+export async function compressPlantImageFile(
+  file: File,
+  opts?: { forVision?: boolean },
+): Promise<CompressedPlantImage> {
+  const forVision = opts?.forVision === true;
+  const maxBytes = forVision ? VISION_MAX_BYTES : MAX_BYTES;
+  const maxW = forVision ? VISION_MAX_WIDTH : MAX_WIDTH;
+  const maxH = forVision ? VISION_MAX_HEIGHT : MAX_HEIGHT;
+
   if (!file.type.startsWith('image/')) {
     throw new Error('Please choose an image file (JPEG, PNG, or HEIC).');
   }
 
-  if (file.size <= 400_000 && /jpe?g$/i.test(file.name)) {
+  if (!forVision && file.size <= 400_000 && /jpe?g$/i.test(file.name)) {
     const buffer = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     let binary = '';
@@ -87,10 +104,10 @@ export async function compressPlantImageFile(file: File): Promise<CompressedPlan
 
   const img = await readImage(file);
   let quality = JPEG_QUALITY;
-  let blob = await encodeJpeg(img, quality);
-  while (blob.size > MAX_BYTES && quality > 0.45) {
+  let blob = await encodeJpeg(img, quality, maxW, maxH);
+  while (blob.size > maxBytes && quality > 0.45) {
     quality -= 0.08;
-    blob = await encodeJpeg(img, quality);
+    blob = await encodeJpeg(img, quality, maxW, maxH);
   }
 
   const base64 = await blobToBase64(blob);

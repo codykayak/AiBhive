@@ -295,7 +295,7 @@ export default function HolisticAskAgent({
   const onPickFile = async (file: File | null) => {
     if (!file) return;
     try {
-      const att = await fileToPlantPhotoAttachment(file);
+      const att = await fileToPlantPhotoAttachment(file, { forVision: true });
       setAttachment(att);
       setError('');
       setCreditsNeeded(false);
