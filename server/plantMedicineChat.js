@@ -560,3 +560,170 @@ export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
     },
   };
 }
+
+const POST_ENRICH_SYSTEM = `You enrich community foraging posts for AiBhive Living Knowledge.
+Given a draft title, caption, optional linked plant from our library, and optionally a photo frame, add helpful educational context.
+
+Return your answer as JSON wrapped exactly like this:
+<<<POST_ENRICH_JSON>>>
+{
+  "suggestedTitle": "string or null",
+  "captionAppend": "2-4 sentences: ID notes, habitat, season, preparation or safety — educational only",
+  "identificationTags": ["common name", "scientific name or trait", "habitat tag"],
+  "suggestedPlantId": "library-plant-id-or-null",
+  "isToxic": false,
+  "safetyNote": "short warning if toxic look-alikes or poison risk, else empty string"
+}
+<<<END_POST_ENRICH_JSON>>>
+
+Rules:
+- Never encourage eating without 100% identification.
+- Not medical or veterinary advice.
+- Prefer plant IDs from the catalog when provided.
+- identificationTags should be short labels users can scan (3-6 tags).`;
+
+function parsePostEnrichJson(reply) {
+  const match = String(reply || '').match(/<<<POST_ENRICH_JSON>>>([\s\S]*?)<<<END_POST_ENRICH_JSON>>>/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[1].trim());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Optional Bhive Credits enrichment for community posts (text + optional photo frame).
+ */
+export async function runCommunityPostEnrich(db, hiveUserId, opts) {
+  const title = String(opts.title || '').trim().slice(0, 120);
+  const text = String(opts.text || '').trim().slice(0, 2000);
+  const plantId = String(opts.plantId || '').trim();
+  const feedCategory = String(opts.feedCategory || '').trim();
+  const attachment = opts.attachment;
+
+  if (!title && !text && !attachment?.base64) {
+    return { ok: false, error: 'Add a title, caption, or photo for Bhive research.' };
+  }
+
+  const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
+  if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
+
+  await ensureHiveUser(db, hiveUserId);
+
+  const rawCost = PLANT_CHAT_RAW_COST;
+  const { markedUsd: markedEstimate } = await hiveUsage.markCostForUser(db, hiveUserId, rawCost);
+  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, FEATURE_ID, {
+    email: opts.email,
+  });
+  if (!budget.ok) {
+    return {
+      ok: false,
+      needPayment: true,
+      code: 'credits_depleted',
+      error: 'Hive credits depleted — add credits for Bhive research.',
+      amountUsd: budget.amountUsd ?? markedEstimate,
+    };
+  }
+
+  await resolveLatestGrokModels();
+  const hasVision = !!attachment?.base64;
+  const model = hasVision
+    ? process.env.PLANT_MEDICINE_VISION_MODEL ||
+      process.env.GROK_DIAGNOSE_VISION_MODEL ||
+      getCachedGrokVisionModel()
+    : process.env.PLANT_MEDICINE_CHAT_MODEL || getCachedGrokChatModel();
+
+  let plantContext = '';
+  if (plantId) {
+    plantContext = buildPlantRagContext(plantId) || '';
+  }
+
+  const catalog = buildPhotoIdCatalogContext(40);
+  const system = [
+    POST_ENRICH_SYSTEM,
+    feedCategory ? `\nPost category: ${feedCategory}` : '',
+    plantContext ? `\n--- LINKED PLANT ---\n${plantContext.slice(0, 4000)}` : '',
+    `\n--- LIBRARY CATALOG (suggestedPlantId must match an id here or be null) ---\n${catalog}`,
+  ].join('');
+
+  const userMessage = [
+    `Draft title: ${title || '(none)'}`,
+    `Draft caption: ${text || '(none)'}`,
+    attachment?.base64
+      ? 'A photo or video frame is attached — use it for identification tags and safety notes.'
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  let userContent;
+  if (hasVision) {
+    const base64 = String(attachment.base64).replace(/^data:[^;]+;base64,/, '');
+    const rawMime = String(attachment.mimeType || 'image/jpeg').toLowerCase();
+    const visionMime = rawMime.includes('png') ? 'image/png' : 'image/jpeg';
+    userContent = buildGrokUserContent(userMessage, { base64, mimeType: visionMime });
+  } else {
+    userContent = userMessage;
+  }
+
+  let reply;
+  try {
+    reply = await grokChatMessages(
+      apiKey,
+      model,
+      [
+        { role: 'system', content: system.slice(0, 12000) },
+        { role: 'user', content: userContent },
+      ],
+      {
+        temperature: 0.35,
+        max_tokens: 1200,
+        vision: hasVision,
+      },
+    );
+  } catch (err) {
+    console.error('[plant-medicine/enrich]', err?.message || err);
+    return { ok: false, error: err?.message || 'Bhive research failed — try again.' };
+  }
+
+  if (!reply) return { ok: false, error: 'No response from Hive AI.' };
+
+  const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
+    rawCostUsd: rawCost,
+    feature: hasVision ? VISION_FEATURE_ID : FEATURE_ID,
+    summary: 'Community post Bhive research',
+    email: opts.email,
+  });
+
+  if (!usage.ok) {
+    return {
+      ok: false,
+      needPayment: !!usage.needUpgrade,
+      error: usage.needUpgrade ? 'Hive credits depleted' : usage.error || 'Billing failed',
+    };
+  }
+
+  const parsed = parsePostEnrichJson(reply) || {};
+  const account = await getHiveAccount(db, hiveUserId);
+
+  const suggestedPlantId = String(parsed.suggestedPlantId || '').trim();
+  const validPlantId = suggestedPlantId && getPlantRagEntry(suggestedPlantId) ? suggestedPlantId : null;
+
+  return {
+    ok: true,
+    suggestedTitle: parsed.suggestedTitle ? String(parsed.suggestedTitle).slice(0, 120) : null,
+    captionAppend: parsed.captionAppend ? String(parsed.captionAppend).slice(0, 1500) : '',
+    identificationTags: Array.isArray(parsed.identificationTags)
+      ? parsed.identificationTags.map((t) => String(t).trim()).filter(Boolean).slice(0, 8)
+      : [],
+    suggestedPlantId: validPlantId,
+    isToxic: !!parsed.isToxic,
+    safetyNote: parsed.safetyNote ? String(parsed.safetyNote).slice(0, 500) : '',
+    chargedUsd: usage.chargedUsd ?? markedEstimate,
+    account: {
+      creditBalanceUsd: account.creditBalanceUsd,
+      usage: account.usage,
+    },
+  };
+}

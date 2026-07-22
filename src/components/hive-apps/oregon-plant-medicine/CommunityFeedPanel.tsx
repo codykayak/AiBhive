@@ -82,9 +82,16 @@ function FeedCard({
       ? [post.imageUrl]
       : []
     : postImageUrls(post as PlantMedicinePost);
+  const videoUrl = !seed && 'videoUrl' in post ? (post as PlantMedicinePost).videoUrl : null;
+  const aiTags = !seed && 'aiTags' in post ? (post as PlantMedicinePost).aiTags : undefined;
+  const isToxicPost = aiTags?.some((t) => /toxic|poison|deadly|danger/i.test(t));
 
   return (
-    <article className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+    <article
+      className={`rounded-xl border bg-slate-900/60 overflow-hidden ${
+        isToxicPost ? 'border-rose-500/45 ring-1 ring-rose-500/20' : 'border-slate-800'
+      }`}
+    >
       <div className="p-4 flex items-start gap-3">
         <UserAvatar
           url={post.authorAvatarUrl}
@@ -107,6 +114,18 @@ function FeedCard({
           {post.text ? (
             <p className="text-sm text-slate-300 mt-2 leading-relaxed line-clamp-3">{post.text}</p>
           ) : null}
+          {aiTags && aiTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {aiTags.slice(0, 5).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : null}
           {plant && plantLabel ? (
             <button
               type="button"
@@ -119,6 +138,12 @@ function FeedCard({
           ) : null}
         </div>
       </div>
+
+      {videoUrl ? (
+        <button type="button" onClick={() => onOpenPost(post)} className="block w-full text-left">
+          <video src={videoUrl} controls className="w-full max-h-72 bg-black" />
+        </button>
+      ) : null}
 
       {images.length > 0 ? (
         <button type="button" onClick={() => onOpenPost(post)} className="block w-full text-left">

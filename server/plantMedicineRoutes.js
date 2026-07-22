@@ -5,6 +5,7 @@ import {
   runPlantMedicineChat,
   runLivingKnowledgeChat,
   runPlantPhotoIdentify,
+  runCommunityPostEnrich,
   resolvePlantHiveUserId,
 } from './plantMedicineChat.js';
 import { isHiveBillingExempt } from './hiveAdmin.js';
@@ -112,9 +113,11 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
         return res.status(400).json({ error: 'base64 required' });
       }
       const buffer = Buffer.from(base64, 'base64');
+      const mime = String(mimeType).toLowerCase();
+      const uploadKind = kind === 'avatar' ? 'avatar' : mime.startsWith('video/') ? 'video' : 'photo';
       const url = await uploadPlantMedicineImage(gcsBucket, {
         uid: user.uid,
-        kind: kind === 'avatar' ? 'avatar' : 'photo',
+        kind: uploadKind,
         buffer,
         mimeType,
       });
@@ -146,13 +149,46 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     }
   });
 
+  app.post('/api/plant-medicine/feed/enrich', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      await ensureHiveUser(db, hiveUserId);
+      const { title, text, plantId, feedCategory, attachment } = req.body || {};
+      if (plantId && !PLANT_ID_RE.test(String(plantId))) {
+        return res.status(400).json({ error: 'Invalid plant id' });
+      }
+      const result = await runCommunityPostEnrich(db, hiveUserId, {
+        title,
+        text,
+        plantId,
+        feedCategory,
+        attachment,
+        email: user.email,
+      });
+      if (!result.ok) {
+        const status = result.needPayment ? 402 : 400;
+        return res.status(status).json(result);
+      }
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/feed/enrich]', err);
+      return res.status(500).json({ error: err.message || 'Enrichment failed' });
+    }
+  });
+
   app.post('/api/plant-medicine/feed/posts', async (req, res) => {
     try {
       const user = await requireAuth(req, res);
       if (!user) return;
-      const { title, text, imageUrl, imageUrls, plantId } = req.body || {};
+      const { title, text, imageUrl, imageUrls, videoUrl, plantId, feedCategory, aiTags, aiEnriched } =
+        req.body || {};
       if (plantId && !PLANT_ID_RE.test(String(plantId))) {
         return res.status(400).json({ error: 'Invalid plant id' });
+      }
+      if (feedCategory && feedCategory !== 'plants' && feedCategory !== 'edibles') {
+        return res.status(400).json({ error: 'feedCategory must be plants or edibles' });
       }
       const post = await createFeedPost(
         db,
@@ -163,7 +199,11 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
           text,
           imageUrl,
           imageUrls,
+          videoUrl,
           plantId: plantId || null,
+          feedCategory: feedCategory || null,
+          aiTags,
+          aiEnriched: !!aiEnriched,
         },
         gcsBucket,
       );
