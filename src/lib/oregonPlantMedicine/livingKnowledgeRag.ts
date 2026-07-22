@@ -479,7 +479,7 @@ export function offlineLivingKnowledgeReply(
     // First miss: ask one Diagnose-style clarifier before hard-pushing contribute.
     if (!isFollowUp) {
       return {
-        reply: `${local.answer}\n\nTo help me search better: are you asking about a specific plant/fungus name, a body system (gut, sleep, skin), or a modality (Cayce, QHHT, Reiki)?`,
+        reply: `${local.answer}\n\nTo focus your Hive Research: are you asking about a specific plant/fungus name, a body system (gut, sleep, skin), or a modality (Cayce, QHHT, Reiki)?`,
         hits: local.hits,
         contributeSuggested: true,
         isClarifier: true,

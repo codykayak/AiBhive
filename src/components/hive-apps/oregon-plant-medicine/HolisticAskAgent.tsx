@@ -32,6 +32,10 @@ import {
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import {
+  HIVE_RESEARCH_LABEL,
+  HIVE_RESEARCH_POWERED_BY,
+} from '../../../lib/oregonPlantMedicine/branding';
+import {
   enrichPlantPhotoIdResult,
   type PlantIdVisual,
 } from '../../../lib/oregonPlantMedicine/plantPhotoIdVisuals';
@@ -435,7 +439,7 @@ export default function HolisticAskAgent({
           setBusy(false);
           return;
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Bhive Credits unavailable — using offline library.');
+          setError(err instanceof Error ? err.message : `${HIVE_RESEARCH_LABEL} unavailable — using offline library.`);
         }
       }
 
@@ -469,7 +473,8 @@ export default function HolisticAskAgent({
           Ask specially trained holistic AI agent
         </p>
         <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-          Powered by Bhive Credits · may ask a clarifying follow-up · library RAG works offline without payment
+          {HIVE_RESEARCH_LABEL} · {HIVE_RESEARCH_POWERED_BY} · may ask a clarifying follow-up · library browse works
+          offline without payment
           {photoIdEnabled
             ? photoIdFreeForUser
               ? ' · admin account — photo plant ID is free'
@@ -490,9 +495,9 @@ export default function HolisticAskAgent({
               {msg.role === 'assistant' ? (
                 <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${theme.badge}`}>
                   {msg.source === 'grok-vision'
-                    ? 'Bhive Credits · Photo ID'
+                    ? `${HIVE_RESEARCH_LABEL} · Photo ID`
                     : msg.source === 'grok'
-                      ? 'Bhive Credits · Living Knowledge'
+                      ? `${HIVE_RESEARCH_LABEL} · Living Knowledge`
                       : 'Offline library'}
                   {typeof msg.chargedUsd === 'number' && msg.chargedUsd > 0
                     ? ` · $${msg.chargedUsd.toFixed(3)} credits`
@@ -561,7 +566,9 @@ export default function HolisticAskAgent({
           {busy ? (
             <div className={`flex items-center gap-2 text-xs ${theme.badge}`}>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {identifyingPhoto ? 'Bhive Credits is identifying your photo…' : 'Bhive Credits is thinking…'}
+              {identifyingPhoto
+                ? `${HIVE_RESEARCH_LABEL} is identifying your photo…`
+                : `${HIVE_RESEARCH_LABEL} is running…`}
             </div>
           ) : null}
           <div ref={bottomRef} />
@@ -588,7 +595,7 @@ export default function HolisticAskAgent({
       {creditsNeeded && !adminExempt ? (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
           <p className="text-xs text-amber-100/90">
-            Photo plant ID uses Bhive Credits (like Diagnose photo). Add credits to continue.
+            Photo plant ID uses {HIVE_RESEARCH_LABEL} ({HIVE_RESEARCH_POWERED_BY}). Add Bhive Credits to continue.
           </p>
           <button
             type="button"
@@ -609,8 +616,8 @@ export default function HolisticAskAgent({
             <p className="text-xs font-bold text-white">Photo ready for ID</p>
             <p className="text-[10px] text-amber-200/90">
               {photoIdFreeForUser
-                ? 'Admin account — Bhive Credits photo ID at no charge'
-                : 'Paid Bhive Credits photo ID · returns confidence + dangerous look-alikes'}
+                ? `Admin account — ${HIVE_RESEARCH_LABEL} photo ID at no charge`
+                : `Paid ${HIVE_RESEARCH_LABEL} photo ID · returns confidence + dangerous look-alikes`}
             </p>
           </div>
           <button
@@ -649,7 +656,7 @@ export default function HolisticAskAgent({
             attachment
               ? 'Optional note about the plant (habitat, region)…'
               : messages.length > 0 && lastAssistant && looksLikeLivingKnowledgeClarifier(lastAssistant.content)
-                ? 'Reply to Bhive Credits follow-up…'
+                ? 'Reply to Hive Research follow-up…'
                 : placeholder
           }
           className={`w-full pl-10 pr-36 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none ${theme.focus}`}
@@ -749,7 +756,7 @@ export default function HolisticAskAgent({
           onClick={onSignIn}
           className={`text-[11px] font-semibold ${theme.badge} hover:underline`}
         >
-          Sign in so Bhive Credits can ask clarifying follow-ups
+          Sign in so {HIVE_RESEARCH_LABEL} can ask clarifying follow-ups
           {photoIdEnabled
             ? photoIdFreeForUser
               ? ' and run photo ID for free'

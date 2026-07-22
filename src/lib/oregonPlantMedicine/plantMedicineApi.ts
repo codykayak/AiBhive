@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth';
 import { adminFetch, adminJson } from '../adminApi';
+import { HIVE_RESEARCH_LABEL } from './branding';
 import { compressPlantImageFile } from './compressPlantImage';
 
 export type PlantMedicineProfile = {
@@ -199,9 +200,9 @@ export async function enrichCommunityPost(
   });
   const data = (await res.json()) as CommunityPostEnrichment & { error?: string; needPayment?: boolean };
   if (res.status === 402 || data.needPayment) {
-    throw new Error(data.error || 'Add Bhive Credits to run research on your post.');
+    throw new Error(data.error || `Add Bhive Credits to run ${HIVE_RESEARCH_LABEL} on your post.`);
   }
-  if (!res.ok) throw new Error(data.error || 'Bhive research failed');
+  if (!res.ok) throw new Error(data.error || `${HIVE_RESEARCH_LABEL} failed`);
   return data;
 }
 

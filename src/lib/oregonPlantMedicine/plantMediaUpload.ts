@@ -1,6 +1,7 @@
 /** Client helpers for community post images and short field videos. */
 
 import { formatPlantImageSize } from './compressPlantImage';
+import { HIVE_RESEARCH_LABEL } from './branding';
 
 export const PLANT_VIDEO_MAX_BYTES = 50 * 1024 * 1024;
 
@@ -30,7 +31,7 @@ export async function readVideoFile(file: File): Promise<{ base64: string; mimeT
   };
 }
 
-/** Grab a single JPEG frame from a video for Bhive vision enrichment. */
+/** Grab a single JPEG frame from a video for Hive Research vision enrichment. */
 export async function videoFrameForEnrichment(
   file: File,
 ): Promise<{ base64: string; mimeType: string } | null> {
@@ -43,7 +44,7 @@ export async function videoFrameForEnrichment(
     video.src = url;
     await new Promise<void>((resolve, reject) => {
       video.onloadeddata = () => resolve();
-      video.onerror = () => reject(new Error('Could not read video for Bhive research'));
+      video.onerror = () => reject(new Error(`Could not read video for ${HIVE_RESEARCH_LABEL}`));
     });
     const seekTo = Number.isFinite(video.duration) && video.duration > 0 ? Math.min(1, video.duration * 0.25) : 0;
     video.currentTime = seekTo;
