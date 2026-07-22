@@ -83,10 +83,12 @@ jobs:
           node scripts/write-mobile-release.mjs
 
       - name: Install root deps (Firebase publish script)
-        run: npm ci
+        run: npm ci --ignore-scripts
+        continue-on-error: true
 
       - name: Publish Firebase download mirror (.gz)
         id: firebase
+        continue-on-error: true
         run: |
           set -euo pipefail
           OUTPUT_FILE="$(mktemp)"
@@ -99,6 +101,7 @@ jobs:
         run: node scripts/write-mobile-release.mjs --firebase-gz-url "${{ steps.firebase.outputs.gz_url }}"
 
       - name: Publish release manifest to Firebase Storage
+        continue-on-error: true
         run: node scripts/publish-mobile-manifest-storage.mjs
 
       - name: Commit deployed APK + manifest

@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 concurrency:
   group: cursor-pr-${{ github.event.pull_request.number }}
@@ -138,3 +139,11 @@ jobs:
             --repo "${{ github.repository }}" \
             --squash \
             --delete-branch
+
+      - name: Trigger main-fixed deploy workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Squash merges via API sometimes skip push webhooks; dispatch deploy jobs explicitly.
+          gh workflow run "Auto-deploy (web + server)" --ref main-fixed || true
+          gh workflow run "Build Android APK" --ref main-fixed || true
