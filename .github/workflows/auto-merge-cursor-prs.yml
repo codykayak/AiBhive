@@ -143,6 +143,7 @@ jobs:
       - name: Trigger main-fixed deploy workflows
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # Squash merges via API sometimes skip push webhooks; dispatch deploy jobs explicitly.
           gh workflow run "Auto-deploy (web + server)" --ref main-fixed || true
