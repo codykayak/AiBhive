@@ -72,13 +72,14 @@ export default function LivingKnowledgeFooter({
           </p>
           <p>
             {LIVING_KNOWLEDGE_APP_NAME} is a community field guide and research library — not medical advice,
-            telehealth, or licensed therapy. Never eat a wild plant or mushroom without 100% identification. Oregon /
-            California Poison Control: <strong className="text-slate-300">1-800-222-1222</strong>. Mental health crisis
+            telehealth, or licensed therapy.             Never eat a wild plant or mushroom without 100% identification. Oregon /
+            Washington / California Poison Control: <strong className="text-slate-300">1-800-222-1222</strong>. Mental health crisis
             (US): <strong className="text-slate-300">988</strong>.
           </p>
           <p className="flex items-center gap-1.5 text-slate-500">
             <FileText className="w-3 h-3" />
-            Holistic, hypnosis, and animal health sections require a one-time hold-document acceptance per device.
+            Holistic, hypnosis, and animal health sections require a one-time hold-document acceptance per account.
+            Use the disclaimer links above to read them again anytime.
           </p>
         </div>
       </div>

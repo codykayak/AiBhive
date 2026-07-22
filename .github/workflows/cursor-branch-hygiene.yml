@@ -1,0 +1,53 @@
+# Fail fast when a cursor/* branch name was already used in a merged PR.
+# Reusing branches after squash-merge is the #1 cause of recurring merge conflicts.
+name: Cursor branch hygiene
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main-fixed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-branch-name:
+    if: |
+      github.event.pull_request.draft == false &&
+      startsWith(github.event.pull_request.head.ref, 'cursor/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject reused cursor branch names
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          CURRENT_PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          prior_prs=$(gh pr list --head "$BRANCH" --state merged --json number -q \
+            "[.[] | select(.number != $CURRENT_PR) | .number] | join(\", #\")" || true)
+
+          if [ -n "$prior_prs" ]; then
+            echo "::error::Branch $BRANCH was already merged in PR(s): #$prior_prs. Create a fresh branch — never reuse after squash-merge."
+            gh pr comment "$CURRENT_PR" --body "## Branch name reused — auto-merge blocked
+
+          Branch \`$BRANCH\` was already squash-merged in PR(s) **#$prior_prs**.
+
+          Squash merge rewrites \`main-fixed\` history. Pushing more commits to the same branch name almost always causes merge conflicts, even for small edits.
+
+          **Fix** — start a new branch from latest \`main-fixed\`:
+
+          \`\`\`bash
+          git fetch origin main-fixed
+          ./scripts/cursor-fresh-branch.sh my-new-feature-name
+          # move commits: git cherry-pick <sha> … or redo edits
+          git push -u origin HEAD
+          \`\`\`
+
+          Then close this PR and open one from the new branch. See \`AGENTS.md\` → Branch hygiene."
+            exit 1
+          fi
+
+          echo "Branch $BRANCH has not been merged before — OK."

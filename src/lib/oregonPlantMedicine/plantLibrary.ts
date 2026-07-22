@@ -1568,7 +1568,7 @@ export const PLANT_LIBRARY: PlantEntry[] = [
 export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
   {
     id: 'edible-wild-foods',
-    title: 'Edible Wild Foods — Oregon & Northern California',
+    title: 'Edible Wild Foods — Oregon, Washington & Northern California',
     description: 'Fruit, greens, mushrooms, seaweed, and preparation references for PNW foragers.',
     links: [
       {
@@ -1627,6 +1627,21 @@ export const EXTERNAL_RESOURCE_LIBRARY: ResourceCategory[] = [
         label: 'PNW Mushroom ID (PSMS)',
         url: 'https://www.psms.org/',
         description: 'Puget Sound Mycological Society resources applicable to Oregon fungi.',
+      },
+      {
+        label: 'Washington Native Plant Society',
+        url: 'https://www.wnps.org/',
+        description: 'Washington native plant ID, ethics, and chapter field trips.',
+      },
+      {
+        label: 'WSU Extension — Gardening & foraging',
+        url: 'https://extension.wsu.edu/gardening/',
+        description: 'Washington State University food safety and wild harvest guidance.',
+      },
+      {
+        label: 'Washington Poison Center',
+        url: 'https://www.wapc.org/',
+        description: '1-800-222-1222 — plant and mushroom exposure emergencies in Washington.',
       },
     ],
   },

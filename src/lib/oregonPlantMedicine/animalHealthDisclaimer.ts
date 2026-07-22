@@ -1,3 +1,5 @@
+import { hasStoredDisclaimer, storeDisclaimerAcceptance } from './disclaimerStorage';
+
 export const ANIMAL_HEALTH_DISCLAIMER_VERSION = 'v1';
 
 export const ANIMAL_HEALTH_DISCLAIMER_STORAGE_KEY = 'living_knowledge_animal_health_disclaimer_v1';
@@ -32,15 +34,10 @@ export const ANIMAL_HEALTH_DISCLAIMER_SECTIONS = [
   },
 ] as const;
 
-export function hasAcceptedAnimalHealthDisclaimer(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(ANIMAL_HEALTH_DISCLAIMER_STORAGE_KEY) === ANIMAL_HEALTH_DISCLAIMER_VERSION;
-  } catch {
-    return false;
-  }
+export function hasAcceptedAnimalHealthDisclaimer(uid?: string | null): boolean {
+  return hasStoredDisclaimer(ANIMAL_HEALTH_DISCLAIMER_STORAGE_KEY, ANIMAL_HEALTH_DISCLAIMER_VERSION, uid);
 }
 
-export function acceptAnimalHealthDisclaimer(): void {
-  localStorage.setItem(ANIMAL_HEALTH_DISCLAIMER_STORAGE_KEY, ANIMAL_HEALTH_DISCLAIMER_VERSION);
+export function acceptAnimalHealthDisclaimer(uid?: string | null): void {
+  storeDisclaimerAcceptance(ANIMAL_HEALTH_DISCLAIMER_STORAGE_KEY, ANIMAL_HEALTH_DISCLAIMER_VERSION, uid);
 }

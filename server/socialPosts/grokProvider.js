@@ -11,8 +11,12 @@ const CHAT_MODEL_FALLBACKS = [
 const VISION_MODEL_FALLBACKS = [
   process.env.GROK_VISION_MODEL,
   process.env.GROK_DIAGNOSE_VISION_MODEL,
+  process.env.PLANT_MEDICINE_VISION_MODEL,
   process.env.FABLE_GROK_VISION_MODEL,
+  'grok-4.5',
+  'grok-4',
   'grok-2-vision-1212',
+  'grok-2-vision-012',
   'grok-vision-beta',
 ].filter(Boolean);
 

@@ -11,6 +11,10 @@ export type PlantRegion =
   | 'ca-sacramento'
   | 'ca-shasta'
   | 'ca-north-coast'
+  | 'wa-puget-sound'
+  | 'wa-olympic-coast'
+  | 'wa-cascades'
+  | 'wa-eastern'
   /** @deprecated use or-willamette */
   | 'eugene'
   /** @deprecated use or-coast */

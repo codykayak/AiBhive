@@ -5,9 +5,14 @@ export type RegionFilter =
   | 'all'
   | 'or-all'
   | 'ca-all'
+  | 'wa-all'
   | PlantRegion;
 
-export const REGION_FILTER_OPTIONS: { value: RegionFilter; label: string; group: 'all' | 'oregon' | 'norcal' }[] = [
+export const REGION_FILTER_OPTIONS: {
+  value: RegionFilter;
+  label: string;
+  group: 'all' | 'oregon' | 'norcal' | 'washington';
+}[] = [
   { value: 'all', label: 'All regions', group: 'all' },
   { value: 'or-all', label: 'Oregon — statewide', group: 'oregon' },
   { value: 'or-willamette', label: 'Oregon — Willamette Valley', group: 'oregon' },
@@ -23,6 +28,11 @@ export const REGION_FILTER_OPTIONS: { value: RegionFilter; label: string; group:
   { value: 'ca-sacramento', label: 'NorCal — Sacramento Valley', group: 'norcal' },
   { value: 'ca-shasta', label: 'NorCal — Shasta & Siskiyou', group: 'norcal' },
   { value: 'ca-north-coast', label: 'NorCal — North Coast', group: 'norcal' },
+  { value: 'wa-all', label: 'Washington — statewide', group: 'washington' },
+  { value: 'wa-puget-sound', label: 'Washington — Puget Sound', group: 'washington' },
+  { value: 'wa-olympic-coast', label: 'Washington — Olympic Coast', group: 'washington' },
+  { value: 'wa-cascades', label: 'Washington — Cascades', group: 'washington' },
+  { value: 'wa-eastern', label: 'Washington — Eastern & Palouse', group: 'washington' },
 ];
 
 const OREGON_REGIONS = new Set<PlantRegion>([
@@ -44,6 +54,13 @@ const NORCAL_REGIONS = new Set<PlantRegion>([
   'ca-sacramento',
   'ca-shasta',
   'ca-north-coast',
+]);
+
+const WASHINGTON_REGIONS = new Set<PlantRegion>([
+  'wa-puget-sound',
+  'wa-olympic-coast',
+  'wa-cascades',
+  'wa-eastern',
 ]);
 
 /** Legacy region tags that imply coverage of multiple OR sub-regions. */
@@ -74,10 +91,33 @@ const REGION_OVERRIDES: Record<string, PlantRegion[]> = {
   'datura-stramonium': ['or-willamette', 'or-east', 'ca-sacramento', 'ca-sierra-foothills'],
 };
 
+function plantInWashington(plant: PlantEntry): boolean {
+  return plant.regions.some((r) => WASHINGTON_REGIONS.has(r));
+}
+
+function appendWashingtonRegions(regions: PlantRegion[]): PlantRegion[] {
+  const out = new Set(regions);
+  const hasORCoast = regions.some((r) => r === 'or-coast' || r === 'florence' || r === 'both');
+  const hasORPortland = regions.includes('or-portland');
+  const hasORCascades = regions.includes('or-cascades');
+  const hasORWillamette = regions.some((r) => r === 'or-willamette' || r === 'eugene');
+  const hasOREast = regions.includes('or-east');
+  const hasNorCalCoast = regions.includes('ca-north-coast');
+
+  if (hasORCoast || hasORPortland || hasNorCalCoast) {
+    out.add('wa-olympic-coast');
+    out.add('wa-puget-sound');
+  }
+  if (hasORCascades || regions.includes('or-klamath')) out.add('wa-cascades');
+  if (hasORWillamette || hasORPortland || regions.includes('or-rogue')) out.add('wa-puget-sound');
+  if (hasOREast) out.add('wa-eastern');
+  return [...out];
+}
+
 /** Expand legacy Eugene / Florence / both tags into modern region filters. */
 export function normalizePlantRegions(regions: PlantRegion[], plantId?: string): PlantRegion[] {
   if (plantId && REGION_OVERRIDES[plantId]) {
-    return [...REGION_OVERRIDES[plantId]];
+    return appendWashingtonRegions([...REGION_OVERRIDES[plantId]]);
   }
   const out = new Set<PlantRegion>();
   for (const r of regions) {
@@ -86,7 +126,7 @@ export function normalizePlantRegions(regions: PlantRegion[], plantId?: string):
     else if (r === 'both') WESTERN_OREGON_REGIONS.forEach((x) => out.add(x));
     else out.add(r);
   }
-  return [...out];
+  return appendWashingtonRegions([...out]);
 }
 
 function plantInOregon(plant: PlantEntry): boolean {
@@ -112,6 +152,10 @@ export function regionLabel(r: PlantRegion): string {
     'ca-sacramento': 'Sacramento Valley',
     'ca-shasta': 'Shasta & Siskiyou',
     'ca-north-coast': 'North Coast CA',
+    'wa-puget-sound': 'Puget Sound',
+    'wa-olympic-coast': 'Olympic Coast',
+    'wa-cascades': 'Washington Cascades',
+    'wa-eastern': 'Eastern Washington',
     eugene: 'Willamette Valley',
     florence: 'Oregon Coast',
     both: 'Oregon wide',
@@ -127,6 +171,12 @@ export function matchesRegion(plant: PlantEntry, filter: RegionFilter): boolean 
   if (filter === 'all') return true;
   if (filter === 'or-all') return plantInOregon(plant);
   if (filter === 'ca-all') return plantInNorcal(plant);
+  if (filter === 'wa-all') return plantInWashington(plant);
+
+  if (filter === 'wa-puget-sound') return plant.regions.includes('wa-puget-sound');
+  if (filter === 'wa-olympic-coast') return plant.regions.includes('wa-olympic-coast');
+  if (filter === 'wa-cascades') return plant.regions.includes('wa-cascades');
+  if (filter === 'wa-eastern') return plant.regions.includes('wa-eastern');
 
   if (filter === 'or-willamette') {
     return plant.regions.some((r) => r === 'or-willamette' || r === 'eugene' || r === 'both');
@@ -172,4 +222,8 @@ export function isNorcalRegion(filter: RegionFilter): boolean {
   return filter === 'ca-all' || filter.startsWith('ca-');
 }
 
-export { LEGACY_OR_WIDE, OREGON_REGIONS, NORCAL_REGIONS };
+export function isWashingtonRegion(filter: RegionFilter): boolean {
+  return filter === 'wa-all' || filter.startsWith('wa-');
+}
+
+export { LEGACY_OR_WIDE, OREGON_REGIONS, NORCAL_REGIONS, WASHINGTON_REGIONS };

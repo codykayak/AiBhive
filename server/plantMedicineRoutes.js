@@ -508,7 +508,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       });
 
       if (!result.ok) {
-        const status = result.needPayment ? 402 : 400;
+        const status = result.needPayment ? 402 : result.code === 'grok_vision_failed' ? 502 : 400;
         return res.status(status).json(result);
       }
 

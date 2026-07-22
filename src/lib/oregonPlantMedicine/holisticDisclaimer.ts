@@ -1,3 +1,5 @@
+import { hasStoredDisclaimer, storeDisclaimerAcceptance } from './disclaimerStorage';
+
 export const HOLISTIC_DISCLAIMER_VERSION = 'v1';
 
 export const HOLISTIC_DISCLAIMER_STORAGE_KEY = 'living_knowledge_holistic_disclaimer_v1';
@@ -32,15 +34,10 @@ export const HOLISTIC_DISCLAIMER_SECTIONS = [
   },
 ] as const;
 
-export function hasAcceptedHolisticDisclaimer(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(HOLISTIC_DISCLAIMER_STORAGE_KEY) === HOLISTIC_DISCLAIMER_VERSION;
-  } catch {
-    return false;
-  }
+export function hasAcceptedHolisticDisclaimer(uid?: string | null): boolean {
+  return hasStoredDisclaimer(HOLISTIC_DISCLAIMER_STORAGE_KEY, HOLISTIC_DISCLAIMER_VERSION, uid);
 }
 
-export function acceptHolisticDisclaimer(): void {
-  localStorage.setItem(HOLISTIC_DISCLAIMER_STORAGE_KEY, HOLISTIC_DISCLAIMER_VERSION);
+export function acceptHolisticDisclaimer(uid?: string | null): void {
+  storeDisclaimerAcceptance(HOLISTIC_DISCLAIMER_STORAGE_KEY, HOLISTIC_DISCLAIMER_VERSION, uid);
 }
