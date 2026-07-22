@@ -378,7 +378,7 @@ export function answerLivingKnowledgeQuery(
   };
 }
 
-/** Compact context blocks for optional online Grok enhancement. */
+/** Compact context blocks for optional online Bhive Credits enhancement. */
 export function buildLivingKnowledgeContextBlocks(hits: LivingKnowledgeHit[], maxChars = 9000): string {
   let out = '';
   for (const h of hits.slice(0, 4)) {
@@ -493,15 +493,15 @@ export function offlineLivingKnowledgeReply(
     };
   }
 
-  const grokNudge =
+  const creditsNudge =
     opts?.signedIn === false
-      ? '\n\n(Offline library — sign in online so Grok can ask clarifying follow-ups like Diagnose.)'
+      ? '\n\n(Offline library — sign in online so Bhive Credits can ask clarifying follow-ups like Diagnose.)'
       : opts?.signedIn
         ? ''
-        : '\n\n(Offline library answer — sign in online for Grok follow-ups.)';
+        : '\n\n(Offline library answer — sign in online for Bhive Credits follow-ups.)';
 
   return {
-    reply: `${local.answer}${grokNudge}`,
+    reply: `${local.answer}${creditsNudge}`,
     hits: local.hits,
     contributeSuggested: local.contributeSuggested,
     isClarifier: false,

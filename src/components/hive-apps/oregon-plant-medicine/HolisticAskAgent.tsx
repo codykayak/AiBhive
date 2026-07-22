@@ -324,7 +324,7 @@ export default function HolisticAskAgent({
 
       if (pendingPhoto && !user) {
         onSignIn?.();
-        setError('Sign in to use paid photo plant ID (Hive credits).');
+        setError('Sign in to use paid photo plant ID (Bhive Credits).');
         return;
       }
 
@@ -400,7 +400,7 @@ export default function HolisticAskAgent({
         }
       }
 
-      // Grok text path (Diagnose-style): multi-turn history + optional clarifiers
+      // Bhive Credits text path (Diagnose-style): multi-turn history + optional clarifiers
       if (user && online) {
         try {
           const context = buildLivingKnowledgeContextBlocks(blendedHits);
@@ -435,7 +435,7 @@ export default function HolisticAskAgent({
           setBusy(false);
           return;
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Grok unavailable — using offline library.');
+          setError(err instanceof Error ? err.message : 'Bhive Credits unavailable — using offline library.');
         }
       }
 
@@ -469,7 +469,7 @@ export default function HolisticAskAgent({
           Ask specially trained holistic AI agent
         </p>
         <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
-          Powered by Grok · may ask a clarifying follow-up · library RAG works offline without payment
+          Powered by Bhive Credits · may ask a clarifying follow-up · library RAG works offline without payment
           {photoIdEnabled
             ? photoIdFreeForUser
               ? ' · admin account — photo plant ID is free'
@@ -490,9 +490,9 @@ export default function HolisticAskAgent({
               {msg.role === 'assistant' ? (
                 <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${theme.badge}`}>
                   {msg.source === 'grok-vision'
-                    ? 'Grok Vision · Photo ID'
+                    ? 'Bhive Credits · Photo ID'
                     : msg.source === 'grok'
-                      ? 'Grok · Living Knowledge'
+                      ? 'Bhive Credits · Living Knowledge'
                       : 'Offline library'}
                   {typeof msg.chargedUsd === 'number' && msg.chargedUsd > 0
                     ? ` · $${msg.chargedUsd.toFixed(3)} credits`
@@ -561,7 +561,7 @@ export default function HolisticAskAgent({
           {busy ? (
             <div className={`flex items-center gap-2 text-xs ${theme.badge}`}>
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {identifyingPhoto ? 'Grok is identifying your photo…' : 'Grok is thinking…'}
+              {identifyingPhoto ? 'Bhive Credits is identifying your photo…' : 'Bhive Credits is thinking…'}
             </div>
           ) : null}
           <div ref={bottomRef} />
@@ -588,7 +588,7 @@ export default function HolisticAskAgent({
       {creditsNeeded && !adminExempt ? (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
           <p className="text-xs text-amber-100/90">
-            Photo plant ID uses Hive credits (like Diagnose photo). Add credits to continue.
+            Photo plant ID uses Bhive Credits (like Diagnose photo). Add credits to continue.
           </p>
           <button
             type="button"
@@ -597,7 +597,7 @@ export default function HolisticAskAgent({
             className="inline-flex items-center gap-2 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/40 text-amber-50 font-bold text-xs px-3 py-2 disabled:opacity-50"
           >
             {checkoutBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-            Add Hive credits
+            Add Bhive Credits
           </button>
         </div>
       ) : null}
@@ -609,8 +609,8 @@ export default function HolisticAskAgent({
             <p className="text-xs font-bold text-white">Photo ready for ID</p>
             <p className="text-[10px] text-amber-200/90">
               {photoIdFreeForUser
-                ? 'Admin account — Grok vision plant ID at no charge'
-                : 'Paid Grok vision · returns confidence + dangerous look-alikes'}
+                ? 'Admin account — Bhive Credits photo ID at no charge'
+                : 'Paid Bhive Credits photo ID · returns confidence + dangerous look-alikes'}
             </p>
           </div>
           <button
@@ -649,7 +649,7 @@ export default function HolisticAskAgent({
             attachment
               ? 'Optional note about the plant (habitat, region)…'
               : messages.length > 0 && lastAssistant && looksLikeLivingKnowledgeClarifier(lastAssistant.content)
-                ? 'Reply to Grok’s follow-up…'
+                ? 'Reply to Bhive Credits follow-up…'
                 : placeholder
           }
           className={`w-full pl-10 pr-36 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder:text-slate-500 text-sm focus:outline-none ${theme.focus}`}
@@ -749,7 +749,7 @@ export default function HolisticAskAgent({
           onClick={onSignIn}
           className={`text-[11px] font-semibold ${theme.badge} hover:underline`}
         >
-          Sign in so Grok can ask clarifying follow-ups
+          Sign in so Bhive Credits can ask clarifying follow-ups
           {photoIdEnabled
             ? photoIdFreeForUser
               ? ' and run photo ID for free'

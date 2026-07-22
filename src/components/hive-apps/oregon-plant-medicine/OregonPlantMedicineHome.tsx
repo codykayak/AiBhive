@@ -18,6 +18,7 @@ import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnos
 import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
 import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import { applySeedVotes, loadSeedVotes, sortFeedByUpvotes, toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import { EARTH_PLANT_MEDICINE_NAME } from '../../../lib/oregonPlantMedicine/branding';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
@@ -33,7 +34,7 @@ import PlantPhoto from './PlantImage';
 import ResearchTopicImage from './ResearchTopicImage';
 import UserAvatar from './UserAvatar';
 import { useAutoplayVideo } from './useAutoplayVideo';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type HomeTab =
   | 'community'
@@ -50,6 +51,8 @@ type Props = {
   user?: User | null;
   onSignIn?: () => void;
   onCreatePost?: () => void;
+  seedVotesVersion?: number;
+  onSeedUpvoteChange?: () => void;
   onOpenTopic?: (library: TopicLibraryId, topicId: string) => void;
 };
 
@@ -237,12 +240,25 @@ function HomeHero() {
 function CommunitySection({
   onNavigate,
   onOpenPost,
+  seedVotesVersion = 0,
+  onSeedUpvoteChange,
 }: {
   onNavigate: (tab: HomeTab) => void;
   onOpenPost: (post: SeedCommunityPost) => void;
+  seedVotesVersion?: number;
+  onSeedUpvoteChange?: () => void;
 }) {
   const theme = THEMES.community;
-  const posts = [...SEED_COMMUNITY_POSTS].sort((a, b) => b.upvoteCount - a.upvoteCount).slice(0, 3);
+  const [votes, setVotes] = useState(() => loadSeedVotes());
+
+  useEffect(() => {
+    setVotes(loadSeedVotes());
+  }, [seedVotesVersion]);
+
+  const posts = useMemo(
+    () => sortFeedByUpvotes(applySeedVotes([...SEED_COMMUNITY_POSTS], votes)).slice(0, 3),
+    [votes],
+  );
 
   return (
     <section className={`rounded-2xl border ${theme.border} bg-slate-900/40 p-5 sm:p-6 mb-8`}>
@@ -272,10 +288,23 @@ function CommunitySection({
                 <div className="w-full h-full bg-gradient-to-br from-sky-900/40 to-slate-900" />
               )}
               <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient} pointer-events-none`} />
-              <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-sky-200 pointer-events-none">
-                <ThumbsUp className="w-3 h-3" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSeedVote(post.id);
+                  setVotes(loadSeedVotes());
+                  onSeedUpvoteChange?.();
+                }}
+                className={`absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border transition-colors ${
+                  post.viewerHasUpvoted
+                    ? 'bg-emerald-500/30 border-emerald-500/50 text-emerald-200'
+                    : 'bg-black/50 border-white/10 text-sky-200 hover:border-emerald-500/40'
+                }`}
+              >
+                <ThumbsUp className={`w-3 h-3 ${post.viewerHasUpvoted ? 'fill-emerald-400' : ''}`} />
                 {post.upvoteCount}
-              </span>
+              </button>
             </div>
             <div className="p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -520,6 +549,8 @@ export default function OregonPlantMedicineHome({
   onSignIn,
   onCreatePost,
   onOpenTopic,
+  seedVotesVersion = 0,
+  onSeedUpvoteChange,
 }: Props) {
   const featuredPlants = ['stinging-nettle', 'oregon-grape']
     .map((id) => PLANT_LIBRARY.find((p) => p.id === id))
@@ -557,7 +588,12 @@ export default function OregonPlantMedicineHome({
         }
       />
 
-      <CommunitySection onNavigate={onNavigate} onOpenPost={onOpenPost} />
+      <CommunitySection
+        onNavigate={onNavigate}
+        onOpenPost={onOpenPost}
+        seedVotesVersion={seedVotesVersion}
+        onSeedUpvoteChange={onSeedUpvoteChange}
+      />
 
       <PlantCardsSection
         tab="plants"

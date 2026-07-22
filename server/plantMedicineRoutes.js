@@ -492,7 +492,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     }
   });
 
-  /** Paid Grok vision plant photo ID — Hive credits; returns candidates + dangerous lookalikes. */
+  /** Paid Bhive Credits photo plant ID — Hive credits; returns candidates + dangerous lookalikes. */
   app.post('/api/plant-medicine/identify', express.json({ limit: '8mb' }), async (req, res) => {
     try {
       const user = await requireAuth(req, res);

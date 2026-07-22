@@ -16,6 +16,7 @@ import {
   SEED_COMMUNITY_VOTER_COUNT,
   type SeedCommunityPost,
 } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import { loadSeedVotes, sortFeedByUpvotes, toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
 import CreateCommunityPostModal from './CreateCommunityPostModal';
 import PlantPhoto from './PlantImage';
 import UserAvatar from './UserAvatar';
@@ -27,6 +28,9 @@ type Props = {
   onSignIn: () => void;
   onOpenPlant: (plant: PlantEntry) => void;
   onOpenPost: (post: FeedPost) => void;
+  reloadToken?: number;
+  seedVotesVersion?: number;
+  onSeedUpvoteChange?: () => void;
 };
 
 function isSeed(post: FeedPost): post is SeedCommunityPost {
@@ -168,14 +172,20 @@ function FeedCard({
   );
 }
 
-export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpenPost }: Props) {
+export default function CommunityFeedPanel({
+  user,
+  onSignIn,
+  onOpenPlant,
+  onOpenPost,
+  reloadToken = 0,
+  seedVotesVersion = 0,
+  onSeedUpvoteChange,
+}: Props) {
   const [livePosts, setLivePosts] = useState<PlantMedicinePost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [seedVotes, setSeedVotes] = useState<Record<string, { count: number; voted: boolean }>>(() =>
-    Object.fromEntries(SEED_COMMUNITY_POSTS.map((p) => [p.id, { count: p.upvoteCount, voted: false }])),
-  );
+  const [seedVotes, setSeedVotes] = useState(() => loadSeedVotes());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -192,29 +202,28 @@ export default function CommunityFeedPanel({ user, onSignIn, onOpenPlant, onOpen
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, reloadToken]);
+
+  useEffect(() => {
+    setSeedVotes(loadSeedVotes());
+  }, [seedVotesVersion]);
 
   const posts = useMemo(() => {
     const merged = mergeCommunityFeed(livePosts);
-    return merged.map((p) => {
-      if (!isSeed(p)) return p;
-      const vote = seedVotes[p.id];
-      if (!vote) return p;
-      return { ...p, upvoteCount: vote.count, viewerHasUpvoted: vote.voted };
+    const withVotes = merged.map((post) => {
+      if (!isSeed(post)) return post;
+      const vote = seedVotes[post.id];
+      if (!vote) return post;
+      return { ...post, upvoteCount: vote.count, viewerHasUpvoted: vote.voted };
     });
+    return sortFeedByUpvotes(withVotes);
   }, [livePosts, seedVotes]);
 
   const onUpvote = (id: string) => {
     if (id.startsWith('seed-')) {
-      const post = SEED_COMMUNITY_POSTS.find((p) => p.id === id);
-      if (!post) return;
-      setSeedVotes((prev) => {
-        const cur = prev[id] ?? { count: post.upvoteCount, voted: false };
-        if (cur.voted) {
-          return { ...prev, [id]: { count: Math.max(0, cur.count - 1), voted: false } };
-        }
-        return { ...prev, [id]: { count: cur.count + 1, voted: true } };
-      });
+      toggleSeedVote(id);
+      setSeedVotes(loadSeedVotes());
+      onSeedUpvoteChange?.();
       return;
     }
     if (!user) {

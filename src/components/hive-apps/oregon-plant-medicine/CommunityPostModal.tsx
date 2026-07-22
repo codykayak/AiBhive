@@ -1,9 +1,10 @@
-import { AlertTriangle, MapPin, Sprout, X } from 'lucide-react';
+import { AlertTriangle, MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
 import type { PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadges';
 import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
+import { toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { AskAiContext } from './AskAiBhivePanel';
 import PostEngagementBar from './PostEngagementBar';
@@ -19,7 +20,37 @@ type Props = {
   onAskAi?: (ctx: AskAiContext) => void;
   onClose: () => void;
   onOpenPlant?: (plant: PlantEntry) => void;
+  onUpvoteChange?: (
+    postId: string,
+    result: { upvoteCount: number; viewerHasUpvoted: boolean },
+    isSeed: boolean,
+  ) => void;
 };
+
+function UpvoteButton({
+  count,
+  voted,
+  onClick,
+}: {
+  count: number;
+  voted: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${
+        voted
+          ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
+          : 'border-slate-700 text-slate-400 hover:border-emerald-500/40 hover:text-emerald-300'
+      }`}
+    >
+      <ThumbsUp className={`w-3.5 h-3.5 ${voted ? 'fill-emerald-400' : ''}`} />
+      {count}
+    </button>
+  );
+}
 
 function isSeed(post: CommunityPostView): post is SeedCommunityPost {
   return 'isSeed' in post && post.isSeed === true;
@@ -40,7 +71,15 @@ function timeAgo(iso: string | null): string {
   return new Date(iso).toLocaleDateString();
 }
 
-export default function CommunityPostModal({ post, user, onSignIn, onAskAi, onClose, onOpenPlant }: Props) {
+export default function CommunityPostModal({
+  post,
+  user,
+  onSignIn,
+  onAskAi,
+  onClose,
+  onOpenPlant,
+  onUpvoteChange,
+}: Props) {
   const seed = isSeed(post);
   const plant = post.plantId ? PLANT_LIBRARY.find((p) => p.id === post.plantId) : undefined;
   const plantLabel = seed ? post.plantCommonName : plant?.commonName;
@@ -111,7 +150,21 @@ export default function CommunityPostModal({ post, user, onSignIn, onAskAi, onCl
             </div>
           ) : null}
 
-          {!seed ? (
+          {seed ? (
+            <div className="space-y-3">
+              <UpvoteButton
+                count={post.upvoteCount}
+                voted={!!post.viewerHasUpvoted}
+                onClick={() => {
+                  const result = toggleSeedVote(post.id);
+                  onUpvoteChange?.(post.id, result, true);
+                }}
+              />
+              <p className="text-[10px] text-slate-500">
+                Community highlight — upvotes help surface the best field notes. Sign in to publish your own posts.
+              </p>
+            </div>
+          ) : (
             <PostEngagementBar
               target={{
                 kind: 'post',
@@ -121,6 +174,7 @@ export default function CommunityPostModal({ post, user, onSignIn, onAskAi, onCl
               }}
               user={user}
               onSignIn={onSignIn}
+              onUpvoteChange={(result) => onUpvoteChange?.(post.id, result, false)}
               onAskAi={
                 onAskAi
                   ? () =>
@@ -132,8 +186,6 @@ export default function CommunityPostModal({ post, user, onSignIn, onAskAi, onCl
                   : undefined
               }
             />
-          ) : (
-            <p className="text-xs text-slate-500">Community highlight — sign in on a live post to comment and upvote.</p>
           )}
 
           {plant && plantLabel && onOpenPlant ? (

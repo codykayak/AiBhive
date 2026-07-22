@@ -416,7 +416,7 @@ export type PlantPhotoAttachment = {
   previewUrl?: string;
 };
 
-/** Paid Grok vision plant photo ID — Hive credits required. */
+/** Paid Bhive Credits photo plant ID — Hive credits required. */
 export async function sendPlantPhotoIdentify(
   user: User,
   opts: {

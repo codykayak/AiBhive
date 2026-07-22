@@ -30,6 +30,7 @@ type Props = {
   user: User | null;
   onSignIn: () => void;
   onAskAi?: () => void;
+  onUpvoteChange?: (result: { upvoteCount: number; viewerHasUpvoted: boolean }) => void;
   className?: string;
   stopPropagation?: boolean;
 };
@@ -39,6 +40,7 @@ export default function PostEngagementBar({
   user,
   onSignIn,
   onAskAi,
+  onUpvoteChange,
   className = '',
   stopPropagation = false,
 }: Props) {
@@ -117,10 +119,12 @@ export default function PostEngagementBar({
         const result = await togglePostUpvote(user, target.postId);
         setUpvotes(result.upvoteCount);
         setVoted(result.viewerHasUpvoted);
+        onUpvoteChange?.(result);
       } else if (contentKind && contentId) {
         const result = await toggleContentUpvote(user, contentKind, contentId);
         setUpvotes(result.upvoteCount);
         setVoted(result.viewerHasUpvoted);
+        onUpvoteChange?.(result);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upvote failed');

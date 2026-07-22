@@ -1,5 +1,5 @@
 /**
- * Plant medicine AI chat — Grok + Living Knowledge RAG context, billed via Hive credits.
+ * Plant medicine AI chat — Bhive Credits + Living Knowledge RAG context, billed via Hive credits.
  */
 import fs from 'fs';
 import path from 'path';
@@ -214,7 +214,7 @@ export async function runPlantMedicineChat(db, hiveUserId, opts) {
   };
 }
 
-const LIVING_KNOWLEDGE_SYSTEM = `You are Grok, powering AiBhive Living Knowledge — a specially trained holistic AI agent for wild plants, edible fungi, holistic protocols, hypnosis/energy education, and animal wellness research.
+const LIVING_KNOWLEDGE_SYSTEM = `You are AiBhive Living Knowledge — a specially trained holistic AI agent powered by Bhive Credits for wild plants, edible fungi, holistic protocols, hypnosis/energy education, and animal wellness research.
 
 Behave like AiBhive Diagnose / Pros Diagnose AI: conversational, practical, multi-turn. When the ask is incomplete, ask a short clarifying follow-up before a long answer.
 
@@ -282,7 +282,7 @@ export async function runLivingKnowledgeChat(db, hiveUserId, opts) {
   };
 }
 
-const PLANT_PHOTO_ID_SYSTEM = `You are Grok, powering AiBhive Living Knowledge plant photo identification — same field-co-pilot style as AiBhive Diagnose / Pros.
+const PLANT_PHOTO_ID_SYSTEM = `You are AiBhive Living Knowledge plant photo identification powered by Bhive Credits — same field-co-pilot style as AiBhive Diagnose / Pros.
 
 You identify wild plants and mushrooms from user photos for educational foraging safety.
 
@@ -411,7 +411,7 @@ function buildPhotoIdCatalogContext(limit = 80) {
 }
 
 /**
- * Paid Grok vision plant photo ID — Hive credits (same cost class as Diagnose photo).
+ * Paid Bhive Credits photo plant ID — Hive credits (same cost class as Diagnose photo).
  * Returns readable reply + structured candidates / dangerous lookalikes matched to library IDs.
  */
 export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
@@ -483,12 +483,12 @@ export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
       },
     );
   } catch (err) {
-    console.error('[plant-medicine/identify] Grok vision failed:', err?.message || err, { model });
+    console.error('[plant-medicine/identify] Bhive Credits vision failed:', err?.message || err, { model });
     return {
       ok: false,
       error:
         err?.message ||
-        'Grok could not read this photo — try a clearer JPEG/PNG in good light, or ask in text.',
+        'Bhive Credits could not read this photo — try a clearer JPEG/PNG in good light, or ask in text.',
       code: 'grok_vision_failed',
     };
   }
