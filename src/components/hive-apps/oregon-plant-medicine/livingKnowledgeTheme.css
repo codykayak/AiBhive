@@ -1,0 +1,116 @@
+/* Living Knowledge (/plants) light theme — scoped under .lk-app[data-lk-theme="light"] */
+
+.lk-app[data-lk-theme='light'] {
+  color-scheme: light;
+}
+
+.lk-app[data-lk-theme='light'] .bg-slate-950,
+.lk-app[data-lk-theme='light'] .bg-slate-950\/70,
+.lk-app[data-lk-theme='light'] .bg-slate-950\/80,
+.lk-app[data-lk-theme='light'] .bg-slate-950\/92 {
+  background-color: rgb(255 255 255 / 0.92) !important;
+}
+
+.lk-app[data-lk-theme='light'] .bg-slate-900,
+.lk-app[data-lk-theme='light'] .bg-slate-900\/40,
+.lk-app[data-lk-theme='light'] .bg-slate-900\/60,
+.lk-app[data-lk-theme='light'] .bg-slate-900\/70,
+.lk-app[data-lk-theme='light'] .bg-slate-900\/80 {
+  background-color: rgb(248 250 252 / 0.95) !important;
+}
+
+.lk-app[data-lk-theme='light'] .from-slate-950 {
+  --tw-gradient-from: #f8fafc var(--tw-gradient-from-position) !important;
+}
+
+.lk-app[data-lk-theme='light'] .via-emerald-950\/20,
+.lk-app[data-lk-theme='light'] .via-emerald-950\/45 {
+  --tw-gradient-via: rgb(209 250 229 / 0.45) var(--tw-gradient-via-position) !important;
+}
+
+.lk-app[data-lk-theme='light'] .to-slate-950,
+.lk-app[data-lk-theme='light'] .to-slate-900 {
+  --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-slate-200,
+.lk-app[data-lk-theme='light'] .text-slate-200\/90,
+.lk-app[data-lk-theme='light'] .text-slate-300 {
+  color: rgb(51 65 85) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-slate-400,
+.lk-app[data-lk-theme='light'] .text-slate-500 {
+  color: rgb(100 116 139) !important;
+}
+
+.lk-app[data-lk-theme='light'] .border-slate-700,
+.lk-app[data-lk-theme='light'] .border-slate-800 {
+  border-color: rgb(203 213 225) !important;
+}
+
+.lk-app[data-lk-theme='light'] .border-emerald-500\/20,
+.lk-app[data-lk-theme='light'] .border-emerald-500\/15,
+.lk-app[data-lk-theme='light'] .border-emerald-500\/10 {
+  border-color: rgb(16 185 129 / 0.25) !important;
+}
+
+.lk-app[data-lk-theme='light'] input,
+.lk-app[data-lk-theme='light'] select,
+.lk-app[data-lk-theme='light'] textarea {
+  background-color: rgb(255 255 255) !important;
+  color: rgb(15 23 42) !important;
+  border-color: rgb(203 213 225) !important;
+}
+
+.lk-app[data-lk-theme='light'] .placeholder\:text-slate-500::placeholder {
+  color: rgb(148 163 184) !important;
+}
+
+.lk-app[data-lk-theme='light'] .bg-black\/35,
+.lk-app[data-lk-theme='light'] .bg-black\/50,
+.lk-app[data-lk-theme='light'] .bg-black\/70 {
+  background-color: rgb(15 23 42 / 0.08) !important;
+}
+
+.lk-app[data-lk-theme='light'] .hover\:bg-white\/5:hover {
+  background-color: rgb(16 185 129 / 0.08) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-emerald-100,
+.lk-app[data-lk-theme='light'] .text-emerald-100\/90 {
+  color: rgb(6 78 59) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-emerald-300,
+.lk-app[data-lk-theme='light'] .text-emerald-400,
+.lk-app[data-lk-theme='light'] .text-emerald-400\/90 {
+  color: rgb(5 150 105) !important;
+}
+
+.lk-app[data-lk-theme='light'] .bg-emerald-500\/10 {
+  background-color: rgb(209 250 229 / 0.65) !important;
+}
+
+.lk-app[data-lk-theme='light'] .bg-lime-500\/10 {
+  background-color: rgb(236 252 203 / 0.7) !important;
+}
+
+.lk-app[data-lk-theme='light'] .text-lime-100\/90,
+.lk-app[data-lk-theme='light'] .text-lime-300 {
+  color: rgb(77 124 15) !important;
+}
+
+.lk-app[data-lk-theme='light'] .border-lime-500\/30 {
+  border-color: rgb(132 204 22 / 0.35) !important;
+}
+
+.lk-app[data-lk-theme='light'] .shadow-lg,
+.lk-app[data-lk-theme='light'] .shadow-xl,
+.lk-app[data-lk-theme='light'] .shadow-2xl {
+  --tw-shadow-color: rgb(15 23 42 / 0.08);
+}

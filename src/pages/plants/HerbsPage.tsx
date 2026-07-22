@@ -12,7 +12,7 @@ import {
 /** Canonical URL: aibhive.com/plants/herbs */
 export default function HerbsPage() {
   return (
-    <div className="min-h-screen bg-[#070a0f]">
+    <div className="min-h-screen">
       <SEO
         title={`${HERBS_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
         description={HERBS_SEO_DESCRIPTION}

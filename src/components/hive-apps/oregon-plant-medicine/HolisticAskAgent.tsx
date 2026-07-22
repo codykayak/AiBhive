@@ -35,6 +35,7 @@ import {
   HIVE_RESEARCH_LABEL,
   HIVE_RESEARCH_POWERED_BY,
 } from '../../../lib/oregonPlantMedicine/branding';
+import { LIVING_KNOWLEDGE_OPEN_ASK_EVENT } from '../../../lib/oregonPlantMedicine/livingKnowledgeAsk';
 import {
   enrichPlantPhotoIdResult,
   type PlantIdVisual,
@@ -248,6 +249,7 @@ export default function HolisticAskAgent({
   const theme = ACCENT[accent];
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -269,6 +271,16 @@ export default function HolisticAskAgent({
   useEffect(() => {
     onQueryChange?.(query);
   }, [query, onQueryChange]);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<{ focus?: boolean }>).detail;
+      if (!detail?.focus) return;
+      window.setTimeout(() => inputRef.current?.focus(), 120);
+    };
+    window.addEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+    return () => window.removeEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -484,7 +496,7 @@ export default function HolisticAskAgent({
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
 
   return (
-    <div ref={rootRef} className="w-full space-y-3">
+    <div ref={rootRef} id="lk-ask-agent" data-lk-ask-agent="" className="w-full space-y-3">
       <div className={`rounded-xl border ${theme.soft} px-3 py-2.5`}>
         <p className={`text-[10px] font-black uppercase tracking-widest ${theme.badge} flex items-center gap-1.5`}>
           <Sparkles className="w-3.5 h-3.5" />
@@ -651,7 +663,7 @@ export default function HolisticAskAgent({
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-        <input
+        <input ref={inputRef}
           type="search"
           role="combobox"
           aria-expanded={openSuggest}

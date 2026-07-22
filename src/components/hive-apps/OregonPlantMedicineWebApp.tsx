@@ -75,6 +75,17 @@ import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicine
 import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import HolisticAskAgent from './oregon-plant-medicine/HolisticAskAgent';
 import LivingKnowledgeAskWithGuide from './oregon-plant-medicine/LivingKnowledgeAskWithGuide';
+import LivingKnowledgeThemeToggle from './oregon-plant-medicine/LivingKnowledgeThemeToggle';
+import LivingKnowledgeAskFab from './oregon-plant-medicine/LivingKnowledgeAskFab';
+import {
+  LivingKnowledgeThemeProvider,
+  useLivingKnowledgeTheme,
+} from './oregon-plant-medicine/LivingKnowledgeThemeContext';
+import {
+  LIVING_KNOWLEDGE_OPEN_ASK_EVENT,
+  livingKnowledgeScopeForTab,
+} from '../../lib/oregonPlantMedicine/livingKnowledgeAsk';
+import './oregon-plant-medicine/livingKnowledgeTheme.css';
 import {
   EARTH_PLANT_MEDICINE_NAME,
   HOLISTIC_REMEDIES_PATH,
@@ -106,6 +117,23 @@ type Props = { expanded?: boolean; initialTab?: Tab };
 
 type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
+
+function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber' | 'teal' {
+  switch (tab) {
+    case 'holistic':
+      return 'violet';
+    case 'hypnosis':
+      return 'cyan';
+    case 'animal-health':
+      return 'rose';
+    case 'herbs':
+      return 'amber';
+    case 'supplements':
+      return 'teal';
+    default:
+      return 'emerald';
+  }
+}
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
 
@@ -362,7 +390,8 @@ function PlantDetail({
 }
 
 /** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
-export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home' }: Props) {
+function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Props) {
+  const { theme } = useLivingKnowledgeTheme();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
@@ -401,7 +430,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [supplementsAccepted, setSupplementsAccepted] = useState(() => hasAcceptedSupplementsDisclaimer());
   const [pendingSupplementsTab, setPendingSupplementsTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
-  const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [askFallbackOpen, setAskFallbackOpen] = useState(false);
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
   const [authError, setAuthError] = useState('');
 
@@ -431,6 +461,26 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     setHerbsAccepted(hasAcceptedHerbsDisclaimer(userId));
     setSupplementsAccepted(hasAcceptedSupplementsDisclaimer(userId));
   }, [userId]);
+
+  useEffect(() => {
+    if (tab !== 'plants') {
+      setShowLocationModal(false);
+      return;
+    }
+    if (!userLocation) {
+      setLocationModalStep('location');
+      setShowLocationModal(true);
+    }
+  }, [tab, userLocation]);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<{ fallback?: boolean }>).detail;
+      if (detail?.fallback) setAskFallbackOpen(true);
+    };
+    window.addEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+    return () => window.removeEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     setTab(initialTab);
@@ -805,8 +855,12 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   );
 
   const shellClass = expanded
-    ? 'min-h-screen bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950 text-white'
-    : 'rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-slate-950 to-slate-900 text-white overflow-hidden';
+    ? theme === 'light'
+      ? 'min-h-screen bg-gradient-to-b from-slate-100 via-emerald-50/50 to-slate-100 text-slate-900'
+      : 'min-h-screen bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950 text-white'
+    : theme === 'light'
+      ? 'rounded-2xl border border-emerald-600/20 bg-gradient-to-b from-slate-50 to-white text-slate-900 overflow-hidden'
+      : 'rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-slate-950 to-slate-900 text-white overflow-hidden';
 
   const authActions = user ? (
     <div className="flex flex-col items-end gap-2">
@@ -845,7 +899,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   );
 
   return (
-    <div className={shellClass}>
+    <div className={`${shellClass} lk-app`} data-lk-theme={theme}>
       <OregonPlantMedicineHero
         compact={!expanded}
         actions={authActions}
@@ -912,14 +966,17 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                 );
               })}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowCreatePost(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              Contribute
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <LivingKnowledgeThemeToggle />
+              <button
+                type="button"
+                onClick={() => setShowCreatePost(true)}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Contribute
+              </button>
+            </div>
           </div>
         </nav>
 
@@ -927,7 +984,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
             {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
             <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
-            {tab !== 'home' && userLocation ? (
+            {tab === 'plants' && userLocation ? (
               <button
                 type="button"
                 onClick={() => {
@@ -1424,7 +1481,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           }}
         />
       ) : null}
-      {showLocationModal ? (
+      {showLocationModal && tab === 'plants' ? (
         <LocationOnboardingModal
           initial={userLocation}
           initialStep={locationModalStep}
@@ -1433,6 +1490,44 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           requireSubmit={!userLocation}
         />
       ) : null}
+      {askFallbackOpen ? (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-950 border border-emerald-500/30 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-sm font-black text-white">Ask Bhive</p>
+              <button
+                type="button"
+                onClick={() => setAskFallbackOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+                aria-label="Close Ask Bhive"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <HolisticAskAgent
+              scope={livingKnowledgeScopeForTab(tab)}
+              accent={tabAskAccent(tab)}
+              placeholder="Ask about plants, herbs, holistic topics, and more…"
+              user={user}
+              onSignIn={() => void handleSignIn()}
+              onContribute={() => setShowCreatePost(true)}
+              onOpenPlant={(plantId) => {
+                const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                if (plant) setSelected(plant);
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+      {expanded ? <LivingKnowledgeAskFab /> : null}
     </div>
+  );
+}
+
+export default function OregonPlantMedicineWebApp(props: Props) {
+  return (
+    <LivingKnowledgeThemeProvider>
+      <OregonPlantMedicineWebAppContent {...props} />
+    </LivingKnowledgeThemeProvider>
   );
 }

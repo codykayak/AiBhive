@@ -215,6 +215,7 @@ function AppShell() {
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
+  const hideSiteAssistant = pathname.startsWith('/plants');
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/research-lab/workspace') ||
@@ -232,7 +233,7 @@ function AppShell() {
             <Navbar />
           </header>
         )}
-        {!isPrivateRoute && !isEmbedRoute && <HomeAssistantWeb />}
+        {!isPrivateRoute && !isEmbedRoute && !hideSiteAssistant && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
