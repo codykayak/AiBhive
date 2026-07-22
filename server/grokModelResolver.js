@@ -6,7 +6,18 @@ const XAI_BASE = 'https://api.x.ai/v1';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const FALLBACK_CHAT = process.env.GROK_CHAT_MODEL || process.env.INTEL_GROK_MODEL || 'grok-3-mini';
 const FALLBACK_VISION =
-  process.env.GROK_VISION_MODEL || process.env.FABLE_GROK_VISION_MODEL || 'grok-2-vision-1212';
+  process.env.GROK_VISION_MODEL ||
+  process.env.GROK_DIAGNOSE_VISION_MODEL ||
+  process.env.PLANT_MEDICINE_VISION_MODEL ||
+  'grok-4';
+
+/** Prefer multimodal Grok models that accept images (grok-4+ first; legacy *vision* last). */
+const VISION_PREFERENCE = [
+  /^grok-4\.5/i,
+  /^grok-4(?!.*image)/i,
+  /^grok-2-vision/i,
+  /vision/i,
+];
 
 /** Prefer reliable chat models for field diagnose (grok-3-mini first). */
 const CHAT_PREFERENCE = [
@@ -35,8 +46,11 @@ function pickBestChatModel(ids) {
 
 function pickBestVisionModel(ids) {
   const list = (ids || []).map(String).filter(Boolean);
-  const vision = list.find((id) => /vision/i.test(id) && /^grok/i.test(id));
-  return vision || FALLBACK_VISION;
+  for (const re of VISION_PREFERENCE) {
+    const hit = list.find((id) => re.test(id) && /^grok/i.test(id) && !/imagine|image-gen/i.test(id));
+    if (hit) return hit;
+  }
+  return FALLBACK_VISION;
 }
 
 /**
