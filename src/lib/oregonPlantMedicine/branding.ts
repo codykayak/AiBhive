@@ -19,7 +19,7 @@ export const LIVING_KNOWLEDGE_TAGLINE =
 
 /** Meta description for /plants and AI corpus summaries. */
 export const LIVING_KNOWLEDGE_SEO_DESCRIPTION =
-  'Living Knowledge Plants and Medicine — 178+ Oregon, Washington, and Northern California wild plants and mushrooms with ID photos, look-alikes, and harvest notes. Site search, community posts, featured essays, holistic protocols, hypnosis and energy research, and animal health libraries. Free to browse; Bhive Credits for Ask AiBhive and opening new states on the map.';
+  'Living Knowledge Plants and Medicine — 178+ Oregon, Washington, and Northern California wild plants and mushrooms with ID photos, look-alikes, and harvest notes. Library browse, community posts, featured essays, holistic protocols, hypnosis and energy research, and animal health libraries. Free to browse; Hive Research (powered by AiBhive) uses Bhive Credits for Ask AiBhive, photo ID, and opening new states on the map.';
 
 export const LIVING_KNOWLEDGE_SEO_KEYWORDS =
   'Living Knowledge, Oregon wild edibles, Northern California foraging, edible mushrooms, medicinal plants, plant identification, holistic remedies, Edgar Cayce, hypnosis QHHT, Reiki, animal health, community foraging, AiBhive';
@@ -62,6 +62,12 @@ export const ANIMAL_HEALTH_CONTRIBUTION_USD = 0;
 /** Default Bhive Credits signup / top-up shown in the app footer bar. */
 export const BHIVE_CREDITS_SIGNUP_USD = 5;
 
+/** User-facing label for paid AI lookup (Ask agent, photo ID, post enrichment). */
+export const HIVE_RESEARCH_LABEL = 'Hive Research';
+
+/** Short attribution shown beside Hive Research features. */
+export const HIVE_RESEARCH_POWERED_BY = 'Powered by AiBhive';
+
 /** @deprecated use BHIVE_CREDITS_SIGNUP_USD */
 export const GROK_CREDITS_SIGNUP_USD = BHIVE_CREDITS_SIGNUP_USD;
 
@@ -94,3 +100,27 @@ export const ANIMAL_HEALTH_PATH = `${PLANTS_PUBLIC_PATH}/${ANIMAL_HEALTH_SLUG}`;
 export const ANIMAL_HEALTH_TAB_LABEL = 'Animal Health';
 
 export const ANIMAL_HEALTH_TAB_SHORT_LABEL = 'Animal Health';
+
+/** Canonical URL segment for herbs materia medica (full path below). */
+export const HERBS_SLUG = 'herbs';
+
+export const HERBS_PATH = `${PLANTS_PUBLIC_PATH}/${HERBS_SLUG}`;
+
+export const HERBS_TAB_LABEL = 'Herbs';
+
+export const HERBS_TAB_SHORT_LABEL = 'Herbs';
+
+export const HERBS_SEO_DESCRIPTION =
+  'Herbs library — Western herbalism, Chinese medicine (TCM), Ayurveda, and Pacific Northwest materia medica with in-depth summaries, traditional uses, safety warnings, and community notes. Not medical advice.';
+
+/** Canonical URL segment for supplements education (full path below). */
+export const SUPPLEMENTS_SLUG = 'supplements';
+
+export const SUPPLEMENTS_PATH = `${PLANTS_PUBLIC_PATH}/${SUPPLEMENTS_SLUG}`;
+
+export const SUPPLEMENTS_TAB_LABEL = 'Supplements';
+
+export const SUPPLEMENTS_TAB_SHORT_LABEL = 'Supplements';
+
+export const SUPPLEMENTS_SEO_DESCRIPTION =
+  'Supplements library — vitamins, minerals, omega-3, probiotics, and specialty compounds with evidence summaries, dosing context, drug interaction notes, and quality guidance. Not medical advice.';

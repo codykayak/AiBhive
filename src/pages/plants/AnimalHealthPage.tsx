@@ -12,7 +12,7 @@ import {
 /** Canonical URL: aibhive.com/plants/animal-health */
 export default function AnimalHealthPage() {
   return (
-    <div className="min-h-screen bg-[#070a0f]">
+    <div className="min-h-screen">
       <SEO
         title={`${ANIMAL_HEALTH_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
         description={ANIMAL_HEALTH_SEO_DESCRIPTION}

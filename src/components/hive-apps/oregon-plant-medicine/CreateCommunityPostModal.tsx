@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth';
 import { useMemo, useState } from 'react';
 import { ImagePlus, Loader2, Sparkles, Video, X } from 'lucide-react';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
+import { HIVE_RESEARCH_LABEL, HIVE_RESEARCH_POWERED_BY } from '../../../lib/oregonPlantMedicine/branding';
 import { formatPlantImageSize, PLANT_IMAGE_MAX_COUNT } from '../../../lib/oregonPlantMedicine/compressPlantImage';
 import { videoFrameForEnrichment } from '../../../lib/oregonPlantMedicine/plantMediaUpload';
 import {
@@ -153,7 +154,7 @@ export default function CreateCommunityPostModal({
       }
       return result;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Bhive research failed');
+      setError(e instanceof Error ? e.message : `${HIVE_RESEARCH_LABEL} failed`);
       return null;
     } finally {
       setEnriching(false);
@@ -372,11 +373,11 @@ export default function CreateCommunityPostModal({
             <span className="text-xs text-violet-100/90 leading-relaxed">
               <span className="font-bold text-violet-200 inline-flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" />
-                Add Bhive Credits research
+                Add {HIVE_RESEARCH_LABEL}
               </span>
               <span className="block mt-1 text-violet-200/70">
-                When you publish, Bhive can add ID tags, habitat notes, and safety warnings from your photo or video
-                frame. Uses a small Hive credit charge.
+                When you publish, {HIVE_RESEARCH_LABEL} ({HIVE_RESEARCH_POWERED_BY}) can add ID tags, habitat notes,
+                and safety warnings from your photo or video frame. Uses a small Bhive Credits charge.
               </span>
             </span>
           </label>
@@ -389,7 +390,7 @@ export default function CreateCommunityPostModal({
               className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-500/40 bg-violet-500/15 hover:bg-violet-500/25 disabled:opacity-60 text-violet-100 font-bold px-4 py-2.5 text-xs"
             >
               {enriching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Preview Bhive research
+              Preview {HIVE_RESEARCH_LABEL}
             </button>
           ) : null}
 
@@ -401,7 +402,7 @@ export default function CreateCommunityPostModal({
                   : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-100'
               }`}
             >
-              <p className="font-black uppercase tracking-wider text-[10px]">Bhive research preview</p>
+              <p className="font-black uppercase tracking-wider text-[10px]">{HIVE_RESEARCH_LABEL} preview</p>
               {enrichmentPreview.identificationTags.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5">
                   {enrichmentPreview.identificationTags.map((tag) => (
@@ -473,7 +474,9 @@ export default function CreateCommunityPostModal({
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 text-white font-bold px-4 py-3 text-sm"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            {runBhiveResearch && !enrichmentPreview ? 'Publish with Bhive research' : 'Publish post'}
+            {runBhiveResearch && !enrichmentPreview
+              ? `Publish with ${HIVE_RESEARCH_LABEL}`
+              : 'Publish post'}
           </button>
         </div>
       </div>

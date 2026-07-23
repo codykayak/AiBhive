@@ -603,7 +603,7 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
   const attachment = opts.attachment;
 
   if (!title && !text && !attachment?.base64) {
-    return { ok: false, error: 'Add a title, caption, or photo for Bhive research.' };
+    return { ok: false, error: 'Add a title, caption, or photo for Hive Research.' };
   }
 
   const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
@@ -621,7 +621,7 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
       ok: false,
       needPayment: true,
       code: 'credits_depleted',
-      error: 'Hive credits depleted — add credits for Bhive research.',
+      error: 'Hive credits depleted — add credits for Hive Research.',
       amountUsd: budget.amountUsd ?? markedEstimate,
     };
   }
@@ -684,7 +684,7 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
     );
   } catch (err) {
     console.error('[plant-medicine/enrich]', err?.message || err);
-    return { ok: false, error: err?.message || 'Bhive research failed — try again.' };
+    return { ok: false, error: err?.message || 'Hive Research failed — try again.' };
   }
 
   if (!reply) return { ok: false, error: 'No response from Hive AI.' };
@@ -692,7 +692,7 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
   const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
     rawCostUsd: rawCost,
     feature: hasVision ? VISION_FEATURE_ID : FEATURE_ID,
-    summary: 'Community post Bhive research',
+    summary: 'Community post Hive Research',
     email: opts.email,
   });
 

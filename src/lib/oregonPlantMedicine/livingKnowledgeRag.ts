@@ -4,9 +4,11 @@
  */
 import { ANIMAL_HEALTH_LIBRARY } from './animalHealthLibrary';
 import { FEATURED_ESSAYS } from './featuredEssays';
+import { HERBS_LIBRARY } from './herbsLibrary';
 import { HOLISTIC_LIBRARY } from './holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
 import { PLANT_LIBRARY } from './plantLibrary';
+import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
 
 export type LivingKnowledgeScope =
   | 'all'
@@ -14,7 +16,9 @@ export type LivingKnowledgeScope =
   | 'edibles'
   | 'holistic'
   | 'hypnosis'
-  | 'animal-health';
+  | 'animal-health'
+  | 'herbs'
+  | 'supplements';
 
 export type LivingKnowledgeDocKind = 'plant' | 'topic' | 'essay';
 
@@ -31,7 +35,7 @@ export type LivingKnowledgeDoc = {
   /** Open plant detail or research topic */
   plantId?: string;
   topicId?: string;
-  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health';
+  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
 };
 
 export type LivingKnowledgeHit = LivingKnowledgeDoc & {
@@ -179,6 +183,38 @@ function buildIndex(): LivingKnowledgeDoc[] {
       tags: [t.category, ...t.relatedPlantIds],
       topicId: t.id,
       topicLibrary: 'animal-health',
+    });
+  }
+
+  for (const t of HERBS_LIBRARY) {
+    docs.push({
+      id: `herbs:${t.id}`,
+      kind: 'topic',
+      library: 'herbs',
+      title: t.title,
+      subtitle: t.category,
+      summary: t.summary,
+      body: [t.summary, t.deepDive, t.whenPeopleExplore, ...(t.approaches ?? [])].join('\n'),
+      safety: t.safetyWarnings ?? [],
+      tags: [t.category, ...t.relatedPlantIds],
+      topicId: t.id,
+      topicLibrary: 'herbs',
+    });
+  }
+
+  for (const t of SUPPLEMENTS_LIBRARY) {
+    docs.push({
+      id: `supplements:${t.id}`,
+      kind: 'topic',
+      library: 'supplements',
+      title: t.title,
+      subtitle: t.category,
+      summary: t.summary,
+      body: [t.summary, t.deepDive, t.whenPeopleExplore, ...(t.approaches ?? [])].join('\n'),
+      safety: t.safetyWarnings ?? [],
+      tags: [t.category, ...t.relatedPlantIds],
+      topicId: t.id,
+      topicLibrary: 'supplements',
     });
   }
 
@@ -447,6 +483,10 @@ export function buildLivingKnowledgeClarifier(scope: LivingKnowledgeScope, text:
       'For hypnosis & energy: past-life regression / QHHT, clinical hypnotherapy, Reiki/chakras, or sound frequencies? What outcome are you hoping to understand?',
     'animal-health':
       'For animal wellness: dog, cat, horse, or livestock? Gut, skin, anxiety, nutrition, or energy modalities — and is this educational research or an emergency (go to a vet for emergencies)?',
+    herbs:
+      'For herbs: Western, Chinese (TCM), or Ayurvedic? Name the herb or what you hope it may support (sleep, stress, digestion, immunity) — and note any medications you take.',
+    supplements:
+      'For supplements: which nutrient or product (vitamin D, magnesium, omega-3, probiotic)? Are you asking about dosing, evidence, or drug interactions?',
   };
   const base = probes[scope] || probes.all;
   if (/id|identify|look|mushroom|plant/i.test(text)) {
@@ -479,7 +519,7 @@ export function offlineLivingKnowledgeReply(
     // First miss: ask one Diagnose-style clarifier before hard-pushing contribute.
     if (!isFollowUp) {
       return {
-        reply: `${local.answer}\n\nTo help me search better: are you asking about a specific plant/fungus name, a body system (gut, sleep, skin), or a modality (Cayce, QHHT, Reiki)?`,
+        reply: `${local.answer}\n\nTo focus your Hive Research: are you asking about a specific plant/fungus name, a body system (gut, sleep, skin), or a modality (Cayce, QHHT, Reiki)?`,
         hits: local.hits,
         contributeSuggested: true,
         isClarifier: true,

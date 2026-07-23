@@ -8,10 +8,11 @@ import {
 } from 'firebase/auth';
 import {
   AlertTriangle,
-  Apple,
   ExternalLink,
   FileText,
+  FlaskConical,
   HeartPulse,
+  Leaf,
   LogOut,
   MapPin,
   Sparkles,
@@ -54,7 +55,11 @@ import HolisticDisclaimerModal from './oregon-plant-medicine/HolisticDisclaimerM
 import HypnosisEnergyPanel from './oregon-plant-medicine/HypnosisEnergyPanel';
 import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnergyDisclaimerModal';
 import AnimalHealthPanel from './oregon-plant-medicine/AnimalHealthPanel';
+import HerbsPanel from './oregon-plant-medicine/HerbsPanel';
+import SupplementsPanel from './oregon-plant-medicine/SupplementsPanel';
 import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDisclaimerModal';
+import HerbsDisclaimerModal from './oregon-plant-medicine/HerbsDisclaimerModal';
+import SupplementsDisclaimerModal from './oregon-plant-medicine/SupplementsDisclaimerModal';
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
@@ -70,6 +75,17 @@ import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicine
 import FeaturedEssayPanel from './oregon-plant-medicine/FeaturedEssayPanel';
 import HolisticAskAgent from './oregon-plant-medicine/HolisticAskAgent';
 import LivingKnowledgeAskWithGuide from './oregon-plant-medicine/LivingKnowledgeAskWithGuide';
+import LivingKnowledgeThemeToggle from './oregon-plant-medicine/LivingKnowledgeThemeToggle';
+import LivingKnowledgeAskFab from './oregon-plant-medicine/LivingKnowledgeAskFab';
+import {
+  LivingKnowledgeThemeProvider,
+  useLivingKnowledgeTheme,
+} from './oregon-plant-medicine/LivingKnowledgeThemeContext';
+import {
+  LIVING_KNOWLEDGE_OPEN_ASK_EVENT,
+  livingKnowledgeScopeForTab,
+} from '../../lib/oregonPlantMedicine/livingKnowledgeAsk';
+import './oregon-plant-medicine/livingKnowledgeTheme.css';
 import {
   EARTH_PLANT_MEDICINE_NAME,
   HOLISTIC_REMEDIES_PATH,
@@ -78,11 +94,17 @@ import {
   HYPNOSIS_ENERGY_TAB_SHORT_LABEL,
   ANIMAL_HEALTH_PATH,
   ANIMAL_HEALTH_TAB_SHORT_LABEL,
+  HERBS_PATH,
+  HERBS_TAB_SHORT_LABEL,
+  SUPPLEMENTS_PATH,
+  SUPPLEMENTS_TAB_SHORT_LABEL,
   STATE_CONTRIBUTION_USD,
 } from '../../lib/oregonPlantMedicine/branding';
 import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
 import { hasAcceptedHypnosisEnergyDisclaimer } from '../../lib/oregonPlantMedicine/hypnosisEnergyDisclaimer';
 import { hasAcceptedAnimalHealthDisclaimer } from '../../lib/oregonPlantMedicine/animalHealthDisclaimer';
+import { hasAcceptedHerbsDisclaimer } from '../../lib/oregonPlantMedicine/herbsDisclaimer';
+import { hasAcceptedSupplementsDisclaimer } from '../../lib/oregonPlantMedicine/supplementsDisclaimer';
 import {
   isSupportedLocation,
   locationLabel,
@@ -93,8 +115,25 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'home' | 'community' | 'plants' | 'edibles' | 'holistic' | 'hypnosis' | 'animal-health' | 'guide' | 'resources';
+type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
+
+function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber' | 'teal' {
+  switch (tab) {
+    case 'holistic':
+      return 'violet';
+    case 'hypnosis':
+      return 'cyan';
+    case 'animal-health':
+      return 'rose';
+    case 'herbs':
+      return 'amber';
+    case 'supplements':
+      return 'teal';
+    default:
+      return 'emerald';
+  }
+}
 
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
 
@@ -351,7 +390,8 @@ function PlantDetail({
 }
 
 /** Living Knowledge Plants and Medicine — community foraging & herbal living knowledge base. */
-export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home' }: Props) {
+function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Props) {
+  const { theme } = useLivingKnowledgeTheme();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<RegionFilter>('all');
@@ -381,8 +421,17 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   const [animalDisclaimerReview, setAnimalDisclaimerReview] = useState(false);
   const [animalAccepted, setAnimalAccepted] = useState(() => hasAcceptedAnimalHealthDisclaimer());
   const [pendingAnimalTab, setPendingAnimalTab] = useState(false);
+  const [herbsDisclaimerOpen, setHerbsDisclaimerOpen] = useState(false);
+  const [herbsDisclaimerReview, setHerbsDisclaimerReview] = useState(false);
+  const [herbsAccepted, setHerbsAccepted] = useState(() => hasAcceptedHerbsDisclaimer());
+  const [pendingHerbsTab, setPendingHerbsTab] = useState(false);
+  const [supplementsDisclaimerOpen, setSupplementsDisclaimerOpen] = useState(false);
+  const [supplementsDisclaimerReview, setSupplementsDisclaimerReview] = useState(false);
+  const [supplementsAccepted, setSupplementsAccepted] = useState(() => hasAcceptedSupplementsDisclaimer());
+  const [pendingSupplementsTab, setPendingSupplementsTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
-  const [showLocationModal, setShowLocationModal] = useState(() => !loadUserLocation());
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [askFallbackOpen, setAskFallbackOpen] = useState(false);
   const [locationModalStep, setLocationModalStep] = useState<'location' | 'welcome' | 'add-state'>('location');
   const [authError, setAuthError] = useState('');
 
@@ -409,7 +458,29 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     setHolisticAccepted(hasAcceptedHolisticDisclaimer(userId));
     setHypnosisAccepted(hasAcceptedHypnosisEnergyDisclaimer(userId));
     setAnimalAccepted(hasAcceptedAnimalHealthDisclaimer(userId));
+    setHerbsAccepted(hasAcceptedHerbsDisclaimer(userId));
+    setSupplementsAccepted(hasAcceptedSupplementsDisclaimer(userId));
   }, [userId]);
+
+  useEffect(() => {
+    if (tab !== 'plants') {
+      setShowLocationModal(false);
+      return;
+    }
+    if (!userLocation) {
+      setLocationModalStep('location');
+      setShowLocationModal(true);
+    }
+  }, [tab, userLocation]);
+
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<{ fallback?: boolean }>).detail;
+      if (detail?.fallback) setAskFallbackOpen(true);
+    };
+    window.addEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+    return () => window.removeEventListener(LIVING_KNOWLEDGE_OPEN_ASK_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     setTab(initialTab);
@@ -427,6 +498,16 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       setAnimalDisclaimerReview(false);
       setAnimalDisclaimerOpen(true);
       setPendingAnimalTab(true);
+    }
+    if (initialTab === 'herbs' && !hasAcceptedHerbsDisclaimer(userId)) {
+      setHerbsDisclaimerReview(false);
+      setHerbsDisclaimerOpen(true);
+      setPendingHerbsTab(true);
+    }
+    if (initialTab === 'supplements' && !hasAcceptedSupplementsDisclaimer(userId)) {
+      setSupplementsDisclaimerReview(false);
+      setSupplementsDisclaimerOpen(true);
+      setPendingSupplementsTab(true);
     }
   }, [initialTab, userId]);
 
@@ -469,6 +550,32 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     }
   }, [expanded, animalAccepted]);
 
+  const openHerbsTab = useCallback(() => {
+    if (!herbsAccepted) {
+      setHerbsDisclaimerReview(false);
+      setPendingHerbsTab(true);
+      setHerbsDisclaimerOpen(true);
+      return;
+    }
+    setTab('herbs');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', HERBS_PATH);
+    }
+  }, [expanded, herbsAccepted]);
+
+  const openSupplementsTab = useCallback(() => {
+    if (!supplementsAccepted) {
+      setSupplementsDisclaimerReview(false);
+      setPendingSupplementsTab(true);
+      setSupplementsDisclaimerOpen(true);
+      return;
+    }
+    setTab('supplements');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', SUPPLEMENTS_PATH);
+    }
+  }, [expanded, supplementsAccepted]);
+
   const selectTab = useCallback(
     (id: Tab) => {
       if (id === 'holistic') {
@@ -483,12 +590,20 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         openAnimalHealthTab();
         return;
       }
+      if (id === 'herbs') {
+        openHerbsTab();
+        return;
+      }
+      if (id === 'supplements') {
+        openSupplementsTab();
+        return;
+      }
       setTab(id);
       if (expanded && typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/plants');
       }
     },
-    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab],
+    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab, openHerbsTab, openSupplementsTab],
   );
 
   const footerView: FooterView =
@@ -587,7 +702,7 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
       if (result.kind === 'plant') {
         const plant = PLANT_LIBRARY.find((p) => p.id === result.id);
         if (!plant) return;
-        selectTab(result.tab === 'edibles' ? 'edibles' : 'plants');
+        selectTab('plants');
         setSelected(plant);
         return;
       }
@@ -600,6 +715,8 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
         holistic: 'holistic',
         hypnosis: 'hypnosis',
         'animal-health': 'animal-health',
+        herbs: 'herbs',
+        supplements: 'supplements',
       };
       const library = libraryMap[result.kind];
       if (library) {
@@ -658,7 +775,6 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     });
   }, [query, region, favoritesOnly, favorites]);
 
-  const plantsToShow = tab === 'edibles' ? edibleFiltered : filtered;
   const ediblesFeaturedEssay = getFeaturedEssay('edibles');
 
   const toggleFavorite = (id: string) => {
@@ -671,9 +787,80 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
     });
   };
 
+  const renderPlantCard = (plant: PlantEntry, variant: 'plants' | 'edibles') => (
+    <article
+      key={`${variant}-${plant.id}`}
+      className={`group rounded-xl border bg-slate-900/60 overflow-hidden transition-colors cursor-pointer ${
+        variant === 'edibles'
+          ? plant.category === 'mushroom'
+            ? 'border-slate-800 hover:border-amber-500/40'
+            : 'border-slate-800 hover:border-lime-500/40'
+          : 'border-slate-800 hover:border-emerald-500/40'
+      }`}
+      onClick={() => setSelected(plant)}
+      onKeyDown={(e) => e.key === 'Enter' && setSelected(plant)}
+      role="button"
+      tabIndex={0}
+    >
+      <div className="relative h-36 overflow-hidden">
+        <PlantPhoto
+          src={plant.imageUrl}
+          plantId={plant.id}
+          scientificName={plant.scientificName}
+          alt={plant.commonName}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(plant.id);
+          }}
+          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70"
+          aria-label="Save plant"
+        >
+          <Star
+            className={`w-4 h-4 ${favorites.has(plant.id) ? 'fill-amber-400 text-amber-400' : 'text-white'}`}
+          />
+        </button>
+      </div>
+      <div className="p-3">
+        <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider truncate">
+          {plant.scientificName}
+        </p>
+        <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {variant === 'edibles' && plant.category === 'mushroom' ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                Mushroom
+              </span>
+            ) : null}
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${useBadgeClass(plant.uses)}`}>
+              {useLabel(plant.uses)}
+            </span>
+          </div>
+          <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+            <PostEngagementBar
+              target={{ kind: 'plant', plantId: plant.id }}
+              user={user}
+              onSignIn={() => void handleSignIn()}
+              stopPropagation
+              onAskAi={() => openAskAiForPlant(plant)}
+            />
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+
   const shellClass = expanded
-    ? 'min-h-screen bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950 text-white'
-    : 'rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-slate-950 to-slate-900 text-white overflow-hidden';
+    ? theme === 'light'
+      ? 'min-h-screen bg-gradient-to-b from-slate-100 via-emerald-50/50 to-slate-100 text-slate-900'
+      : 'min-h-screen bg-gradient-to-b from-slate-950 via-emerald-950/20 to-slate-950 text-white'
+    : theme === 'light'
+      ? 'rounded-2xl border border-emerald-600/20 bg-gradient-to-b from-slate-50 to-white text-slate-900 overflow-hidden'
+      : 'rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-slate-950 to-slate-900 text-white overflow-hidden';
 
   const authActions = user ? (
     <div className="flex flex-col items-end gap-2">
@@ -712,16 +899,16 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
   );
 
   return (
-    <div className={shellClass}>
+    <div className={`${shellClass} lk-app`} data-lk-theme={theme}>
       <OregonPlantMedicineHero
         compact={!expanded}
         actions={authActions}
         onContribute={() => setShowCreatePost(true)}
       />
 
-      <header className="border-b border-emerald-500/20">
+      <header className="border-b border-emerald-500/25">
         <nav
-          className={`sticky top-0 z-30 bg-slate-950/92 backdrop-blur-xl border-b border-emerald-500/15 ${
+          className={`lk-nav-bar sticky top-0 z-30 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 backdrop-blur-xl border-b border-emerald-400/40 shadow-lg shadow-emerald-900/30 ${
             expanded ? 'px-4 sm:px-8' : 'px-4'
           }`}
         >
@@ -732,14 +919,20 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                   ['home', 'Home', Home],
                   ['community', 'Community', Users],
                   ['plants', 'Plants', Sprout],
-                  ['edibles', 'Edibles', Apple],
+                  ['herbs', HERBS_TAB_SHORT_LABEL, Leaf],
+                  ['supplements', SUPPLEMENTS_TAB_SHORT_LABEL, FlaskConical],
                   ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
                   ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
                   ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
                 ] as const
               ).map(([id, label, Icon]) => {
                 const active = tab === id;
-                const isResearch = id === 'holistic' || id === 'hypnosis' || id === 'animal-health';
+                const isResearch =
+                  id === 'holistic' ||
+                  id === 'hypnosis' ||
+                  id === 'animal-health' ||
+                  id === 'herbs' ||
+                  id === 'supplements';
                 return (
                   <button
                     key={id}
@@ -749,13 +942,19 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                       active
                         ? isResearch
                           ? 'text-violet-200'
-                          : 'text-emerald-300'
-                        : 'text-slate-500 hover:text-slate-200'
+                          : 'text-emerald-100'
+                        : 'text-emerald-200/70 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
                     <span className="hidden sm:inline">{label}</span>
-                    <span className="sm:hidden">{id === 'animal-health' ? 'Animals' : label.split(' ')[0]}</span>
+                    <span className="sm:hidden">
+                      {id === 'animal-health'
+                        ? 'Animals'
+                        : id === 'supplements'
+                          ? 'Supps'
+                          : label.split(' ')[0]}
+                    </span>
                     {active ? (
                       <span
                         className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full ${
@@ -767,22 +966,25 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                 );
               })}
             </div>
-            <button
-              type="button"
-              onClick={() => setShowCreatePost(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              Contribute
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <LivingKnowledgeThemeToggle />
+              <button
+                type="button"
+                onClick={() => setShowCreatePost(true)}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 text-xs transition-colors"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Contribute
+              </button>
+            </div>
           </div>
         </nav>
 
-        <div className="border-b border-emerald-500/10 bg-slate-950/70">
+        <div className="lk-nav-search border-b border-emerald-500/30 bg-gradient-to-b from-emerald-800/90 to-emerald-900/80">
           <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
             {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
             <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
-            {tab !== 'home' && userLocation ? (
+            {tab === 'plants' && userLocation ? (
               <button
                 type="button"
                 onClick={() => {
@@ -834,45 +1036,26 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           />
         ) : null}
 
-        {tab === 'plants' || tab === 'edibles' ? (
+        {tab === 'plants' ? (
           <>
             <LivingKnowledgeAskWithGuide
-              accent={tab === 'edibles' ? 'lime' : 'emerald'}
+              accent="emerald"
               intro={
-                tab === 'edibles' ? (
-                  <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 text-sm text-lime-100/90 leading-relaxed">
-                    <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
-                      Wild edible foods &amp; mushrooms
-                    </p>
-                    <p>
-                      Berries, greens, roots, and fungi across Oregon, Washington, and Northern California — each entry includes{' '}
-                      <strong className="text-white">three ID photos</strong>, habitat notes, toxic look-alikes, and
-                      preparation ideas.{' '}
-                      <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100/90 leading-relaxed">
-                    <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
-                      Primary field guide
-                    </p>
-                    <p>
-                      {EARTH_PLANT_MEDICINE_NAME} centers on this plant &amp; mushroom library — foraging IDs, regions,
-                      look-alikes, and harvest notes. Holistic protocols, hypnosis, and animal health live under adjacent
-                      research libraries in the nav.
-                    </p>
-                  </div>
-                )
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100/90 leading-relaxed">
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-300 mb-2">
+                    Primary field guide
+                  </p>
+                  <p>
+                    {EARTH_PLANT_MEDICINE_NAME} — foraging IDs, regions, look-alikes, and harvest notes. Wild edibles
+                    &amp; mushrooms are in the section below. Herbs, supplements, and holistic libraries are in the nav.
+                  </p>
+                </div>
               }
               askAgent={
                 <HolisticAskAgent
-                  scope={tab === 'edibles' ? 'edibles' : 'plants'}
-                  accent={tab === 'edibles' ? 'lime' : 'emerald'}
-                  placeholder={
-                    tab === 'edibles'
-                      ? 'Ask about berries, mycelium, chanterelles, wild greens…'
-                      : 'Ask about plants, Latin names, look-alikes, harvest…'
-                  }
+                  scope="plants"
+                  accent="emerald"
+                  placeholder="Ask about plants, Latin names, look-alikes, harvest…"
                   onQueryChange={setQuery}
                   user={user}
                   onSignIn={() => void handleSignIn()}
@@ -884,86 +1067,50 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
                 />
               }
               filters={
-                tab === 'edibles' ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <select
-                      value={region}
-                      onChange={(e) => setRegion(e.target.value as RegionFilter)}
-                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
-                    >
-                      {REGION_FILTER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setFavoritesOnly((v) => !v)}
-                      className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
-                        favoritesOnly
-                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                          : 'border-slate-700 text-slate-400'
-                      }`}
-                    >
-                      <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
-                      Saved
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowCreatePost(true)}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-lime-600 hover:bg-lime-500 text-white font-bold px-4 py-2.5 text-sm shrink-0"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      Share a post
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <select
-                      value={region}
-                      onChange={(e) => setRegion(e.target.value as RegionFilter)}
-                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
-                    >
-                      {REGION_FILTER_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={useFilter}
-                      onChange={(e) => setUseFilter(e.target.value as UseFilter)}
-                      className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
-                    >
-                      <option value="all">All uses</option>
-                      <option value="edible">Edible</option>
-                      <option value="medicinal">Medicinal</option>
-                      <option value="both">Edible &amp; medicinal</option>
-                      <option value="hallucinogenic">Hallucinogenic</option>
-                    </select>
-                    <button
-                      type="button"
-                      onClick={() => setFavoritesOnly((v) => !v)}
-                      className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
-                        favoritesOnly
-                          ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
-                          : 'border-slate-700 text-slate-400'
-                      }`}
-                    >
-                      <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
-                      Saved
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowCreatePost(true)}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-sm shrink-0"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      Share a post
-                    </button>
-                  </div>
-                )
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value as RegionFilter)}
+                    className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white flex-1"
+                  >
+                    {REGION_FILTER_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={useFilter}
+                    onChange={(e) => setUseFilter(e.target.value as UseFilter)}
+                    className="px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white"
+                  >
+                    <option value="all">All uses</option>
+                    <option value="edible">Edible</option>
+                    <option value="medicinal">Medicinal</option>
+                    <option value="both">Edible &amp; medicinal</option>
+                    <option value="hallucinogenic">Hallucinogenic</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setFavoritesOnly((v) => !v)}
+                    className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-sm font-bold ${
+                      favoritesOnly
+                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-300'
+                        : 'border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <Star className={`w-4 h-4 ${favoritesOnly ? 'fill-amber-400' : ''}`} />
+                    Saved
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreatePost(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-sm shrink-0"
+                  >
+                    <PlusCircle className="w-4 h-4" />
+                    Share a post
+                  </button>
+                </div>
               }
             />
 
@@ -1000,89 +1147,36 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
               <RegionalOfflinePackButton region={region} />
             </div>
 
+            <p className="text-xs text-slate-500 mb-4">{filtered.length} plants in library</p>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+              {filtered.map((plant) => renderPlantCard(plant, 'plants'))}
+            </div>
+
+            <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 text-sm text-lime-100/90 leading-relaxed mb-6">
+              <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
+                Wild edible foods &amp; mushrooms
+              </p>
+              <p>
+                Berries, greens, roots, and fungi — each entry includes ID photos, habitat notes, toxic look-alikes, and
+                preparation ideas.{' '}
+                <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
+              </p>
+            </div>
+
             <p className="text-xs text-slate-500 mb-4">
-              {plantsToShow.length}{' '}
-              {tab === 'edibles' ? 'edible wild foods & mushrooms' : 'plants in library'}
+              {edibleFiltered.length} edible wild foods &amp; mushrooms
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tab === 'edibles' ? (
-                <GridSectionVideo
-                  video={SECTION_VIDEOS.edibles}
-                  accentClass="text-lime-300"
-                  borderClass="border-lime-500/35 hover:border-lime-500/50"
-                />
-              ) : null}
+              <GridSectionVideo
+                video={SECTION_VIDEOS.edibles}
+                accentClass="text-lime-300"
+                borderClass="border-lime-500/35 hover:border-lime-500/50"
+              />
               {interleaveFeaturedTile(
-                plantsToShow.map((plant) => (
-                <article
-                  key={plant.id}
-                  className={`group rounded-xl border bg-slate-900/60 overflow-hidden transition-colors cursor-pointer ${
-                    tab === 'edibles'
-                      ? plant.category === 'mushroom'
-                        ? 'border-slate-800 hover:border-amber-500/40'
-                        : 'border-slate-800 hover:border-lime-500/40'
-                      : 'border-slate-800 hover:border-emerald-500/40'
-                  }`}
-                  onClick={() => setSelected(plant)}
-                  onKeyDown={(e) => e.key === 'Enter' && setSelected(plant)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="relative h-36 overflow-hidden">
-                    <PlantPhoto
-                      src={plant.imageUrl}
-                      plantId={plant.id}
-                      scientificName={plant.scientificName}
-                      alt={plant.commonName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(plant.id);
-                      }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/70"
-                      aria-label="Save plant"
-                    >
-                      <Star
-                        className={`w-4 h-4 ${
-                          favorites.has(plant.id) ? 'fill-amber-400 text-amber-400' : 'text-white'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider truncate">
-                      {plant.scientificName}
-                    </p>
-                    <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
-                    <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {tab === 'edibles' && plant.category === 'mushroom' ? (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
-                            Mushroom
-                          </span>
-                        ) : null}
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${useBadgeClass(plant.uses)}`}>
-                          {useLabel(plant.uses)}
-                        </span>
-                      </div>
-                      <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                        <PostEngagementBar
-                          target={{ kind: 'plant', plantId: plant.id }}
-                          user={user}
-                          onSignIn={() => void handleSignIn()}
-                          stopPropagation
-                          onAskAi={() => openAskAiForPlant(plant)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </article>
-                )),
-                tab === 'edibles' && ediblesFeaturedEssay ? (
+                edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles')),
+                ediblesFeaturedEssay ? (
                   <FeaturedEssayPanel
                     key="edibles-featured-essay"
                     essay={ediblesFeaturedEssay}
@@ -1129,6 +1223,30 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
             onCreatePost={() => setShowCreatePost(true)}
             onAskAi={openAskAi}
             focusTopicId={focusTopic?.library === 'animal-health' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
+          />
+        ) : null}
+
+        {tab === 'herbs' && herbsAccepted ? (
+          <HerbsPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onOpenPlant={(plant) => setSelected(plant)}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'herbs' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
+          />
+        ) : null}
+
+        {tab === 'supplements' && supplementsAccepted ? (
+          <SupplementsPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onOpenPlant={(plant) => setSelected(plant)}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'supplements' ? focusTopic.topicId : null}
             onFocusTopicConsumed={clearFocusTopic}
           />
         ) : null}
@@ -1305,7 +1423,65 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           }}
         />
       ) : null}
-      {showLocationModal ? (
+      {herbsDisclaimerOpen ? (
+        <HerbsDisclaimerModal
+          reviewOnly={herbsDisclaimerReview}
+          userId={userId}
+          onCancel={() => {
+            setHerbsDisclaimerOpen(false);
+            setHerbsDisclaimerReview(false);
+            setPendingHerbsTab(false);
+            if (tab === 'herbs' && !herbsAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            if (!herbsDisclaimerReview) setHerbsAccepted(true);
+            setHerbsDisclaimerOpen(false);
+            setHerbsDisclaimerReview(false);
+            if (pendingHerbsTab && !herbsDisclaimerReview) {
+              setPendingHerbsTab(false);
+              setTab('herbs');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', HERBS_PATH);
+              }
+            }
+          }}
+        />
+      ) : null}
+      {supplementsDisclaimerOpen ? (
+        <SupplementsDisclaimerModal
+          reviewOnly={supplementsDisclaimerReview}
+          userId={userId}
+          onCancel={() => {
+            setSupplementsDisclaimerOpen(false);
+            setSupplementsDisclaimerReview(false);
+            setPendingSupplementsTab(false);
+            if (tab === 'supplements' && !supplementsAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            if (!supplementsDisclaimerReview) setSupplementsAccepted(true);
+            setSupplementsDisclaimerOpen(false);
+            setSupplementsDisclaimerReview(false);
+            if (pendingSupplementsTab && !supplementsDisclaimerReview) {
+              setPendingSupplementsTab(false);
+              setTab('supplements');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', SUPPLEMENTS_PATH);
+              }
+            }
+          }}
+        />
+      ) : null}
+      {showLocationModal && tab === 'plants' ? (
         <LocationOnboardingModal
           initial={userLocation}
           initialStep={locationModalStep}
@@ -1314,6 +1490,44 @@ export default function OregonPlantMedicineWebApp({ expanded, initialTab = 'home
           requireSubmit={!userLocation}
         />
       ) : null}
+      {askFallbackOpen ? (
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-950 border border-emerald-500/30 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto shadow-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <p className="text-sm font-black text-white">Ask Bhive</p>
+              <button
+                type="button"
+                onClick={() => setAskFallbackOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+                aria-label="Close Ask Bhive"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <HolisticAskAgent
+              scope={livingKnowledgeScopeForTab(tab)}
+              accent={tabAskAccent(tab)}
+              placeholder="Ask about plants, herbs, holistic topics, and more…"
+              user={user}
+              onSignIn={() => void handleSignIn()}
+              onContribute={() => setShowCreatePost(true)}
+              onOpenPlant={(plantId) => {
+                const plant = PLANT_LIBRARY.find((p) => p.id === plantId);
+                if (plant) setSelected(plant);
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+      {expanded ? <LivingKnowledgeAskFab /> : null}
     </div>
+  );
+}
+
+export default function OregonPlantMedicineWebApp(props: Props) {
+  return (
+    <LivingKnowledgeThemeProvider>
+      <OregonPlantMedicineWebAppContent {...props} />
+    </LivingKnowledgeThemeProvider>
   );
 }

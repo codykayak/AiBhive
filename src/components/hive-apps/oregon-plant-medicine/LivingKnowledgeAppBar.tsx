@@ -3,6 +3,8 @@ import type { User } from 'firebase/auth';
 import { Download, Loader2, Sparkles } from 'lucide-react';
 import {
   BHIVE_CREDITS_SIGNUP_USD,
+  HIVE_RESEARCH_LABEL,
+  HIVE_RESEARCH_POWERED_BY,
   PLANT_APP_DISPLAY_NAME,
 } from '../../../lib/oregonPlantMedicine/branding';
 import LivingKnowledgeSocialShare from './LivingKnowledgeSocialShare';
@@ -13,7 +15,7 @@ type Props = {
   onSignIn?: () => void;
 };
 
-/** Sticky bottom bar — Bhive Credits for Ask AI + Android APK download. */
+/** Sticky bottom bar — Hive Research credits + Android APK download. */
 export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [error, setError] = useState('');
@@ -40,11 +42,11 @@ export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
         <div className="flex-1 min-w-0">
           <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
-            Enable Bhive Credits search &amp; photo ID
+            Enable {HIVE_RESEARCH_LABEL} &amp; photo ID
           </p>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-            Add ${BHIVE_CREDITS_SIGNUP_USD} in Bhive Credits to unlock Ask AI and photo plant identification on{' '}
-            {PLANT_APP_DISPLAY_NAME}. Browsing the library stays free.
+            Add ${BHIVE_CREDITS_SIGNUP_USD} in Bhive Credits to unlock {HIVE_RESEARCH_LABEL} and photo plant
+            identification on {PLANT_APP_DISPLAY_NAME}. {HIVE_RESEARCH_POWERED_BY}. Browsing the library stays free.
           </p>
           {error ? <p className="text-[11px] text-amber-300 mt-1">{error}</p> : null}
         </div>

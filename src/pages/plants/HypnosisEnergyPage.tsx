@@ -12,7 +12,7 @@ import {
 /** Canonical URL: aibhive.com/plants/hypnosis-and-energy */
 export default function HypnosisEnergyPage() {
   return (
-    <div className="min-h-screen bg-[#070a0f]">
+    <div className="min-h-screen">
       <SEO
         title={`${HYPNOSIS_ENERGY_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
         description={HYPNOSIS_SEO_DESCRIPTION}

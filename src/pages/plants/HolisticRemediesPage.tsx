@@ -12,7 +12,7 @@ import {
 /** Canonical URL: aibhive.com/plants/holistic-remedies-and-protocols */
 export default function HolisticRemediesPage() {
   return (
-    <div className="min-h-screen bg-[#070a0f]">
+    <div className="min-h-screen">
       <SEO
         title={`${HOLISTIC_TAB_LABEL} | ${LIVING_KNOWLEDGE_APP_NAME}`}
         description={HOLISTIC_SEO_DESCRIPTION}

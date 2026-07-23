@@ -6,6 +6,7 @@ import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadge
 import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
+import { HIVE_RESEARCH_LABEL } from '../../../lib/oregonPlantMedicine/branding';
 import type { AskAiContext } from './AskAiBhivePanel';
 import PostEngagementBar from './PostEngagementBar';
 import PlantPhoto from './PlantImage';
@@ -152,7 +153,7 @@ export default function CommunityPostModal({
               }`}
             >
               <p className="text-[10px] font-black uppercase tracking-widest text-sky-300 mb-2">
-                Bhive identification tags
+                {HIVE_RESEARCH_LABEL} tags
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {aiTags.map((tag) => (

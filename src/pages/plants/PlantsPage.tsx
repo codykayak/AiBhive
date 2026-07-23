@@ -34,7 +34,7 @@ export default function PlantsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#070a0f]">
+    <div className="min-h-screen">
       <SEO
         title={`${LIVING_KNOWLEDGE_APP_NAME} — Wild Edibles & Homeopathic Plants | AiBhive`}
         description={LIVING_KNOWLEDGE_SEO_DESCRIPTION}
