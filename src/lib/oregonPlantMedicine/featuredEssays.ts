@@ -1,7 +1,7 @@
 import type { ExternalLink } from './types';
 
 /** Where a featured Living Knowledge essay appears. */
-export type FeaturedEssayPage = 'plants-home' | 'holistic' | 'hypnosis' | 'edibles' | 'herbs';
+export type FeaturedEssayPage = 'plants-home' | 'holistic' | 'hypnosis' | 'edibles' | 'herbs' | 'animal-health';
 
 export type FeaturedEssay = {
   id: string;
@@ -23,7 +23,7 @@ export type FeaturedEssay = {
   videoLinks: ExternalLink[];
   relatedPlantIds: string[];
   /** Accent theme for card chrome */
-  accent: 'emerald' | 'violet' | 'cyan' | 'lime' | 'amber';
+  accent: 'emerald' | 'violet' | 'cyan' | 'lime' | 'amber' | 'rose';
 };
 
 export const FEATURED_ESSAYS: FeaturedEssay[] = [
@@ -646,6 +646,119 @@ Wild / food-grade Chondrus crispus | True Irish moss fronds | Traditional gel, p
 Cultivated Gracilaria “sea moss” | Different red alga, often pool-grown | Smoothie gels when clearly labeled | Do not assume identical minerals/folklore
 Refined carrageenan additive | Purified polysaccharide | Commercial thickeners | Separate debate from whole-plant gel
 Sea moss capsules / tonics | Variable extracts | Only if label + testing are clear | Marketing claims ≠ clinical proof`,
+  },
+  {
+    id: 'senior-dog-joint-mobility',
+    page: 'animal-health',
+    title: 'Senior Dogs & Joint Mobility — Comfortable Aging Without the Hype',
+    categoryLabel: 'Featured · Companion animals',
+    accent: 'rose',
+    imageUrl: '/oregon-plant-medicine/senior-dog-joint-mobility.jpg',
+    imageCredit: 'AiBhive Living Knowledge — senior dog joint mobility illustration',
+    summary:
+      'An educational Living Knowledge deep dive on aging canine joints: how osteoarthritis shows up, what integrative vets often discuss (weight, movement, physical therapy, nutrition), where supplements and plant allies fit as adjuncts — and when limping is an emergency. Not veterinary advice.',
+    whenPeopleExplore:
+      'Slower stairs, stiffness after rest, reluctance to jump into the car, or shopping for “joint chews” for an older dog.',
+    approaches: [
+      'Veterinary exam first — rule out injury, neurologic disease, and pain that needs prescription care.',
+      'Weight management and low-impact daily movement (short walks, swim, controlled play).',
+      'Evidence-leaning joint nutrients (omega-3 EPA/DHA, veterinary-guided chondroprotectants) when appropriate.',
+      'Physical therapy, laser, acupuncture, or rehab as clinician-directed adjuncts.',
+      'Home safety: rugs, ramps, orthopedic beds — environment is medicine for stiff joints.',
+    ],
+    relatedPlantIds: ['yarrow', 'plantain', 'oregon-grape', 'stinging-nettle'],
+    safetyWarnings: [
+      'Sudden non-weight-bearing lameness, paralysis, bloating, collapse, or trauma needs emergency veterinary care now.',
+      'Never give human NSAIDs (ibuprofen, naproxen) or acetaminophen to dogs — they can be fatal.',
+      'Many “joint herbs” and essential oils are unsafe or unproven in dogs — do not dose kitchen spices or oils from social media.',
+      'Supplements can interact with anticoagulants, steroids, and NSAIDs — coordinate with your veterinarian.',
+      'Educational reference only — not a diagnosis or treatment plan.',
+    ],
+    videoLinks: [
+      {
+        label: 'Canine osteoarthritis education (search veterinary sources)',
+        url: 'https://www.youtube.com/results?search_query=canine+osteoarthritis+veterinary+education',
+        description: 'Prefer board-certified veterinary rehab / university explainers over supplement ads.',
+      },
+      {
+        label: 'Dog physical therapy & senior mobility (educational search)',
+        url: 'https://www.youtube.com/results?search_query=canine+rehabilitation+senior+dog+mobility',
+        description: 'Rehab demos for discussion with your vet — not DIY replacement for exams.',
+      },
+    ],
+    sources: [
+      {
+        label: 'AVMA — Pet care & senior pets overview',
+        url: 'https://www.avma.org/resources-tools/pet-owners/petcare',
+        description: 'General companion-animal wellness framing from the American Veterinary Medical Association.',
+      },
+      {
+        label: 'FDA — Animal NSAID information',
+        url: 'https://www.fda.gov/animal-veterinary',
+        description: 'Context for veterinary NSAIDs vs dangerous human OTC painkillers.',
+      },
+      {
+        label: 'NIH — Omega-3 fatty acids fact sheet',
+        url: 'https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/',
+        description: 'Human nutrient science often cited when discussing EPA/DHA; veterinary dosing differs.',
+      },
+      {
+        label: 'Living Knowledge — Emergency vs holistic care',
+        url: 'https://aibhive.com/plants/animal-health',
+        description: 'In-library topic on when to go to the ER vet first.',
+      },
+    ],
+    deepDive: `An older dog’s walk tells a story. The pause before the first step out of bed. The hitch on the stairs. The polite refusal to leap into the hatchback they once cleared in one bound. Canine osteoarthritis — degenerative joint disease — is one of the most common comfort problems in aging dogs, and it sits right at the heart of Living Knowledge’s Animal Health library: how we care, what we can honestly claim, and when plants or “natural” products are adjuncts rather than answers.
+
+This essay is educational. It is not veterinary advice, not a prescription, and not permission to skip the clinic. Sudden non-weight-bearing lameness, neurologic weakness, trauma, bloating, or collapse is an emergency.
+
+What “stiff joints” often means
+
+Osteoarthritis involves cartilage wear, inflammation of the joint lining, bony remodeling, and pain that changes how a dog moves and sleeps. Large breeds, athletes, dogs with old cruciate or hip issues, and overweight dogs are over-represented — but any breed can develop it. Cats get joint disease too; this featured piece focuses on dogs because the mobility cues owners notice first are often canine.
+
+Pain is not always dramatic. Many seniors simply become “less interested” in walks, lag on hills, lick a wrist, or take longer to rise. Those soft signals deserve a veterinary workup: exam, orthopedic assessment, and imaging when indicated. Limping is a clinical problem, not a shopping list.
+
+The hierarchy that actually helps
+
+Integrative veterinarians who work with seniors usually start with foundations, not Instagram herbs:
+
+1. Diagnose and treat pain appropriately. Veterinary NSAIDs, other analgesics, and sometimes joint injections or surgery are medical tools. Human ibuprofen, naproxen, and acetaminophen can kill dogs — never share your medicine cabinet.
+
+2. Lighten the load. Every extra pound multiplies force through hips and elbows. Weight loss under veterinary guidance is often the highest-leverage “natural” intervention available.
+
+3. Move smart. Short, frequent walks beat weekend warrior hikes. Swimming or underwater treadmill work (rehab clinics) builds muscle with less concussion. Rest days matter after flare-ups.
+
+4. Change the house. Ramps into cars and onto couches, runners on slick floors, raised bowls if neck pain coexists, orthopedic bedding. Environment is therapy.
+
+5. Then discuss adjuncts. Physical therapy, therapeutic laser, acupuncture, massage, and carefully chosen nutrition or supplements — when your veterinarian agrees they fit this dog.
+
+Where nutrition and “joint chews” fit
+
+Omega-3 fatty acids (EPA and DHA from marine sources) have the strongest nutritional conversation in veterinary osteoarthritis literature as anti-inflammatory dietary support — dosing is species-specific and product quality varies. Glucosamine/chondroitin, green-lipped mussel, undenatured collagen, and similar chondroprotectants are widely sold; evidence quality is mixed, and “works for every dog” is marketing, not science. If you try a supplement, pick a reputable veterinary brand, introduce one change at a time, and track mobility for several weeks with your vet’s blessing.
+
+Plant allies — humility required
+
+Our plant library includes yarrow, plantain, nettle, and Oregon grape — historically discussed in human herbalism for inflammation or skin. That does not translate into safe kitchen dosing for dogs. Many spices (including concentrated turmeric/curcumin products), essential oils, and “anti-inflammatory tinctures” are inappropriate or toxic in companion animals. Living Knowledge rule: botanical curiosity belongs in conversation with a veterinarian familiar with veterinary herbal medicine — not in a DIY dropper aimed at a twenty-pound terrier.
+
+CBD and hemp products appear elsewhere in this Animal Health section with research caveats. They are not a substitute for pain assessment, and product contamination / THC risk is real. Coordinate, don’t freestyle.
+
+Energy work and gentle bodywork
+
+Owners exploring Reiki, Tellington TTouch, or calm massage for anxious, painful seniors often report that the ritual of slow contact helps the household — the dog, and the human. Treat these as comfort and bonding practices alongside veterinary care, not as cures for structural joint disease. If touch causes flinching, stop and call your vet; pain that worsens with handling needs medical eyes.
+
+A week of Living Knowledge practice
+
+Book or confirm a senior wellness exam if stiffness is new. Film a ten-second “rise from bed” video on day one and day seven for your vet. Measure waist and treat intake. Add one non-slip rug on the worst hallway. Ask your clinic whether a rehab referral or a trial of a veterinary NSAID / omega-3 plan is appropriate before buying a third joint chew. Read our Emergency vs holistic topic so you know which symptoms skip the waitlist.
+
+Aging is not failure. A stiff golden in evening light can still have rich years — if comfort is treated as seriously as cute. Keep the meadow walks short and sweet, keep the ER number saved, and keep miracle cures on a short leash.`,
+    chartBlock: `Layer | What it addresses | Who guides it | Watch-outs
+---|---|---|---
+Vet exam + pain plan | Diagnosis, NSAIDs, other analgesics | Veterinarian | Never use human OTC painkillers
+Weight + daily movement | Joint load, muscle support | Vet + owner | Avoid weekend over-exercise
+Home ramps / flooring / beds | Fall risk, rise difficulty | Owner | Pain with handling → call clinic
+Rehab / PT / acupuncture | Strength, mobility, comfort | Vet or rehab clinician | Not a DIY substitute for imaging
+Supplements (omega-3, etc.) | Possible adjunct support | Vet-guided | Quality varies; interactions possible
+Kitchen herbs / oils from social media | Mostly noise for OA | Avoid unsupervised | Toxicity risk in dogs`,
   },
 ];
 

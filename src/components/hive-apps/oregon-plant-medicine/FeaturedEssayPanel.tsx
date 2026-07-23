@@ -44,6 +44,13 @@ const ACCENT = {
     ring: 'ring-amber-500/20',
     detailBorder: 'border-amber-500/35',
   },
+  rose: {
+    border: 'border-rose-500/40 hover:border-rose-400/60',
+    badge: 'bg-rose-500/20 text-rose-200 border-rose-400/40',
+    label: 'text-rose-300',
+    ring: 'ring-rose-500/20',
+    detailBorder: 'border-rose-500/35',
+  },
 } as const;
 
 function ChartBlock({ text }: { text: string }) {

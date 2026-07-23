@@ -226,7 +226,11 @@ function buildIndex(): LivingKnowledgeDoc[] {
           ? 'edibles'
           : e.page === 'holistic'
             ? 'holistic'
-            : 'hypnosis';
+            : e.page === 'herbs'
+              ? 'herbs'
+              : e.page === 'animal-health'
+                ? 'animal-health'
+                : 'hypnosis';
     docs.push({
       id: `essay:${e.id}`,
       kind: 'essay',

@@ -6,6 +6,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
 import { ANIMAL_HEALTH_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/animalHealthTypes';
 import { ANIMAL_HEALTH_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { AskAiContext } from './AskAiBhivePanel';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
@@ -71,6 +72,7 @@ export default function AnimalHealthPanel({
       onAskAi={onAskAi}
       askScope="animal-health"
       askAccent="rose"
+      featuredEssay={getFeaturedEssay('animal-health')}
       focusTopicId={focusTopicId}
       onFocusTopicConsumed={onFocusTopicConsumed}
     />
