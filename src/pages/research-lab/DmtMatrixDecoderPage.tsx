@@ -24,6 +24,7 @@ interface CatalogSymbol {
 
 interface Detection {
   symbolId: string;
+  tokenId?: string | null;
   name: string;
   confidence: number;
   x: number;
@@ -41,6 +42,13 @@ interface DecodeResult {
   sessionId: string;
   merged: Detection[];
   cvDetections: Detection[];
+  structuralMatches?: Detection[];
+  syntax?: {
+    tokenSequence?: string[];
+    shannonEntropy?: number;
+    bigramMatrix?: Record<string, Record<string, number>>;
+    spatialGraph?: { layoutType?: string; nodeCount?: number; edgeCount?: number };
+  };
   vision?: {
     summary?: string;
     matrixStructure?: string;
@@ -382,8 +390,25 @@ export default function DmtMatrixDecoderPage() {
                     CV worker offline — vision-only mode. ({result.workerError})
                   </p>
                 )}
+                {result.syntax?.shannonEntropy != null && (
+                  <p style={{ marginTop: '0.5rem', color: 'var(--dmt-cyan)' }}>
+                    Token entropy: <strong>{result.syntax.shannonEntropy.toFixed(3)} bits</strong>
+                    {result.syntax.spatialGraph?.layoutType && (
+                      <> · layout: <strong>{result.syntax.spatialGraph.layoutType}</strong></>
+                    )}
+                  </p>
+                )}
               </div>
             </section>
+
+            {result.syntax?.tokenSequence?.length ? (
+              <section className={styles.section} aria-label="Token sequence">
+                <h2 className={styles.sectionTitle}>Token sequence</h2>
+                <div className={styles.summaryCard}>
+                  {result.syntax.tokenSequence.join(' → ')}
+                </div>
+              </section>
+            ) : null}
 
             <section className={styles.section} aria-label="Detected symbols">
               <h2 className={styles.sectionTitle}>
@@ -406,6 +431,7 @@ export default function DmtMatrixDecoderPage() {
                       <div>
                         <div className={styles.detName}>{det.name}</div>
                         <div className={styles.detMeta}>
+                          {det.tokenId && <span>{det.tokenId} · </span>}
                           {det.symbolId} · {det.method || det.source || 'fused'}
                           {det.catalogDescription && ` — ${det.catalogDescription.slice(0, 60)}`}
                         </div>

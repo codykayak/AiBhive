@@ -21,11 +21,18 @@ Study the image and return ONLY valid JSON (no markdown) with this schema:
       "label": "short name for the glyph",
       "description": "what it looks like",
       "catalogGuess": "best matching id from known catalogue if any, else null",
+      "tokenGuess": "GLYPH_XXXX if inferable, else null",
       "confidence": 0.0-1.0,
       "x": 0.0-1.0 normalized left,
       "y": 0.0-1.0 normalized top,
       "width": 0.0-1.0 normalized width,
-      "height": 0.0-1.0 normalized height
+      "height": 0.0-1.0 normalized height,
+      "attributions": {
+        "symmetry": 0.0-1.0,
+        "junctionCount": integer,
+        "strokeComplexity": 0.0-1.0,
+        "topologyClass": "linear|radial|grid|loop|compound|unknown"
+      }
     }
   ],
   "decodeNotes": "hypothesis about what the sequence might encode",

@@ -6,3 +6,6 @@ opencv-python-headless==4.11.0.86
 python-dotenv==1.0.1
 requests==2.32.3
 google-genai==1.49.0
+scikit-learn==1.6.1
+umap-learn==0.5.7
+hdbscan==0.8.40
