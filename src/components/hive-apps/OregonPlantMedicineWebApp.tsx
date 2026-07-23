@@ -906,9 +906,9 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
         onContribute={() => setShowCreatePost(true)}
       />
 
-      <header className="border-b border-emerald-500/20">
+      <header className="border-b border-emerald-500/25">
         <nav
-          className={`sticky top-0 z-30 bg-slate-950/92 backdrop-blur-xl border-b border-emerald-500/15 ${
+          className={`lk-nav-bar sticky top-0 z-30 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 backdrop-blur-xl border-b border-emerald-500/30 shadow-lg shadow-emerald-950/25 ${
             expanded ? 'px-4 sm:px-8' : 'px-4'
           }`}
         >
@@ -942,8 +942,8 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
                       active
                         ? isResearch
                           ? 'text-violet-200'
-                          : 'text-emerald-300'
-                        : 'text-slate-500 hover:text-slate-200'
+                          : 'text-emerald-100'
+                        : 'text-emerald-200/70 hover:text-white'
                     }`}
                   >
                     <Icon className="w-4 h-4 shrink-0" />
@@ -980,7 +980,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
           </div>
         </nav>
 
-        <div className="border-b border-emerald-500/10 bg-slate-950/70">
+        <div className="lk-nav-search border-b border-emerald-500/20 bg-gradient-to-b from-emerald-950/85 to-emerald-900/75">
           <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
             {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
             <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />

@@ -1,8 +1,23 @@
 /* Living Knowledge (/plants) light theme — scoped under .lk-app[data-lk-theme="light"] */
 
-.lk-app[data-lk-theme='light'] {
-  color-scheme: light;
+.lk-app[data-lk-theme='light'] .lk-nav-bar {
+  background: linear-gradient(to right, rgb(6 78 59), rgb(5 150 105), rgb(6 78 59)) !important;
+  border-color: rgb(16 185 129 / 0.35) !important;
 }
+
+.lk-app[data-lk-theme='light'] .lk-nav-search {
+  background: linear-gradient(to bottom, rgb(209 250 229 / 0.95), rgb(236 253 245 / 0.9)) !important;
+  border-color: rgb(16 185 129 / 0.25) !important;
+}
+
+.lk-app[data-lk-theme='light'] .lk-nav-bar .text-emerald-200\/70 {
+  color: rgb(6 95 70 / 0.85) !important;
+}
+
+.lk-app[data-lk-theme='light'] .lk-nav-bar .hover\:text-white:hover {
+  color: rgb(6 78 59) !important;
+}
+
 
 .lk-app[data-lk-theme='light'] .bg-slate-950,
 .lk-app[data-lk-theme='light'] .bg-slate-950\/70,
