@@ -5,6 +5,16 @@ import { grokChatMessages } from './socialPosts/grokProvider.js';
 import { extractDocumentText } from './intelDocuments.js';
 import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
 
+const HOMEWORK_CHAT_SYSTEM = `You are a private research assistant helping the user explore and understand their uploaded reference library.
+
+Rules:
+- Answer using ONLY the reference documents provided in your context.
+- Cite which document(s) you used when making key claims (use the document titles).
+- If the documents do not contain enough information, say what is missing — do not invent facts, quotes, or citations.
+- Be clear and helpful: summarize, compare, explain concepts, find definitions, or pull out themes from the material.
+- Use bullet points or short sections when listing multiple items.
+- You may quote brief excerpts from the documents when it helps the user understand.`;
+
 const HOMEWORK_SYSTEM = `You are a private homework assistant. Your job is to complete assignments using ONLY the reference documents provided in the RAG context.
 
 Rules:
@@ -76,6 +86,62 @@ export async function completeHomeworkAssignment(assignmentText, ragContext, cus
   } catch (err) {
     console.error('[homework/complete]', err.message || err);
     return { ok: false, error: err.message || 'Homework completion failed.' };
+  }
+}
+
+/**
+ * Multi-turn chat grounded in the user's homework RAG library.
+ * @param {string} message
+ * @param {Array<{ role: string, content: string }>} history
+ * @param {string} ragContext
+ */
+export async function chatHomeworkRag(message, history, ragContext) {
+  const userMessage = String(message || '').trim();
+  if (!userMessage) return { ok: false, error: 'Message is required.' };
+
+  const apiKey = grokKey();
+  if (!apiKey) {
+    return { ok: false, error: 'Grok API is not configured (XAI_API_KEY).' };
+  }
+
+  const contextBlock = String(ragContext || '').trim();
+  const systemContent = [
+    HOMEWORK_CHAT_SYSTEM,
+    '',
+    contextBlock
+      ? `## Reference documents (RAG corpus)\nUse these as your sole factual source:\n\n${contextBlock.slice(0, 80000)}`
+      : '## Reference documents\n(No reference documents uploaded yet.)',
+  ].join('\n');
+
+  const prior = Array.isArray(history) ? history : [];
+  const trimmedHistory = prior
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && String(m.content || '').trim())
+    .slice(-16)
+    .map((m) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.content).trim().slice(0, 12000),
+    }));
+
+  try {
+    const model = await resolveHomeworkModel();
+    const messages = [
+      { role: 'system', content: systemContent.slice(0, 100000) },
+      ...trimmedHistory,
+      { role: 'user', content: userMessage.slice(0, 12000) },
+    ];
+    const text = await grokChatMessages(apiKey, model, messages);
+    if (!text) return { ok: false, error: 'No response from Grok.' };
+
+    return {
+      ok: true,
+      reply: text,
+      provider: 'grok',
+      model,
+      hadRagContext: Boolean(contextBlock),
+    };
+  } catch (err) {
+    console.error('[homework/chat]', err.message || err);
+    return { ok: false, error: err.message || 'Homework chat failed.' };
   }
 }
 

@@ -63,11 +63,12 @@ import { estimateCursorBuildCost } from './hiveCursorEstimate.js';
 import { assertCanStartBuild, getBuildUsage, recordBuildStart } from './hiveBuildLimits.js';
 import { createRagSourcesService, initRagSourcesService } from './ragSources.js';
 import { createHomeworkRagService } from './homeworkRag.js';
-import { completeHomeworkAssignment, extractAssignmentText } from './homeworkChat.js';
+import { completeHomeworkAssignment, chatHomeworkRag, extractAssignmentText } from './homeworkChat.js';
 import { verifyHomeworkUser, resolveHomeworkOwnerKeys } from './homeworkAuth.js';
 import {
   homeworkOcrRawCost,
   homeworkCompleteRawCost,
+  homeworkChatRawCost,
   homeworkIngestRawCost,
   requireHomeworkBudget,
   chargeHomeworkUsage,
@@ -1540,6 +1541,53 @@ app.post('/api/homework/complete', verifyHomeworkUser, async (req, res) => {
   } catch (error) {
     console.error('[homework/complete] error:', error);
     return res.status(500).json({ error: error.message || 'Homework completion failed' });
+  }
+});
+
+app.post('/api/homework/chat', verifyHomeworkUser, async (req, res) => {
+  try {
+    const { ownerKeys } = homeworkOwnerContext(req);
+    const userId = req.homeworkUser.uid;
+    const message = String(req.body?.message || '').trim();
+    if (!message) {
+      return res.status(400).json({ error: 'message is required.' });
+    }
+
+    const rawCost = homeworkChatRawCost();
+    if (!homeworkBillingExempt(req.homeworkUser)) {
+      await ensureHiveUser(db, userId);
+      const budget = await requireHomeworkBudget(db, userId, rawCost, 'homework_chat');
+      if (!budget.ok) {
+        return res.status(402).json(budget);
+      }
+    }
+
+    const ragContext = await homeworkRagService.buildRagContext(ownerKeys);
+    const history = Array.isArray(req.body?.history) ? req.body.history : [];
+    const result = await chatHomeworkRag(message, history, ragContext);
+    if (!result.ok) {
+      return res.status(400).json({ error: result.error || 'Chat failed' });
+    }
+
+    let chargedUsd = 0;
+    if (!homeworkBillingExempt(req.homeworkUser)) {
+      const charge = await chargeHomeworkUsage(
+        db,
+        userId,
+        rawCost,
+        'homework_chat',
+        'Homework library chat'
+      );
+      if (!charge.ok) {
+        return res.status(402).json(charge);
+      }
+      chargedUsd = charge.chargedUsd ?? 0;
+    }
+
+    return res.json({ ...result, chargedUsd });
+  } catch (error) {
+    console.error('[homework/chat] error:', error);
+    return res.status(500).json({ error: error.message || 'Homework chat failed' });
   }
 });
 

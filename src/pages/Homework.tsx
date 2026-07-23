@@ -13,6 +13,7 @@ import {
   Lock,
   LogOut,
   GraduationCap,
+  MessageSquare,
   ScanText,
   Sparkles,
   Trash2,
@@ -29,15 +30,17 @@ import {
   deleteHomeworkDocument,
   HomeworkPaymentRequiredError,
   listHomeworkDocuments,
+  sendHomeworkChat,
   uploadHomeworkDocument,
   viewHomeworkDocument,
+  type HomeworkChatMessage,
   type HomeworkDocument,
 } from '../lib/homeworkApi';
 import { compressAndIngestImageFiles, type OcrFormat } from '../lib/homeworkOcr';
 import { downloadRagLibrary, type RagExportFormat } from '../lib/homeworkExport';
 import WebPlansStrip from '../components/app/WebPlansStrip';
 
-type Step = 'rag' | 'assign';
+type Step = 'rag' | 'chat' | 'assign';
 export type HomeworkVariant = 'admin' | 'public';
 
 const OCR_FORMATS: OcrFormat[] = ['Markdown', 'Plain Text', 'Preserve Layout'];
@@ -136,12 +139,24 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
   const [answerMeta, setAnswerMeta] = useState<{ provider: string; model: string; hadRag: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [chatMessages, setChatMessages] = useState<HomeworkChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
   const imageInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const assignmentFileRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const dragDepthRef = useRef(0);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [chatMessages, chatBusy]);
 
   const verifyAdminAccess = useCallback(async (currentUser: User) => {
     const token = await currentUser.getIdToken();
@@ -214,6 +229,8 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
     setOcrFiles([]);
     setAnswer('');
     setAnswerMeta(null);
+    setChatMessages([]);
+    setChatInput('');
   };
 
   const addOcrFiles = useCallback((incoming: FileList | File[]) => {
@@ -411,6 +428,35 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSendChat = async () => {
+    if (!user || !chatInput.trim() || chatBusy) return;
+    if (documents.length === 0) {
+      setError('Build your RAG library first (Step 1) — upload page images for OCR.');
+      return;
+    }
+
+    const userMessage = chatInput.trim();
+    const nextMessages: HomeworkChatMessage[] = [...chatMessages, { role: 'user', content: userMessage }];
+    setChatMessages(nextMessages);
+    setChatInput('');
+    setChatBusy(true);
+    setError(null);
+
+    try {
+      const result = await sendHomeworkChat(user, {
+        message: userMessage,
+        history: chatMessages,
+      });
+      setChatMessages([...nextMessages, { role: 'assistant', content: result.reply }]);
+    } catch (err: unknown) {
+      setChatMessages(chatMessages);
+      setChatInput(userMessage);
+      setError(formatError(err, 'Chat failed'));
+    } finally {
+      setChatBusy(false);
+    }
+  };
+
   const totalChars = documents.reduce((sum, d) => sum + (d.chars || 0), 0);
   const totalPages = documents.reduce((sum, d) => sum + (d.pageCount || 0), 0);
 
@@ -522,8 +568,8 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
           </div>
           <p className="text-slate-400 text-sm">
             {isPublic
-              ? 'Your reference library is private to your account. OCR and completion use Hive credits.'
-              : 'Step 1: OCR your reference pages into RAG. Step 2: Grok completes the assignment from that library.'}
+              ? 'Your reference library is private to your account. OCR, chat, and completion use Hive credits.'
+              : 'Step 1: OCR your reference pages into RAG. Step 2: Ask questions about your library. Step 3: Grok completes the assignment.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -563,13 +609,28 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
         <ArrowRight className="w-4 h-4 text-slate-600 hidden sm:block" />
         <button
           type="button"
-          onClick={() => setStep('assign')}
+          onClick={() => setStep('chat')}
+          disabled={documents.length === 0}
           className={cn(
-            'flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors',
-            step === 'assign' ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400 hover:bg-white/10'
+            'flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-40',
+            step === 'chat' ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400 hover:bg-white/10'
           )}
         >
           <span className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-xs font-bold">2</span>
+          <MessageSquare className="w-4 h-4" />
+          Ask your library
+        </button>
+        <ArrowRight className="w-4 h-4 text-slate-600 hidden sm:block" />
+        <button
+          type="button"
+          onClick={() => setStep('assign')}
+          disabled={documents.length === 0}
+          className={cn(
+            'flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-40',
+            step === 'assign' ? 'bg-bee-amber text-bee-black' : 'bg-white/5 text-slate-400 hover:bg-white/10'
+          )}
+        >
+          <span className="w-6 h-6 rounded-full bg-black/20 flex items-center justify-center text-xs font-bold">3</span>
           <Sparkles className="w-4 h-4" />
           Complete assignment
         </button>
@@ -856,12 +917,123 @@ export function HomeworkWorkspace({ variant = 'admin' }: { variant?: HomeworkVar
             <button
               type="button"
               disabled={documents.length === 0}
-              onClick={() => setStep('assign')}
+              onClick={() => setStep('chat')}
               className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
             >
-              Continue to assignment
-              <ArrowRight className="w-4 h-4" />
+              Ask your library
+              <MessageSquare className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'chat' && (
+        <div className="space-y-6">
+          <div className="glass-card p-4 rounded-2xl bg-bee-amber/5 border border-bee-amber/20">
+            <p className="text-slate-300 text-sm">
+              <MessageSquare className="w-4 h-4 inline mr-2 text-bee-amber" />
+              Ask Grok questions about your uploaded material — summaries, definitions, themes, comparisons, and
+              prep for assignments. Answers are grounded in{' '}
+              <strong className="text-white">
+                {documents.length} document{documents.length === 1 ? '' : 's'}
+                {totalPages > 0 ? `, ${totalPages} OCR pages` : ''}, {totalChars.toLocaleString()} characters
+              </strong>
+              .
+            </p>
+          </div>
+
+          <div className="glass-card p-6 rounded-2xl flex flex-col min-h-[520px]">
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-bee-amber" />
+                Chat with your library
+              </h2>
+              {chatMessages.length > 0 && (
+                <button
+                  type="button"
+                  disabled={chatBusy}
+                  onClick={() => setChatMessages([])}
+                  className="text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50"
+                >
+                  Clear chat
+                </button>
+              )}
+            </div>
+
+            <div
+              ref={chatScrollRef}
+              className="flex-1 rounded-xl border border-white/10 bg-black/30 p-4 overflow-y-auto min-h-[320px] max-h-[50vh] mb-4"
+            >
+              {chatMessages.length === 0 ? (
+                <div className="text-center py-12 px-4">
+                  <MessageSquare className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400 text-sm mb-2">Ask anything about your reference material.</p>
+                  <p className="text-slate-500 text-xs">
+                    Try: &ldquo;Summarize chapter 3&rdquo;, &ldquo;What are the key themes?&rdquo;, &ldquo;Define
+                    photosynthesis from my notes&rdquo;
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {chatMessages.map((m, i) => (
+                    <div
+                      key={`${m.role}-${i}`}
+                      className={cn(
+                        'rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed',
+                        m.role === 'user'
+                          ? 'bg-bee-amber/20 text-white ml-8 border border-bee-amber/30'
+                          : 'bg-white/[0.04] text-slate-200 mr-8 border border-white/10'
+                      )}
+                    >
+                      {m.content}
+                    </div>
+                  ))}
+                  {chatBusy && (
+                    <div className="flex items-center gap-2 text-slate-400 text-sm mr-8">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Thinking…
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+              )}
+            </div>
+
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Ask about your uploaded material… (Enter to send, Shift+Enter for newline)"
+              rows={4}
+              disabled={chatBusy || documents.length === 0}
+              className="w-full mb-3 px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-white placeholder:text-slate-500 text-sm resize-y disabled:opacity-50"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void handleSendChat();
+                }
+              }}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-slate-500 text-xs">Each message uses Hive credits (Grok + your RAG context).</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStep('assign')}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm font-medium"
+                >
+                  Complete assignment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSendChat()}
+                  disabled={chatBusy || !chatInput.trim() || documents.length === 0}
+                  className="px-5 py-2.5 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-black font-semibold text-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                  {chatBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
+                  Send
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

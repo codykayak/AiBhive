@@ -38,6 +38,20 @@ type CompleteResponse = {
   chargedUsd?: number;
 };
 
+export type HomeworkChatMessage = {
+  role: 'user' | 'assistant';
+  content: string;
+};
+
+type ChatResponse = {
+  ok: boolean;
+  reply: string;
+  provider: string;
+  model: string;
+  hadRagContext: boolean;
+  chargedUsd?: number;
+};
+
 function parsePaymentError(text: string, status: number): HomeworkPaymentRequiredError | null {
   if (status !== 402) return null;
   try {
@@ -181,6 +195,19 @@ export async function completeHomeworkAssignment(
   return homeworkJson<CompleteResponse>('/api/homework/complete', user, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+export async function sendHomeworkChat(
+  user: User,
+  opts: { message: string; history?: HomeworkChatMessage[] }
+): Promise<ChatResponse> {
+  return homeworkJson<ChatResponse>('/api/homework/chat', user, {
+    method: 'POST',
+    body: JSON.stringify({
+      message: opts.message,
+      history: opts.history ?? [],
+    }),
   });
 }
 
