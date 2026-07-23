@@ -24,12 +24,13 @@ import {
 import {
   PlantCreditsError,
   fetchPlantMedicineBillingStatus,
-  fileToPlantPhotoAttachment,
+  filesToVisionAttachments,
   sendLivingKnowledgeChat,
   sendPlantPhotoIdentify,
   type PlantChatMessage,
   type PlantPhotoAttachment,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import { PLANT_IMAGE_MAX_COUNT } from '../../../lib/oregonPlantMedicine/compressPlantImage';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import {
   HIVE_RESEARCH_LABEL,
@@ -51,6 +52,7 @@ type ChatMsg = {
   contributeSuggested?: boolean;
   source?: 'grok' | 'offline' | 'grok-vision';
   attachmentPreview?: string;
+  attachmentPreviews?: string[];
   candidates?: PlantIdVisual[];
   dangerousLookalikes?: PlantIdVisual[];
   chargedUsd?: number;
@@ -258,7 +260,7 @@ export default function HolisticAskAgent({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [messages, setMessages] = useState<ChatMsg[]>([]);
-  const [attachment, setAttachment] = useState<PlantPhotoAttachment | null>(null);
+  const [attachments, setAttachments] = useState<PlantPhotoAttachment[]>([]);
   const [creditsNeeded, setCreditsNeeded] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [identifyingPhoto, setIdentifyingPhoto] = useState(false);
@@ -326,16 +328,29 @@ export default function HolisticAskAgent({
     onContribute(q || undefined);
   };
 
-  const onPickFile = async (file: File | null) => {
-    if (!file) return;
+  const onPickFiles = async (fileList: FileList | null) => {
+    if (!fileList?.length) return;
+    const remaining = PLANT_IMAGE_MAX_COUNT - attachments.length;
+    if (remaining <= 0) {
+      setError(`You can attach up to ${PLANT_IMAGE_MAX_COUNT} photos per ID request.`);
+      return;
+    }
     try {
-      const att = await fileToPlantPhotoAttachment(file, { forVision: true });
-      setAttachment(att);
+      const batch = await filesToVisionAttachments(Array.from(fileList).slice(0, remaining));
+      if (!batch.length) {
+        setError('Please choose image files (JPEG, PNG, or HEIC).');
+        return;
+      }
+      setAttachments((prev) => [...prev, ...batch]);
       setError('');
       setCreditsNeeded(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not read photo');
+      setError(err instanceof Error ? err.message : 'Could not read photos');
     }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const addCredits = async () => {
@@ -353,10 +368,10 @@ export default function HolisticAskAgent({
   const send = useCallback(
     async (raw: string) => {
       const trimmed = raw.trim();
-      const pendingPhoto = attachment;
-      if ((!trimmed && !pendingPhoto) || busy) return;
+      const pendingPhotos = attachments;
+      if ((!trimmed && !pendingPhotos.length) || busy) return;
 
-      if (pendingPhoto && !user) {
+      if (pendingPhotos.length && !user) {
         onSignIn?.();
         setError('Sign in to use paid photo plant ID (Bhive Credits).');
         return;
@@ -365,8 +380,16 @@ export default function HolisticAskAgent({
       const userMsg: ChatMsg = {
         id: uid(),
         role: 'user',
-        content: trimmed || (pendingPhoto ? 'Identify this plant from my photo.' : ''),
-        attachmentPreview: pendingPhoto?.previewUrl,
+        content:
+          trimmed ||
+          (pendingPhotos.length > 1
+            ? `Identify this plant or mushroom from my ${pendingPhotos.length} field photos.`
+            : 'Identify this plant from my photo.'),
+        attachmentPreview: pendingPhotos.length === 1 ? pendingPhotos[0]?.previewUrl : undefined,
+        attachmentPreviews:
+          pendingPhotos.length > 1
+            ? pendingPhotos.map((p) => p.previewUrl).filter((u): u is string => !!u)
+            : undefined,
       };
       const next = [...messages, userMsg];
       setMessages(next);
@@ -375,7 +398,7 @@ export default function HolisticAskAgent({
       setBusy(true);
       setError('');
       setCreditsNeeded(false);
-      setAttachment(null);
+      setAttachments([]);
 
       const priorUser = next.filter((m) => m.role === 'user').map((m) => m.content);
       const blendedQuery = priorUser.slice(-4).join(' ');
@@ -384,17 +407,20 @@ export default function HolisticAskAgent({
         retrieval.length > 0 ? retrieval : suggestLivingKnowledgeTerms(blendedQuery, scope, 5);
       const online = typeof navigator === 'undefined' ? true : navigator.onLine;
 
-      // Paid photo plant ID (Diagnose-style vision)
-      if (pendingPhoto && user) {
+      // Paid photo plant ID (Diagnose-style vision, multi-angle)
+      if (pendingPhotos.length && user) {
         setIdentifyingPhoto(true);
         try {
           const context = buildLivingKnowledgeContextBlocks(blendedHits);
           const result = await sendPlantPhotoIdentify(user, {
             message:
               trimmed ||
-              'Identify this plant or mushroom from the photo. Rank confidence and list dangerous look-alikes.',
+              (pendingPhotos.length > 1
+                ? `Identify this plant or mushroom from all ${pendingPhotos.length} photos. Cross-reference traits across angles, rank confidence, and list dangerous look-alikes.`
+                : 'Identify this plant or mushroom from the photo. Rank confidence and list dangerous look-alikes.'),
             context,
-            attachment: pendingPhoto,
+            attachment: pendingPhotos.length === 1 ? pendingPhotos[0] : undefined,
+            attachments: pendingPhotos.length > 1 ? pendingPhotos : undefined,
           });
           const visuals = enrichPlantPhotoIdResult({
             candidates: result.candidates,
@@ -490,7 +516,7 @@ export default function HolisticAskAgent({
       ]);
       setBusy(false);
     },
-    [attachment, busy, messages, onSignIn, scope, user],
+    [attachments, busy, messages, onSignIn, scope, user],
   );
 
   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
@@ -533,6 +559,13 @@ export default function HolisticAskAgent({
                     ? ` · $${msg.chargedUsd.toFixed(3)} credits`
                     : ''}
                 </p>
+              ) : null}
+              {msg.attachmentPreviews && msg.attachmentPreviews.length > 0 ? (
+                <div className="mb-2 grid grid-cols-3 gap-1">
+                  {msg.attachmentPreviews.map((src) => (
+                    <img key={src} src={src} alt="Attached plant" className="h-16 rounded-lg border border-white/10 object-cover" />
+                  ))}
+                </div>
               ) : null}
               {msg.attachmentPreview ? (
                 <img
@@ -639,25 +672,42 @@ export default function HolisticAskAgent({
         </div>
       ) : null}
 
-      {attachment ? (
-        <div className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-2">
-          <img src={attachment.previewUrl} alt="Pending plant photo" className="h-14 w-14 rounded-lg object-cover" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white">Photo ready for ID</p>
-            <p className="text-[10px] text-amber-200/90">
+      {attachments.length > 0 ? (
+        <div className="rounded-xl border border-slate-700 bg-slate-900/80 p-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-bold text-white">
+              {attachments.length} photo{attachments.length === 1 ? '' : 's'} ready for ID
+            </p>
+            <p className="text-[10px] text-amber-200/90 text-right">
               {photoIdFreeForUser
-                ? `Admin account — ${HIVE_RESEARCH_LABEL} photo ID at no charge`
-                : `Paid ${HIVE_RESEARCH_LABEL} photo ID · returns confidence + dangerous look-alikes`}
+                ? `Admin — ${HIVE_RESEARCH_LABEL} analyzes all angles`
+                : `${HIVE_RESEARCH_LABEL} cross-references every photo`}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setAttachment(null)}
-            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-white/5"
-            aria-label="Remove photo"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+            {attachments.map((att, index) => (
+              <div key={`${att.previewUrl || index}`} className="relative">
+                <img
+                  src={att.previewUrl}
+                  alt={`Plant photo ${index + 1}`}
+                  className="h-14 w-full rounded-lg object-cover border border-white/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAttachment(index)}
+                  className="absolute -top-1 -right-1 p-0.5 rounded-full bg-black/70 text-white hover:bg-black"
+                  aria-label={`Remove photo ${index + 1}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {attachments.length < PLANT_IMAGE_MAX_COUNT ? (
+            <p className="text-[10px] text-slate-500">
+              Add up to {PLANT_IMAGE_MAX_COUNT} angles — cap, gills, stem, habitat, bruising, scale.
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -683,7 +733,7 @@ export default function HolisticAskAgent({
             if (e.key === 'Escape') setOpenSuggest(false);
           }}
           placeholder={
-            attachment
+            attachments.length > 0
               ? 'Optional note about the plant (habitat, region)…'
               : messages.length > 0 && lastAssistant && looksLikeLivingKnowledgeClarifier(lastAssistant.content)
                 ? 'Reply to Hive Research follow-up…'
@@ -721,7 +771,7 @@ export default function HolisticAskAgent({
           <button
             type="button"
             onClick={() => void send(query)}
-            disabled={busy || (!query.trim() && !attachment)}
+            disabled={busy || (!query.trim() && !attachments.length)}
             className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white disabled:opacity-50 ${theme.button}`}
           >
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
@@ -732,9 +782,9 @@ export default function HolisticAskAgent({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/*" multiple
           className="hidden"
-          onChange={(e) => void onPickFile(e.target.files?.[0] || null)}
+          onChange={(e) => void onPickFiles(e.target.files)}
         />
         <input
           ref={cameraRef}
@@ -742,10 +792,10 @@ export default function HolisticAskAgent({
           accept="image/*"
           capture="environment"
           className="hidden"
-          onChange={(e) => void onPickFile(e.target.files?.[0] || null)}
+          onChange={(e) => void onPickFiles(e.target.files)}
         />
 
-        {openSuggest && suggestions.length > 0 && messages.length === 0 && !attachment ? (
+        {openSuggest && suggestions.length > 0 && messages.length === 0 && !attachments.length ? (
           <ul
             id={listId}
             role="listbox"

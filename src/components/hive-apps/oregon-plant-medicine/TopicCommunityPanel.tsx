@@ -1,12 +1,14 @@
 import type { User } from 'firebase/auth';
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Loader2, ThumbsUp, Trash2, User as UserIcon } from 'lucide-react';
+import { PLANT_IMAGE_MAX_COUNT } from '../../../lib/oregonPlantMedicine/compressPlantImage';
 import {
   createTopicPost,
   deletePlantPost,
   fetchTopicPosts,
+  postImageUrls,
   togglePostUpvote,
-  uploadPlantImage,
+  uploadPlantImages,
   type PlantMedicinePost,
   type TopicLibraryId,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
@@ -82,17 +84,33 @@ export default function TopicCommunityPanel({
     }
   };
 
-  const onPhotoPick = async (file: File | null) => {
-    if (!file || !user) {
+  const onPhotoPick = async (files: FileList | null) => {
+    if (!files?.length || !user) {
       if (!user) onSignIn();
+      return;
+    }
+    const batch = Array.from(files)
+      .filter((f) => f.type.startsWith('image/'))
+      .slice(0, PLANT_IMAGE_MAX_COUNT);
+    if (!batch.length) {
+      setError('Please choose image files (JPEG, PNG, or HEIC).');
       return;
     }
     setPhotoPending(true);
     setError('');
     try {
-      const url = await uploadPlantImage(user, file, 'photo');
-      await createTopicPost(user, library, topicId, { type: 'photo', text: '', imageUrl: url });
-      alert('Photo submitted — it will appear after review.');
+      const imageUrls = await uploadPlantImages(user, batch, 'photo');
+      await createTopicPost(user, library, topicId, {
+        type: 'photo',
+        text: '',
+        imageUrls,
+        imageUrl: imageUrls[0],
+      });
+      alert(
+        batch.length > 1
+          ? `${batch.length} photos submitted — they will appear after review.`
+          : 'Photo submitted — it will appear after review.',
+      );
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Photo upload failed');
@@ -157,12 +175,23 @@ export default function TopicCommunityPanel({
           <p className="text-xs text-slate-500 mb-2">No community images yet.</p>
         ) : (
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {photos.map((post) => (
-              <div key={post.id} className="rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
-                {post.imageUrl ? (
-                  <img src={post.imageUrl} alt="Community contribution" className="w-full h-28 object-cover" />
-                ) : null}
-                <div className="p-2 flex items-center justify-between gap-1">
+            {photos.map((post) => {
+              const imgs = postImageUrls(post);
+              return (
+                <div key={post.id} className="rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
+                  {imgs.length > 0 ? (
+                    <div className={`grid gap-0.5 bg-black/40 ${imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                      {imgs.slice(0, 4).map((src) => (
+                        <img
+                          key={src}
+                          src={src}
+                          alt="Community contribution"
+                          className="w-full h-28 object-cover"
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  <div className="p-2 flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Avatar url={post.authorAvatarUrl} name={post.authorDisplayName} />
                     <span className="text-[10px] text-slate-400 truncate">{post.authorDisplayName}</span>
@@ -179,7 +208,8 @@ export default function TopicCommunityPanel({
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {user ? (
@@ -187,11 +217,14 @@ export default function TopicCommunityPanel({
             <input
               type="file"
               accept="image/*"
+              multiple
               className="sr-only"
               disabled={photoPending}
-              onChange={(e) => void onPhotoPick(e.target.files?.[0] ?? null)}
+              onChange={(e) => void onPhotoPick(e.target.files)}
             />
-            {photoPending ? 'Uploading…' : '+ Add reference photo (reviewed before publish)'}
+            {photoPending
+              ? 'Uploading…'
+              : `+ Add reference photos (up to ${PLANT_IMAGE_MAX_COUNT}, reviewed before publish)`}
           </label>
         ) : (
           <button type="button" onClick={onSignIn} className={`text-xs font-bold ${accentClass} hover:underline`}>

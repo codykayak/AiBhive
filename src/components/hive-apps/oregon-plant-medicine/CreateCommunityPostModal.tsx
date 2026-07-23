@@ -8,11 +8,12 @@ import { videoFrameForEnrichment } from '../../../lib/oregonPlantMedicine/plantM
 import {
   createFeedPost,
   enrichCommunityPost,
+  filesToVisionAttachments,
   uploadPlantImages,
   uploadPlantVideo,
   type CommunityPostEnrichment,
+  type VisionAttachment,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
-import { compressPlantImageFile } from '../../../lib/oregonPlantMedicine/compressPlantImage';
 
 export type CommunityPostPrefill = {
   title?: string;
@@ -117,16 +118,15 @@ export default function CreateCommunityPostModal({
     setEnrichmentPreview(null);
   };
 
-  const buildVisionAttachment = async (): Promise<{ base64: string; mimeType: string } | undefined> => {
-    if (photos[0]) {
-      const compressed = await compressPlantImageFile(photos[0].file, { forVision: true });
-      return { base64: compressed.base64, mimeType: compressed.mimeType };
+  const buildVisionAttachments = async (): Promise<VisionAttachment[]> => {
+    if (photos.length > 0) {
+      return filesToVisionAttachments(photos.map((p) => p.file));
     }
     if (video) {
       const frame = await videoFrameForEnrichment(video.file);
-      if (frame) return frame;
+      if (frame) return [frame];
     }
-    return undefined;
+    return [];
   };
 
   const runResearch = async (): Promise<CommunityPostEnrichment | null> => {
@@ -137,13 +137,14 @@ export default function CreateCommunityPostModal({
     setEnriching(true);
     setError('');
     try {
-      const attachment = await buildVisionAttachment();
+      const visionAttachments = await buildVisionAttachments();
       const result = await enrichCommunityPost(user, {
         title: title.trim(),
         text: text.trim(),
         plantId: plantId || undefined,
         feedCategory: feedCategory || undefined,
-        attachment,
+        attachment: visionAttachments.length === 1 ? visionAttachments[0] : undefined,
+        attachments: visionAttachments.length > 1 ? visionAttachments : undefined,
       });
       setEnrichmentPreview(result);
       if (result.suggestedTitle && !title.trim()) setTitle(result.suggestedTitle);
@@ -376,8 +377,9 @@ export default function CreateCommunityPostModal({
                 Add {HIVE_RESEARCH_LABEL}
               </span>
               <span className="block mt-1 text-violet-200/70">
-                When you publish, {HIVE_RESEARCH_LABEL} ({HIVE_RESEARCH_POWERED_BY}) can add ID tags, habitat notes,
-                and safety warnings from your photo or video frame. Uses a small Bhive Credits charge.
+                When you publish, {HIVE_RESEARCH_LABEL} ({HIVE_RESEARCH_POWERED_BY}) analyzes{' '}
+                <strong className="text-violet-100">all attached photos together</strong> (up to {PLANT_IMAGE_MAX_COUNT})
+                for ID tags, habitat notes, and safety warnings. Uses a small Bhive Credits charge.
               </span>
             </span>
           </label>

@@ -13,7 +13,7 @@ import {
   resolveLatestGrokModels,
 } from './grokModelResolver.js';
 import { DIAGNOSE_GROK_VISION_RAW } from './diagnoseBilling.js';
-import { buildGrokUserContent } from './prosGrokMessage.js';
+import { buildGrokUserContent, MAX_VISION_ATTACHMENTS } from './prosGrokMessage.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FEATURE_ID = 'plant_medicine_chat';
@@ -23,6 +23,25 @@ const PLANT_CHAT_RAW_COST = 0.006;
 const PLANT_VISION_RAW_COST = Number(process.env.PLANT_MEDICINE_VISION_RAW_COST ?? DIAGNOSE_GROK_VISION_RAW);
 /** Ask AiBhive uses Hive credits — only paid feature besides adding states. */
 const PLANT_CHAT_FREE = false;
+
+function collectVisionAttachments(opts) {
+  const list = [];
+  if (opts.attachment?.base64) list.push(opts.attachment);
+  if (Array.isArray(opts.attachments)) list.push(...opts.attachments);
+  return list
+    .filter((a) => a?.base64)
+    .slice(0, MAX_VISION_ATTACHMENTS)
+    .map((a) => ({
+      base64: String(a.base64).replace(/^data:[^;]+;base64,/, ''),
+      mimeType: String(a.mimeType || 'image/jpeg').toLowerCase().includes('png') ? 'image/png' : 'image/jpeg',
+    }))
+    .filter((a) => a.base64.length >= 80 && a.base64.length <= 2_200_000);
+}
+
+function visionRawCostForCount(imageCount) {
+  const n = Math.max(1, Math.min(MAX_VISION_ATTACHMENTS, imageCount || 1));
+  return PLANT_VISION_RAW_COST * (1 + 0.18 * (n - 1));
+}
 
 let ragIndex = null;
 
@@ -288,7 +307,9 @@ You identify wild plants and mushrooms from user photos for educational foraging
 
 RULES:
 - Prefer matches from the Living Knowledge plant catalog provided below when morphology fits.
-- Be honest about uncertainty. Never claim 100% ID from a single photo unless diagnostic features are unmistakable.
+- When MULTIPLE photos are attached, treat them as one field investigation: cross-reference cap, gills, stem, habitat, bruising, latex, bark, flowers, fruit, spore color, scale objects, and growth habit ACROSS images before assigning confidence.
+- Note which photo(s) support each diagnostic trait. If images appear to show different organisms, say so and lower confidence.
+- Be honest about uncertainty. Never claim 100% ID from photos alone unless diagnostic features are unmistakable across angles.
 - ALWAYS list dangerous / toxic look-alikes for any edible candidate — this is critical.
 - Never encourage eating anything without 100% in-person confirmation. Never give cultivation steps for controlled substances.
 - Educational only — not medical advice.
@@ -415,21 +436,17 @@ function buildPhotoIdCatalogContext(limit = 80) {
  * Returns readable reply + structured candidates / dangerous lookalikes matched to library IDs.
  */
 export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
-  const message = String(opts.message || 'Identify this plant from the photo.').trim().slice(0, 2000);
-  const attachment = opts.attachment;
+  const message = String(opts.message || 'Identify this plant from the photo(s).').trim().slice(0, 2000);
   const context = String(opts.context || '').trim().slice(0, 8000);
-  if (!attachment?.base64) return { ok: false, error: 'Photo attachment is required.' };
-
-  const base64 = String(attachment.base64).replace(/^data:[^;]+;base64,/, '');
-  if (base64.length < 80) return { ok: false, error: 'Photo data looks empty.' };
-  if (base64.length > 7_500_000) return { ok: false, error: 'Photo too large — try a smaller image.' };
+  const visionImages = collectVisionAttachments(opts);
+  if (!visionImages.length) return { ok: false, error: 'At least one photo is required.' };
 
   const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
   if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
 
   await ensureHiveUser(db, hiveUserId);
 
-  const rawCost = PLANT_VISION_RAW_COST;
+  const rawCost = visionRawCostForCount(visionImages.length);
   const { markedUsd: markedEstimate } = await hiveUsage.markCostForUser(db, hiveUserId, rawCost);
   const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, VISION_FEATURE_ID, {
     email: opts.email,
@@ -452,20 +469,23 @@ export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
     getCachedGrokVisionModel();
 
   const catalog = buildPhotoIdCatalogContext(50);
+  const multiNote =
+    visionImages.length > 1
+      ? `\nThe user attached ${visionImages.length} photos — synthesize evidence from every angle before ranking candidates.\n`
+      : '';
   const system = [
     PLANT_PHOTO_ID_SYSTEM,
+    multiNote,
     '\n--- LIVING KNOWLEDGE PLANT CATALOG (prefer these IDs when they fit) ---\n',
     catalog,
     context ? `\n--- EXTRA CLIENT RAG CONTEXT ---\n${context.slice(0, 4000)}` : '',
   ].join('');
 
-  const rawMime = String(attachment.mimeType || 'image/jpeg').toLowerCase();
-  const visionMime = rawMime.includes('png') ? 'image/png' : 'image/jpeg';
-
-  const userContent = buildGrokUserContent(message, {
-    base64,
-    mimeType: visionMime,
-  });
+  const userContent = buildGrokUserContent(
+    message,
+    visionImages.length === 1 ? { base64: visionImages[0].base64, mimeType: visionImages[0].mimeType } : null,
+    visionImages.length > 1 ? visionImages : null,
+  );
 
   let reply;
   try {
@@ -562,7 +582,9 @@ export async function runPlantPhotoIdentify(db, hiveUserId, opts) {
 }
 
 const POST_ENRICH_SYSTEM = `You enrich community foraging posts for AiBhive Living Knowledge.
-Given a draft title, caption, optional linked plant from our library, and optionally a photo frame, add helpful educational context.
+Given a draft title, caption, optional linked plant from our library, and up to ${MAX_VISION_ATTACHMENTS} field photos, add helpful educational context.
+
+When multiple photos are attached, cross-reference all of them — different angles, habitat, bruising, gills, bark, flowers, or scale references may appear in different shots.
 
 Return your answer as JSON wrapped exactly like this:
 <<<POST_ENRICH_JSON>>>
@@ -600,9 +622,9 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
   const text = String(opts.text || '').trim().slice(0, 2000);
   const plantId = String(opts.plantId || '').trim();
   const feedCategory = String(opts.feedCategory || '').trim();
-  const attachment = opts.attachment;
+  const visionImages = collectVisionAttachments(opts);
 
-  if (!title && !text && !attachment?.base64) {
+  if (!title && !text && !visionImages.length) {
     return { ok: false, error: 'Add a title, caption, or photo for Hive Research.' };
   }
 
@@ -611,9 +633,10 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
 
   await ensureHiveUser(db, hiveUserId);
 
-  const rawCost = PLANT_CHAT_RAW_COST;
+  const hasVision = visionImages.length > 0;
+  const rawCost = hasVision ? visionRawCostForCount(visionImages.length) : PLANT_CHAT_RAW_COST;
   const { markedUsd: markedEstimate } = await hiveUsage.markCostForUser(db, hiveUserId, rawCost);
-  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, FEATURE_ID, {
+  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, hasVision ? VISION_FEATURE_ID : FEATURE_ID, {
     email: opts.email,
   });
   if (!budget.ok) {
@@ -627,7 +650,6 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
   }
 
   await resolveLatestGrokModels();
-  const hasVision = !!attachment?.base64;
   const model = hasVision
     ? process.env.PLANT_MEDICINE_VISION_MODEL ||
       process.env.GROK_DIAGNOSE_VISION_MODEL ||
@@ -650,19 +672,22 @@ export async function runCommunityPostEnrich(db, hiveUserId, opts) {
   const userMessage = [
     `Draft title: ${title || '(none)'}`,
     `Draft caption: ${text || '(none)'}`,
-    attachment?.base64
-      ? 'A photo or video frame is attached — use it for identification tags and safety notes.'
-      : '',
+    visionImages.length === 1
+      ? 'One field photo is attached — use it for identification tags and safety notes.'
+      : visionImages.length > 1
+        ? `${visionImages.length} field photos are attached — synthesize traits from ALL images before tagging or suggesting plant IDs.`
+        : '',
   ]
     .filter(Boolean)
     .join('\n');
 
   let userContent;
   if (hasVision) {
-    const base64 = String(attachment.base64).replace(/^data:[^;]+;base64,/, '');
-    const rawMime = String(attachment.mimeType || 'image/jpeg').toLowerCase();
-    const visionMime = rawMime.includes('png') ? 'image/png' : 'image/jpeg';
-    userContent = buildGrokUserContent(userMessage, { base64, mimeType: visionMime });
+    userContent = buildGrokUserContent(
+      userMessage,
+      visionImages.length === 1 ? { base64: visionImages[0].base64, mimeType: visionImages[0].mimeType } : null,
+      visionImages.length > 1 ? visionImages : null,
+    );
   } else {
     userContent = userMessage;
   }

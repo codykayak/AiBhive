@@ -1,12 +1,14 @@
 import type { User } from 'firebase/auth';
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Loader2, ThumbsUp, Trash2, User as UserIcon } from 'lucide-react';
+import { PLANT_IMAGE_MAX_COUNT } from '../../../lib/oregonPlantMedicine/compressPlantImage';
 import {
   createPlantPost,
   deletePlantPost,
   fetchPlantPosts,
+  postImageUrls,
   togglePostUpvote,
-  uploadPlantImage,
+  uploadPlantImages,
   type PlantMedicinePost,
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import UserAvatar from './UserAvatar';
@@ -73,22 +75,34 @@ export default function PlantCommunityPanel({ plantId, user, onSignIn }: Props) 
     }
   };
 
-  const onPhotoPick = async (file: File | null) => {
-    if (!file || !user) {
+  const onPhotoPick = async (files: FileList | null) => {
+    if (!files?.length || !user) {
       if (!user) onSignIn();
+      return;
+    }
+    const batch = Array.from(files)
+      .filter((f) => f.type.startsWith('image/'))
+      .slice(0, PLANT_IMAGE_MAX_COUNT);
+    if (!batch.length) {
+      setError('Please choose image files (JPEG, PNG, or HEIC).');
       return;
     }
     setPhotoPending(true);
     setError('');
     try {
-      const url = await uploadPlantImage(user, file, 'photo');
+      const imageUrls = await uploadPlantImages(user, batch, 'photo');
       await createPlantPost(user, plantId, {
         type: 'photo',
         text: '',
-        imageUrl: url,
+        imageUrls,
+        imageUrl: imageUrls[0],
       });
       setError('');
-      alert('Photo submitted — it will appear after review.');
+      alert(
+        batch.length > 1
+          ? `${batch.length} photos submitted — they will appear after review.`
+          : 'Photo submitted — it will appear after review.',
+      );
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Photo upload failed');
@@ -153,10 +167,16 @@ export default function PlantCommunityPanel({ plantId, user, onSignIn }: Props) 
           <p className="text-xs text-slate-500 mb-2">No community photos yet.</p>
         ) : (
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {photos.map((post) => (
+            {photos.map((post) => {
+              const imgs = postImageUrls(post);
+              return (
               <div key={post.id} className="rounded-lg overflow-hidden border border-slate-700 bg-slate-950">
-                {post.imageUrl ? (
-                  <img src={post.imageUrl} alt="Community ID" className="w-full h-28 object-cover" />
+                {imgs.length > 0 ? (
+                  <div className={`grid gap-0.5 bg-black/40 ${imgs.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {imgs.slice(0, 4).map((src) => (
+                      <img key={src} src={src} alt="Community ID" className="w-full h-28 object-cover" />
+                    ))}
+                  </div>
                 ) : null}
                 <div className="p-2 flex items-center justify-between gap-1">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -175,7 +195,8 @@ export default function PlantCommunityPanel({ plantId, user, onSignIn }: Props) 
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {user ? (
@@ -183,11 +204,14 @@ export default function PlantCommunityPanel({ plantId, user, onSignIn }: Props) 
             <input
               type="file"
               accept="image/*"
+              multiple
               className="sr-only"
               disabled={photoPending}
-              onChange={(e) => void onPhotoPick(e.target.files?.[0] ?? null)}
+              onChange={(e) => void onPhotoPick(e.target.files)}
             />
-            {photoPending ? 'Uploading…' : '+ Add ID photo (reviewed before publish)'}
+            {photoPending
+              ? 'Uploading…'
+              : `+ Add ID photos (up to ${PLANT_IMAGE_MAX_COUNT}, reviewed before publish)`}
           </label>
         ) : (
           <button type="button" onClick={onSignIn} className="text-xs font-bold text-emerald-400 hover:underline">

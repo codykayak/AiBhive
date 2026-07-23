@@ -1,7 +1,7 @@
 import type { User } from 'firebase/auth';
 import { adminFetch, adminJson } from '../adminApi';
 import { HIVE_RESEARCH_LABEL } from './branding';
-import { compressPlantImageFile } from './compressPlantImage';
+import { compressPlantImageFile, PLANT_IMAGE_MAX_COUNT, type CompressedPlantImage } from './compressPlantImage';
 
 export type PlantMedicineProfile = {
   uid: string;
@@ -141,7 +141,7 @@ export async function fetchPlantPosts(
 export function createPlantPost(
   user: User,
   plantId: string,
-  body: { type: 'comment' | 'photo'; title?: string; text?: string; imageUrl?: string },
+  body: { type: 'comment' | 'photo'; title?: string; text?: string; imageUrl?: string; imageUrls?: string[] },
 ): Promise<PlantMedicinePost> {
   return adminJson(`/api/plant-medicine/plants/${encodeURIComponent(plantId)}/posts`, user, {
     method: 'POST',
@@ -186,7 +186,8 @@ export async function enrichCommunityPost(
     text?: string;
     plantId?: string;
     feedCategory?: 'plants' | 'edibles';
-    attachment?: { base64: string; mimeType: string };
+    attachment?: VisionAttachment;
+    attachments?: VisionAttachment[];
   },
 ): Promise<CommunityPostEnrichment> {
   const token = await user.getIdToken();
@@ -245,7 +246,7 @@ export function createTopicPost(
   user: User,
   library: TopicLibraryId,
   topicId: string,
-  body: { type: 'comment' | 'photo'; text?: string; imageUrl?: string },
+  body: { type: 'comment' | 'photo'; text?: string; imageUrl?: string; imageUrls?: string[] },
 ): Promise<PlantMedicinePost> {
   return adminJson(
     `/api/plant-medicine/libraries/${encodeURIComponent(library)}/topics/${encodeURIComponent(topicId)}/posts`,
@@ -482,11 +483,27 @@ export type PlantPhotoIdCandidate = {
   uses?: string | null;
 };
 
-export type PlantPhotoAttachment = {
+export type VisionAttachment = {
   base64: string;
   mimeType: string;
   previewUrl?: string;
 };
+
+export type PlantPhotoAttachment = VisionAttachment;
+
+/** Compress up to PLANT_IMAGE_MAX_COUNT images for Hive Research / photo ID vision. */
+export async function filesToVisionAttachments(files: File[]): Promise<VisionAttachment[]> {
+  const batch = files.filter((f) => f.type.startsWith('image/')).slice(0, PLANT_IMAGE_MAX_COUNT);
+  const multiPhoto = batch.length > 1;
+  const results = await Promise.all(
+    batch.map((file) => compressPlantImageFile(file, { forVision: true, multiPhoto })),
+  );
+  return results.map((r) => ({
+    base64: r.base64,
+    mimeType: r.mimeType,
+    previewUrl: r.previewUrl,
+  }));
+}
 
 /** Paid Bhive Credits photo plant ID — Hive credits required. */
 export async function sendPlantPhotoIdentify(
@@ -494,7 +511,8 @@ export async function sendPlantPhotoIdentify(
   opts: {
     message?: string;
     context?: string;
-    attachment: PlantPhotoAttachment;
+    attachment?: PlantPhotoAttachment;
+    attachments?: PlantPhotoAttachment[];
   },
 ): Promise<{
   reply: string;
@@ -512,12 +530,18 @@ export async function sendPlantPhotoIdentify(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      message: opts.message || 'Identify this plant from the photo. Include dangerous look-alikes.',
+      message: opts.message || 'Identify this plant from the photo(s). Include dangerous look-alikes.',
       context: opts.context || '',
-      attachment: {
-        base64: opts.attachment.base64,
-        mimeType: opts.attachment.mimeType || 'image/jpeg',
-      },
+      attachment: opts.attachment
+        ? {
+            base64: opts.attachment.base64,
+            mimeType: opts.attachment.mimeType || 'image/jpeg',
+          }
+        : undefined,
+      attachments: opts.attachments?.map((a) => ({
+        base64: a.base64,
+        mimeType: a.mimeType || 'image/jpeg',
+      })),
     }),
   });
   const data = (await res.json()) as {

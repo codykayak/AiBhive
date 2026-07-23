@@ -263,13 +263,18 @@ export async function listCommunityFeed(db, { viewerUid, gcsBucket, limit = 50 }
 export async function createPost(
   db,
   FieldValue,
-  { plantId, author, type, title, text, imageUrl },
+  { plantId, author, type, title, text, imageUrl, imageUrls },
   gcsBucket = null,
 ) {
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const status = type === 'comment' ? 'approved' : 'pending';
   const ref = db.collection(POSTS).doc();
   const now = new Date();
+  const urls = Array.isArray(imageUrls)
+    ? imageUrls.filter(Boolean).slice(0, 6)
+    : imageUrl
+      ? [imageUrl]
+      : [];
   const payload = {
     plantId,
     authorUid: author.uid,
@@ -278,7 +283,8 @@ export async function createPost(
     type,
     title: title ? clip(title, 120) : null,
     text: clip(text, type === 'comment' ? 2000 : 500),
-    imageUrl: imageUrl || null,
+    imageUrl: urls[0] || null,
+    imageUrls: urls,
     status,
     upvoteCount: 0,
     createdAt: now,
@@ -299,7 +305,7 @@ export async function createFeedPost(
 
   const profile = (await getProfile(db, author.uid, gcsBucket)) || {};
   const urls = Array.isArray(imageUrls)
-    ? imageUrls.filter(Boolean).slice(0, 5)
+    ? imageUrls.filter(Boolean).slice(0, 6)
     : imageUrl
       ? [imageUrl]
       : [];
@@ -334,7 +340,7 @@ export async function createFeedPost(
 export async function createTopicPost(
   db,
   FieldValue,
-  { library, topicId, author, type, text, imageUrl },
+  { library, topicId, author, type, text, imageUrl, imageUrls },
   gcsBucket = null,
 ) {
   if (!TOPIC_LIBRARIES.has(library)) throw new Error('Invalid library');
@@ -344,6 +350,11 @@ export async function createTopicPost(
   const status = type === 'comment' ? 'approved' : 'pending';
   const ref = db.collection(POSTS).doc();
   const now = new Date();
+  const urls = Array.isArray(imageUrls)
+    ? imageUrls.filter(Boolean).slice(0, 6)
+    : imageUrl
+      ? [imageUrl]
+      : [];
   const payload = {
     library,
     topicId,
@@ -352,7 +363,8 @@ export async function createTopicPost(
     authorAvatarUrl: profile.avatarUrl || null,
     type,
     text: clip(text, type === 'comment' ? 2000 : 500),
-    imageUrl: imageUrl || null,
+    imageUrl: urls[0] || null,
+    imageUrls: urls,
     status,
     upvoteCount: 0,
     createdAt: now,

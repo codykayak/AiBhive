@@ -7,8 +7,8 @@ const JPEG_QUALITY = 0.85;
 const MAX_BYTES = 1_500_000;
 /** Tighter cap for Bhive Credits photo ID (jpg/png only, faster upload). */
 const VISION_MAX_BYTES = 900_000;
-const VISION_MAX_WIDTH = 1536;
-const VISION_MAX_HEIGHT = 1536;
+/** Tighter cap per image when sending multiple photos to vision (up to 6). */
+const VISION_MAX_BYTES_MULTI = 520_000;
 
 export type CompressedPlantImage = {
   file: File;
@@ -77,10 +77,11 @@ async function blobToBase64(blob: Blob): Promise<string> {
  */
 export async function compressPlantImageFile(
   file: File,
-  opts?: { forVision?: boolean },
+  opts?: { forVision?: boolean; multiPhoto?: boolean },
 ): Promise<CompressedPlantImage> {
   const forVision = opts?.forVision === true;
-  const maxBytes = forVision ? VISION_MAX_BYTES : MAX_BYTES;
+  const multiPhoto = opts?.multiPhoto === true;
+  const maxBytes = forVision ? (multiPhoto ? VISION_MAX_BYTES_MULTI : VISION_MAX_BYTES) : MAX_BYTES;
   const maxW = forVision ? VISION_MAX_WIDTH : MAX_WIDTH;
   const maxH = forVision ? VISION_MAX_HEIGHT : MAX_HEIGHT;
 
@@ -123,7 +124,7 @@ export async function compressPlantImageFile(
   };
 }
 
-export const PLANT_IMAGE_MAX_COUNT = 5;
+export const PLANT_IMAGE_MAX_COUNT = 6;
 
 export function formatPlantImageSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
