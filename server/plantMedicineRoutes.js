@@ -149,13 +149,13 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     }
   });
 
-  app.post('/api/plant-medicine/feed/enrich', async (req, res) => {
+  app.post('/api/plant-medicine/feed/enrich', express.json({ limit: '12mb' }), async (req, res) => {
     try {
       const user = await requireAuth(req, res);
       if (!user) return;
       const hiveUserId = resolvePlantHiveUserId(user.uid);
       await ensureHiveUser(db, hiveUserId);
-      const { title, text, plantId, feedCategory, attachment } = req.body || {};
+      const { title, text, plantId, feedCategory, attachment, attachments } = req.body || {};
       if (plantId && !PLANT_ID_RE.test(String(plantId))) {
         return res.status(400).json({ error: 'Invalid plant id' });
       }
@@ -165,6 +165,7 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
         plantId,
         feedCategory,
         attachment,
+        attachments,
         email: user.email,
       });
       if (!result.ok) {
@@ -239,22 +240,24 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       if (!PLANT_ID_RE.test(plantId)) {
         return res.status(400).json({ error: 'Invalid plant id' });
       }
-      const { type, text, imageUrl } = req.body || {};
+      const { type, text, imageUrl, imageUrls } = req.body || {};
       if (type !== 'comment' && type !== 'photo') {
         return res.status(400).json({ error: 'type must be comment or photo' });
       }
       if (type === 'comment' && !String(text || '').trim()) {
         return res.status(400).json({ error: 'Comment text required' });
       }
-      if (type === 'photo' && !imageUrl) {
-        return res.status(400).json({ error: 'imageUrl required for photo posts' });
+      const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : imageUrl ? [imageUrl] : [];
+      if (type === 'photo' && urls.length === 0) {
+        return res.status(400).json({ error: 'imageUrl or imageUrls required for photo posts' });
       }
       const post = await createPost(db, FieldValue, {
         plantId,
         author: user,
         type,
         text,
-        imageUrl,
+        imageUrl: urls[0],
+        imageUrls: urls,
       }, gcsBucket);
       return res.status(201).json({ post });
     } catch (err) {
@@ -295,20 +298,21 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
       if (!TOPIC_ID_RE.test(topicId)) {
         return res.status(400).json({ error: 'Invalid topic id' });
       }
-      const { type, text, imageUrl } = req.body || {};
+      const { type, text, imageUrl, imageUrls } = req.body || {};
       if (type !== 'comment' && type !== 'photo') {
         return res.status(400).json({ error: 'type must be comment or photo' });
       }
       if (type === 'comment' && !String(text || '').trim()) {
         return res.status(400).json({ error: 'Comment text required' });
       }
-      if (type === 'photo' && !imageUrl) {
-        return res.status(400).json({ error: 'imageUrl required for photo posts' });
+      const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : imageUrl ? [imageUrl] : [];
+      if (type === 'photo' && urls.length === 0) {
+        return res.status(400).json({ error: 'imageUrl or imageUrls required for photo posts' });
       }
       const post = await createTopicPost(
         db,
         FieldValue,
-        { library, topicId, author: user, type, text, imageUrl },
+        { library, topicId, author: user, type, text, imageUrl: urls[0], imageUrls: urls },
         gcsBucket,
       );
       return res.status(201).json({ post });
@@ -533,17 +537,18 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
   });
 
   /** Paid Bhive Credits photo plant ID — Hive credits; returns candidates + dangerous lookalikes. */
-  app.post('/api/plant-medicine/identify', express.json({ limit: '8mb' }), async (req, res) => {
+  app.post('/api/plant-medicine/identify', express.json({ limit: '12mb' }), async (req, res) => {
     try {
       const user = await requireAuth(req, res);
       if (!user) return;
 
-      const { message, context = '', attachment } = req.body || {};
+      const { message, context = '', attachment, attachments } = req.body || {};
       const hiveUserId = resolvePlantHiveUserId(user.uid);
       const result = await runPlantPhotoIdentify(db, hiveUserId, {
         message,
         context,
         attachment,
+        attachments,
         email: user.email,
       });
 

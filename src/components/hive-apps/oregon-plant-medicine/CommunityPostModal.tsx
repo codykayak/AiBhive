@@ -1,7 +1,7 @@
 import { AlertTriangle, MapPin, Sprout, ThumbsUp, X } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { PLANT_LIBRARY } from '../../../lib/oregonPlantMedicine/plantLibrary';
-import type { PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
+import { postImageUrls, type PlantMedicinePost } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { PlantCategoryBadges } from '../../../lib/oregonPlantMedicine/plantBadges';
 import type { SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
@@ -91,6 +91,11 @@ export default function CommunityPostModal({
   const videoUrl = livePost?.videoUrl;
   const aiTags = livePost?.aiTags;
   const isToxicPost = aiTags?.some((t) => /toxic|poison|deadly|danger/i.test(t));
+  const images = seed
+    ? post.imageUrl
+      ? [post.imageUrl]
+      : []
+    : postImageUrls(post as PlantMedicinePost);
 
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
@@ -131,14 +136,29 @@ export default function CommunityPostModal({
           <video src={videoUrl} controls className="w-full max-h-[min(52vh,420px)] bg-black" />
         ) : null}
 
-        {post.imageUrl ? (
-          <PlantPhoto
-            src={post.imageUrl}
-            plantId={post.plantId ?? undefined}
-            scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
-            alt={title ?? plantLabel ?? 'Community foraging photo'}
-            className="w-full max-h-[min(52vh,420px)] object-cover"
-          />
+        {images.length > 0 ? (
+          images.length === 1 ? (
+            <PlantPhoto
+              src={images[0]}
+              plantId={post.plantId ?? undefined}
+              scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
+              alt={title ?? plantLabel ?? 'Community foraging photo'}
+              className="w-full max-h-[min(52vh,420px)] object-cover"
+            />
+          ) : (
+            <div className={`grid gap-0.5 bg-black/40 ${images.length > 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {images.map((src) => (
+                <PlantPhoto
+                  key={src}
+                  src={src}
+                  plantId={post.plantId ?? undefined}
+                  scientificName={plant?.scientificName ?? plantLabel ?? 'Wild plant'}
+                  alt={title ?? plantLabel ?? 'Community foraging photo'}
+                  className="w-full max-h-48 object-cover"
+                />
+              ))}
+            </div>
+          )
         ) : null}
 
         <div className="p-4 space-y-4">
