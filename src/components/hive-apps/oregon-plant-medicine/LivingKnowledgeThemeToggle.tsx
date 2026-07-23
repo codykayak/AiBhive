@@ -15,8 +15,8 @@ export default function LivingKnowledgeThemeToggle({ className = '' }: Props) {
       onClick={toggleTheme}
       className={`inline-flex items-center gap-1.5 shrink-0 rounded-lg border px-2.5 py-2 text-xs font-bold transition-colors ${
         light
-          ? 'border-emerald-600/30 bg-white/90 text-emerald-800 hover:bg-white'
-          : 'border-emerald-400/30 bg-emerald-950/50 text-emerald-100 hover:bg-emerald-900/60 hover:text-white'
+          ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+          : 'border-slate-600 bg-slate-800/80 text-slate-200 hover:bg-slate-700 hover:text-white'
       } ${className}`}
       aria-label={light ? 'Switch to dark theme' : 'Switch to light theme'}
       title={light ? 'Dark mode' : 'Light mode'}
