@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Living Knowledge Plants",
+    "slug": "aibhive-plants",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./icon.png",
+    "scheme": "aibhiveplants",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./icon.png",
+        "backgroundColor": "#0f172a"
+      },
+      "package": "com.aibhive.plants",
+      "versionCode": 1,
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-splash-screen"
+    ]
+  }
+}

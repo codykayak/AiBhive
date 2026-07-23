@@ -3213,6 +3213,91 @@ function resolveDiagnoseApkPath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
+function loadPlantsReleaseManifestFromDisk() {
+  const candidates = [
+    path.join(__dirname, '../public/plants-mobile-releases.json'),
+    path.join(__dirname, '../dist/plants-mobile-releases.json'),
+  ];
+  for (const manifestPath of candidates) {
+    if (!fs.existsSync(manifestPath)) continue;
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+function loadPlantsVersionFromAppJson() {
+  const appJsonPath = path.join(__dirname, '../aibhive-plants/app.json');
+  if (!fs.existsSync(appJsonPath)) return null;
+  try {
+    const expo = JSON.parse(fs.readFileSync(appJsonPath, 'utf8')).expo ?? {};
+    if (!expo.version) return null;
+    return {
+      shippedNativeVersion: expo.version,
+      versionCode: expo.android?.versionCode,
+      sourceVersion: expo.version,
+      appName: expo.name || 'Living Knowledge Plants',
+      playStoreStatus: 'pending_approval',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchPlantsReleaseFromRemote() {
+  const bucket = firebaseConfig.storageBucket;
+  if (!bucket) return null;
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/mobile%2Fplants-mobile-releases.json?alt=media`;
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('[plants/releases] remote manifest fetch failed:', err.message);
+    return null;
+  }
+}
+
+function mergePlantsManifestWithAppJson(manifest) {
+  const fromApp = loadPlantsVersionFromAppJson();
+  if (!fromApp) return manifest;
+  const base = manifest ?? {};
+  if (!isManifestNewer(fromApp, base)) return base;
+  return {
+    ...base,
+    ...fromApp,
+    downloadUrl: base.downloadUrl || 'https://aibhive.com/api/download/plants-apk',
+    fullApkUrl: base.fullApkUrl || 'https://aibhive.com/api/download/plants-apk',
+    publishedAt: base.publishedAt || new Date().toISOString(),
+    playStoreStatus: base.playStoreStatus || 'pending_approval',
+  };
+}
+
+async function getPlantsReleaseManifest() {
+  const [remote, disk] = await Promise.all([
+    fetchPlantsReleaseFromRemote(),
+    Promise.resolve(loadPlantsReleaseManifestFromDisk()),
+  ]);
+  const picked =
+    isManifestNewer(remote, disk) ? remote : isManifestNewer(disk, remote) ? disk : remote || disk;
+  const merged = mergePlantsManifestWithAppJson(picked) || {};
+  merged.downloadUrl = merged.downloadUrl || 'https://aibhive.com/api/download/plants-apk';
+  merged.fullApkUrl = merged.fullApkUrl || 'https://aibhive.com/api/download/plants-apk';
+  merged.playStoreStatus = merged.playStoreStatus || 'pending_approval';
+  return Object.keys(merged).length ? merged : null;
+}
+
+function resolvePlantsApkPath() {
+  const candidates = [
+    path.join(__dirname, '../dist/aibhive-plants.apk'),
+    path.join(__dirname, '../public/aibhive-plants.apk'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
 app.get('/api/diagnose/releases', async (_req, res) => {
   const manifest = await getDiagnoseReleaseManifest();
   if (!manifest) {
@@ -3254,6 +3339,49 @@ app.get('/api/download/diagnose-apk', async (req, res) => {
 
 app.get('/aibhive-diagnose.apk', async (req, res) => {
   return res.redirect(301, '/api/download/diagnose-apk');
+});
+
+app.get('/api/plants/releases', async (_req, res) => {
+  const manifest = await getPlantsReleaseManifest();
+  if (!manifest) {
+    return res.status(404).json({ error: 'Plants release manifest not available.' });
+  }
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+  return res.json(manifest);
+});
+
+app.get('/api/download/plants-apk', async (req, res) => {
+  const manifest = await getPlantsReleaseManifest();
+  if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {
+    return res.redirect(302, manifest.firebaseGzUrl);
+  }
+  if (manifest?.firebaseApkUrl && req.query.compressed !== '1' && req.query.local !== '1') {
+    return res.redirect(302, manifest.firebaseApkUrl);
+  }
+
+  const apkPath = resolvePlantsApkPath();
+  if (!apkPath) {
+    if (manifest?.firebaseApkUrl) {
+      return res.redirect(302, manifest.firebaseApkUrl);
+    }
+    return res.status(404).json({
+      error: 'Plants APK not available yet. Try again after the mobile build finishes.',
+    });
+  }
+
+  if (req.query.compressed === '1') {
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader('Content-Disposition', 'attachment; filename="aibhive-plants.apk.gz"');
+    return fs.createReadStream(apkPath).pipe(zlib.createGzip()).pipe(res);
+  }
+
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="aibhive-plants.apk"');
+  return res.sendFile(apkPath);
+});
+
+app.get('/aibhive-plants.apk', async (_req, res) => {
+  return res.redirect(301, '/api/download/plants-apk');
 });
 
 app.get('/taylored-mobile.apk', async (req, res) => {

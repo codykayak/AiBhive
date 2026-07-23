@@ -1,0 +1,106 @@
+# Builds Living Knowledge Plants Android APK (WebView shell for aibhive.com/plants)
+name: Build Plants APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'aibhive-plants/**'
+      - 'public/plants-mobile-releases.json'
+      - 'scripts/write-plants-release.mjs'
+      - 'scripts/publish-plants-apk-firebase.mjs'
+      - '.github/workflows/build-plants-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-plants-apk-main-fixed
+  cancel-in-progress: false
+
+jobs:
+  build-plants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: ${{ !contains(github.event.head_commit.message, '[skip-plants-apk]') }}
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: ./aibhive-plants
+        run: npm install
+
+      - name: Build Plants APK
+        working-directory: ./aibhive-plants
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m
+          EXPO_PUBLIC_PLANTS_URL: https://aibhive.com/plants?mobile=1
+        run: bash scripts/ci-android-build.sh
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aibhive-plants-apk
+          path: public/aibhive-plants.apk
+
+      - name: Update release manifest
+        run: node scripts/write-plants-release.mjs
+
+      - name: Install root deps (Firebase publish script)
+        run: npm ci
+
+      - name: Publish Firebase download mirror
+        id: firebase
+        run: |
+          set -euo pipefail
+          OUTPUT_FILE="$(mktemp)"
+          node scripts/publish-plants-apk-firebase.mjs | tee "$OUTPUT_FILE"
+          APK_URL=$(grep '^FIREBASE_APK_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          GZ_URL=$(grep '^FIREBASE_GZ_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+          echo "gz_url=$GZ_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Commit deployed Plants APK + manifest
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/aibhive-plants.apk public/plants-mobile-releases.json
+          if git diff --staged --quiet; then
+            echo "Plants APK unchanged, skipping commit"
+          else
+            git commit -m "chore(plants): deploy Living Knowledge Plants APK [skip-plants-apk]"
+            git stash push -u -m "ci-plants-build-artifacts" || true
+            git pull --rebase origin main-fixed
+            git push origin HEAD:main-fixed
+          fi
+
+      - name: Print download links
+        if: always()
+        run: |
+          echo ""
+          echo "============================================================"
+          echo "  Plants APK: https://aibhive.com/api/download/plants-apk"
+          echo "  Firebase:   ${{ steps.firebase.outputs.apk_url }}"
+          echo "  Web app:    https://aibhive.com/plants"
+          echo "============================================================"
