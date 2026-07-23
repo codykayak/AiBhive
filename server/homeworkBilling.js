@@ -2,6 +2,7 @@ import * as hiveUsage from './hiveUsage.js';
 
 const OCR_PER_PAGE = Number(process.env.HOMEWORK_OCR_RAW_COST_PER_PAGE ?? 0.003);
 const COMPLETE_COST = Number(process.env.HOMEWORK_COMPLETE_RAW_COST ?? 0.012);
+const CHAT_COST = Number(process.env.HOMEWORK_CHAT_RAW_COST ?? 0.008);
 const INGEST_COST = Number(process.env.HOMEWORK_INGEST_RAW_COST ?? 0.006);
 
 export function homeworkOcrRawCost(pageCount) {
@@ -10,6 +11,10 @@ export function homeworkOcrRawCost(pageCount) {
 
 export function homeworkCompleteRawCost() {
   return COMPLETE_COST;
+}
+
+export function homeworkChatRawCost() {
+  return CHAT_COST;
 }
 
 export function homeworkIngestRawCost() {
