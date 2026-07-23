@@ -1,7 +1,7 @@
 import type { ExternalLink } from './types';
 
 /** Where a featured Living Knowledge essay appears. */
-export type FeaturedEssayPage = 'plants-home' | 'holistic' | 'hypnosis' | 'edibles';
+export type FeaturedEssayPage = 'plants-home' | 'holistic' | 'hypnosis' | 'edibles' | 'herbs';
 
 export type FeaturedEssay = {
   id: string;
@@ -23,7 +23,7 @@ export type FeaturedEssay = {
   videoLinks: ExternalLink[];
   relatedPlantIds: string[];
   /** Accent theme for card chrome */
-  accent: 'emerald' | 'violet' | 'cyan' | 'lime';
+  accent: 'emerald' | 'violet' | 'cyan' | 'lime' | 'amber';
 };
 
 export const FEATURED_ESSAYS: FeaturedEssay[] = [
@@ -528,6 +528,124 @@ Pasteurized straw / sawdust bags | Medium | Colonize then fruit in weeks | Regul
 Outdoor wine-cap beds | Medium-low | Season-dependent | Gardeners with shade beds
 Commercial mycelium meat fermentation | Industrial | Continuous tanks | Packaged meat alternatives
 Wild foraging (chanterelle, morel) | Skill-based | Season & ecology | Forest ID — not a grow kit`,
+  },
+  {
+    id: 'irish-sea-moss-mineral-gel',
+    page: 'herbs',
+    title: 'Irish Sea Moss — Atlantic Carrageenan, Mineral Gel, and How to Use It Honestly',
+    categoryLabel: 'Featured · Coastal herbs',
+    accent: 'amber',
+    imageUrl: '/oregon-plant-medicine/irish-sea-moss-mineral-gel.jpg',
+    imageCredit: 'AiBhive Living Knowledge — Irish sea moss (Chondrus crispus) tide-pool illustration',
+    summary:
+      'A practical Living Knowledge deep dive on true Irish sea moss (Chondrus crispus): what it is, how traditional Atlantic communities prepared the mineral-rich gel, how it differs from colorful “sea moss” sold online, iodine/heavy-metal cautions, and kitchen uses — educational only, not medical advice.',
+    whenPeopleExplore:
+      'Interest in sea moss gel, thyroid/iodine folklore, smoothie bowls, vegan thickeners, or Caribbean / Irish coastal food traditions.',
+    approaches: [
+      'Identify true Chondrus crispus (cartilaginous, branching, purple-to-green) vs look-alike “pool-grown” moss products.',
+      'Rinse, soak, and simmer into a neutral gel for soups, smoothies, and sauces.',
+      'Use culinary amounts — not megadoses of raw dried moss or unlabeled extracts.',
+      'Source from cold Atlantic waters with harvest ethics; prefer tested food-grade product when not foraging yourself.',
+      'Pair with whole-food mineral diversity (greens, seafood, dairy/alternatives) rather than sea moss as a sole “92 minerals” cure.',
+    ],
+    relatedPlantIds: ['usnea', 'douglas-fir-tip', 'oregon-grape', 'yarrow'],
+    safetyWarnings: [
+      'Seaweeds concentrate iodine and can disrupt thyroid function in excess — people with thyroid disease should ask a clinician before regular use.',
+      'Coastal seaweeds can bioaccumulate heavy metals and pollutants — prefer tested food-grade sources; rinse thoroughly.',
+      'Foraging intertidal species: check local harvest regulations, leave holdfasts, and avoid polluted harbors.',
+      'Not a treatment for COVID, cancer, infertility, or “detox.” Marketing claims of “92 minerals curing disease” are not clinical evidence.',
+      'Allergy to iodine/seafood is a reason for caution; start with small culinary amounts.',
+      'Educational reference only — not medical advice.',
+    ],
+    videoLinks: [
+      {
+        label: 'Sea moss gel preparation (culinary overview)',
+        url: 'https://www.youtube.com/results?search_query=irish+sea+moss+gel+chondrus+crispus',
+        description: 'Search culinary demos — verify the Latin name on any product shown.',
+      },
+      {
+        label: 'Edible seaweed & forage ethics (educational search)',
+        url: 'https://www.youtube.com/results?search_query=chondrus+crispus+irish+moss+biology',
+        description: 'Prefer university / natural-history explainers over supplement ads.',
+      },
+    ],
+    sources: [
+      {
+        label: 'NIH ODS — Iodine fact sheet',
+        url: 'https://ods.od.nih.gov/factsheets/Iodine-HealthProfessional/',
+        description: 'Iodine physiology, upper limits, and thyroid context for seaweed foods.',
+      },
+      {
+        label: 'FAO — Seaweeds used as human food',
+        url: 'https://www.fao.org/4/y4765e/y4765e0b.htm',
+        description: 'Global edible seaweed overview including carrageenophytes.',
+      },
+      {
+        label: 'Encyclopedia of Life — Chondrus crispus',
+        url: 'https://eol.org/pages/910873',
+        description: 'Taxonomy and natural history of Irish moss.',
+      },
+      {
+        label: 'FDA — Carrageenan in foods',
+        url: 'https://www.fda.gov/food',
+        description: 'Food-additive framing for refined carrageenan vs whole sea moss gel.',
+      },
+    ],
+    deepDive: `Walk an Irish or Maritime Canada tide line at low water and you may find a cartilaginous, branching red alga pressed flat against rock: Chondrus crispus — Irish moss, carrageen moss, the plant behind the classic “sea moss gel” of coastal kitchens. In Living Knowledge we treat it as a featured Herbs essay because it sits at the crossroads of folk materia medica, food thickener, and modern wellness marketing. This page is for honest education: what the organism is, how people traditionally used it, what science can and cannot claim, and how to prepare a gel without swallowing every claim on a supplement pouch.
+
+Not medical advice. If you have thyroid disease, are pregnant, or take medication, talk with a clinician before making seaweed a daily habit.
+
+What Irish sea moss actually is
+
+True Irish sea moss is Chondrus crispus (and closely related red algae in the Gigartinaceae). It is not a terrestrial moss. It is a red seaweed that grows on rocky North Atlantic shores from Europe to eastern North America. Fresh fronds are stiff, fan-branched, and range from deep purple-red to olive-green depending on light and season. When dried they bleach toward pale cream or gold — the color many grocery bags show.
+
+The gel people love comes from cell-wall polysaccharides called carrageenans. When you rinse, soak, and gently simmer the fronds, those polysaccharides hydrate into a smooth, nearly flavorless gel that sets as it cools. That gel thickens soups, smoothies, ice cream, and vegan puddings the way agar or cornstarch might — with a softer, more elastic mouthfeel.
+
+A hard truth about the internet aisle
+
+Much of what is sold as “sea moss” online is not wild Chondrus. Colorful gold, purple, and green “pools” of moss are often Gracilaria or other cultivated red algae grown in tanks or tropical waters, then marketed with Irish-moss folklore attached. Some products are excellent food. Some are mislabeled. Living Knowledge framing: read the Latin name. Prefer Chondrus crispus (or clearly named Gracilaria if that is what you want). Be skeptical of rainbow piles promising pharmaceutical miracles.
+
+Traditional and culinary use
+
+Irish and Scottish coastal communities simmered carrageen in milk for blancmange-style puddings and as a soothing drink during colds — food-as-comfort more than standardized phytotherapy. In parts of the Caribbean, sea moss drinks (often blended with milk, nutmeg, and sweeteners) are cultural staples associated with vitality. Those traditions deserve respect as food culture. They are not the same as a randomized trial proving disease reversal.
+
+Kitchen method (home gel)
+
+1. Inspect: remove grit, shells, and any fronds that smell rotten.
+2. Rinse in cool fresh water several times.
+3. Soak 4–12 hours until expanded and softer (change water if very salty).
+4. Simmer gently in fresh water until fronds break down (often 15–25 minutes).
+5. Blend smooth; cool in a clean jar. Refrigerate and use within about a week, or freeze in portions.
+
+Start with a spoonful in a smoothie or soup — culinary seasoning scale — not a cup of gel as a “protocol.”
+
+Minerals, iodine, and the “92 minerals” claim
+
+Seaweeds can contribute iodine, some magnesium, potassium, and trace elements depending on species and ocean chemistry. That does not mean every bag delivers a fixed list of ninety-two minerals in clinically meaningful doses, nor that more is better. Iodine is a Goldilocks nutrient: deficiency harms the thyroid; excess also harms the thyroid. People with Hashimoto’s, Graves’, nodules, or on thyroid hormone should not self-dose seaweed aggressively. NIH iodine fact sheets are better guides than influencer reels.
+
+Heavy metals and harvest ethics
+
+Filter-feeding and mineral-concentrating organisms can also concentrate cadmium, arsenic, lead, or local pollutants. Buy from suppliers who test lots when possible. If you forage: know your coastline, avoid industrial outfalls, follow local rules, and never strip a rock bare — leave holdfasts and enough biomass for the bed to recover.
+
+Carrageenan controversy — keep the categories straight
+
+Refined food-additive carrageenan (extracted, purified) has a separate regulatory and research debate from whole cooked sea moss gel. Internet arguments often mash them together. Whole traditional gel is a food; industrial carrageenan is an ingredient. Neither is a license to ignore personal tolerance — if gel upsets your gut, stop.
+
+How this fits the Herbs library
+
+On /plants/herbs we study Western, Chinese, and Ayurvedic materia medica with preparation and caution front-and-center. Irish sea moss belongs here as a coastal botanical food used like an herbaceous thickener and tonic food — alongside honest limits. It is not a substitute for thyroid medication, not an antiviral prescription, and not a detox cleanse. It is a tide-pool organism that becomes a versatile gel when treated with respect.
+
+A Living Knowledge practice week
+
+Buy a small amount of clearly labeled Chondrus (or skip buying and study photos until you can tell it from look-alikes). Make one jar of gel. Use it three ways: smoothie, soup, and a simple pudding. Journal taste, digestion, and any thyroid-related symptoms if you already track those with a clinician. Compare labels on two commercial “sea moss” products and note which print a Latin binomial. That habit — species first, hype second — is the same discipline we ask of foragers in the plant and mushroom libraries.
+
+Irish sea moss rewards curiosity. Keep the romance of the Atlantic shore, keep the gel in the kitchen, and keep medical claims on a short leash.`,
+    chartBlock: `Form | What it is | Best use | Caution
+---|---|---|---
+Wild / food-grade Chondrus crispus | True Irish moss fronds | Traditional gel, puddings, soups | Iodine + metals; thyroid caution
+Cultivated Gracilaria “sea moss” | Different red alga, often pool-grown | Smoothie gels when clearly labeled | Do not assume identical minerals/folklore
+Refined carrageenan additive | Purified polysaccharide | Commercial thickeners | Separate debate from whole-plant gel
+Sea moss capsules / tonics | Variable extracts | Only if label + testing are clear | Marketing claims ≠ clinical proof`,
   },
 ];
 
