@@ -28,6 +28,13 @@ export const RESEARCH_TRANSLATE_RAW = Number(process.env.RESEARCH_LAB_TRANSLATE_
 
 export const RESEARCH_PUBLISH_RAW = Number(process.env.RESEARCH_LAB_PUBLISH_RAW ?? 0.006);
 
+/** DMT Matrix Decoder — CV + vision fusion per photo. */
+export const RESEARCH_DMT_DECODE_RAW = Number(process.env.RESEARCH_LAB_DMT_DECODE_RAW ?? 0.018);
+
+export function dmtMatrixDecodeRawCost() {
+  return RESEARCH_DMT_DECODE_RAW;
+}
+
 export function researchOcrRawCost(pageCount) {
   return RESEARCH_OCR_RAW_PER_PAGE * Math.max(1, Number(pageCount) || 1);
 }

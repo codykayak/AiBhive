@@ -3,6 +3,8 @@ import ResearchLabHero from './components/ResearchLabHero';
 import ResearchLabWelcomeSection from './components/ResearchLabWelcomeSection';
 import ResearchLabToolsSection from './components/ResearchLabToolsSection';
 import CommunalLibraryMapSection from './components/CommunalLibraryMapSection';
+import { Link } from 'react-router-dom';
+import { ScanLine } from 'lucide-react';
 import styles from './researchLab.module.css';
 
 export default function ResearchLabLandingPage() {
@@ -38,6 +40,22 @@ export default function ResearchLabLandingPage() {
         ]}
       />
       <ResearchLabHero />
+      <section className={styles.rlDmtDecoderPromo} aria-label="DMT Matrix Decoder">
+        <div className={styles.rlDmtDecoderInner}>
+          <ScanLine className={styles.rlDmtDecoderIcon} aria-hidden />
+          <div>
+            <p className={styles.rlDmtDecoderEyebrow}>Pioneer tool · New</p>
+            <h2 className={styles.rlDmtDecoderTitle}>DMT Matrix Decoder</h2>
+            <p className={styles.rlDmtDecoderLead}>
+              AI-powered decoder for 650nm laser diffraction glyphs — CV classifier fused with Gemini/Grok
+              vision against the DMT Code 100×100 catalogue.
+            </p>
+          </div>
+          <Link to="/research-lab/dmt-matrix-decoder" className={styles.rlDmtDecoderCta}>
+            Open decoder
+          </Link>
+        </div>
+      </section>
       <ResearchLabWelcomeSection />
       <section
         id="communal-library"

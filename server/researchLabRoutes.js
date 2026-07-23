@@ -65,6 +65,13 @@ import {
   getNagHammadiStarterBrief,
 } from './nagHammadiFindsDirectory.js';
 import { getResearchLabFablePrefs, saveResearchLabFablePrefs } from './researchLabPrefs.js';
+import {
+  decodeDmtMatrix,
+  dmtDecodeRawCost,
+  listDmtSessions,
+  loadDmtCatalog,
+  saveDmtSession,
+} from './dmtMatrixDecoder.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -711,6 +718,73 @@ export function registerResearchLabRoutes(app, db) {
       return res.json(prefs);
     } catch (error) {
       return res.status(400).json({ error: error.message || 'Could not save preferences.' });
+    }
+  });
+
+  // —— DMT Matrix Decoder ——
+  app.get('/api/research-lab/dmt-matrix/catalog', (_req, res) => {
+    try {
+      return res.json(loadDmtCatalog());
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Catalog unavailable.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/sessions', async (req, res) => {
+    const authUser = await requireResearchLabUser(req, res);
+    if (!authUser) return;
+    try {
+      const sessions = await listDmtSessions(db, authUser.uid, 30);
+      return res.json({ sessions });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Could not load sessions.' });
+    }
+  });
+
+  app.post('/api/research-lab/dmt-matrix/decode', json10mb, async (req, res) => {
+    let uid = null;
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      uid = authUser.uid;
+
+      const { imageBase64, mimeType, useVision, visionProvider, notes, byok } = req.body || {};
+      if (!imageBase64) {
+        return res.status(400).json({ error: 'imageBase64 is required.' });
+      }
+
+      const rawCost = dmtDecodeRawCost();
+      const gate = await gateAndCharge(db, uid, rawCost, 'dmt-matrix-decode', 'DMT Matrix decode', {
+        email: authUser.email,
+      });
+      if (!gate.ok) {
+        return res.status(gate.status).json(gate.body);
+      }
+
+      const result = await decodeDmtMatrix({
+        imageBase64,
+        mimeType: mimeType || 'image/jpeg',
+        useVision: useVision !== false,
+        visionProvider: visionProvider || 'auto',
+        byok: byok || {},
+        notes: notes || '',
+      });
+
+      await saveDmtSession(db, uid, result, {
+        imageBase64,
+        mimeType,
+        email: authUser.email,
+      });
+
+      endUserJob(uid);
+      return res.json({
+        ...result,
+        chargedUsd: gate.chargedUsd ?? 0,
+        adminExempt: !!gate.adminExempt,
+      });
+    } catch (error) {
+      if (uid) endUserJob(uid);
+      return res.status(500).json({ error: error.message || 'DMT decode failed.' });
     }
   });
 }
