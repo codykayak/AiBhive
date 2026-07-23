@@ -6,6 +6,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/herbsLibrary';
 import { HERBS_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/herbsTypes';
 import { HERBS_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { AskAiContext } from './AskAiBhivePanel';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
@@ -72,6 +73,7 @@ export default function HerbsPanel({
       onAskAi={onAskAi}
       askScope="herbs"
       askAccent="amber"
+      featuredEssay={getFeaturedEssay('herbs')}
       focusTopicId={focusTopicId}
       onFocusTopicConsumed={onFocusTopicConsumed}
     />
