@@ -50,7 +50,7 @@ export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
           </p>
           {error ? <p className="text-[11px] text-amber-300 mt-1">{error}</p> : null}
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-full sm:w-auto sm:items-center">
           <button
             type="button"
             disabled={checkoutBusy}
@@ -60,13 +60,18 @@ export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
             {checkoutBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {user ? `Buy $${BHIVE_CREDITS_SIGNUP_USD} Bhive Credits` : `Sign in — $${BHIVE_CREDITS_SIGNUP_USD} credits`}
           </button>
-          <a
-            href="/api/download/apk"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-900/80 hover:border-emerald-500/40 text-slate-200 font-bold text-sm px-5 py-3"
-          >
-            <Download className="w-4 h-4" />
-            Download APK
-          </a>
+          <div className="flex flex-col gap-1">
+            <a
+              href="/api/download/plants-apk"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-900/80 hover:border-emerald-500/40 text-slate-200 font-bold text-sm px-5 py-3"
+            >
+              <Download className="w-4 h-4" />
+              Download Android APK
+            </a>
+            <p className="text-[10px] text-slate-500 text-center sm:text-right leading-snug px-1">
+              Google Play approval pending — install directly while we wait for the store listing.
+            </p>
+          </div>
         </div>
       </div>
       <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-4 border-t border-white/5 pt-3">

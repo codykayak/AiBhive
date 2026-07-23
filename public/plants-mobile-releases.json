@@ -1,0 +1,10 @@
+{
+  "shippedNativeVersion": "1.0.0",
+  "versionCode": 1,
+  "sourceVersion": "1.0.0",
+  "appName": "Living Knowledge Plants",
+  "downloadUrl": "https://aibhive.com/api/download/plants-apk",
+  "fullApkUrl": "https://aibhive.com/api/download/plants-apk",
+  "releaseNotes": "v1.0.0 — Android shell for aibhive.com/plants: field guide, community, Hive Research photo ID, and research libraries.",
+  "playStoreStatus": "pending_approval"
+}
