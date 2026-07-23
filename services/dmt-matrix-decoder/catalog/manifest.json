@@ -1,0 +1,350 @@
+{
+  "version": "1.0.0",
+  "dateModified": "2026-07-23",
+  "license": "CC-BY-4.0",
+  "attribution": "DMT Code Visual Symbol Catalogue \u2014 https://dmtcode.com (archetype glyphs for decoder training)",
+  "canvasSize": 100,
+  "symbolCount": 24,
+  "symbols": [
+    {
+      "id": "symbol_001",
+      "name": "T-Bar Glyph",
+      "description": "Vertical line with horizontal crossbar resembling letter T",
+      "tags": [
+        "alphabetic",
+        "vertical",
+        "bilateral"
+      ],
+      "source": "650nm_laser",
+      "filename": "symbol_001.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "symbol_002",
+      "name": "Bilateral Cross",
+      "description": "Perfect bilateral cross with four equal arms extending from center",
+      "tags": [
+        "geometric",
+        "cross",
+        "bilateral"
+      ],
+      "source": "650nm_laser",
+      "filename": "symbol_002.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "symbol_003",
+      "name": "Double Helix",
+      "description": "Double helix spiral rotating clockwise with consistent spacing",
+      "tags": [
+        "spiral",
+        "helix",
+        "radial"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "symbol_003.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "symbol_004",
+      "name": "Runic Angular",
+      "description": "Angular symbol resembling runic alphabet with sharp vertices",
+      "tags": [
+        "alphabetic",
+        "angular",
+        "rune"
+      ],
+      "source": "650nm_laser",
+      "filename": "symbol_004.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "hex_lattice",
+      "name": "Hexagonal Lattice",
+      "description": "Stable hexagonal lattice with nested triangles extending into depth",
+      "tags": [
+        "geometric",
+        "hexagonal",
+        "stable",
+        "3D"
+      ],
+      "source": "650nm_laser",
+      "filename": "hex_lattice.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "mandala_8",
+      "name": "Eight-Fold Mandala",
+      "description": "Mandala structure with 8-fold symmetry, red-to-gold color shift reported",
+      "tags": [
+        "mandala",
+        "geometric",
+        "symmetrical",
+        "colorful"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "mandala_8.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "binary_bars",
+      "name": "Binary Bars",
+      "description": "Binary-like vertical bars that flicker between states with mathematical feel",
+      "tags": [
+        "binary",
+        "mathematical",
+        "static",
+        "repeating"
+      ],
+      "source": "650nm_laser",
+      "filename": "binary_bars.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "katakana_grid",
+      "name": "Katakana Grid",
+      "description": "Rapidly shifting katakana-like characters on a tile grid",
+      "tags": [
+        "katakana-like",
+        "shifting",
+        "grid"
+      ],
+      "source": "650nm_laser",
+      "filename": "katakana_grid.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "dna_spiral",
+      "name": "DNA Helix",
+      "description": "Flowing spiral pattern resembling DNA helix rotating slowly clockwise",
+      "tags": [
+        "spiral",
+        "organic",
+        "moving",
+        "helix"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "dna_spiral.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "triangle_nested",
+      "name": "Nested Triangles",
+      "description": "Nested triangles within hexagonal cells, infinite depth illusion",
+      "tags": [
+        "geometric",
+        "triangular",
+        "3D"
+      ],
+      "source": "650nm_laser",
+      "filename": "triangle_nested.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "circle_concentric",
+      "name": "Concentric Rings",
+      "description": "Pulsing concentric circles radiating from a luminous center",
+      "tags": [
+        "radial",
+        "circular",
+        "pulsing"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "circle_concentric.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "chevron_stack",
+      "name": "Chevron Stack",
+      "description": "Stacked chevrons pointing upward like ascending code brackets",
+      "tags": [
+        "geometric",
+        "angular",
+        "repeating"
+      ],
+      "source": "650nm_laser",
+      "filename": "chevron_stack.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "wave_interference",
+      "name": "Interference Waves",
+      "description": "Sinusoidal interference bands from laser diffraction on a surface",
+      "tags": [
+        "wave",
+        "laser",
+        "diffraction"
+      ],
+      "source": "650nm_laser",
+      "filename": "wave_interference.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "diamond_lattice",
+      "name": "Diamond Lattice",
+      "description": "Rhombus/diamond tiling with alternating bright nodes",
+      "tags": [
+        "geometric",
+        "lattice",
+        "repeating"
+      ],
+      "source": "650nm_laser",
+      "filename": "diamond_lattice.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "arrow_radial",
+      "name": "Radial Arrows",
+      "description": "Eight radial arrows emanating from center like a compass rose",
+      "tags": [
+        "radial",
+        "directional",
+        "geometric"
+      ],
+      "source": "650nm_laser",
+      "filename": "arrow_radial.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "bracket_pair",
+      "name": "Bracket Pair",
+      "description": "Mirrored angular brackets framing an empty matrix cell",
+      "tags": [
+        "alphabetic",
+        "angular",
+        "bilateral"
+      ],
+      "source": "650nm_laser",
+      "filename": "bracket_pair.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "infinity_loop",
+      "name": "Infinity Loop",
+      "description": "Figure-eight infinity loop with glowing overlap at center",
+      "tags": [
+        "curved",
+        "bilateral",
+        "organic"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "infinity_loop.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "star_pentagram",
+      "name": "Pentagram Star",
+      "description": "Five-point star with inner pentagon, often reported as luminous",
+      "tags": [
+        "geometric",
+        "radial",
+        "symmetrical"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "star_pentagram.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "eye_motif",
+      "name": "Eye Motif",
+      "description": "Almond eye with central pupil and radiating lashes",
+      "tags": [
+        "organic",
+        "bilateral",
+        "watching"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "eye_motif.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "ladder_rungs",
+      "name": "Ladder Rungs",
+      "description": "Parallel horizontal rungs between two vertical rails",
+      "tags": [
+        "geometric",
+        "vertical",
+        "repeating"
+      ],
+      "source": "650nm_laser",
+      "filename": "ladder_rungs.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "portal_arch",
+      "name": "Portal Arch",
+      "description": "Arched doorway or portal with nested rectangular frames",
+      "tags": [
+        "architectural",
+        "3D",
+        "portal"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "portal_arch.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "cube_wireframe",
+      "name": "Wireframe Cube",
+      "description": "Isometric wireframe cube rotating in perceived 3D space",
+      "tags": [
+        "geometric",
+        "3D",
+        "angular"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "cube_wireframe.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "flower_6",
+      "name": "Six-Petal Flower",
+      "description": "Six-petal rosette with radial symmetry and glowing center",
+      "tags": [
+        "organic",
+        "radial",
+        "symmetrical"
+      ],
+      "source": "closed_eyes_dmt",
+      "filename": "flower_6.png",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "zigzag_lightning",
+      "name": "Zigzag Lightning",
+      "description": "Sharp zigzag lightning bolt with bilateral symmetry",
+      "tags": [
+        "angular",
+        "energy",
+        "bilateral"
+      ],
+      "source": "650nm_laser",
+      "filename": "zigzag_lightning.png",
+      "width": 100,
+      "height": 100
+    }
+  ]
+}

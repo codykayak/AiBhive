@@ -1,0 +1,346 @@
+.dmt {
+  --dmt-bg: #030508;
+  --dmt-surface: #0a1018;
+  --dmt-card: #0f1724;
+  --dmt-border: rgba(34, 211, 238, 0.18);
+  --dmt-cyan: #22d3ee;
+  --dmt-magenta: #e879f9;
+  --dmt-amber: #fbbf24;
+  --dmt-text: #eef6ff;
+  --dmt-muted: #8ba3bc;
+  --dmt-danger: #fb7185;
+  min-height: 100dvh;
+  background: radial-gradient(ellipse 120% 80% at 50% -20%, rgba(34, 211, 238, 0.12), transparent 55%),
+    var(--dmt-bg);
+  color: var(--dmt-text);
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.shell {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+}
+
+.hero {
+  padding: 1.25rem 0 1rem;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dmt-cyan);
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.title {
+  font-size: clamp(1.6rem, 6vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+  background: linear-gradient(135deg, #fff 0%, var(--dmt-cyan) 45%, var(--dmt-magenta) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lead {
+  font-size: 0.92rem;
+  color: var(--dmt-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.uploadCard {
+  background: var(--dmt-card);
+  border: 1px solid var(--dmt-border);
+  border-radius: 1.25rem;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 11rem;
+  border: 2px dashed rgba(34, 211, 238, 0.35);
+  border-radius: 1rem;
+  background: rgba(34, 211, 238, 0.04);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  touch-action: manipulation;
+}
+
+.dropzone:active {
+  border-color: var(--dmt-cyan);
+  background: rgba(34, 211, 238, 0.08);
+}
+
+.dropzoneIcon {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: var(--dmt-cyan);
+}
+
+.dropzoneText {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.dropzoneHint {
+  font-size: 0.75rem;
+  color: var(--dmt-muted);
+}
+
+.previewWrap {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 4 / 3;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.overlayCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.select,
+.textarea {
+  width: 100%;
+  background: var(--dmt-surface);
+  border: 1px solid var(--dmt-border);
+  border-radius: 0.75rem;
+  color: var(--dmt-text);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.textarea {
+  min-height: 4rem;
+  resize: vertical;
+}
+
+.btnPrimary {
+  flex: 1;
+  min-height: 3rem;
+  border: none;
+  border-radius: 0.85rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0891b2, #7c3aed);
+  color: #fff;
+  touch-action: manipulation;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  min-height: 3rem;
+  padding: 0 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--dmt-border);
+  background: transparent;
+  color: var(--dmt-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error {
+  color: var(--dmt-danger);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.section {
+  margin: 1.25rem 0;
+}
+
+.sectionTitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dmt-cyan);
+  font-weight: 700;
+  margin: 0 0 0.65rem;
+}
+
+.summaryCard {
+  background: var(--dmt-card);
+  border: 1px solid var(--dmt-border);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.detectionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.detectionItem {
+  display: grid;
+  grid-template-columns: 3rem 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+  background: var(--dmt-card);
+  border: 1px solid var(--dmt-border);
+  border-radius: 0.85rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.glyphThumb {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background: #050810;
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.detName {
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.detMeta {
+  font-size: 0.72rem;
+  color: var(--dmt-muted);
+}
+
+.confBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--dmt-cyan);
+}
+
+.catalogGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45rem;
+}
+
+.catalogItem {
+  aspect-ratio: 1;
+  border-radius: 0.55rem;
+  background: #050810;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  padding: 0.25rem;
+}
+
+.catalogItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.catalogLabel {
+  font-size: 0.58rem;
+  color: var(--dmt-muted);
+  text-align: center;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stickyBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(3, 5, 8, 0.92);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--dmt-border);
+}
+
+.stickyInner {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pioneer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 0.85rem;
+  background: rgba(232, 121, 249, 0.08);
+  border: 1px solid rgba(232, 121, 249, 0.2);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 1rem 0;
+}
+
+.pioneerIcon {
+  color: var(--dmt-magenta);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.signInBanner {
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.signInBanner a {
+  color: var(--dmt-amber);
+  font-weight: 700;
+}
+
+@media (min-width: 481px) {
+  .catalogGrid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}

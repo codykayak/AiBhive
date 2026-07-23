@@ -7,6 +7,7 @@ import {
   RESEARCH_BYOK_ORCHESTRATION_RAW,
   RESEARCH_OCR_RAW_PER_PAGE,
   RESEARCH_PUBLISH_RAW,
+  RESEARCH_DMT_DECODE_RAW,
   RESEARCH_SCRAPE_BYOK_RAW,
   RESEARCH_SCRAPE_PLATFORM_RAW,
   RESEARCH_TRANSLATE_RAW,
@@ -42,6 +43,9 @@ export function estimateRawCost(op, params = {}) {
       return RESEARCH_TRANSLATE_RAW;
     case 'publish':
       return RESEARCH_PUBLISH_RAW;
+    case 'dmt-decode':
+    case 'dmt-matrix-decode':
+      return RESEARCH_DMT_DECODE_RAW;
     default:
       return 0.01;
   }
