@@ -1,8 +1,8 @@
 /* Living Knowledge (/plants) light theme — scoped under .lk-app[data-lk-theme="light"] */
 
 .lk-app[data-lk-theme='light'] .lk-nav-bar {
-  background: linear-gradient(to right, rgb(6 78 59), rgb(5 150 105), rgb(6 78 59)) !important;
-  border-color: rgb(16 185 129 / 0.35) !important;
+  background: linear-gradient(to right, rgb(4 120 87), rgb(5 150 105), rgb(4 120 87)) !important;
+  border-color: rgb(16 185 129 / 0.45) !important;
 }
 
 .lk-app[data-lk-theme='light'] .lk-nav-search {
