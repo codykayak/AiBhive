@@ -1,0 +1,70 @@
+# Deploy DMT Matrix Decoder Python worker to Cloud Run.
+# Main AiBhive Express app calls this via DMT_DECODER_URL (see LOCAL_DEV.md).
+name: Deploy DMT Matrix Decoder
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'services/dmt-matrix-decoder/**'
+      - '.github/workflows/deploy-dmt-matrix-decoder.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dmt-matrix-decoder
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      DMT_DECODER_WORKER_SECRET: ${{ secrets.DMT_DECODER_WORKER_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and deploy worker
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CLOUD_RUN_REGION != '' }}
+        working-directory: services/dmt-matrix-decoder
+        run: |
+          PROJECT="${GCP_PROJECT_ID:-gen-lang-client-0787280773}"
+          IMAGE="gcr.io/${PROJECT}/dmt-matrix-decoder:${GITHUB_SHA::12}"
+          gcloud builds submit --tag "$IMAGE" --project "$PROJECT"
+          DEPLOY_ARGS=(
+            --image "$IMAGE"
+            --region "${CLOUD_RUN_REGION}"
+            --project "$PROJECT"
+            --memory 1Gi
+            --timeout 120
+            --allow-unauthenticated
+            --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,XAI_API_KEY=XAI_API_KEY:latest"
+          )
+          if [ -n "${DMT_DECODER_WORKER_SECRET}" ]; then
+            DEPLOY_ARGS+=(--set-env-vars "DMT_DECODER_WORKER_SECRET=${DMT_DECODER_WORKER_SECRET}")
+          fi
+          gcloud run deploy dmt-matrix-decoder "${DEPLOY_ARGS[@]}"
+
+      - name: Skip notice
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CLOUD_RUN_REGION == '' }}
+        run: |
+          echo "GCP deploy secrets not configured — skipping dmt-matrix-decoder deploy."
+          echo "Set GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, CLOUD_RUN_REGION in repo secrets."

@@ -4,7 +4,8 @@
  *
  * Usage:
  *   node scripts/sync-dmt-symbol-catalogue.mjs --from /path/to/pngs
- *   node scripts/sync-dmt-symbol-catalogue.mjs --fetch   # tries dmtcode.com patterns (best-effort)
+ *   node scripts/sync-dmt-symbol-catalogue.mjs --registry   # live dmtcode.com Supabase registry
+ *   npm run sync:dmt-catalog
  */
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, basename } from 'node:path';
@@ -17,38 +18,37 @@ const SERVICE_DIR = join(ROOT, 'services', 'dmt-matrix-decoder');
 const SYMBOLS_DIR = join(SERVICE_DIR, 'catalog', 'symbols');
 const PUBLIC_DIR = join(ROOT, 'public', 'dmt-symbols');
 
+const SUPABASE_URL = process.env.DMTCODE_SUPABASE_URL || 'https://bbmhrgpsyiahefnxqwfg.supabase.co';
+const SUPABASE_ANON_KEY =
+  process.env.DMTCODE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJibWhyZ3BzeWlhaGVmbnhxd2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1Njc5ODcsImV4cCI6MjA3OTE0Mzk4N30.zPuWahf5g140hdR__asVINWBvYJaxZmVvDQTvIAjLww';
+
 function parseArgs() {
   const args = process.argv.slice(2);
-  const out = { from: null, fetch: false };
+  const out = { from: null, registry: false, fetch: false };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--from' && args[i + 1]) out.from = resolve(args[++i]);
-    if (args[i] === '--fetch') out.fetch = true;
+    if (args[i] === '--registry') out.registry = true;
+    if (args[i] === '--fetch') out.fetch = true; // legacy alias for --registry
   }
+  if (out.fetch) out.registry = true;
   return out;
 }
 
-async function tryFetchRemote(id) {
-  const urls = [
-    `https://dmtcode.com/registry/images/${id}.png`,
-    `https://dmtcode.com/catalogue/${id}.png`,
-    `https://dmtcode.com/symbols/${id}.png`,
-  ];
-  for (const url of urls) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.slice(0, 4).toString() !== '\x89PNG') continue;
-      return buf;
-    } catch {
-      /* next */
-    }
+async function fetchRegistryFromSupabase() {
+  const fetchScript = join(SERVICE_DIR, 'scripts', 'fetch_dmtcode_registry.py');
+  const result = spawnSync('python3', [fetchScript], { cwd: SERVICE_DIR, stdio: 'inherit' });
+  if (result.status !== 0) {
+    throw new Error('fetch_dmtcode_registry.py failed');
   }
-  return null;
+  const recordsPath = join(SERVICE_DIR, 'catalog', 'registry_records.json');
+  if (!existsSync(recordsPath)) return 0;
+  const records = JSON.parse(readFileSync(recordsPath, 'utf8'));
+  return records.glyphCount || 0;
 }
 
 async function main() {
-  const { from, fetch } = parseArgs();
+  const { from, registry } = parseArgs();
   mkdirSync(SYMBOLS_DIR, { recursive: true });
   mkdirSync(PUBLIC_DIR, { recursive: true });
 
@@ -64,21 +64,14 @@ async function main() {
       copyFileSync(dest, join(PUBLIC_DIR, basename(file)));
       console.log(`Imported ${file}`);
     }
-  } else if (fetch) {
-    const ids = Array.from({ length: 120 }, (_, i) => String(i + 1).padStart(3, '0'));
-    let imported = 0;
-    for (const id of ids) {
-      const buf = await tryFetchRemote(id);
-      if (!buf) continue;
-      const name = `${id}.png`;
-      writeFileSync(join(SYMBOLS_DIR, name), buf);
-      writeFileSync(join(PUBLIC_DIR, name), buf);
-      imported++;
-      console.log(`Fetched ${name}`);
-    }
-    console.log(`Remote fetch imported ${imported} PNGs (dmtcode.com may require manual download).`);
+  } else if (registry) {
+    const count = await fetchRegistryFromSupabase();
+    console.log(
+      `Registry sync: ${count} PNGs from dmtcode.com (Supabase registry_glyphs). ` +
+        'PNG ZIP on /registry is still "Coming Soon"; this is the live source.',
+    );
   } else {
-    console.log('No --from or --fetch; rebuilding manifest from existing PNGs only.');
+    console.log('No --from or --registry; rebuilding manifest from existing PNGs only.');
   }
 
   const build = spawnSync('python3', ['scripts/build_catalog.py'], {

@@ -15,7 +15,7 @@ COPY catalog ./catalog
 COPY src ./src
 
 # Build catalogue PNGs + structural vectors if missing
-RUN python scripts/build_catalog.py && python scripts/build_structural_catalog.py
+RUN python scripts/fetch_dmtcode_registry.py && python scripts/build_catalog.py && python scripts/build_structural_catalog.py
 
 ENV PORT=8080
 EXPOSE 8080

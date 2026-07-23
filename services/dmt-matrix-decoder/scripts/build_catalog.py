@@ -395,20 +395,34 @@ def main() -> None:
             }
         )
 
+    # Include registry glyphs fetched from dmtcode.com (see fetch_dmtcode_registry.py)
+    registry_meta: dict[str, dict] = {}
+    registry_path = ROOT / "catalog" / "registry_records.json"
+    if registry_path.exists():
+        try:
+            reg = json.loads(registry_path.read_text(encoding="utf-8"))
+            for g in reg.get("glyphs") or []:
+                registry_meta[g.get("filename", "")] = g
+        except json.JSONDecodeError:
+            pass
+
     # Include any extra PNGs dropped in by the user (e.g. full dmtcode.com catalogue)
     for path in sorted(SYMBOLS_DIR.glob("*.png")):
         if path.stem in {s["id"] for s in symbols}:
             continue
+        meta = registry_meta.get(path.name, {})
         symbols.append(
             {
-                "id": path.stem,
-                "name": path.stem.replace("_", " ").title(),
-                "description": "Imported glyph from external catalogue",
-                "tags": ["imported"],
-                "source": "catalogue_import",
+                "id": meta.get("id") or path.stem,
+                "name": meta.get("name") or path.stem.replace("_", " ").title(),
+                "description": meta.get("description") or "Imported glyph from external catalogue",
+                "tags": meta.get("tags") or ["imported"],
+                "source": meta.get("source") or "catalogue_import",
                 "filename": path.name,
-                "width": SIZE,
-                "height": SIZE,
+                "width": meta.get("width") or SIZE,
+                "height": meta.get("height") or SIZE,
+                **({"registryId": meta["registryId"]} if meta.get("registryId") else {}),
+                **({"registryUrl": meta["registryUrl"]} if meta.get("registryUrl") else {}),
             }
         )
 

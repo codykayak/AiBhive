@@ -31,6 +31,24 @@ Upload photo
 | `src/pipeline.py` | Build orchestration |
 | `scripts/build_structural_catalog.py` | CLI to rebuild structural manifest |
 
+## Sync catalogue from dmtcode.com
+
+The PNG ZIP on [dmtcode.com/registry](https://dmtcode.com/registry) is listed as **Coming Soon**.
+Live 100×100 glyphs are available via the public Supabase `registry_glyphs` table (embedded base64 PNGs).
+
+```bash
+# From repo root — fetches registry + rebuilds raster + structural manifests
+npm run sync:dmt-catalog
+
+# Or inside the worker directory
+python3 scripts/fetch_dmtcode_registry.py
+python3 scripts/build_catalog.py
+python3 scripts/build_structural_catalog.py
+```
+
+Also available: [data.json](https://dmtcode.com/data.json), registry CSV/JSON downloads (SPA), and
+[Zenodo 10.5281/zenodo.17816520](https://doi.org/10.5281/zenodo.17816520) (metadata JSON only).
+
 ## Build structural catalogue
 
 ```bash
@@ -46,15 +64,36 @@ Output: `catalog/structural_manifest.json` + per-glyph `catalog/structural/*.vec
 
 ## Deploy
 
+Pushes to `main-fixed` under `services/dmt-matrix-decoder/` trigger `.github/workflows/deploy-dmt-matrix-decoder.yml`.
+Uses the same GCP Workload Identity secrets as the main AiBhive Cloud Run service.
+
+Manual deploy:
+
 ```bash
-gcloud builds submit --tag gcr.io/PROJECT_ID/dmt-matrix-decoder
+cd services/dmt-matrix-decoder
+PROJECT=gen-lang-client-0787280773
+gcloud builds submit --tag gcr.io/$PROJECT/dmt-matrix-decoder --project $PROJECT
 gcloud run deploy dmt-matrix-decoder \
-  --image gcr.io/PROJECT_ID/dmt-matrix-decoder \
+  --image gcr.io/$PROJECT/dmt-matrix-decoder \
   --region us-central1 \
+  --project $PROJECT \
+  --memory 1Gi \
+  --timeout 120 \
   --set-env-vars DMT_DECODER_WORKER_SECRET=your-secret \
   --set-secrets GEMINI_API_KEY=GEMINI_API_KEY:latest,XAI_API_KEY=XAI_API_KEY:latest \
-  --memory 1Gi --no-allow-unauthenticated
+  --allow-unauthenticated
 ```
+
+### Wire main AiBhive Cloud Run service
+
+Add to the **main** Cloud Run service (Express on aibhive.com):
+
+| Variable | Value |
+|----------|--------|
+| `DMT_DECODER_URL` | Worker URL, e.g. `https://dmt-matrix-decoder-xxxxx-uc.a.run.app` |
+| `DMT_DECODER_WORKER_SECRET` | Same secret as the worker |
+
+`GEMINI_API_KEY` and `XAI_API_KEY` / `GROK_API_KEY` should already exist on the main service (vision fallback).
 
 ## Endpoints
 
