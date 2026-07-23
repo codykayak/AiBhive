@@ -7,13 +7,13 @@ type ExpandedFields = {
 };
 
 const W = {
-  herbs: commonsImage('Herbs in flowerpots.jpg'),
+  herbs: commonsImage('Medicinal Herbs.jpg'),
   ginger: commonsImage('Ingwer 2 fcm.jpg'),
-  ginseng: commonsImage('Panax ginseng roots.jpg'),
+  ginseng: commonsImage('Ginseng root.jpg'),
   turmeric: commonsImage('Curcuma longa roots.jpg'),
   mushroom: commonsImage('Ganoderma lucidum 01.jpg'),
-  berries: commonsImage('Lycium barbarum fruits.jpg'),
-  forest: commonsImage('Pacific Northwest rainforest.jpg'),
+  berries: commonsImage('Lycium barbarum RHu fruit.JPG'),
+  forest: commonsImage('Roosevelt elk bull in Hoh Rainforest 2022-05-30.jpg'),
   tea: commonsImage('Herbal tea.jpg'),
 };
 
