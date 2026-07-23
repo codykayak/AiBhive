@@ -7,24 +7,24 @@ type ExpandedFields = {
 };
 
 const W = {
-  herbs: commonsImage('Herbal medicine in white bowls.jpg'),
-  dandelion: commonsImage('Dandelion-2005-03-13 edit.jpg'),
-  liver: commonsImage('Liver annotated.jpg'),
+  herbs: commonsImage('Medicinal Herbs.jpg'),
+  dandelion: commonsImage('Dandelion flower macro taraxacum officinale.jpg'),
+  liver: commonsImage('Liver and nearby organs-es.png'),
   gut: commonsImage('Digestive system diagram en.svg'),
-  sleep: commonsImage('Sleeping baby in a teddy bear themed blanket.jpg'),
-  immune: commonsImage('Sambucus nigra 002.JPG'),
+  sleep: commonsImage('Human sleeping on a bed with a dog.jpg'),
+  immune: commonsImage('Elder berry (Sambucus nigra). Knockentiber. North Ayrshire.jpg'),
   diet: commonsImage('Mediterranean diet.jpg'),
-  stress: commonsImage('Ashwagandha Withania somnifera.jpg'),
+  stress: commonsImage('Withania somnifera MHNT.BOT.2012.10.13.jpg'),
   skin: commonsImage('Calendula officinalis flowers.jpg'),
-  water: commonsImage('Large drop.jpg'),
-  fasting: commonsImage('IF breakfast.jpg'),
-  legal: commonsImage('Balance - Scales of Justice (PSF).png'),
-  mushroom: commonsImage('Ganoderma oregonense 02.jpg'),
+  water: commonsImage('Water drop 001.jpg'),
+  fasting: commonsImage('Healthy English Breakfast.jpg'),
+  legal: commonsImage('W scales of justice icon.svg'),
+  mushroom: commonsImage('Ganoderma oregonesis.JPG'),
   plant: commonsImage('Mahonia aquifolium.jpg'),
-  castor: commonsImage('Castor oil bottle.jpg'),
-  bath: commonsImage('Salt baths at the Dead Sea.jpg'),
+  castor: commonsImage('Ricinus communis in Sicily 2024.jpg'),
+  bath: commonsImage('Decaying spa baths - geograph.org.uk - 949489.jpg'),
   cayce: commonsImage('Cayce 1910.jpg'),
-  detox: commonsImage('Activated charcoal tablets.jpg'),
+  detox: commonsImage('Activated-charcoal-i.png'),
 };
 
 export const HOLISTIC_TOPIC_EXPANDED: Record<string, ExpandedFields> = {
