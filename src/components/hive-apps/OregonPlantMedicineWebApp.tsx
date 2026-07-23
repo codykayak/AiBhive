@@ -135,6 +135,52 @@ function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber
   }
 }
 
+const TAB_PAGE_LABELS: Record<Tab, string> = {
+  home: 'Home',
+  community: 'Community',
+  plants: 'Plants & foraging',
+  herbs: 'Herbs',
+  supplements: 'Supplements',
+  holistic: 'Holistic protocols',
+  hypnosis: 'Hypnosis & energy',
+  'animal-health': 'Animal health',
+  guide: 'Field guide',
+  resources: 'Resources',
+};
+
+const NAV_GROUPS = [
+  {
+    id: 'browse',
+    label: 'Browse',
+    items: [
+      ['home', 'Home', Home],
+      ['community', 'Community', Users],
+      ['plants', 'Plants', Sprout],
+    ],
+  },
+  {
+    id: 'libraries',
+    label: 'Libraries',
+    items: [
+      ['herbs', HERBS_TAB_SHORT_LABEL, Leaf],
+      ['supplements', SUPPLEMENTS_TAB_SHORT_LABEL, FlaskConical],
+      ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
+      ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
+      ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
+    ],
+  },
+] as const;
+
+function isResearchNavTab(id: string) {
+  return id === 'holistic' || id === 'hypnosis' || id === 'animal-health' || id === 'herbs' || id === 'supplements';
+}
+
+function navTabShortLabel(id: string, label: string) {
+  if (id === 'animal-health') return 'Animals';
+  if (id === 'supplements') return 'Supps';
+  return label.split(' ')[0];
+}
+
 const FAVORITES_KEY = 'oregon_plant_medicine_favorites';
 
 function loadFavorites(): Set<string> {
@@ -906,65 +952,47 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
         onContribute={() => setShowCreatePost(true)}
       />
 
-      <header className="border-b border-emerald-500/25">
+      <header className="border-b border-slate-800">
         <nav
-          className={`lk-nav-bar sticky top-0 z-30 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 backdrop-blur-xl border-b border-emerald-400/40 shadow-lg shadow-emerald-900/30 ${
+          className={`lk-nav-bar sticky top-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800 ${
             expanded ? 'px-4 sm:px-8' : 'px-4'
           }`}
         >
           <div className="max-w-6xl mx-auto flex items-center gap-3 py-2.5">
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1 min-w-0">
-              {(
-                [
-                  ['home', 'Home', Home],
-                  ['community', 'Community', Users],
-                  ['plants', 'Plants', Sprout],
-                  ['herbs', HERBS_TAB_SHORT_LABEL, Leaf],
-                  ['supplements', SUPPLEMENTS_TAB_SHORT_LABEL, FlaskConical],
-                  ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
-                  ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
-                  ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
-                ] as const
-              ).map(([id, label, Icon]) => {
-                const active = tab === id;
-                const isResearch =
-                  id === 'holistic' ||
-                  id === 'hypnosis' ||
-                  id === 'animal-health' ||
-                  id === 'herbs' ||
-                  id === 'supplements';
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => selectTab(id)}
-                    className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
-                      active
-                        ? isResearch
-                          ? 'text-violet-200'
-                          : 'text-emerald-100'
-                        : 'text-emerald-200/70 hover:text-white'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    <span className="hidden sm:inline">{label}</span>
-                    <span className="sm:hidden">
-                      {id === 'animal-health'
-                        ? 'Animals'
-                        : id === 'supplements'
-                          ? 'Supps'
-                          : label.split(' ')[0]}
-                    </span>
-                    {active ? (
-                      <span
-                        className={`absolute bottom-0 left-2 right-2 h-0.5 rounded-full ${
-                          isResearch ? 'bg-violet-400' : 'bg-emerald-400'
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none flex-1 min-w-0 pb-0.5">
+              {NAV_GROUPS.map((group, groupIndex) => (
+                <div key={group.id} className="flex items-center gap-1 shrink-0">
+                  {groupIndex > 0 ? (
+                    <span className="hidden sm:block w-px h-7 bg-slate-700 mx-1.5 shrink-0" aria-hidden />
+                  ) : null}
+                  <span className="hidden lg:inline text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-1.5 shrink-0">
+                    {group.label}
+                  </span>
+                  {group.items.map(([id, label, Icon]) => {
+                    const active = tab === id;
+                    const research = isResearchNavTab(id);
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => selectTab(id)}
+                        aria-current={active ? 'page' : undefined}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-colors ${
+                          active
+                            ? research
+                              ? 'bg-violet-500/20 text-white ring-1 ring-violet-400/35 shadow-sm'
+                              : 'bg-white/10 text-white ring-1 ring-white/15 shadow-sm'
+                            : 'text-slate-400 hover:text-white hover:bg-white/5'
                         }`}
-                      />
-                    ) : null}
-                  </button>
-                );
-              })}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="hidden sm:inline">{label}</span>
+                        <span className="sm:hidden">{navTabShortLabel(id, label)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <LivingKnowledgeThemeToggle />
@@ -980,28 +1008,39 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
           </div>
         </nav>
 
-        <div className="lk-nav-search border-b border-emerald-500/30 bg-gradient-to-b from-emerald-800/90 to-emerald-900/80">
-          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
-            {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
-            <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
-            {tab === 'plants' && userLocation ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setLocationModalStep('location');
-                  setShowLocationModal(true);
-                }}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400/90 hover:text-emerald-300"
-              >
-                <MapPin className="w-3.5 h-3.5" />
-                {locationLabel(userLocation)}
-                {regionSupported && userLocation.stateId
-                  ? ` · ${subRegionLabel(userLocation.subRegion)}`
-                  : !regionSupported
-                    ? ' · not in library yet'
-                    : ''}
-              </button>
-            ) : null}
+        <div className="lk-nav-search border-b border-slate-800 bg-slate-900/90">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4">
+            <div className="flex flex-col gap-3 max-w-2xl mx-auto w-full">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Find anything</p>
+                  <p className="text-sm font-semibold text-white">Search plants, herbs, supplements, and protocols</p>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 sm:text-right">
+                  Viewing: <span className="text-slate-200">{TAB_PAGE_LABELS[tab]}</span>
+                </span>
+              </div>
+              {authError ? <p className="text-xs text-red-300">{authError}</p> : null}
+              <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} />
+              {tab === 'plants' && userLocation ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocationModalStep('location');
+                    setShowLocationModal(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-300 hover:text-sky-200 self-start"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  {locationLabel(userLocation)}
+                  {regionSupported && userLocation.stateId
+                    ? ` · ${subRegionLabel(userLocation.subRegion)}`
+                    : !regionSupported
+                      ? ' · not in library yet'
+                      : ''}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>
