@@ -70,6 +70,7 @@ import {
   dmtDecodeRawCost,
   listDmtSessions,
   loadDmtCatalog,
+  loadStructuralCatalog,
   saveDmtSession,
 } from './dmtMatrixDecoder.js';
 
@@ -730,6 +731,18 @@ export function registerResearchLabRoutes(app, db) {
     }
   });
 
+  app.get('/api/research-lab/dmt-matrix/structural/catalog', (_req, res) => {
+    try {
+      const manifest = loadStructuralCatalog();
+      if (!manifest.glyphCount) {
+        return res.status(404).json({ error: 'Structural catalogue not built.' });
+      }
+      return res.json(manifest);
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Structural catalog unavailable.' });
+    }
+  });
+
   app.get('/api/research-lab/dmt-matrix/sessions', async (req, res) => {
     const authUser = await requireResearchLabUser(req, res);
     if (!authUser) return;
@@ -748,7 +761,7 @@ export function registerResearchLabRoutes(app, db) {
       if (!authUser) return;
       uid = authUser.uid;
 
-      const { imageBase64, mimeType, useVision, visionProvider, notes, byok } = req.body || {};
+      const { imageBase64, mimeType, useVision, useStructural, visionProvider, notes, byok } = req.body || {};
       if (!imageBase64) {
         return res.status(400).json({ error: 'imageBase64 is required.' });
       }
@@ -765,6 +778,7 @@ export function registerResearchLabRoutes(app, db) {
         imageBase64,
         mimeType: mimeType || 'image/jpeg',
         useVision: useVision !== false,
+        useStructural: useStructural !== false,
         visionProvider: visionProvider || 'auto',
         byok: byok || {},
         notes: notes || '',

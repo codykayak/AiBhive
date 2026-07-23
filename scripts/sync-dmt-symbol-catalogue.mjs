@@ -87,6 +87,12 @@ async function main() {
   });
   if (build.status !== 0) process.exit(build.status ?? 1);
 
+  const structural = spawnSync('python3', ['scripts/build_structural_catalog.py'], {
+    cwd: SERVICE_DIR,
+    stdio: 'inherit',
+  });
+  if (structural.status !== 0) process.exit(structural.status ?? 1);
+
   // Mirror manifest + symbols to public/ for static serving
   const manifestSrc = join(SERVICE_DIR, 'catalog', 'manifest.json');
   if (existsSync(manifestSrc)) {

@@ -14,8 +14,8 @@ COPY scripts ./scripts
 COPY catalog ./catalog
 COPY src ./src
 
-# Build catalogue PNGs if missing
-RUN python scripts/build_catalog.py
+# Build catalogue PNGs + structural vectors if missing
+RUN python scripts/build_catalog.py && python scripts/build_structural_catalog.py
 
 ENV PORT=8080
 EXPOSE 8080
