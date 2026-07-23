@@ -908,7 +908,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
 
       <header className="border-b border-emerald-500/25">
         <nav
-          className={`lk-nav-bar sticky top-0 z-30 bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 backdrop-blur-xl border-b border-emerald-500/30 shadow-lg shadow-emerald-950/25 ${
+          className={`lk-nav-bar sticky top-0 z-30 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-800 backdrop-blur-xl border-b border-emerald-400/40 shadow-lg shadow-emerald-900/30 ${
             expanded ? 'px-4 sm:px-8' : 'px-4'
           }`}
         >
@@ -980,7 +980,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
           </div>
         </nav>
 
-        <div className="lk-nav-search border-b border-emerald-500/20 bg-gradient-to-b from-emerald-950/85 to-emerald-900/75">
+        <div className="lk-nav-search border-b border-emerald-500/30 bg-gradient-to-b from-emerald-800/90 to-emerald-900/80">
           <div className="max-w-6xl mx-auto px-4 sm:px-8 py-4 flex flex-col items-center">
             {authError ? <p className="text-xs text-red-300 mb-2 w-full max-w-xl text-center">{authError}</p> : null}
             <LivingKnowledgeSiteSearch onSelect={handleSiteSearchSelect} className="max-w-xl" />
