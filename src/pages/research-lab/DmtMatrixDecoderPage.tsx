@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import { signInWithPopup } from 'firebase/auth';
 import {
   Camera,
+  ChevronRight,
   Loader2,
   ScanLine,
   Sparkles,
   Upload,
   Zap,
+  BookOpen,
+  BarChart3,
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import { auth, googleProvider } from '../../firebase';
@@ -61,7 +64,90 @@ interface DecodeResult {
   chargedUsd?: number;
 }
 
+interface CorpusPreview {
+  symbolCount: number;
+  registryCount: number;
+  tokenCount: number;
+  clusterCount: number;
+  shannonEntropyCatalog: number;
+  tagFrequency: { tag: string; count: number }[];
+  topGlyphs: { id: string; name: string; filename: string; tokenId?: string; tags: string[] }[];
+}
+
+interface ResearchReport {
+  reportId: string;
+  generatedAt: string;
+  budget: {
+    budgetUsd: number;
+    apiBudgetUsd: number;
+    apiSpentUsd: number;
+    glyphsCompared: number;
+    useRawBudget?: boolean;
+  };
+  stats: {
+    symbolCount: number;
+    registryCount: number;
+    shannonEntropy: number;
+    tagFrequency: { tag: string; count: number }[];
+    topBigrams: { pair: string; count: number; probability: number }[];
+    frequencyRanking: {
+      rank: number;
+      id: string;
+      name: string;
+      tokenId?: string;
+      filename: string;
+      tags: string[];
+    }[];
+  };
+  comparisons: {
+    glyphId: string;
+    glyphName: string;
+    filename: string;
+    matches: {
+      script: string;
+      characterOrForm: string;
+      similarityScore: number;
+      reasoning: string;
+    }[];
+    linguisticLikelihood: number;
+    notes?: string;
+  }[];
+  promisingMatches: {
+    glyphId: string;
+    glyphName: string;
+    filename: string;
+    script: string;
+    characterOrForm: string;
+    similarityScore: number;
+    reasoning: string;
+  }[];
+  assessment: {
+    classification: string;
+    confidence: number;
+    rationale: string[];
+    promisingScriptMatches: number;
+    avgLinguisticLikelihood: number;
+  };
+  synthesis?: {
+    headline?: string;
+    summary?: string;
+    namingHypotheses?: { name: string; glyphIds: string[]; rationale: string }[];
+    nextExperiments?: string[];
+    confidenceInStructuredLanguage?: number;
+  };
+  chargedUsd?: number;
+  useRawBudget?: boolean;
+}
+
 const FALLBACK_DECODE_COST = 0.02;
+const DEFAULT_RESEARCH_BUDGET = 1;
+
+const CLASS_LABELS: Record<string, string> = {
+  structured_symbolic_system: 'Structured symbolic system',
+  hybrid_geometric_linguistic: 'Hybrid geometric / linguistic',
+  geometric_primitives: 'Geometric primitives',
+  repeating_geometric_motifs: 'Repeating geometric motifs',
+};
 
 async function compressImage(file: File): Promise<{ base64: string; mimeType: string; previewUrl: string }> {
   return new Promise((resolve, reject) => {
@@ -108,9 +194,15 @@ export default function DmtMatrixDecoderPage() {
   const [notes, setNotes] = useState('');
   const [visionProvider, setVisionProvider] = useState('auto');
   const [busy, setBusy] = useState(false);
+  const [researchBusy, setResearchBusy] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<DecodeResult | null>(null);
+  const [researchReport, setResearchReport] = useState<ResearchReport | null>(null);
+  const [corpusPreview, setCorpusPreview] = useState<CorpusPreview | null>(null);
   const [estimatedCost, setEstimatedCost] = useState(FALLBACK_DECODE_COST);
+  const [researchBudget, setResearchBudget] = useState(DEFAULT_RESEARCH_BUDGET);
+  const [useRawBudget, setUseRawBudget] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const catalog = (catalogData as { symbols: CatalogSymbol[] }).symbols || [];
   const catalogById = useMemo(
@@ -124,22 +216,41 @@ export default function DmtMatrixDecoderPage() {
   }, []);
 
   useEffect(() => {
+    void fetch('/api/research-lab/dmt-matrix/corpus-preview')
+      .then((r) => r.json())
+      .then((data) => setCorpusPreview(data))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       setEstimatedCost(FALLBACK_DECODE_COST);
+      setIsAdmin(false);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
         const token = await user.getIdToken();
-        const res = await fetch('/api/research-lab/estimate', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ op: 'dmt-decode' }),
-        });
-        const data = await res.json();
-        if (!cancelled && res.ok) {
-          setEstimatedCost(Number(data.estimatedCredits) || FALLBACK_DECODE_COST);
+        const [decodeEst, researchEst] = await Promise.all([
+          fetch('/api/research-lab/estimate', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ op: 'dmt-decode' }),
+          }).then((r) => r.json()),
+          fetch('/api/research-lab/estimate', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              op: 'dmt-research',
+              params: { budgetUsd: researchBudget, useRawBudget },
+            }),
+          }).then((r) => r.json()),
+        ]);
+        if (!cancelled) {
+          setEstimatedCost(Number(decodeEst.estimatedCredits) || FALLBACK_DECODE_COST);
+          if (researchEst.budgetUsd) setResearchBudget(Number(researchEst.budgetUsd));
+          setIsAdmin(!!researchEst.isAdmin);
         }
       } catch {
         /* fallback */
@@ -148,7 +259,7 @@ export default function DmtMatrixDecoderPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, researchBudget, useRawBudget]);
 
   const drawOverlays = useCallback(() => {
     const canvas = canvasRef.current;
@@ -217,6 +328,35 @@ export default function DmtMatrixDecoderPage() {
     }
   }
 
+  async function runResearch() {
+    if (!user) {
+      setError('Sign in to run corpus decoding research.');
+      return;
+    }
+    setResearchBusy(true);
+    setError('');
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch('/api/research-lab/dmt-matrix/research', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          budgetUsd: researchBudget,
+          useRawBudget: useRawBudget && isAdmin,
+          visionProvider,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Research run failed.');
+      setResearchReport(data as ResearchReport);
+      if (data.isAdmin) setIsAdmin(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Research run failed.');
+    } finally {
+      setResearchBusy(false);
+    }
+  }
+
   async function runDecode() {
     if (!imageBase64) {
       setError('Upload or capture a laser matrix photo first.');
@@ -253,42 +393,227 @@ export default function DmtMatrixDecoderPage() {
     }
   }
 
+  function toggleRawBudget() {
+    if (!isAdmin) return;
+    setUseRawBudget((v) => !v);
+  }
+
+  const priceLabel = `$${researchBudget.toFixed(2)}`;
+  const rawHint = useRawBudget && isAdmin ? ' · raw token budget' : '';
+
   return (
     <div className={styles.dmt}>
       <SEO
         title="DMT Matrix Decoder — 650nm Laser Glyph AI | AiBhive Research Lab"
-        description="Pioneer AI decoder for DMT laser diffraction symbols. Upload matrix photos, match against the DMT Code 100×100 glyph catalogue, and fuse CV + Gemini/Grok vision."
+        description="Decode the DMT laser diffraction code: corpus statistics, script comparison against katakana, Hebrew, Aramaic, and AI matrix photo decoding."
         keywords="DMT matrix decoder, laser code, 650nm, glyph classifier, DMT Code, visual symbols, AiBhive Research Lab"
         image="/rl-hero-historical-ancient.png"
       />
 
-      <div className={styles.shell}>
-        <header className={styles.hero}>
-          <p className={styles.eyebrow}>Research Lab · Pioneer Tool</p>
+      <section className={styles.heroVideo} aria-label="DMT Matrix Decoder hero">
+        <video
+          className={styles.heroVideoEl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/dmt-symbols/registry_ceed6b59-9bd8-46e2-be16-ef6ecc5363ea.png"
+        >
+          <source src="/dmt-symbols/dmt-matrix-hero.mp4" type="video/mp4" />
+        </video>
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroContent}>
+          <p className={styles.eyebrow}>Research Lab · DMT Code Project</p>
           <h1 className={styles.title}>DMT Matrix Decoder</h1>
           <p className={styles.lead}>
-            Decode the laser diffraction glyph matrix — CV classifier + Gemini/Grok vision fused against
-            the DMT Code 100×100 catalogue.
+            Statistical corpus analysis + script comparison + AI photo decoding for the 650nm laser
+            diffraction glyph matrix.
           </p>
-        </header>
+          <div className={styles.heroStats}>
+            <span>{corpusPreview?.symbolCount ?? catalog.length} glyphs</span>
+            <span>{corpusPreview?.registryCount ?? 0} registry</span>
+            <span>{corpusPreview?.clusterCount ?? 0} clusters</span>
+          </div>
+        </div>
+      </section>
+
+      <div className={styles.shell}>
+        <section className={styles.researchCard} aria-label="Corpus decoding research">
+          <div className={styles.researchHeader}>
+            <BookOpen size={20} className={styles.researchIcon} aria-hidden />
+            <div>
+              <h2 className={styles.researchTitle}>Decode the corpus</h2>
+              <p className={styles.researchSub}>
+                Frequency ranking, Shannon entropy, bigram transitions, and Gemini/Grok script
+                comparison (katakana, kanji, Hebrew, Aramaic, runes).
+              </p>
+            </div>
+          </div>
+
+          {corpusPreview && (
+            <div className={styles.previewGrid}>
+              <div className={styles.statPill}>
+                <BarChart3 size={14} aria-hidden />
+                Entropy {corpusPreview.shannonEntropyCatalog.toFixed(2)} bits
+              </div>
+              {corpusPreview.tagFrequency.slice(0, 4).map((t) => (
+                <div key={t.tag} className={styles.statPill}>
+                  {t.tag} ×{t.count}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!user && (
+            <p className={styles.signInBanner}>
+              <button type="button" className={styles.linkBtn} onClick={() => void signIn()}>
+                Sign in with Google
+              </button>{' '}
+              to run decoding research ({priceLabel} Hive credits).
+            </p>
+          )}
+
+          <div className={styles.decodeCtaRow}>
+            <button
+              type="button"
+              className={styles.btnDecode}
+              disabled={researchBusy || !user}
+              onClick={() => void runResearch()}
+            >
+              {researchBusy ? (
+                <>
+                  <Loader2 size={18} className={styles.spin} aria-hidden />
+                  Decoding corpus…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} aria-hidden />
+                  Start Decoding
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`${styles.priceBadge} ${isAdmin ? styles.priceBadgeAdmin : ''} ${useRawBudget ? styles.priceBadgeRaw : ''}`}
+              onClick={toggleRawBudget}
+              title={
+                isAdmin
+                  ? 'Admin: tap to toggle raw token budget (no markup)'
+                  : 'Hive credits for this research run'
+              }
+              disabled={!user}
+            >
+              {priceLabel}
+              <span className={styles.priceSub}>credits{rawHint}</span>
+            </button>
+          </div>
+          <p className={styles.budgetHint}>
+            Fixed budget — spends up to {priceLabel} in API tokens
+            {useRawBudget && isAdmin ? ' (admin raw mode)' : ' (includes platform markup)'}.
+            No open-ended spinning.
+          </p>
+        </section>
+
+        {researchReport && (
+          <section className={styles.section} aria-label="Research report">
+            <h2 className={styles.sectionTitle}>Research report</h2>
+            <div className={styles.summaryCard}>
+              <p className={styles.reportHeadline}>
+                {researchReport.synthesis?.headline ||
+                  CLASS_LABELS[researchReport.assessment.classification] ||
+                  researchReport.assessment.classification}
+              </p>
+              <p>{researchReport.synthesis?.summary}</p>
+              <p className={styles.reportMeta}>
+                Classification:{' '}
+                <strong>
+                  {CLASS_LABELS[researchReport.assessment.classification] ||
+                    researchReport.assessment.classification}
+                </strong>{' '}
+                ({Math.round(researchReport.assessment.confidence * 100)}% confidence) · spent{' '}
+                {researchReport.budget.apiSpentUsd.toFixed(2)} /{' '}
+                {researchReport.budget.apiBudgetUsd.toFixed(2)} API budget ·{' '}
+                {researchReport.budget.glyphsCompared} glyphs compared
+              </p>
+            </div>
+
+            {!!researchReport.promisingMatches.length && (
+              <>
+                <h3 className={styles.subTitle}>Promising script matches</h3>
+                <ul className={styles.matchList}>
+                  {researchReport.promisingMatches.map((m) => (
+                    <li key={`${m.glyphId}-${m.script}`} className={styles.matchItem}>
+                      <img
+                        src={`/dmt-symbols/${m.filename}`}
+                        alt=""
+                        className={styles.glyphThumb}
+                      />
+                      <div>
+                        <div className={styles.detName}>
+                          {m.glyphName} → {m.script}
+                        </div>
+                        <div className={styles.detMeta}>
+                          {m.characterOrForm} · {Math.round(m.similarityScore * 100)}% similar
+                        </div>
+                        <div className={styles.matchReason}>{m.reasoning}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            <h3 className={styles.subTitle}>Top frequent glyphs</h3>
+            <ul className={styles.detectionList}>
+              {researchReport.stats.frequencyRanking.slice(0, 8).map((g) => (
+                <li key={g.id} className={styles.detectionItem}>
+                  <img src={`/dmt-symbols/${g.filename}`} alt="" className={styles.glyphThumb} />
+                  <div>
+                    <div className={styles.detName}>
+                      #{g.rank} {g.name}
+                    </div>
+                    <div className={styles.detMeta}>
+                      {g.tokenId || g.id} · {g.tags.join(', ')}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {!!researchReport.stats.topBigrams.length && (
+              <>
+                <h3 className={styles.subTitle}>Highest-probability transitions</h3>
+                <div className={styles.summaryCard}>
+                  {researchReport.stats.topBigrams
+                    .slice(0, 6)
+                    .map((b) => `${b.pair} (${(b.probability * 100).toFixed(1)}%)`)
+                    .join(' · ')}
+                </div>
+              </>
+            )}
+
+            {researchReport.synthesis?.namingHypotheses?.length ? (
+              <>
+                <h3 className={styles.subTitle}>Naming hypotheses</h3>
+                <ul className={styles.detectionList}>
+                  {researchReport.synthesis.namingHypotheses.map((h) => (
+                    <li key={h.name} className={styles.summaryCard}>
+                      <strong>{h.name}</strong> — {h.rationale}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </section>
+        )}
 
         <div className={styles.pioneer}>
           <Sparkles className={styles.pioneerIcon} size={18} aria-hidden />
           <span>
-            First known AI stack built to decode reported DMT laser symbols. Upload a photo, get positioned
-            glyph matches, and store sessions in Firebase for research.
+            Photo decode: upload a laser matrix image for positioned glyph matching. Sessions saved
+            to Firebase for sequence analysis.
           </span>
         </div>
-
-        {!user && (
-          <div className={styles.signInBanner}>
-            <button type="button" onClick={() => void signIn()} style={{ background: 'none', border: 'none', color: 'inherit', font: 'inherit', cursor: 'pointer', padding: 0 }}>
-              Sign in with Google
-            </button>{' '}
-            to decode and save results (~{estimatedCost.toFixed(2)} Hive credits per photo). Or{' '}
-            <Link to="/research-lab/workspace">open Research Lab workspace</Link>.
-          </div>
-        )}
 
         <div className={styles.uploadCard}>
           <input
@@ -318,8 +643,8 @@ export default function DmtMatrixDecoderPage() {
               onClick={() => inputRef.current?.click()}
             >
               <Camera className={styles.dropzoneIcon} aria-hidden />
-              <span className={styles.dropzoneText}>Tap to capture or upload</span>
-              <span className={styles.dropzoneHint}>650nm laser diffraction · matrix photos · sketches</span>
+              <span className={styles.dropzoneText}>Tap to capture or upload matrix photo</span>
+              <span className={styles.dropzoneHint}>650nm laser diffraction · matrix photos</span>
             </button>
           )}
 
@@ -344,25 +669,25 @@ export default function DmtMatrixDecoderPage() {
             <div className={styles.row}>
               {previewUrl && (
                 <button type="button" className={styles.btnGhost} onClick={() => inputRef.current?.click()}>
-                  <Upload size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden />
+                  <Upload size={16} aria-hidden />
                   Replace
                 </button>
               )}
               <button
                 type="button"
                 className={styles.btnPrimary}
-                disabled={busy || !imageBase64}
+                disabled={busy || !imageBase64 || !user}
                 onClick={() => void runDecode()}
               >
                 {busy ? (
                   <>
-                    <Loader2 size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} className="spin" aria-hidden />
+                    <Loader2 size={18} className={styles.spin} aria-hidden />
                     Decoding…
                   </>
                 ) : (
                   <>
-                    <ScanLine size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden />
-                    Decode matrix
+                    <ScanLine size={18} aria-hidden />
+                    Decode photo · ~{estimatedCost.toFixed(2)}
                   </>
                 )}
               </button>
@@ -374,24 +699,11 @@ export default function DmtMatrixDecoderPage() {
         {result && (
           <>
             <section className={styles.section} aria-label="Decode summary">
-              <h2 className={styles.sectionTitle}>Analysis</h2>
+              <h2 className={styles.sectionTitle}>Photo analysis</h2>
               <div className={styles.summaryCard}>
                 {result.vision?.summary || 'CV classifier completed.'}
-                {result.vision?.matrixStructure && (
-                  <p style={{ marginTop: '0.5rem', color: 'var(--dmt-muted)' }}>
-                    Structure: <strong>{result.vision.matrixStructure}</strong>
-                  </p>
-                )}
-                {result.vision?.decodeNotes && (
-                  <p style={{ marginTop: '0.5rem' }}>{result.vision.decodeNotes}</p>
-                )}
-                {result.workerError && (
-                  <p style={{ marginTop: '0.5rem', color: 'var(--dmt-amber)' }}>
-                    CV worker offline — vision-only mode. ({result.workerError})
-                  </p>
-                )}
                 {result.syntax?.shannonEntropy != null && (
-                  <p style={{ marginTop: '0.5rem', color: 'var(--dmt-cyan)' }}>
+                  <p className={styles.reportMeta}>
                     Token entropy: <strong>{result.syntax.shannonEntropy.toFixed(3)} bits</strong>
                     {result.syntax.spatialGraph?.layoutType && (
                       <> · layout: <strong>{result.syntax.spatialGraph.layoutType}</strong></>
@@ -400,15 +712,6 @@ export default function DmtMatrixDecoderPage() {
                 )}
               </div>
             </section>
-
-            {result.syntax?.tokenSequence?.length ? (
-              <section className={styles.section} aria-label="Token sequence">
-                <h2 className={styles.sectionTitle}>Token sequence</h2>
-                <div className={styles.summaryCard}>
-                  {result.syntax.tokenSequence.join(' → ')}
-                </div>
-              </section>
-            ) : null}
 
             <section className={styles.section} aria-label="Detected symbols">
               <h2 className={styles.sectionTitle}>
@@ -432,8 +735,7 @@ export default function DmtMatrixDecoderPage() {
                         <div className={styles.detName}>{det.name}</div>
                         <div className={styles.detMeta}>
                           {det.tokenId && <span>{det.tokenId} · </span>}
-                          {det.symbolId} · {det.method || det.source || 'fused'}
-                          {det.catalogDescription && ` — ${det.catalogDescription.slice(0, 60)}`}
+                          {det.symbolId}
                         </div>
                       </div>
                       <span className={styles.confBadge}>
@@ -444,27 +746,13 @@ export default function DmtMatrixDecoderPage() {
                 })}
               </ul>
             </section>
-
-            {!!result.vision?.researchFlags?.length && (
-              <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>Research flags</h2>
-                <ul className={styles.detectionList}>
-                  {result.vision.researchFlags.map((flag) => (
-                    <li key={flag} className={styles.summaryCard}>
-                      <Zap size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden />
-                      {flag}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
           </>
         )}
 
         <section className={styles.section} aria-label="Glyph catalogue">
           <h2 className={styles.sectionTitle}>Catalogue ({catalog.length} glyphs)</h2>
           <div className={styles.catalogGrid}>
-            {catalog.map((sym) => (
+            {catalog.slice(0, 24).map((sym) => (
               <div key={sym.id}>
                 <div className={styles.catalogItem}>
                   <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
@@ -473,23 +761,13 @@ export default function DmtMatrixDecoderPage() {
               </div>
             ))}
           </div>
+          {catalog.length > 24 && (
+            <Link to="/research-lab/workspace" className={styles.moreLink}>
+              View all in workspace <ChevronRight size={14} />
+            </Link>
+          )}
         </section>
       </div>
-
-      {previewUrl && (
-        <div className={styles.stickyBar}>
-          <div className={styles.stickyInner}>
-            <button
-              type="button"
-              className={styles.btnPrimary}
-              disabled={busy || !imageBase64 || !user}
-              onClick={() => void runDecode()}
-            >
-              {busy ? 'Decoding…' : `Decode · ~${estimatedCost.toFixed(2)} credits`}
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

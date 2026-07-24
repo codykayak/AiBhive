@@ -83,7 +83,7 @@ export async function checkTokenBudget(db, userId, markedUpCostUsd, featureId, o
 
 /** @param {import('firebase-admin/firestore').Firestore} db */
 export async function recordTokenUsage(db, userId, opts) {
-  const { rawCostUsd, feature, summary, taskId, email } = opts;
+  const { rawCostUsd, feature, summary, taskId, email, chargeUsdOverride } = opts;
   if (await isHiveBillingExempt(db, { userId, email })) {
     return { ok: true, chargedUsd: 0, adminExempt: true };
   }
@@ -92,7 +92,16 @@ export async function recordTokenUsage(db, userId, opts) {
     return { ok: true, chargedUsd: 0, free: true };
   }
 
-  const { markedUsd: markedUp, markupMultiplier } = await markCostForUser(db, userId, rawCostUsd);
+  let markedUp;
+  let markupMultiplier;
+  if (chargeUsdOverride != null) {
+    markedUp = Math.max(0, Number(chargeUsdOverride) || 0);
+    markupMultiplier = rawCostUsd > 0 ? markedUp / rawCostUsd : 1;
+  } else {
+    const marked = await markCostForUser(db, userId, rawCostUsd);
+    markedUp = marked.markedUsd;
+    markupMultiplier = marked.markupMultiplier;
+  }
   if (markedUp === 0) return { ok: true, chargedUsd: 0 };
 
   const check = await checkTokenBudget(db, userId, markedUp, feature, { email });
