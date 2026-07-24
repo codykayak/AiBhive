@@ -62,5 +62,9 @@ echo "==> Gradle assembleRelease"
 
 APK_OUT="app/build/outputs/apk/release/app-release.apk"
 PUBLIC_APK="../../public/aibhive-plants.apk"
+mkdir -p "$(dirname "$PUBLIC_APK")"
 cp "$APK_OUT" "$PUBLIC_APK"
 echo "==> Plants APK ready at public/aibhive-plants.apk"
+
+# Free runner disk before upload / publish steps
+rm -rf app/build android/.gradle ../node_modules/.cache 2>/dev/null || true
