@@ -93,6 +93,7 @@
 .heroStats {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
 }
@@ -106,6 +107,36 @@
   background: rgba(34, 211, 238, 0.12);
   border: 1px solid rgba(34, 211, 238, 0.28);
   color: var(--dmt-cyan);
+}
+
+.heroGlyphTile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem 0.4rem;
+  border-radius: 0.85rem;
+  background: rgba(3, 5, 8, 0.72);
+  border: 1px solid rgba(232, 121, 249, 0.35);
+  box-shadow: 0 0 24px rgba(232, 121, 249, 0.15);
+  min-width: 4.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.heroGlyphTile img {
+  width: 3.25rem;
+  height: 3.25rem;
+  object-fit: contain;
+  border-radius: 0.45rem;
+  background: #050810;
+}
+
+.heroGlyphTile span {
+  font-size: 0.62rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.22);
 }
 
 /* —— Research card —— */

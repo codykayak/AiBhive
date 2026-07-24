@@ -3640,6 +3640,27 @@
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.06), rgba(232, 121, 249, 0.08));
 }
 
+.rlDmtDecoderGlyphTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(232, 121, 249, 0.35);
+  background: rgba(5, 8, 16, 0.85);
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.12);
+  overflow: hidden;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.rlDmtDecoderGlyphTile img {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
+}
+
 .rlDmtDecoderIcon {
   width: 2rem;
   height: 2rem;
@@ -3687,6 +3708,10 @@
   .rlDmtDecoderInner {
     grid-template-columns: 1fr;
     text-align: center;
+  }
+
+  .rlDmtDecoderGlyphTile {
+    margin: 0 auto;
   }
 
   .rlDmtDecoderIcon {

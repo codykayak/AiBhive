@@ -22,6 +22,7 @@ import {
 } from '../../lib/dmtMatrixInsight';
 import DmtMatrixInsightChat from './components/DmtMatrixInsightChat';
 import DmtLaserProvenanceSection from './components/DmtLaserProvenanceSection';
+import { DMT_FEATURED_GLYPH } from './dmtLaserProvenance';
 import styles from './dmtMatrixDecoder.module.css';
 import catalogData from '../../data/dmtSymbolCatalog.json';
 
@@ -445,7 +446,19 @@ export default function DmtMatrixDecoderPage() {
           </p>
           <div className={styles.heroStats}>
             <span>{corpusPreview?.symbolCount ?? catalog.length} glyphs</span>
-            <span>{corpusPreview?.registryCount ?? 0} registry</span>
+            <a
+              href={DMT_FEATURED_GLYPH.registryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.heroGlyphTile}
+              title={DMT_FEATURED_GLYPH.name}
+            >
+              <img
+                src={`/dmt-symbols/${DMT_FEATURED_GLYPH.filename}`}
+                alt={DMT_FEATURED_GLYPH.name}
+              />
+              <span>{corpusPreview?.registryCount ?? 0} registry</span>
+            </a>
             <span>{corpusPreview?.clusterCount ?? 0} clusters</span>
           </div>
           <Link to="/research-lab/dmt-matrix-library" className={styles.moreLink} style={{ marginTop: '0.75rem' }}>

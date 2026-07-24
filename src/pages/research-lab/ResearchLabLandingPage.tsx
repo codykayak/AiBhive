@@ -4,8 +4,8 @@ import ResearchLabWelcomeSection from './components/ResearchLabWelcomeSection';
 import ResearchLabToolsSection from './components/ResearchLabToolsSection';
 import CommunalLibraryMapSection from './components/CommunalLibraryMapSection';
 import { Link } from 'react-router-dom';
-import { ScanLine } from 'lucide-react';
 import styles from './researchLab.module.css';
+import { DMT_FEATURED_GLYPH } from './dmtLaserProvenance';
 
 export default function ResearchLabLandingPage() {
   return (
@@ -42,7 +42,18 @@ export default function ResearchLabLandingPage() {
       <ResearchLabHero />
       <section className={styles.rlDmtDecoderPromo} aria-label="DMT Matrix Decoder">
         <div className={styles.rlDmtDecoderInner}>
-          <ScanLine className={styles.rlDmtDecoderIcon} aria-hidden />
+          <a
+            href={DMT_FEATURED_GLYPH.registryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.rlDmtDecoderGlyphTile}
+            title={DMT_FEATURED_GLYPH.name}
+          >
+            <img
+              src={`/dmt-symbols/${DMT_FEATURED_GLYPH.filename}`}
+              alt={DMT_FEATURED_GLYPH.name}
+            />
+          </a>
           <div>
             <p className={styles.rlDmtDecoderEyebrow}>Pioneer tool · New</p>
             <h2 className={styles.rlDmtDecoderTitle}>DMT Matrix Decoder</h2>
