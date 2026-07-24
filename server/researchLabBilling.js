@@ -2,6 +2,7 @@
  * Research Lab utility billing — Hive credits (Hive credits) or BYOK orchestration fee.
  */
 import * as hiveUsage from './hiveUsage.js';
+import { TOKEN_MARKUP } from './hivePlans.js';
 import { ensureProfile, resolveApiKey } from '../functions/lib/tartar/credits.js';
 
 /** Raw API cost per OCR page when using platform Gemini (aligned with homework). */
@@ -30,6 +31,17 @@ export const RESEARCH_PUBLISH_RAW = Number(process.env.RESEARCH_LAB_PUBLISH_RAW 
 
 /** DMT Matrix Decoder — CV + vision fusion per photo. */
 export const RESEARCH_DMT_DECODE_RAW = Number(process.env.RESEARCH_LAB_DMT_DECODE_RAW ?? 0.018);
+
+/** DMT corpus research — script comparison + statistical report (per ~$1 budget). */
+export const RESEARCH_DMT_RESEARCH_BUDGET_USD = Number(
+  process.env.RESEARCH_LAB_DMT_RESEARCH_BUDGET_USD ?? 1,
+);
+
+export function dmtResearchRawCost(budgetUsd = RESEARCH_DMT_RESEARCH_BUDGET_USD, useRawBudget = false) {
+  const budget = Math.max(0.25, Math.min(Number(budgetUsd) || RESEARCH_DMT_RESEARCH_BUDGET_USD, 5));
+  if (useRawBudget) return budget;
+  return Math.round((budget / TOKEN_MARKUP) * 10000) / 10000;
+}
 
 export function dmtMatrixDecodeRawCost() {
   return RESEARCH_DMT_DECODE_RAW;
@@ -63,8 +75,17 @@ export function harvestRawCost(keys = {}, roles = {}, usesPlatformRouting = fals
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
  */
-export async function requireResearchLabBudget(db, userId, rawCostUsd, feature, { email } = {}) {
-  const { markedUsd: marked } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);
+export async function requireResearchLabBudget(
+  db,
+  userId,
+  rawCostUsd,
+  feature,
+  { email, chargeUsdOverride } = {},
+) {
+  const marked =
+    chargeUsdOverride != null
+      ? Math.max(0, Number(chargeUsdOverride) || 0)
+      : (await hiveUsage.markCostForUser(db, userId, rawCostUsd)).markedUsd;
   const budget = await hiveUsage.checkTokenBudget(db, userId, marked, feature, { email });
   if (!budget.ok) {
     return {
@@ -80,12 +101,20 @@ export async function requireResearchLabBudget(db, userId, rawCostUsd, feature, 
 /**
  * @param {import('firebase-admin/firestore').Firestore} db
  */
-export async function chargeResearchLabUsage(db, userId, rawCostUsd, feature, summary, { email } = {}) {
+export async function chargeResearchLabUsage(
+  db,
+  userId,
+  rawCostUsd,
+  feature,
+  summary,
+  { email, chargeUsdOverride } = {},
+) {
   const charge = await hiveUsage.recordTokenUsage(db, userId, {
     rawCostUsd,
     feature,
     summary,
     email,
+    chargeUsdOverride,
   });
   if (!charge.ok) {
     const { markedUsd } = await hiveUsage.markCostForUser(db, userId, rawCostUsd);

@@ -73,6 +73,15 @@ import {
   loadStructuralCatalog,
   saveDmtSession,
 } from './dmtMatrixDecoder.js';
+import {
+  buildCorpusPreview,
+  runDmtMatrixResearch,
+  saveDmtResearchReport,
+  resolveResearchBudget,
+  DMT_RESEARCH_DEFAULT_BUDGET_USD,
+} from './dmtMatrixResearch.js';
+import { isAdminEmail } from './hiveAdmin.js';
+import { dmtResearchRawCost, RESEARCH_DMT_RESEARCH_BUDGET_USD } from './researchLabBilling.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -95,7 +104,7 @@ function usesPlatformRouting(routing) {
  * Budget + daily spend + concurrency gate. Charges credits BEFORE work so
  * failed charges cannot leave platform API spend unpaid.
  */
-async function gateAndCharge(db, uid, rawCost, feature, summary, { email } = {}) {
+async function gateAndCharge(db, uid, rawCost, feature, summary, { email, chargeUsdOverride } = {}) {
   const job = beginUserJob(uid);
   if (!job.ok) return { ok: false, status: 429, body: { error: job.reason, code: 'CONCURRENCY' } };
 
@@ -107,20 +116,26 @@ async function gateAndCharge(db, uid, rawCost, feature, summary, { email } = {})
         .doc(uid)
         .set({ email: String(email).toLowerCase() }, { merge: true });
     }
-    const budget = await requireResearchLabBudget(db, uid, rawCost, feature, { email });
+    const budget = await requireResearchLabBudget(db, uid, rawCost, feature, { email, chargeUsdOverride });
     if (!budget.ok) {
       endUserJob(uid);
       return { ok: false, status: 402, body: budget };
     }
 
-    const { markedUsd: marked } = await markCostForUser(db, uid, rawCost);
+    const { markedUsd: marked } =
+      chargeUsdOverride != null
+        ? { markedUsd: Math.max(0, Number(chargeUsdOverride) || 0) }
+        : await markCostForUser(db, uid, rawCost);
     const daily = await assertDailySpendCap(db, uid, marked, { reserve: true, email });
     if (!daily.ok) {
       endUserJob(uid);
       return { ok: false, status: 429, body: { error: daily.reason, code: 'DAILY_CAP' } };
     }
 
-    const charge = await chargeResearchLabUsage(db, uid, rawCost, feature, summary, { email });
+    const charge = await chargeResearchLabUsage(db, uid, rawCost, feature, summary, {
+      email,
+      chargeUsdOverride,
+    });
     if (!charge.ok) {
       endUserJob(uid);
       return { ok: false, status: 402, body: charge };
@@ -574,7 +589,9 @@ export function registerResearchLabRoutes(app, db) {
     try {
       const authUser = await requireResearchLabUser(req, res);
       if (!authUser) return;
-      const result = await estimateForUser(db, authUser.uid, req.body?.op, req.body?.params || {});
+      const result = await estimateForUser(db, authUser.uid, req.body?.op, req.body?.params || {}, {
+        email: authUser.email,
+      });
       return res.json(result);
     } catch (error) {
       return res.status(400).json({ error: error.message || 'Estimate failed.' });
@@ -740,6 +757,60 @@ export function registerResearchLabRoutes(app, db) {
       return res.json(manifest);
     } catch (error) {
       return res.status(500).json({ error: error.message || 'Structural catalog unavailable.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/corpus-preview', (_req, res) => {
+    try {
+      return res.json(buildCorpusPreview());
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Corpus preview unavailable.' });
+    }
+  });
+
+  app.post('/api/research-lab/dmt-matrix/research', json2mb, async (req, res) => {
+    let uid = null;
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      uid = authUser.uid;
+
+      const budgetUsd = Number(req.body?.budgetUsd) || DMT_RESEARCH_DEFAULT_BUDGET_USD;
+      const useRawBudget = !!req.body?.useRawBudget && isAdminEmail(authUser.email);
+      const resolved = resolveResearchBudget(budgetUsd, { useRawBudget });
+      const rawCost = dmtResearchRawCost(budgetUsd, useRawBudget);
+      const chargeUsdOverride = useRawBudget ? resolved.chargeUsd : undefined;
+
+      const gate = await gateAndCharge(db, uid, rawCost, 'dmt-matrix-research', 'DMT corpus research', {
+        email: authUser.email,
+        chargeUsdOverride,
+      });
+      if (!gate.ok) {
+        return res.status(gate.status).json(gate.body);
+      }
+
+      const report = await runDmtMatrixResearch({
+        budgetUsd,
+        useRawBudget,
+        visionProvider: req.body?.visionProvider || 'auto',
+        byok: req.body?.byok || {},
+        db,
+        uid,
+      });
+
+      await saveDmtResearchReport(db, uid, report, { email: authUser.email });
+
+      endUserJob(uid);
+      return res.json({
+        ...report,
+        chargedUsd: gate.chargedUsd ?? 0,
+        adminExempt: !!gate.adminExempt,
+        isAdmin: isAdminEmail(authUser.email),
+        useRawBudget,
+      });
+    } catch (error) {
+      if (uid) endUserJob(uid);
+      return res.status(500).json({ error: error.message || 'DMT research failed.' });
     }
   });
 
