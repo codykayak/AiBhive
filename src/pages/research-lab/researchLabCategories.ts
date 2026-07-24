@@ -32,6 +32,7 @@ export interface ResearchLabCategory {
 export const RESEARCH_LAB_NAV = [
   { name: 'Research Lab', path: '/research-lab' },
   { name: 'DMT Matrix Decoder', path: '/research-lab/dmt-matrix-decoder' },
+  { name: 'DMT Matrix Library', path: '/research-lab/dmt-matrix-library' },
   { name: 'Research tools', path: '/research-lab/workspace' },
   { name: 'Communal Library', path: '/research-lab/communal-library' },
   { name: 'Historical - Ancient', path: '/research-lab/historical-ancient' },

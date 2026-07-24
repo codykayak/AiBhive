@@ -32,6 +32,7 @@ const KNOWN_TOPICS = new Set([
   'alchemy',
   'ley-lines',
   'nag-hammadi',
+  'dmt-matrix',
   'general',
 ]);
 

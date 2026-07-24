@@ -61,6 +61,7 @@ const HerbsPage = lazy(() => import('./pages/plants/HerbsPage'));
 const SupplementsPage = lazy(() => import('./pages/plants/SupplementsPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const DmtMatrixDecoderPage = lazy(() => import('./pages/research-lab/DmtMatrixDecoderPage'));
+const DmtMatrixLibraryPage = lazy(() => import('./pages/research-lab/DmtMatrixLibraryPage'));
 const ResearchLabWorkspacePage = lazy(() => import('./pages/research-lab/ResearchLabWorkspacePage'));
 const ResearchLabCategoryPage = lazy(() => import('./pages/research-lab/ResearchLabCategoryPage'));
 const CommunalLibraryPage = lazy(() => import('./pages/research-lab/CommunalLibraryPage'));
@@ -157,6 +158,8 @@ function AnimatedRoutes() {
             </Route>
             <Route path="/research-lab" element={<ResearchLabLandingPage />} />
             <Route path="/research-lab/dmt-matrix-decoder" element={<DmtMatrixDecoderPage />} />
+            <Route path="/research-lab/dmt-matrix-library" element={<DmtMatrixLibraryPage />} />
+            <Route path="/research-lab/dmt-matrix-library/:entryId" element={<DmtMatrixLibraryPage />} />
             <Route path="/research-lab/workspace" element={<ResearchLabWorkspacePage />} />
             <Route path="/research-lab/communal-library" element={<CommunalLibraryPage />} />
             <Route

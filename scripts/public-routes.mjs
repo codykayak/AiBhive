@@ -55,6 +55,7 @@ export function getSitemapEntries() {
     { loc: '/hive-apps/build', priority: '0.9', changefreq: 'weekly' },
     { loc: '/research-lab', priority: '0.95', changefreq: 'weekly' },
     { loc: '/research-lab/dmt-matrix-decoder', priority: '0.9', changefreq: 'weekly' },
+    { loc: '/research-lab/dmt-matrix-library', priority: '0.88', changefreq: 'daily' },
     { loc: '/plants', priority: '0.95', changefreq: 'weekly' },
     { loc: '/plants/holistic-remedies-and-protocols', priority: '0.88', changefreq: 'weekly' },
     { loc: '/plants/hypnosis-and-energy', priority: '0.88', changefreq: 'weekly' },

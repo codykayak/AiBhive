@@ -591,3 +591,232 @@
     grid-template-columns: repeat(6, 1fr);
   }
 }
+
+/* —— Community library —— */
+.libHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 1rem 0 0.75rem;
+}
+
+.libBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dmt-cyan);
+  text-decoration: none;
+}
+
+.libStatsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.libFilters {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.filterChip {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--dmt-muted);
+  cursor: pointer;
+}
+
+.filterChipActive {
+  border-color: rgba(34, 211, 238, 0.45);
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--dmt-cyan);
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+}
+
+.searchInput {
+  flex: 1;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--dmt-border);
+  background: var(--dmt-card);
+  color: var(--dmt-text);
+  padding: 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feedCard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--dmt-card);
+  border: 1px solid var(--dmt-border);
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.feedCard:active {
+  transform: scale(0.99);
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+.feedType {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dmt-magenta);
+  margin-bottom: 0.35rem;
+}
+
+.feedTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0 0 0.35rem;
+  line-height: 1.3;
+}
+
+.feedSummary {
+  font-size: 0.8rem;
+  color: var(--dmt-muted);
+  line-height: 1.45;
+  margin: 0 0 0.55rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.feedMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--dmt-muted);
+}
+
+.feedMeta strong {
+  color: var(--dmt-cyan);
+}
+
+.contribForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.contribInput {
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--dmt-border);
+  background: var(--dmt-surface);
+  color: var(--dmt-text);
+  padding: 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.contribTextarea {
+  border-radius: 0.75rem;
+  border: 1px solid var(--dmt-border);
+  background: var(--dmt-surface);
+  color: var(--dmt-text);
+  padding: 0.65rem 0.75rem;
+  font-size: 0.88rem;
+  resize: vertical;
+  min-height: 4rem;
+  font-family: inherit;
+}
+
+.contribList {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contribItem {
+  background: rgba(34, 211, 238, 0.06);
+  border: 1px solid rgba(34, 211, 238, 0.15);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+.contribKind {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dmt-amber);
+  margin-bottom: 0.25rem;
+}
+
+.publishedBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.publishedBanner a {
+  color: var(--dmt-cyan);
+  font-weight: 700;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--dmt-muted);
+  font-size: 0.88rem;
+}
+
+.upvoteBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--dmt-amber);
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.upvoteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

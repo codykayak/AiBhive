@@ -219,6 +219,16 @@ export const COMMUNAL_TOPICS: CommunalTopic[] = [
     links: ['translation', 'alchemy', 'academia', 'hieroglyphics'],
     hue: 45,
   },
+  {
+    id: 'dmt-matrix',
+    label: 'DMT Matrix Code',
+    docs: 0,
+    blurb:
+      '650nm laser diffraction glyphs — corpus statistics, script comparisons, and community photo decodes.',
+    position: [1.2, 1.4, 0.6],
+    links: ['translation', 'hieroglyphics', 'quantum', 'alchemy'],
+    hue: 290,
+  },
 ];
 
 export function getCommunalTopic(id: string) {
