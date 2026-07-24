@@ -42,7 +42,7 @@ manifest.sourceVersion = version;
 manifest.downloadUrl = 'https://aibhive.com/api/download/plants-apk';
 manifest.fullApkUrl = 'https://aibhive.com/api/download/plants-apk';
 manifest.publishedAt = new Date().toISOString();
-manifest.appName = expo.name || 'Living Knowledge Plants';
+manifest.appName = expo.name || 'AiBhivePlants';
 manifest.playStoreStatus = manifest.playStoreStatus || 'pending_approval';
 
 if (firebaseApkUrl) {
@@ -56,7 +56,7 @@ if (firebaseGzUrl) {
 
 manifest.releaseNotes =
   manifest.releaseNotes ||
-  `v${version} — Android app for aibhive.com/plants: wild plant ID, community posts, holistic libraries, and Hive Research photo identification.`;
+  `v${version} — AiBhivePlants Android app for aibhive.com/plants: wild plant ID, community posts, holistic libraries, and Hive Research photo identification.`;
 
 fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log('Updated', manifestPath);

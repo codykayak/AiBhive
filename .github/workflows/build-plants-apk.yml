@@ -89,7 +89,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Plants APK unchanged, skipping commit"
           else
-            git commit -m "chore(plants): deploy Living Knowledge Plants APK [skip-plants-apk]"
+            git commit -m "chore(plants): deploy AiBhivePlants APK [skip-plants-apk]"
             git stash push -u -m "ci-plants-build-artifacts" || true
             git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed

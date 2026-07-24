@@ -1,6 +1,6 @@
 import {
+  AIBHIVE_PLANTS_APP_NAME,
   LIVING_KNOWLEDGE_SEO_DESCRIPTION,
-  PLANT_APP_DISPLAY_NAME,
   PLANTS_PUBLIC_PATH,
 } from './branding';
 
@@ -19,7 +19,7 @@ export function getLivingKnowledgeShareUrl(): string {
 
 export function getLivingKnowledgeSharePayload(): LivingKnowledgeSharePayload {
   const url = getLivingKnowledgeShareUrl();
-  const title = PLANT_APP_DISPLAY_NAME;
+  const title = AIBHIVE_PLANTS_APP_NAME;
   const text = `${title} — ${LIVING_KNOWLEDGE_SEO_DESCRIPTION.slice(0, 200)}…`;
   return { url, title, text };
 }

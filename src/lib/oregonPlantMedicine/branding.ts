@@ -1,9 +1,19 @@
-/** User-facing name and copy for the Living Knowledge plant library hive app. */
-export const PLANT_APP_DISPLAY_NAME = 'AiBhive Plant ID and Holistic Remedies';
+/** Official product name — web app and Android APK. */
+export const AIBHIVE_PLANTS_APP_NAME = 'AiBhivePlants';
 
-export const LIVING_KNOWLEDGE_APP_NAME = PLANT_APP_DISPLAY_NAME;
+/** @deprecated use AIBHIVE_PLANTS_APP_NAME */
+export const PLANT_APP_DISPLAY_NAME = AIBHIVE_PLANTS_APP_NAME;
 
-export const LIVING_KNOWLEDGE_SHORT_NAME = 'Living Knowledge';
+export const LIVING_KNOWLEDGE_APP_NAME = AIBHIVE_PLANTS_APP_NAME;
+
+export const LIVING_KNOWLEDGE_SHORT_NAME = 'AiBhivePlants';
+
+/** Direct APK download (Google Play listing pending). */
+export const PLANTS_APK_DOWNLOAD_PATH = '/api/download/plants-apk';
+
+export const PLANTS_APK_DOWNLOAD_URL = `https://aibhive.com${PLANTS_APK_DOWNLOAD_PATH}`;
+
+export const PLANTS_APK_FILENAME = 'AiBhivePlants.apk';
 
 /** Top-left brand line on the plant medicine home shell. */
 export const COMMUNITY_NAV_BRAND = 'Community Living Knowledgebase';
@@ -19,10 +29,10 @@ export const LIVING_KNOWLEDGE_TAGLINE =
 
 /** Meta description for /plants and AI corpus summaries. */
 export const LIVING_KNOWLEDGE_SEO_DESCRIPTION =
-  'Living Knowledge Plants and Medicine — 178+ Oregon, Washington, and Northern California wild plants and mushrooms with ID photos, look-alikes, and harvest notes. Library browse, community posts, featured essays, holistic protocols, hypnosis and energy research, and animal health libraries. Free to browse; Hive Research (powered by AiBhive) uses Bhive Credits for Ask AiBhive, photo ID, and opening new states on the map.';
+  'AiBhivePlants — free Pacific Northwest plant ID and holistic remedies app. 178+ Oregon, Washington, and Northern California wild plants and mushrooms with photos, look-alikes, and harvest notes. Herbs, supplements, holistic protocols, hypnosis & energy, and animal health libraries. Community posts and featured essays. Free to browse on web; download the AiBhivePlants Android APK (Google Play pending). Hive Research uses Bhive Credits for Ask AiBhive and photo ID.';
 
 export const LIVING_KNOWLEDGE_SEO_KEYWORDS =
-  'Living Knowledge, Oregon wild edibles, Northern California foraging, edible mushrooms, medicinal plants, plant identification, holistic remedies, Edgar Cayce, hypnosis QHHT, Reiki, animal health, community foraging, AiBhive';
+  'AiBhivePlants, AiBhive Plants APK, Android plant identification app, Oregon wild edibles, Northern California foraging, edible mushrooms, medicinal plants, plant identification, holistic remedies, herbs TCM Ayurveda, supplements, Edgar Cayce, hypnosis QHHT, Reiki, animal health, community foraging, AiBhive';
 
 export const HOLISTIC_SEO_DESCRIPTION =
   '35+ educational holistic remedy topics — PNW materia medica, Edgar Cayce traditions, detox overviews, nervines, and safety notes with deep-dive articles, site search, community posts, and featured essays. Cross-linked to the plant library. Not medical advice.';

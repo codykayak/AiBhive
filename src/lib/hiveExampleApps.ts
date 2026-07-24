@@ -95,7 +95,7 @@ export const EXAMPLE_TOOLS = [
   },
   {
     id: EXAMPLE_APP_IDS.oregonPlantMedicine,
-    title: 'Living Knowledge Plants and Medicine',
-    sub: 'Living knowledge base · plants & medicine',
+    title: 'AiBhivePlants',
+    sub: 'Plant ID · foraging · holistic remedies',
   },
 ] as const;

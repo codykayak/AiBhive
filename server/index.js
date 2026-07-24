@@ -3413,19 +3413,23 @@ app.get('/api/download/plants-apk', async (req, res) => {
       return res.redirect(302, manifest.firebaseApkUrl);
     }
     return res.status(404).json({
-      error: 'Plants APK not available yet. Try again after the mobile build finishes.',
+      error: 'AiBhivePlants APK not available yet. Try again after the mobile build finishes.',
     });
   }
 
   if (req.query.compressed === '1') {
     res.setHeader('Content-Type', 'application/gzip');
-    res.setHeader('Content-Disposition', 'attachment; filename="aibhive-plants.apk.gz"');
+    res.setHeader('Content-Disposition', 'attachment; filename="AiBhivePlants.apk.gz"');
     return fs.createReadStream(apkPath).pipe(zlib.createGzip()).pipe(res);
   }
 
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-  res.setHeader('Content-Disposition', 'attachment; filename="aibhive-plants.apk"');
+  res.setHeader('Content-Disposition', 'attachment; filename="AiBhivePlants.apk"');
   return res.sendFile(apkPath);
+});
+
+app.get('/AiBhivePlants.apk', async (_req, res) => {
+  return res.redirect(301, '/api/download/plants-apk');
 });
 
 app.get('/aibhive-plants.apk', async (_req, res) => {

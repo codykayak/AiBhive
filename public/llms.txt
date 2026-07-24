@@ -90,12 +90,15 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [Get started / pricing quote](https://aibhive.com/get-started): Instant quotes for transcription, translation, voice cloning
 - [Book consultation](https://aibhive.com/book-consultation): Strategy call for custom agentic workflows
 
-## Living Knowledge Plants and Medicine (community field guide)
+## AiBhivePlants — Pacific Northwest field guide (web + Android)
 
-Secondary public app — Pacific Northwest foraging and adjacent research libraries. Free to browse, search, and post; Hive credits for Ask AiBhive and opening new states on the map ($3).
+Free community plant ID and holistic remedies app at https://aibhive.com/plants. Browse on the web or install the **AiBhivePlants** Android APK while Google Play approval is pending.
 
-- [Living Knowledge Plants and Medicine](https://aibhive.com/plants): 178+ wild plants and mushrooms — ID photos, look-alikes, regional filters, site search, community posts, featured essays, PDF field guides
-- [Holistic remedies & protocols](https://aibhive.com/plants/holistic-remedies-and-protocols): 35+ educational topics — Edgar Cayce, detox, nervines, PNW materia medica (not medical advice)
+- [AiBhivePlants — home](https://aibhive.com/plants): 178+ wild plants and mushrooms — ID photos, look-alikes, regional filters, site search, community posts, featured essays, PDF field guides
+- [AiBhivePlants Android APK](https://aibhive.com/api/download/plants-apk): Direct install (`AiBhivePlants.apk`) — same experience as the web app in a native shell
+- [Herbs](https://aibhive.com/plants/herbs): Western herbalism, TCM, Ayurveda, and PNW materia medica (not medical advice)
+- [Supplements](https://aibhive.com/plants/supplements): Vitamins, minerals, omega-3, probiotics — evidence summaries (not medical advice)
+- [Holistic remedies & protocols](https://aibhive.com/plants/holistic-remedies-and-protocols): 35+ topics — Edgar Cayce, detox, nervines, PNW materia medica (not medical advice)
 - [Hypnosis & energy](https://aibhive.com/plants/hypnosis-and-energy): Regression, QHHT, Reiki, chakras, Solfeggio frequencies (not therapy)
 - [Animal health](https://aibhive.com/plants/animal-health): Dogs, cats, horses, livestock — holistic vet education (not veterinary advice)
 

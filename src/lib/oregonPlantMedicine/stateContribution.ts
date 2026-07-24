@@ -4,7 +4,7 @@ import { BUILDER_PATH, STATE_CONTRIBUTION_USD } from './branding';
 export function buildAddStatePrompt(state: string, city?: string): string {
   const place = city?.trim() ? `${city.trim()}, ${state}` : state;
   return [
-    `Add a new regional library to Living Knowledge Plants and Medicine for ${state}.`,
+    `Add a new regional library to AiBhivePlants for ${state}.`,
     '',
     'This is a contribution to the community living knowledge base. Follow the same data model and depth as the existing Oregon plant library in src/lib/oregonPlantMedicine/plantLibrary.ts.',
     '',
