@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import { auth, googleProvider } from '../../firebase';
+import { buildDmtEntriesContext, buildDmtEntryContext } from '../../lib/dmtMatrixInsight';
+import DmtMatrixInsightChat from './components/DmtMatrixInsightChat';
 import styles from './dmtMatrixDecoder.module.css';
 
 type LibraryStats = {
@@ -330,6 +332,15 @@ export default function DmtMatrixLibraryPage() {
             )}
           </div>
 
+          <DmtMatrixInsightChat
+            focusTitle={entry.title}
+            contextText={buildDmtEntryContext(entry, contributions)}
+            sessionKey={`dmt_insight_entry_${entry.id}`}
+            user={user}
+            onSignIn={() => void signIn()}
+            mode="entry"
+          />
+
           <div style={{ display: 'flex', gap: '0.5rem', margin: '0.75rem 0' }}>
             <button
               type="button"
@@ -605,6 +616,25 @@ export default function DmtMatrixLibraryPage() {
               Run a decode <ChevronRight size={14} />
             </Link>
           </div>
+        )}
+
+        {!loading && entries.length > 0 && (
+          <DmtMatrixInsightChat
+            focusTitle={
+              q.trim()
+                ? `Search: "${q.trim()}" · ${entries.length} finding${entries.length === 1 ? '' : 's'}`
+                : `${entries.length} finding${entries.length === 1 ? '' : 's'} in view`
+            }
+            contextText={buildDmtEntriesContext(entries, {
+              searchQuery: q.trim() || undefined,
+              typeFilter,
+            })}
+            sessionKey={`dmt_insight_search_${typeFilter}_${q.trim().slice(0, 40) || 'all'}`}
+            user={user}
+            onSignIn={() => void signIn()}
+            mode="search"
+            collapsed={!q.trim()}
+          />
         )}
 
         <ul className={styles.feedList}>
