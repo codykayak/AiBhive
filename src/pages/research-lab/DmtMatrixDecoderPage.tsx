@@ -15,6 +15,11 @@ import {
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import { auth, googleProvider } from '../../firebase';
+import {
+  buildDmtDecodeResultContext,
+  buildDmtResearchReportContext,
+} from '../../lib/dmtMatrixInsight';
+import DmtMatrixInsightChat from './components/DmtMatrixInsightChat';
 import styles from './dmtMatrixDecoder.module.css';
 import catalogData from '../../data/dmtSymbolCatalog.json';
 
@@ -532,6 +537,14 @@ export default function DmtMatrixDecoderPage() {
                 </Link>
               </div>
             )}
+            <DmtMatrixInsightChat
+              focusTitle={researchReport.synthesis?.headline || 'Corpus research report'}
+              contextText={buildDmtResearchReportContext(researchReport)}
+              sessionKey={`dmt_insight_report_${researchReport.reportId}`}
+              user={user}
+              onSignIn={() => void signIn()}
+              mode="entry"
+            />
             <h2 className={styles.sectionTitle}>Research report</h2>
             <div className={styles.summaryCard}>
               <p className={styles.reportHeadline}>
@@ -723,6 +736,14 @@ export default function DmtMatrixDecoderPage() {
                 </Link>
               </div>
             )}
+            <DmtMatrixInsightChat
+              focusTitle={result.vision?.summary?.slice(0, 80) || 'Photo decode results'}
+              contextText={buildDmtDecodeResultContext(result)}
+              sessionKey={`dmt_insight_decode_${result.sessionId}`}
+              user={user}
+              onSignIn={() => void signIn()}
+              mode="entry"
+            />
             <section className={styles.section} aria-label="Decode summary">
               <h2 className={styles.sectionTitle}>Photo analysis</h2>
               <div className={styles.summaryCard}>

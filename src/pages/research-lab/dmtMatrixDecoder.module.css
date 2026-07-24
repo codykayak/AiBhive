@@ -820,3 +820,168 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* —— AI insight chat —— */
+.insightChat {
+  margin: 0.85rem 0 1rem;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, rgba(15, 23, 36, 0.98), rgba(20, 10, 30, 0.95));
+  overflow: hidden;
+}
+
+.insightChatToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  background: transparent;
+  color: var(--dmt-text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.insightChatToggleText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.insightChatToggleText strong {
+  font-size: 0.92rem;
+}
+
+.insightChatToggleText span {
+  font-size: 0.72rem;
+  color: var(--dmt-muted);
+}
+
+.insightChatIcon {
+  color: var(--dmt-magenta);
+  flex-shrink: 0;
+}
+
+.insightChatBody {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid rgba(168, 85, 247, 0.15);
+}
+
+.insightChatFocus {
+  font-size: 0.78rem;
+  color: var(--dmt-cyan);
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.insightStarters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.insightStarterChip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(232, 121, 249, 0.22);
+  background: rgba(232, 121, 249, 0.08);
+  color: var(--dmt-text);
+  cursor: pointer;
+}
+
+.insightStarterChip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.insightMessages {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+  padding: 0.25rem 0;
+}
+
+.insightEmpty {
+  font-size: 0.8rem;
+  color: var(--dmt-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.insightMsgUser {
+  align-self: flex-end;
+  max-width: 92%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.85rem 0.85rem 0.2rem 0.85rem;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.insightMsgAi {
+  align-self: flex-start;
+  max-width: 96%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.85rem 0.85rem 0.85rem 0.2rem;
+  background: rgba(15, 23, 36, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.insightThinking {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--dmt-muted);
+  margin: 0;
+}
+
+.insightForm {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.insightInput {
+  flex: 1;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--dmt-border);
+  background: var(--dmt-surface);
+  color: var(--dmt-text);
+  padding: 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.insightSend {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #a855f7, #06b6d4);
+  color: #fff;
+  cursor: pointer;
+}
+
+.insightSend:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
