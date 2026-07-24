@@ -17,6 +17,7 @@ import {
 import { SEO } from '../../components/SEO';
 import { auth, googleProvider } from '../../firebase';
 import { buildDmtEntriesContext, buildDmtEntryContext } from '../../lib/dmtMatrixInsight';
+import { DMT_CODE_LINKS } from './dmtLaserProvenance';
 import DmtMatrixInsightChat from './components/DmtMatrixInsightChat';
 import styles from './dmtMatrixDecoder.module.css';
 
@@ -533,7 +534,11 @@ export default function DmtMatrixLibraryPage() {
           <h1 className={styles.title}>DMT Matrix Library</h1>
           <p className={styles.lead}>
             Every decode run feeds the hive. Browse corpus research, photo analyses, and community
-            naming hypotheses — built by everyone, for everyone.
+            naming hypotheses — built by everyone, for everyone. Glyphs sourced from{' '}
+            <a href={DMT_CODE_LINKS.registry} target="_blank" rel="noopener noreferrer">
+              dmtcode.com/registry
+            </a>
+            .
           </p>
           <div className={styles.heroStats}>
             <span>
@@ -556,7 +561,7 @@ export default function DmtMatrixLibraryPage() {
         <div className={styles.libHeader}>
           <Link to="/research-lab/dmt-matrix-decoder" className={styles.libBack}>
             <ArrowLeft size={16} aria-hidden />
-            Decoder
+            Decoder & laser experiment
           </Link>
           <Link to="/research-lab/communal-library" className={styles.moreLink}>
             Communal Library <ChevronRight size={14} />

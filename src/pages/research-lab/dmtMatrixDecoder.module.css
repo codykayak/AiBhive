@@ -985,3 +985,200 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* —— Laser provenance —— */
+.provenanceSection {
+  margin: 0.75rem 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.provenanceHeader {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.provenanceIcon {
+  color: var(--dmt-amber);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.provenanceTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+}
+
+.provenanceLead {
+  font-size: 0.82rem;
+  color: var(--dmt-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.provenanceCard {
+  background: var(--dmt-card);
+  border: 1px solid var(--dmt-border);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.provenanceCard p {
+  margin: 0 0 0.65rem;
+}
+
+.provenanceCard p:last-child {
+  margin-bottom: 0;
+}
+
+.provenanceSubTitle {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--dmt-cyan);
+  margin: 0 0 0.55rem;
+}
+
+.provenanceList {
+  margin: 0 0 0.75rem;
+  padding-left: 1.1rem;
+}
+
+.provenanceList li {
+  margin-bottom: 0.45rem;
+}
+
+.provenanceList a,
+.provenanceCard a {
+  color: var(--dmt-cyan);
+  font-weight: 600;
+}
+
+.provenanceList code {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.provenanceYes {
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.65rem;
+  background: rgba(34, 211, 238, 0.08);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+.sourceLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 211, 238, 0.28);
+  background: rgba(34, 211, 238, 0.08);
+  color: var(--dmt-cyan);
+  text-decoration: none;
+}
+
+.pipelineGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.pipelineCard {
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 36, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pipelineTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--dmt-magenta);
+  margin-bottom: 0.35rem;
+}
+
+.pipelineCard p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--dmt-muted);
+}
+
+.tipsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.tipsHeading {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dmt-amber);
+  margin: 0 0 0.35rem;
+}
+
+.tipsList {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.76rem;
+  color: var(--dmt-muted);
+}
+
+.tipsList li {
+  margin-bottom: 0.3rem;
+}
+
+.methodBadge {
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(232, 121, 249, 0.12);
+  color: var(--dmt-magenta);
+}
+
+.registryLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--dmt-cyan);
+  text-decoration: none;
+  margin-top: 0.2rem;
+}
+
+.catalogSource {
+  font-size: 0.58rem;
+  color: var(--dmt-muted);
+  margin-top: 0.15rem;
+}
+
+@media (min-width: 521px) {
+  .tipsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
