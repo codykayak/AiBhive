@@ -212,9 +212,12 @@ function enrichMerged(merged, vision, tokenIndex) {
     const meta = byId[det.symbolId];
     return {
       ...det,
+      name: meta?.name || det.name,
       tokenId: det.tokenId || tokenIndex[det.symbolId] || null,
       tags: meta?.tags || [],
       catalogDescription: meta?.description || det.description,
+      catalogSource: meta?.source || null,
+      registryUrl: meta?.registryUrl || null,
       attributions: det.attributions || {},
     };
   });

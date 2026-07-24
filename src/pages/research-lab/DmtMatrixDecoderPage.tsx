@@ -4,6 +4,7 @@ import { signInWithPopup } from 'firebase/auth';
 import {
   Camera,
   ChevronRight,
+  ExternalLink,
   Loader2,
   ScanLine,
   Sparkles,
@@ -20,6 +21,7 @@ import {
   buildDmtResearchReportContext,
 } from '../../lib/dmtMatrixInsight';
 import DmtMatrixInsightChat from './components/DmtMatrixInsightChat';
+import DmtLaserProvenanceSection from './components/DmtLaserProvenanceSection';
 import styles from './dmtMatrixDecoder.module.css';
 import catalogData from '../../data/dmtSymbolCatalog.json';
 
@@ -29,6 +31,8 @@ interface CatalogSymbol {
   description: string;
   tags?: string[];
   filename: string;
+  source?: string;
+  registryUrl?: string;
 }
 
 interface Detection {
@@ -44,6 +48,8 @@ interface Detection {
   source?: string;
   description?: string;
   catalogDescription?: string;
+  catalogSource?: string;
+  registryUrl?: string;
   normalized?: { x: number; y: number; width: number; height: number };
 }
 
@@ -450,6 +456,11 @@ export default function DmtMatrixDecoderPage() {
       </section>
 
       <div className={styles.shell}>
+        <DmtLaserProvenanceSection
+          symbolCount={corpusPreview?.symbolCount ?? catalog.length}
+          registryCount={corpusPreview?.registryCount}
+        />
+
         <section className={styles.researchCard} aria-label="Corpus decoding research">
           <div className={styles.researchHeader}>
             <BookOpen size={20} className={styles.researchIcon} aria-hidden />
@@ -639,8 +650,9 @@ export default function DmtMatrixDecoderPage() {
         <div className={styles.pioneer}>
           <Sparkles className={styles.pioneerIcon} size={18} aria-hidden />
           <span>
-            Photo decode: upload a laser matrix image for positioned glyph matching. Sessions saved
-            to Firebase for sequence analysis.
+            <strong>Photo decode:</strong> upload a raw 650nm laser photograph — we scan for catalogue
+            glyphs (template match + structural vectors + vision AI), draw boxes on matches, and save
+            sessions to the communal library. See &quot;Can it read characters&quot; above for what works.
           </span>
         </div>
 
@@ -673,7 +685,9 @@ export default function DmtMatrixDecoderPage() {
             >
               <Camera className={styles.dropzoneIcon} aria-hidden />
               <span className={styles.dropzoneText}>Tap to capture or upload matrix photo</span>
-              <span className={styles.dropzoneHint}>650nm laser diffraction · matrix photos</span>
+              <span className={styles.dropzoneHint}>
+                Raw laser wall photos · 650nm diffraction · matches our dmtcode.com catalogue
+              </span>
             </button>
           )}
 
@@ -782,7 +796,27 @@ export default function DmtMatrixDecoderPage() {
                         <div className={styles.detMeta}>
                           {det.tokenId && <span>{det.tokenId} · </span>}
                           {det.symbolId}
+                          {det.source && (
+                            <>
+                              {' '}
+                              · <span className={styles.methodBadge}>{det.source}</span>
+                            </>
+                          )}
                         </div>
+                        {det.catalogDescription && (
+                          <div className={styles.matchReason}>{det.catalogDescription}</div>
+                        )}
+                        {(det.registryUrl || meta?.registryUrl) && (
+                          <a
+                            href={det.registryUrl || meta?.registryUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.registryLink}
+                          >
+                            <ExternalLink size={12} aria-hidden />
+                            View on dmtcode.com
+                          </a>
+                        )}
                       </div>
                       <span className={styles.confBadge}>
                         {Math.round((det.confidence || 0) * 100)}%
@@ -797,13 +831,33 @@ export default function DmtMatrixDecoderPage() {
 
         <section className={styles.section} aria-label="Glyph catalogue">
           <h2 className={styles.sectionTitle}>Catalogue ({catalog.length} glyphs)</h2>
+          <p className={styles.researchSub} style={{ marginBottom: '0.75rem' }}>
+            Archetypes + community registry tiles from{' '}
+            <a href="https://dmtcode.com/registry" target="_blank" rel="noopener noreferrer">
+              dmtcode.com/registry
+            </a>
+            . Photo decode matches against these IDs.
+          </p>
           <div className={styles.catalogGrid}>
             {catalog.slice(0, 24).map((sym) => (
               <div key={sym.id}>
-                <div className={styles.catalogItem}>
-                  <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
-                </div>
+                {sym.registryUrl ? (
+                  <a
+                    href={sym.registryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.catalogItem}
+                    title={`View ${sym.name} on dmtcode.com`}
+                  >
+                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
+                  </a>
+                ) : (
+                  <div className={styles.catalogItem}>
+                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
+                  </div>
+                )}
                 <div className={styles.catalogLabel}>{sym.name}</div>
+                {sym.source && <div className={styles.catalogSource}>{sym.source}</div>}
               </div>
             ))}
           </div>
