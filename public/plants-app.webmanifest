@@ -1,7 +1,7 @@
 {
-  "name": "AiBhive Plant ID and Holistic Remedies",
-  "short_name": "Plant ID",
-  "description": "Pacific Northwest wild plant identification, edibles, mushrooms, and holistic research libraries.",
+  "name": "AiBhivePlants",
+  "short_name": "AiBhivePlants",
+  "description": "Pacific Northwest wild plant identification, foraging field guide, holistic remedies, herbs, and supplements.",
   "start_url": "/plants",
   "scope": "/plants",
   "display": "standalone",

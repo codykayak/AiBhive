@@ -416,9 +416,9 @@
   },
   {
     "id": "example-oregon-plant-medicine",
-    "title": "Living Knowledge Plants and Medicine",
-    "tagline": "PNW foraging field guide & research libraries",
-    "summary": "Community living knowledge base — 178+ wild plants and mushrooms with ID photos, site search, community posts, featured essays, and adjacent holistic, hypnosis, and animal health libraries across Oregon and Northern California.",
+    "title": "AiBhivePlants",
+    "tagline": "PNW plant ID, foraging & holistic remedies",
+    "summary": "AiBhivePlants — community living knowledge base with 178+ wild plants and mushrooms, site search, community posts, featured essays, herbs, supplements, and holistic, hypnosis, and animal health libraries. Free on web; Android APK available.",
     "theme": "green",
     "icon": "leaf",
     "category": "guides",
@@ -427,7 +427,7 @@
     "pages": [
       {
         "id": "about",
-        "title": "Living Knowledge Plants and Medicine",
+        "title": "AiBhivePlants",
         "type": "info",
         "config": {
           "body": "Open the full interactive living knowledge base — plant field guide plus holistic, hypnosis, and animal health research libraries.",
@@ -438,7 +438,8 @@
             "Free browsing and search; Hive credits for Ask AiBhive and $3 state map expansion"
           ],
           "links": [
-            { "label": "Open Living Knowledge Plants and Medicine", "url": "https://aibhive.com/plants" }
+            { "label": "Open AiBhivePlants", "url": "https://aibhive.com/plants" },
+            { "label": "Download AiBhivePlants APK", "url": "https://aibhive.com/api/download/plants-apk" }
           ]
         }
       }

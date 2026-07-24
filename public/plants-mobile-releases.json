@@ -2,9 +2,10 @@
   "shippedNativeVersion": "1.0.0",
   "versionCode": 1,
   "sourceVersion": "1.0.0",
-  "appName": "Living Knowledge Plants",
+  "appName": "AiBhivePlants",
   "downloadUrl": "https://aibhive.com/api/download/plants-apk",
   "fullApkUrl": "https://aibhive.com/api/download/plants-apk",
-  "releaseNotes": "v1.0.0 — Android shell for aibhive.com/plants: field guide, community, Hive Research photo ID, and research libraries.",
+  "apkFilename": "AiBhivePlants.apk",
+  "releaseNotes": "v1.0.0 — AiBhivePlants Android app for aibhive.com/plants: wild plant ID, foraging field guide, holistic libraries, community posts, and Hive Research photo identification. Google Play listing pending.",
   "playStoreStatus": "pending_approval"
 }

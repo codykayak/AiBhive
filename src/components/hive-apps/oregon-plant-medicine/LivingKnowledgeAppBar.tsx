@@ -2,10 +2,12 @@ import { useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Download, Loader2, Sparkles } from 'lucide-react';
 import {
+  AIBHIVE_PLANTS_APP_NAME,
   BHIVE_CREDITS_SIGNUP_USD,
   HIVE_RESEARCH_LABEL,
   HIVE_RESEARCH_POWERED_BY,
-  PLANT_APP_DISPLAY_NAME,
+  PLANTS_APK_DOWNLOAD_PATH,
+  PLANTS_APK_FILENAME,
 } from '../../../lib/oregonPlantMedicine/branding';
 import LivingKnowledgeSocialShare from './LivingKnowledgeSocialShare';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
@@ -46,7 +48,7 @@ export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
           </p>
           <p className="text-xs text-slate-400 mt-1 leading-relaxed">
             Add ${BHIVE_CREDITS_SIGNUP_USD} in Bhive Credits to unlock {HIVE_RESEARCH_LABEL} and photo plant
-            identification on {PLANT_APP_DISPLAY_NAME}. {HIVE_RESEARCH_POWERED_BY}. Browsing the library stays free.
+            identification on {AIBHIVE_PLANTS_APP_NAME}. {HIVE_RESEARCH_POWERED_BY}. Browsing the library stays free.
           </p>
           {error ? <p className="text-[11px] text-amber-300 mt-1">{error}</p> : null}
         </div>
@@ -62,14 +64,14 @@ export default function LivingKnowledgeAppBar({ user, onSignIn }: Props) {
           </button>
           <div className="flex flex-col gap-1">
             <a
-              href="/api/download/plants-apk"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-900/80 hover:border-emerald-500/40 text-slate-200 font-bold text-sm px-5 py-3"
+              href={PLANTS_APK_DOWNLOAD_PATH}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/60 hover:border-emerald-400/60 hover:bg-emerald-900/40 text-emerald-100 font-bold text-sm px-5 py-3"
             >
               <Download className="w-4 h-4" />
-              Download Android APK
+              Get {AIBHIVE_PLANTS_APP_NAME} APK
             </a>
             <p className="text-[10px] text-slate-500 text-center sm:text-right leading-snug px-1">
-              Google Play approval pending — install directly while we wait for the store listing.
+              Free Android install ({PLANTS_APK_FILENAME}) — Google Play approval pending.
             </p>
           </div>
         </div>

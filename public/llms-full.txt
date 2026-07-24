@@ -32,11 +32,16 @@ Guided flow: describe the app in plain English, review a quote, approve, and Bhi
 
 ## Hive Apps store — https://aibhive.com/hive-apps
 
-Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, and a mock real estate dashboard. Living Knowledge Plants and Medicine is also listed at https://aibhive.com/plants (canonical URL; legacy hive runner redirects).
+Community storefront. First apps are inexpensive ($1–$5 range messaging). Users browse store listings, try web runners, install free community apps, and share improvements. Demo runners include resume bot, research/OSINT, job hunter, social post hunter, homework bot, meeting burn, focus reactor, house flip calculator, and a mock real estate dashboard. **AiBhivePlants** is the flagship community field guide at https://aibhive.com/plants (legacy hive runner redirects).
 
-## Living Knowledge Plants and Medicine — https://aibhive.com/plants
+## AiBhivePlants — https://aibhive.com/plants
 
-Community living knowledge base for edible wild plants, mushrooms, and adjacent research libraries across Oregon and Northern California. **Not the main AiBhive product** — a free-to-browse public field guide indexed for search and AI discovery.
+**AiBhivePlants** is a free community living knowledge base for edible wild plants, mushrooms, and adjacent research libraries across Oregon and Northern California. Available on the web and as a direct-download Android APK (`AiBhivePlants.apk`) while Google Play approval is pending. **Not the main AiBhive product** — indexed for search and AI discovery.
+
+### Android app
+- **Download:** https://aibhive.com/api/download/plants-apk (filename: `AiBhivePlants.apk`)
+- **Package:** `com.aibhive.plants` — WebView shell loading `https://aibhive.com/plants?mobile=1`
+- **Google Play:** listing pending; direct APK install supported
 
 ### Core plant library
 - **178+ species** with three ID photos each, habitat notes, toxic look-alikes, harvest and preparation ideas, regional filters (Oregon coast, Willamette Valley, Northern California), and downloadable PDF field guides.
@@ -48,14 +53,17 @@ Community living knowledge base for edible wild plants, mushrooms, and adjacent 
 - **Contribute** — community post form for field notes; **$3 Hive credits** to add a new US state to the regional map.
 
 ### Adjacent research libraries (same app, separate tabs)
+- **Herbs** — https://aibhive.com/plants/herbs — Western herbalism, TCM, Ayurveda, PNW materia medica. Not medical advice.
+- **Supplements** — https://aibhive.com/plants/supplements — vitamins, minerals, omega-3, probiotics. Not medical advice.
 - **Holistic remedies & protocols** — https://aibhive.com/plants/holistic-remedies-and-protocols — 35+ topics with deep-dive articles, images, Edgar Cayce–inspired remedies, detox overviews, safety warnings. Educational only; not medical advice.
 - **Hypnosis & energy** — https://aibhive.com/plants/hypnosis-and-energy — past life regression, Edgar Cayce, Dolores Cannon QHHT, clinical hypnotherapy, Reiki, chakras, tuning forks, Solfeggio frequencies. Not therapy or medical care.
 - **Animal health** — https://aibhive.com/plants/animal-health — holistic veterinary education for dogs, cats, horses, livestock. Not veterinary advice.
 
 ### URLs and redirects
 - Canonical home: `https://aibhive.com/plants`
+- Android APK: `https://aibhive.com/api/download/plants-apk` (`AiBhivePlants.apk`)
 - Legacy runner `/hive-apps/run/example-oregon-plant-medicine` redirects to `/plants`
-- Brand names used in UI: “Living Knowledge Plants and Medicine”, “Earth's Plant Medicine” (hero), “Community Living Knowledgebase” (nav)
+- Brand names: **AiBhivePlants** (product), “Earth's Plant Medicine” (hero), “Community Living Knowledgebase” (nav)
 
 ## AiBhive Pros — https://aibhive.com/pros
 

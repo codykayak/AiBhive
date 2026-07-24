@@ -14,7 +14,7 @@ interface SEOProps {
   title?: string;
   description?: string;
   keywords?: string;
-  type?: 'WebSite' | 'SoftwareApplication' | 'WebPage';
+  type?: 'WebSite' | 'SoftwareApplication' | 'WebPage' | 'WebApplication';
   /** Absolute or site-root path for social preview image */
   image?: string;
   /** Extra JSON-LD nodes merged into @graph */
