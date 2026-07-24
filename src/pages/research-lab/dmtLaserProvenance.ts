@@ -1,5 +1,3 @@
-/** Provenance + laser experiment background for the DMT Matrix Decoder. */
-
 export const DMT_CODE_LINKS = {
   home: 'https://dmtcode.com',
   registry: 'https://dmtcode.com/registry',
@@ -7,6 +5,14 @@ export const DMT_CODE_LINKS = {
   zenodo: 'https://doi.org/10.5281/zenodo.17816520',
   supabaseSource:
     'https://bbmhrgpsyiahefnxqwfg.supabase.co/rest/v1/registry_glyphs',
+} as const;
+
+/** Hero / promo tile — canonical registry glyph (same as decoder video poster). */
+export const DMT_FEATURED_GLYPH = {
+  id: 'registry_ceed6b59-9bd8-46e2-be16-ef6ecc5363ea',
+  filename: 'registry_ceed6b59-9bd8-46e2-be16-ef6ecc5363ea.png',
+  name: 'DMT registry glyph',
+  registryUrl: 'https://dmtcode.com/registry/ceed6b59-9bd8-46e2-be16-ef6ecc5363ea',
 } as const;
 
 export const DMT_CATALOG_ATTRIBUTION =
