@@ -11,6 +11,7 @@ import {
   Zap,
   BookOpen,
   BarChart3,
+  Users,
 } from 'lucide-react';
 import { SEO } from '../../components/SEO';
 import { auth, googleProvider } from '../../firebase';
@@ -62,6 +63,7 @@ interface DecodeResult {
   visionError?: string;
   workerError?: string;
   chargedUsd?: number;
+  library?: { id: string; sharePath?: string; title?: string };
 }
 
 interface CorpusPreview {
@@ -137,6 +139,7 @@ interface ResearchReport {
   };
   chargedUsd?: number;
   useRawBudget?: boolean;
+  library?: { id: string; sharePath?: string; title?: string };
 }
 
 const FALLBACK_DECODE_COST = 0.02;
@@ -434,6 +437,10 @@ export default function DmtMatrixDecoderPage() {
             <span>{corpusPreview?.registryCount ?? 0} registry</span>
             <span>{corpusPreview?.clusterCount ?? 0} clusters</span>
           </div>
+          <Link to="/research-lab/dmt-matrix-library" className={styles.moreLink} style={{ marginTop: '0.75rem' }}>
+            <Users size={14} aria-hidden />
+            Browse community library <ChevronRight size={14} />
+          </Link>
         </div>
       </section>
 
@@ -516,6 +523,15 @@ export default function DmtMatrixDecoderPage() {
 
         {researchReport && (
           <section className={styles.section} aria-label="Research report">
+            {researchReport.library?.id && (
+              <div className={styles.publishedBanner}>
+                <Sparkles size={16} aria-hidden />
+                Published to the communal library —{' '}
+                <Link to={`/research-lab/dmt-matrix-library/${researchReport.library.id}`}>
+                  view & contribute
+                </Link>
+              </div>
+            )}
             <h2 className={styles.sectionTitle}>Research report</h2>
             <div className={styles.summaryCard}>
               <p className={styles.reportHeadline}>
@@ -698,6 +714,15 @@ export default function DmtMatrixDecoderPage() {
 
         {result && (
           <>
+            {result.library?.id && (
+              <div className={styles.publishedBanner}>
+                <Sparkles size={16} aria-hidden />
+                Published to the communal library —{' '}
+                <Link to={`/research-lab/dmt-matrix-library/${result.library.id}`}>
+                  view & contribute
+                </Link>
+              </div>
+            )}
             <section className={styles.section} aria-label="Decode summary">
               <h2 className={styles.sectionTitle}>Photo analysis</h2>
               <div className={styles.summaryCard}>

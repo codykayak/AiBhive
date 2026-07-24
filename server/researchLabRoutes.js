@@ -82,6 +82,16 @@ import {
 } from './dmtMatrixResearch.js';
 import { isAdminEmail } from './hiveAdmin.js';
 import { dmtResearchRawCost, RESEARCH_DMT_RESEARCH_BUDGET_USD } from './researchLabBilling.js';
+import {
+  contributeToDmtEntry,
+  getDmtLibraryEntry,
+  getDmtLibraryStats,
+  listContributions,
+  listDmtLibrary,
+  publishDecodeToLibrary,
+  publishResearchToLibrary,
+  upvoteDmtEntry,
+} from './dmtMatrixLibrary.js';
 
 const json2mb = express.json({ limit: '2mb' });
 const json10mb = express.json({ limit: '10mb' });
@@ -800,9 +810,24 @@ export function registerResearchLabRoutes(app, db) {
 
       await saveDmtResearchReport(db, uid, report, { email: authUser.email });
 
+      let library = null;
+      const publishToCommons = req.body?.publishToCommons !== false;
+      if (db && publishToCommons) {
+        try {
+          library = await publishResearchToLibrary(db, report, {
+            uid,
+            email: authUser.email,
+            visibility: 'public',
+          });
+        } catch (libErr) {
+          console.warn('[dmt-research] library publish failed:', libErr?.message);
+        }
+      }
+
       endUserJob(uid);
       return res.json({
         ...report,
+        library,
         chargedUsd: gate.chargedUsd ?? 0,
         adminExempt: !!gate.adminExempt,
         isAdmin: isAdminEmail(authUser.email),
@@ -811,6 +836,86 @@ export function registerResearchLabRoutes(app, db) {
     } catch (error) {
       if (uid) endUserJob(uid);
       return res.status(500).json({ error: error.message || 'DMT research failed.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/library/stats', async (_req, res) => {
+    try {
+      if (!db) return res.json({ totalEntries: 0, researchCount: 0, decodeCount: 0, contributionCount: 0 });
+      const stats = await getDmtLibraryStats(db);
+      return res.json(stats);
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Library stats unavailable.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/library', async (req, res) => {
+    try {
+      if (!db) return res.json({ entries: [] });
+      const authUser = await verifyHiveAuth(req);
+      const entries = await listDmtLibrary(db, {
+        limit: req.query.limit,
+        type: req.query.type,
+        q: req.query.q,
+        viewerUid: authUser?.uid || null,
+      });
+      return res.json({ entries });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Could not load library.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/library/:id/contributions', async (req, res) => {
+    try {
+      if (!db) return res.json({ contributions: [] });
+      const contributions = await listContributions(db, req.params.id, req.query.limit);
+      return res.json({ contributions });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Could not load contributions.' });
+    }
+  });
+
+  app.get('/api/research-lab/dmt-matrix/library/:id', async (req, res) => {
+    try {
+      if (!db) return res.status(503).json({ error: 'Library storage unavailable.' });
+      const authUser = await verifyHiveAuth(req);
+      const entry = await getDmtLibraryEntry(db, req.params.id, {
+        viewerUid: authUser?.uid || null,
+      });
+      if (!entry) return res.status(404).json({ error: 'Entry not found.' });
+      return res.json({ entry });
+    } catch (error) {
+      return res.status(500).json({ error: error.message || 'Could not load entry.' });
+    }
+  });
+
+  app.post('/api/research-lab/dmt-matrix/library/:id/contribute', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      if (!db) return res.status(503).json({ error: 'Library storage unavailable.' });
+      const contribution = await contributeToDmtEntry(db, req.params.id, {
+        uid: authUser.uid,
+        email: authUser.email,
+        contributor: req.body?.contributor,
+        kind: req.body?.kind,
+        payload: req.body?.payload || req.body,
+      });
+      return res.json({ ok: true, contribution });
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Contribution failed.' });
+    }
+  });
+
+  app.post('/api/research-lab/dmt-matrix/library/:id/upvote', json2mb, async (req, res) => {
+    try {
+      const authUser = await requireResearchLabUser(req, res);
+      if (!authUser) return;
+      if (!db) return res.status(503).json({ error: 'Library storage unavailable.' });
+      const result = await upvoteDmtEntry(db, req.params.id, authUser.uid);
+      return res.json(result);
+    } catch (error) {
+      return res.status(400).json({ error: error.message || 'Upvote failed.' });
     }
   });
 
@@ -861,9 +966,25 @@ export function registerResearchLabRoutes(app, db) {
         email: authUser.email,
       });
 
+      let library = null;
+      const publishToCommons = req.body?.publishToCommons !== false;
+      if (db && publishToCommons) {
+        try {
+          library = await publishDecodeToLibrary(db, result, {
+            uid,
+            email: authUser.email,
+            visibility: 'public',
+            notes: notes || '',
+          });
+        } catch (libErr) {
+          console.warn('[dmt-decode] library publish failed:', libErr?.message);
+        }
+      }
+
       endUserJob(uid);
       return res.json({
         ...result,
+        library,
         chargedUsd: gate.chargedUsd ?? 0,
         adminExempt: !!gate.adminExempt,
       });
