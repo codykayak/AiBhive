@@ -1,6 +1,8 @@
 # Builds the Android APK, uploads a .gz mirror to Firebase Storage, bumps
 # public/mobile-releases.json, and commits the new APK back to main-fixed.
 #
+# Also builds AiBhivePlants (aibhive-plants/) when that app changes.
+#
 # Trigger model:
 #   - Auto: every push to main-fixed (so each Hive merge produces a fresh APK).
 #     Doc-only changes can be skipped by including [skip-apk] in the commit
@@ -18,10 +20,14 @@ on:
     branches: [main-fixed]
     paths:
       - 'taylored-mobile/**'
+      - 'aibhive-plants/**'
       - 'public/**'
       - 'scripts/write-mobile-release.mjs'
+      - 'scripts/write-plants-release.mjs'
       - 'scripts/publish-apk-firebase.mjs'
+      - 'scripts/publish-plants-apk-firebase.mjs'
       - '.github/workflows/build-apk.yml'
+      - '.github/workflows/build-plants-apk.yml'
 
 permissions:
   contents: write
@@ -31,18 +37,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      taylored: ${{ steps.filter.outputs.taylored }}
+      plants: ${{ steps.filter.outputs.plants }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: filter
+        run: |
+          taylored=false
+          plants=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            taylored=true
+            plants=true
+          else
+            mapfile -t files < <(git diff --name-only HEAD^ HEAD)
+            for f in "${files[@]}"; do
+              case "$f" in
+                taylored-mobile/*|scripts/write-mobile-release.mjs|scripts/publish-apk-firebase.mjs)
+                  taylored=true ;;
+                aibhive-plants/*|public/plants-mobile-releases.json|scripts/write-plants-release.mjs|scripts/publish-plants-apk-firebase.mjs|.github/workflows/build-plants-apk.yml)
+                  plants=true ;;
+              esac
+            done
+          fi
+          echo "taylored=$taylored" >> "$GITHUB_OUTPUT"
+          echo "plants=$plants" >> "$GITHUB_OUTPUT"
+          echo "taylored=$taylored plants=$plants"
+
   build-android:
+    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # Skip when the commit message asks us to, or when the push is the
-    # workflow's own deploy commit (covered by [skip ci] in that commit).
-    if: ${{ !contains(github.event.head_commit.message, '[skip-apk]') }}
+    if: ${{ needs.changes.outputs.taylored == 'true' && !contains(github.event.head_commit.message, '[skip-apk]') }}
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # Use a deploy-friendly token so we can push the rebuilt APK back.
           token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
@@ -114,8 +149,6 @@ jobs:
             echo "APK unchanged, skipping commit"
           else
             git commit -m "chore(mobile): deploy Taylored Mobile APK + manifest [skip-apk]"
-            # Android build leaves tracked edits under taylored-mobile/android/;
-            # stash them so pull --rebase is not blocked by a dirty working tree.
             git stash push -u -m "ci-mobile-build-artifacts" || true
             git pull --rebase origin main-fixed
             git push origin HEAD:main-fixed
@@ -129,4 +162,130 @@ jobs:
           echo "  APK download:   https://aibhive.com/api/download/apk"
           echo "  .gz mirror:     ${{ steps.firebase.outputs.gz_url }}"
           echo "  Manifest:       https://aibhive.com/api/mobile/releases"
+          echo "============================================================"
+
+  build-plants-apk:
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: ${{ needs.changes.outputs.plants == 'true' && (github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip-plants-apk]')) }}
+    steps:
+      - name: Free disk space on runner
+        run: |
+          echo "==> Disk before cleanup"
+          df -h /
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android/sdk/emulator
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/share/boost
+          sudo docker image prune --all --force || true
+          echo "==> Disk after cleanup"
+          df -h /
+
+      - name: Checkout (sparse — plants app + signing key only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            aibhive-plants
+            taylored-mobile/credentials
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: ./aibhive-plants
+        run: npm ci
+
+      - name: Prepare output directory
+        run: mkdir -p public
+
+      - name: Build Plants APK
+        working-directory: ./aibhive-plants
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3072m -XX:MaxMetaspaceSize=768m
+          EXPO_PUBLIC_PLANTS_URL: https://aibhive.com/plants?mobile=1
+        run: bash scripts/ci-android-build.sh
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aibhive-plants-apk
+          path: public/aibhive-plants.apk
+          if-no-files-found: error
+
+  publish-plants-apk:
+    needs: build-plants-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ needs.build-plants-apk.result == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aibhive-plants-apk
+          path: public
+
+      - name: Verify APK
+        run: ls -lh public/aibhive-plants.apk
+
+      - name: Update release manifest
+        run: node scripts/write-plants-release.mjs
+
+      - name: Install Firebase SDK (publish only)
+        run: npm install firebase@12.11.0 --no-save --no-package-lock
+
+      - name: Publish Firebase download mirror
+        id: firebase
+        run: |
+          set -euo pipefail
+          OUTPUT_FILE="$(mktemp)"
+          node scripts/publish-plants-apk-firebase.mjs | tee "$OUTPUT_FILE"
+          APK_URL=$(grep '^FIREBASE_APK_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          GZ_URL=$(grep '^FIREBASE_GZ_URL=' "$OUTPUT_FILE" | head -n1 | cut -d= -f2-)
+          echo "apk_url=$APK_URL" >> "$GITHUB_OUTPUT"
+          echo "gz_url=$GZ_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Commit deployed Plants APK + manifest
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/aibhive-plants.apk public/plants-mobile-releases.json
+          if git diff --staged --quiet; then
+            echo "Plants APK unchanged, skipping commit"
+          else
+            git commit -m "chore(plants): deploy AiBhivePlants APK [skip-plants-apk]"
+            git pull --rebase origin main-fixed
+            git push origin HEAD:main-fixed
+          fi
+
+      - name: Print download links
+        if: always()
+        run: |
+          echo ""
+          echo "============================================================"
+          echo "  AiBhivePlants APK: https://aibhive.com/api/download/plants-apk"
+          echo "  Firebase:          ${{ steps.firebase.outputs.apk_url }}"
+          echo "  Web app:           https://aibhive.com/plants"
           echo "============================================================"
