@@ -1,6 +1,14 @@
 # AiBhivePlants — Android APK
 
-Native Android shell for [aibhive.com/plants](https://aibhive.com/plants) — Pacific Northwest plant ID, foraging field guide, holistic remedies, herbs, supplements, and community posts.
+Standalone Android app for **[aibhive.com/plants](https://aibhive.com/plants)** only — not the full AiBhive website.
+
+## In-app scope (8 pages)
+
+Home, Community, Plants & foraging, Herbs, Supplements, Holistic protocols, Hypnosis & energy, and Animal health — all under `/plants/*`.
+
+## Icon
+
+Launcher icon: [`icon.png`](./icon.png) (referenced in `app.json` for icon, splash, and adaptive icon).
 
 ## Local build
 
