@@ -8,7 +8,17 @@ Home, Community, Plants & foraging, Herbs, Supplements, Holistic protocols, Hypn
 
 ## Icon
 
-Launcher icon: [`icon.png`](./icon.png) (referenced in `app.json` for icon, splash, and adaptive icon).
+Launcher icon: [`icon.png`](./icon.png) — **1024×1024 PNG** (Expo / Android adaptive icon).
+
+If GitHub rejects a large upload, commit the raw file as `icon-source.png` and run:
+
+```bash
+cd aibhive-plants
+python3 -m pip install pillow
+python3 -c "from PIL import Image; ..."  # or: node scripts/normalize-icon.mjs icon-source.png
+```
+
+The repo includes `icon-source.png` as the master honeycomb artwork; CI validates `icon.png` is a real PNG before building.
 
 ## Local build
 

@@ -68,7 +68,7 @@ export default function App() {
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
           originWhitelist={['https://*']}
-          userAgent="AiBhivePlants/1.0.2 Android"
+          userAgent="AiBhivePlants/1.0.3 Android"
         />
         {loading ? (
           <View
