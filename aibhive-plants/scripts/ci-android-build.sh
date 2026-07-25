@@ -10,11 +10,19 @@ echo "EXPO_PUBLIC_PLANTS_URL=$EXPO_PUBLIC_PLANTS_URL"
 echo "==> App icon"
 for f in icon.png; do
   if [[ ! -f "$f" ]]; then
-    echo "MISSING: $f"
+    echo "MISSING: $f — add aibhive-plants/icon.png (1024x1024 PNG recommended)"
     exit 1
   fi
   echo "OK: $f"
 done
+node -e "
+const fs = require('fs');
+const p = 'icon.png';
+const b = fs.readFileSync(p);
+if (b.length < 1024) throw new Error('icon.png too small — file may be corrupt or failed to upload');
+if (b[0] !== 0x89 || b[1] !== 0x50) throw new Error('icon.png is not a valid PNG');
+console.log('icon.png bytes=', b.length);
+"
 
 mkdir -p credentials
 if [[ ! -f credentials/android-release.keystore ]]; then
