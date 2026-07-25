@@ -9,6 +9,7 @@ import SiteGuideTour from './components/SiteGuideTour';
 import { AssistantDockProvider } from './context/AssistantDockContext';
 import ScrollToTop from './components/ScrollToTop';
 import AppLayout, { AppRedirect } from './pages/app/AppLayout';
+import { isPlantsMobileApp } from './lib/oregonPlantMedicine/plantsMobileShell';
 
 const Home = lazy(() => import('./pages/Home'));
 const TranscriptionStudio = lazy(() => import('./pages/TranscriptionStudio'));
@@ -220,6 +221,7 @@ function AppShell() {
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
+  const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
   const hideSiteAssistant = pathname.startsWith('/plants');
   const hideFooter =
     pathname.startsWith('/app/research') ||
@@ -233,15 +235,17 @@ function AppShell() {
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && (
+        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isPlantsMobileShell && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
         )}
-        {!isPrivateRoute && !isEmbedRoute && !hideSiteAssistant && <HomeAssistantWeb />}
+        {!isPrivateRoute && !isEmbedRoute && !hideSiteAssistant && !isPlantsMobileShell && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
-        <main className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}>
+        <main
+          className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
+        >
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
               <Routes>

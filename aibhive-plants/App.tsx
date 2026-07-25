@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Platform, SafeAreaView, StatusBar, View } from 'react-native';
+import {
+  ActivityIndicator,
+  BackHandler,
+  Linking,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  View,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { WebViewNavigation } from 'react-native-webview';
 import * as SplashScreen from 'expo-splash-screen';
+import { isPlantsInAppUrl } from './plantsNavigation';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -16,6 +25,12 @@ export default function App() {
 
   const onNavChange = useCallback((nav: WebViewNavigation) => {
     setCanGoBack(nav.canGoBack);
+  }, []);
+
+  const handleShouldStartLoad = useCallback((request: { url: string }) => {
+    if (isPlantsInAppUrl(request.url)) return true;
+    void Linking.openURL(request.url);
+    return false;
   }, []);
 
   useEffect(() => {
@@ -39,6 +54,7 @@ export default function App() {
           source={{ uri: PLANTS_URL }}
           style={{ flex: 1, backgroundColor: '#0f172a' }}
           onNavigationStateChange={onNavChange}
+          onShouldStartLoadWithRequest={handleShouldStartLoad}
           onLoadEnd={() => {
             setLoading(false);
             void SplashScreen.hideAsync();
@@ -51,8 +67,8 @@ export default function App() {
           allowsFullscreenVideo
           mediaPlaybackRequiresUserAction={false}
           setSupportMultipleWindows={false}
-          originWhitelist={['https://*', 'http://*']}
-          userAgent="AiBhivePlants/1.0 Android"
+          originWhitelist={['https://*']}
+          userAgent="AiBhivePlants/1.0.2 Android"
         />
         {loading ? (
           <View
