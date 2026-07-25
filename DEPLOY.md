@@ -5,7 +5,7 @@ Production deploys run automatically on every push to **`main-fixed`** via GitHu
 | Workflow | What it deploys |
 |----------|-----------------|
 | `Auto-deploy (web + server)` | Cloud Run — website + API (`/hive-apps`, server routes) |
-| `Build Android APK` | Fresh signed APK → Firebase + `public/taylored-mobile.apk` |
+| `Build Plants APK` | AiBhivePlants (`/plants` only) → Firebase + `public/aibhive-plants.apk` |
 | `EAS Update (JS OTA)` | JS-only mobile changes over the air |
 
 ## If deploys are not running

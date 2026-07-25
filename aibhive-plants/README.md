@@ -22,6 +22,14 @@ Output: `public/aibhive-plants.apk` (served as **AiBhivePlants.apk**)
 
 CI: GitHub Actions → **Build Plants APK** (runs on `main-fixed` when `aibhive-plants/**` changes).
 
+**If GitHub Actions billing blocks CI**, build on Google Cloud Build instead:
+
+```bash
+gcloud builds submit --config aibhive-plants/cloudbuild.yaml .
+```
+
+Then commit `public/aibhive-plants.apk` and `public/plants-mobile-releases.json` to `main-fixed`, or rely on the Firebase mirror updated by the build script.
+
 ## Download
 
 - Web: https://aibhive.com/plants — **Get AiBhivePlants APK** button
