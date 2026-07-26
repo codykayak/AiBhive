@@ -1,14 +1,14 @@
 {
-  "shippedNativeVersion": "1.0.1",
-  "versionCode": 2,
-  "sourceVersion": "1.0.1",
+  "shippedNativeVersion": "1.0.4",
+  "versionCode": 5,
+  "sourceVersion": "1.0.4",
   "appName": "AiBhivePlants",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-plants.apk?alt=media&token=07b33934-cc3f-472c-bec1-da2223bd4fda",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-plants.apk?alt=media&token=07b33934-cc3f-472c-bec1-da2223bd4fda",
+  "downloadUrl": "https://aibhive.com/api/download/plants-apk",
+  "fullApkUrl": "https://aibhive.com/api/download/plants-apk",
   "apkFilename": "AiBhivePlants.apk",
   "releaseNotes": "v1.0.0 — AiBhivePlants Android app for aibhive.com/plants: wild plant ID, foraging field guide, holistic libraries, community posts, and Hive Research photo identification. Google Play listing pending.",
   "playStoreStatus": "pending_approval",
-  "publishedAt": "2026-07-24T12:15:46.015Z",
+  "publishedAt": "2026-07-26T04:57:11.505Z",
   "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/mobile%2Faibhive-plants.apk?alt=media&token=07b33934-cc3f-472c-bec1-da2223bd4fda",
   "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Fplants-apk-1784895344277%2Faibhive-plants.apk.gz?alt=media&token=400bddb9-18b9-4dcc-82b2-da7e8d290fd1"
 }
