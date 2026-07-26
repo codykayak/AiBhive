@@ -469,6 +469,45 @@ export default function DmtMatrixDecoderPage() {
       </section>
 
       <div className={styles.shell}>
+        <section className={`${styles.section} ${styles.catalogSectionProminent}`} aria-label="Glyph catalogue">
+          <h2 className={styles.sectionTitle}>Catalogue ({catalog.length} glyphs)</h2>
+          <p className={styles.researchSub} style={{ marginBottom: '0.75rem' }}>
+            Archetypes + community registry tiles from{' '}
+            <a href="https://dmtcode.com/registry" target="_blank" rel="noopener noreferrer">
+              dmtcode.com/registry
+            </a>
+            . Photo decode matches against these IDs.
+          </p>
+          <div className={styles.catalogGrid}>
+            {catalog.slice(0, 24).map((sym) => (
+              <div key={sym.id}>
+                {sym.registryUrl ? (
+                  <a
+                    href={sym.registryUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.catalogItem}
+                    title={`View ${sym.name} on dmtcode.com`}
+                  >
+                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
+                  </a>
+                ) : (
+                  <div className={styles.catalogItem}>
+                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
+                  </div>
+                )}
+                <div className={styles.catalogLabel}>{sym.name}</div>
+                {sym.source && <div className={styles.catalogSource}>{sym.source}</div>}
+              </div>
+            ))}
+          </div>
+          {catalog.length > 24 && (
+            <Link to="/research-lab/workspace" className={styles.moreLink}>
+              View all in workspace <ChevronRight size={14} />
+            </Link>
+          )}
+        </section>
+
         <DmtLaserProvenanceSection
           symbolCount={corpusPreview?.symbolCount ?? catalog.length}
           registryCount={corpusPreview?.registryCount}
@@ -841,45 +880,6 @@ export default function DmtMatrixDecoderPage() {
             </section>
           </>
         )}
-
-        <section className={styles.section} aria-label="Glyph catalogue">
-          <h2 className={styles.sectionTitle}>Catalogue ({catalog.length} glyphs)</h2>
-          <p className={styles.researchSub} style={{ marginBottom: '0.75rem' }}>
-            Archetypes + community registry tiles from{' '}
-            <a href="https://dmtcode.com/registry" target="_blank" rel="noopener noreferrer">
-              dmtcode.com/registry
-            </a>
-            . Photo decode matches against these IDs.
-          </p>
-          <div className={styles.catalogGrid}>
-            {catalog.slice(0, 24).map((sym) => (
-              <div key={sym.id}>
-                {sym.registryUrl ? (
-                  <a
-                    href={sym.registryUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.catalogItem}
-                    title={`View ${sym.name} on dmtcode.com`}
-                  >
-                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
-                  </a>
-                ) : (
-                  <div className={styles.catalogItem}>
-                    <img src={`/dmt-symbols/${sym.filename}`} alt={sym.name} loading="lazy" />
-                  </div>
-                )}
-                <div className={styles.catalogLabel}>{sym.name}</div>
-                {sym.source && <div className={styles.catalogSource}>{sym.source}</div>}
-              </div>
-            ))}
-          </div>
-          {catalog.length > 24 && (
-            <Link to="/research-lab/workspace" className={styles.moreLink}>
-              View all in workspace <ChevronRight size={14} />
-            </Link>
-          )}
-        </section>
       </div>
     </div>
   );
