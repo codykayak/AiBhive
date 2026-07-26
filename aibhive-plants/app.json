@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhivePlants",
     "slug": "aibhive-plants",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "default",
     "icon": "./icon.png",
     "scheme": "aibhiveplants",
@@ -18,7 +18,7 @@
         "backgroundColor": "#0f172a"
       },
       "package": "com.aibhive.plants",
-      "versionCode": 4,
+      "versionCode": 5,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "INTERNET",
