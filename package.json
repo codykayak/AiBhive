@@ -25,7 +25,12 @@
     "sitemap": "node scripts/generate-sitemap.mjs",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test:homework-ocr": "node scripts/test-homework-ocr-upload.mjs"
+    "test:homework-ocr": "node scripts/test-homework-ocr-upload.mjs",
+    "anticheat:lab": "tsx anticheat-lab/ts/run-lab.ts",
+    "anticheat:lab:json": "tsx anticheat-lab/ts/run-lab.ts --json",
+    "anticheat:lab:video": "python3 anticheat-lab/python/generate_synthetic_video.py",
+    "anticheat:lab:capture": "python3 anticheat-lab/python/lab_capture.py --file anticheat-lab/fixtures/synthetic_target.mp4 --frames 300",
+    "anticheat:lab:analyze": "tsx anticheat-lab/ts/run-lab-from-capture.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
