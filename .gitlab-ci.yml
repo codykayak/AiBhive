@@ -1,0 +1,136 @@
+# GitLab CI — mirrors key GitHub Actions for AiBhive on GitLab.
+# Secrets: see GITLAB.md (Settings → CI/CD → Variables).
+
+stages:
+  - hygiene
+  - sync
+  - merge
+  - build
+  - deploy
+
+variables:
+  MAIN_BRANCH: main-fixed
+  GIT_DEPTH: "0"
+
+# ── Cursor agent MR: branch hygiene ─────────────────────────────────────────
+cursor_branch_hygiene:
+  stage: hygiene
+  image: alpine:3.20
+  rules:
+    - if: >-
+        $CI_PIPELINE_SOURCE == "merge_request_event" &&
+        $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main-fixed" &&
+        $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^cursor\/.*/
+  before_script:
+    - apk add --no-cache bash curl python3 git
+  script:
+    - bash scripts/gitlab-branch-hygiene.sh
+
+# ── Cursor agent MR: sync main-fixed into branch ────────────────────────────
+cursor_sync_main_fixed:
+  stage: sync
+  image: alpine:3.20
+  rules:
+    - if: >-
+        $CI_PIPELINE_SOURCE == "merge_request_event" &&
+        $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main-fixed" &&
+        $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^cursor\/.*/
+  before_script:
+    - apk add --no-cache bash curl python3 git
+    - git config user.email "gitlab-ci@localhost"
+    - git config user.name "gitlab-ci"
+  script:
+    - bash scripts/gitlab-sync-mr.sh
+  needs:
+    - job: cursor_branch_hygiene
+
+# ── Cursor agent MR: squash merge when pipeline succeeds ────────────────────
+cursor_auto_merge:
+  stage: merge
+  image: alpine:3.20
+  rules:
+    - if: >-
+        $CI_PIPELINE_SOURCE == "merge_request_event" &&
+        $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main-fixed" &&
+        $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^cursor\/.*/
+  before_script:
+    - apk add --no-cache bash curl python3
+  script:
+    - bash scripts/gitlab-merge-mr.sh
+  needs:
+    - job: cursor_sync_main_fixed
+  # Requires CI_JOB_TOKEN or GITLAB_TOKEN with api + write_repository.
+  # If project uses approval rules, add bot as allowed merger or use bypass.
+
+# ── Web + server deploy (push to main-fixed) ────────────────────────────────
+deploy_cloud_run:
+  stage: deploy
+  image: google/cloud-sdk:alpine
+  rules:
+    - if: >-
+        $CI_COMMIT_BRANCH == "main-fixed" &&
+        $CI_PIPELINE_SOURCE == "push" &&
+        $CI_COMMIT_MESSAGE !~ /\[skip-deploy\]/
+    changes:
+      - src/**/*
+      - server/**/*
+      - aibhive-diagnose/lib/**/*
+      - functions/**/*
+      - services/**/*
+      - shared/**/*
+      - cody/**/*
+      - autoposter/**/*
+      - public/**/*
+      - vite.config.ts
+      - scripts/prerender.mjs
+      - scripts/public-routes.mjs
+      - package.json
+      - package-lock.json
+      - firebase-applet-config.json
+      - .gitlab-ci.yml
+  before_script:
+    - apk add --no-cache nodejs npm
+  script:
+    - |
+      if [ -z "$GCP_SA_KEY" ] || [ -z "$CLOUD_RUN_SERVICE" ] || [ -z "$CLOUD_RUN_REGION" ]; then
+        echo "GCP_SA_KEY / CLOUD_RUN_SERVICE / CLOUD_RUN_REGION not set — skipping deploy."
+        exit 0
+      fi
+      echo "$GCP_SA_KEY" | base64 -d > /tmp/gcp-key.json 2>/dev/null || echo "$GCP_SA_KEY" > /tmp/gcp-key.json
+      gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+      gcloud config set project "$(python3 -c 'import json; print(json.load(open("/tmp/gcp-key.json"))["project_id"])')"
+      npm ci
+      npm run build
+      gcloud run deploy "$CLOUD_RUN_SERVICE" \
+        --source . \
+        --region "$CLOUD_RUN_REGION" \
+        --quiet
+  timeout: 25m
+
+# ── EAS OTA (optional) ──────────────────────────────────────────────────────
+eas_update:
+  stage: deploy
+  image: node:20-bookworm
+  rules:
+    - if: >-
+        $CI_COMMIT_BRANCH == "main-fixed" &&
+        $CI_PIPELINE_SOURCE == "push" &&
+        $CI_COMMIT_MESSAGE !~ /\[skip-ota\]/
+    changes:
+      - taylored-mobile/src/**/*
+      - taylored-mobile/index.ts
+      - taylored-mobile/App.tsx
+      - taylored-mobile/package.json
+      - taylored-mobile/package-lock.json
+      - shared/**/*
+      - .gitlab-ci.yml
+  script:
+    - |
+      if [ -z "$EXPO_TOKEN" ]; then
+        echo "EXPO_TOKEN not set — skipping OTA."
+        exit 0
+      fi
+      cd taylored-mobile && npm install
+      MSG="${CI_COMMIT_MESSAGE%%$'\n'*}"
+      npx eas-cli update --branch production --message "${MSG:0:140}" --non-interactive
+  timeout: 15m
