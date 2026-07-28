@@ -26,6 +26,19 @@ gh pr merge <number> --squash --delete-branch
 
 Merge triggers deploy via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
 
+## GitLab (if GitHub is unavailable)
+
+Full setup: **[GITLAB.md](./GITLAB.md)** — CI variables, protected branches, approvals, and Cursor Cloud repo URL.
+
+Quick flow:
+
+1. Push to `cursor/<name>-c7f3` on GitLab `origin`.
+2. Open MR to `main-fixed` (`glab mr create --target-branch main-fixed --fill --yes`).
+3. GitLab CI runs hygiene → sync → auto squash-merge (`.gitlab-ci.yml`).
+4. Or merge manually: `glab mr merge --squash --yes --remove-source-branch`.
+
+Required GitLab CI variables: `GCP_SA_KEY`, `CLOUD_RUN_SERVICE`, `CLOUD_RUN_REGION` (deploy). Optional: `EXPO_TOKEN`, `GITLAB_TOKEN` (for scripts outside CI).
+
 ## Branch hygiene
 
 **One branch per PR. Never reuse a branch after squash-merge.**
