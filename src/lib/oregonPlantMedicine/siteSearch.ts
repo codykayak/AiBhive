@@ -5,6 +5,7 @@ import { HOLISTIC_LIBRARY } from './holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
 import { PLANT_LIBRARY } from './plantLibrary';
 import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
+import { IRIDOLOGY_LIBRARY } from './iridologyLibrary';
 
 export type SiteSearchResultKind =
   | 'plant'
@@ -13,6 +14,7 @@ export type SiteSearchResultKind =
   | 'animal-health'
   | 'herbs'
   | 'supplements'
+  | 'iridology'
   | 'essay'
   | 'tab';
 
@@ -21,7 +23,7 @@ export type SiteSearchResult = {
   kind: SiteSearchResultKind;
   title: string;
   subtitle: string;
-  tab: 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'community' | 'home';
+  tab: 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology' | 'community' | 'home';
   haystack: string;
 };
 
@@ -109,6 +111,17 @@ export function buildSiteSearchIndex(): SiteSearchResult[] {
       title: t.title,
       subtitle: 'Supplements',
       tab: 'supplements',
+      haystack: [t.title, t.summary, t.deepDive, t.whenPeopleExplore, ...t.approaches].join(' '),
+    });
+  }
+
+  for (const t of IRIDOLOGY_LIBRARY) {
+    results.push({
+      id: t.id,
+      kind: 'iridology',
+      title: t.title,
+      subtitle: 'AI Iridology',
+      tab: 'iridology',
       haystack: [t.title, t.summary, t.deepDive, t.whenPeopleExplore, ...t.approaches].join(' '),
     });
   }

@@ -1,0 +1,61 @@
+{
+  "methodologies": [
+    {
+      "id": "jensen",
+      "name": "Bernard Jensen zone iridology",
+      "summary": "Clock-face organ zones mapped on the iris; right iris reflects right side of body, left iris left side. Used for educational organ-sector correlation, not clinical proof."
+    },
+    {
+      "id": "physical",
+      "name": "Physical / European iridology",
+      "summary": "Focus on fiber density (open vs dense), lacunae, crypts, pigment spots, nerve rings, and arcus senilis as constitutional and terrain signs."
+    },
+    {
+      "id": "integrated",
+      "name": "Integrated iridology",
+      "summary": "Cross-check zone signs with fiber structure and constitution before stating a tendency; require multiple converging signs and express uncertainty."
+    },
+    {
+      "id": "rayid",
+      "name": "Rayid (personality)",
+      "summary": "Personality and emotional pattern reading — label as non-medical, exploratory only."
+    }
+  ],
+  "zones": [
+    { "position": "12 o'clock brain / head", "jensenNotes": "Cerebral zone, pituitary/pineal references in classic charts" },
+    { "position": "1-2 o'clock throat / thyroid", "jensenNotes": "Neck, thyroid, larynx sector in many charts" },
+    { "position": "3 o'clock liver / gallbladder (right eye)", "jensenNotes": "Right iris — hepatic/biliary sector in Jensen tradition" },
+    { "position": "5-6 o'clock digestive / colon", "jensenNotes": "Lower digestive tract, colon reflex zones" },
+    { "position": "7-8 o'clock lung / breast", "jensenNotes": "Respiratory and chest sectors — use cautious language only" },
+    { "position": "9 o'clock kidney / adrenal", "jensenNotes": "Filtration, adrenal stress themes in iridology texts" },
+    { "position": "6 o'clock legs / pelvis", "jensenNotes": "Lower extremity and pelvic reflex areas" }
+  ],
+  "signs": [
+    { "sign": "lacuna", "physicalMeaning": "Pit or cavity in iris stroma — often linked to inherited weakness or chronic irritation in iridology texts" },
+    { "sign": "crypt", "physicalMeaning": "Deep closed pit — stronger emphasis on inherited tendency in European iridology" },
+    { "sign": "nerve ring", "physicalMeaning": "Concentric white ring — nervous system stress or sensitivity in traditional readings" },
+    { "sign": "pigment spot", "physicalMeaning": "Brown/rust deposit — localized sign; map to nearest zone cautiously" },
+    { "sign": "open fibers", "physicalMeaning": "Loose iris texture — lymphatic or reactive constitution in Jensen typing" },
+    { "sign": "dense fibers", "physicalMeaning": "Tight iris texture — hematogenic or biliary tendencies in classic typing" },
+    { "sign": "arcus senilis", "physicalMeaning": "White/grey ring at limbus — age-related; iridologists note cardiovascular themes (not diagnostic)" }
+  ],
+  "constitutionalTypes": [
+    { "type": "lymphatic", "patterns": "Blue-grey iris, open fibers, mucus congestion themes in iridology literature" },
+    { "type": "biliary", "patterns": "Mixed brown-yellow, dense fibers, digestive and inflammatory themes" },
+    { "type": "hematogenic", "patterns": "Brown iris, dense structure, blood/iron and metabolic themes" },
+    { "type": "neurogenic", "patterns": "Nerve rings, fine radial lines, nervous system sensitivity themes" }
+  ],
+  "photoQualityTips": [
+    "Use natural daylight; avoid direct flash.",
+    "Fill the frame with the iris; minimize eyelid coverage.",
+    "Hold steady; blur invalidates fine fiber reading.",
+    "Remove contact lenses if possible.",
+    "Capture left and right eyes separately when comparing zones."
+  ],
+  "cautions": [
+    "Never state a disease diagnosis from an iris photo.",
+    "Use phrasing: iridology literature associates…, possible tendency…, consider professional evaluation.",
+    "Poor photo quality → recommend retake, do not guess.",
+    "Iridology is controversial; acknowledge uncertainty in every report."
+  ]
+}

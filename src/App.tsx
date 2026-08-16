@@ -60,6 +60,7 @@ const HypnosisEnergyPage = lazy(() => import('./pages/plants/HypnosisEnergyPage'
 const AnimalHealthPage = lazy(() => import('./pages/plants/AnimalHealthPage'));
 const HerbsPage = lazy(() => import('./pages/plants/HerbsPage'));
 const SupplementsPage = lazy(() => import('./pages/plants/SupplementsPage'));
+const IridologyPage = lazy(() => import('./pages/plants/IridologyPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const DmtMatrixDecoderPage = lazy(() => import('./pages/research-lab/DmtMatrixDecoderPage'));
 const DmtMatrixLibraryPage = lazy(() => import('./pages/research-lab/DmtMatrixLibraryPage'));
@@ -190,6 +191,7 @@ function AnimatedRoutes() {
             <Route path="/plants/animal-health" element={<AnimalHealthPage />} />
             <Route path="/plants/herbs" element={<HerbsPage />} />
             <Route path="/plants/supplements" element={<SupplementsPage />} />
+            <Route path="/plants/iridology" element={<IridologyPage />} />
             <Route path="/plants" element={<PlantsPage />} />
             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />
             <Route

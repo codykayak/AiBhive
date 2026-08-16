@@ -8,6 +8,7 @@ import {
   MessageCircle,
   PawPrint,
   Sparkles,
+  Eye,
   Sprout,
   ThumbsUp,
   Users,
@@ -19,6 +20,7 @@ import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnos
 import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
 import { HERBS_LIBRARY } from '../../../lib/oregonPlantMedicine/herbsLibrary';
 import { SUPPLEMENTS_LIBRARY } from '../../../lib/oregonPlantMedicine/supplementsLibrary';
+import { IRIDOLOGY_LIBRARY } from '../../../lib/oregonPlantMedicine/iridologyLibrary';
 import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
 import { applySeedVotes, loadSeedVotes, sortFeedByUpvotes, toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
@@ -46,7 +48,8 @@ type HomeTab =
   | 'hypnosis'
   | 'animal-health'
   | 'herbs'
-  | 'supplements';
+  | 'supplements'
+  | 'iridology';
 
 type Props = {
   onNavigate: (tab: HomeTab) => void;
@@ -168,6 +171,18 @@ const THEMES: Record<HomeTab | 'edibles', SectionTheme> = {
     accent: 'text-teal-300',
     button: 'bg-teal-600 hover:bg-teal-500',
     glow: 'shadow-teal-500/10',
+  },
+  iridology: {
+    icon: Eye,
+    label: 'AI Iridology',
+    headline: 'Educational iris analysis',
+    blurb:
+      'Jensen zones, physical signs, constitutional typing, and Hive Research iris photo analysis — with strong disclaimers. Not medical diagnosis.',
+    gradient: 'from-indigo-950/80 via-slate-950/40 to-transparent',
+    border: 'border-indigo-500/25',
+    accent: 'text-indigo-300',
+    button: 'bg-indigo-600 hover:bg-indigo-500',
+    glow: 'shadow-indigo-500/10',
   },
 };
 
@@ -536,7 +551,7 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
   onNavigate,
   hideImages = false,
 }: {
-  tab: 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
+  tab: 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
   topics: T[];
   onNavigate: (tab: HomeTab) => void;
   hideImages?: boolean;
@@ -557,6 +572,8 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
                   ? 'hover:border-amber-500/40'
                   : tab === 'supplements'
                     ? 'hover:border-teal-500/40'
+                    : tab === 'iridology'
+                      ? 'hover:border-indigo-500/40'
                     : 'hover:border-rose-500/40'
             }`}
           >
@@ -606,6 +623,7 @@ export default function OregonPlantMedicineHome({
   const animalTopics = ANIMAL_HEALTH_LIBRARY.slice(0, 3) as AnimalHealthTopic[];
   const herbsTopics = HERBS_LIBRARY.slice(0, 3);
   const supplementsTopics = SUPPLEMENTS_LIBRARY.slice(0, 3);
+  const iridologyTopics = IRIDOLOGY_LIBRARY.slice(0, 3);
   const featuredEssay = getFeaturedEssay('plants-home');
 
   return (
@@ -656,6 +674,8 @@ export default function OregonPlantMedicineHome({
       <ResearchCardsSection tab="animal-health" topics={animalTopics} onNavigate={onNavigate} />
 
       <ResearchCardsSection tab="herbs" topics={herbsTopics} onNavigate={onNavigate} />
+
+      <ResearchCardsSection tab="iridology" topics={iridologyTopics} onNavigate={onNavigate} />
 
       <ResearchCardsSection tab="supplements" topics={supplementsTopics} onNavigate={onNavigate} hideImages />
 

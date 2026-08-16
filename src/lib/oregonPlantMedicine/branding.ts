@@ -134,3 +134,15 @@ export const SUPPLEMENTS_TAB_SHORT_LABEL = 'Supplements';
 
 export const SUPPLEMENTS_SEO_DESCRIPTION =
   'Supplements library — vitamins, minerals, omega-3, probiotics, and specialty compounds with evidence summaries, dosing context, drug interaction notes, and quality guidance. Not medical advice.';
+
+/** Canonical URL segment for AI iridology education + iris photo analysis. */
+export const IRIDOLOGY_SLUG = 'iridology';
+
+export const IRIDOLOGY_PATH = `${PLANTS_PUBLIC_PATH}/${IRIDOLOGY_SLUG}`;
+
+export const IRIDOLOGY_TAB_LABEL = 'AI Iridology';
+
+export const IRIDOLOGY_TAB_SHORT_LABEL = 'Iridology';
+
+export const IRIDOLOGY_SEO_DESCRIPTION =
+  'Educational iridology library — Jensen zone charts, physical/European signs, constitutional typing, and integrated methodology. AI iris photo analysis via Hive Research (Grok vision) with strong disclaimers. Not medical diagnosis.';

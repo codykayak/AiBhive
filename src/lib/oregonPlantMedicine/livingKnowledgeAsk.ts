@@ -16,6 +16,8 @@ export function livingKnowledgeScopeForTab(tab: string): LivingKnowledgeScope {
       return 'herbs';
     case 'supplements':
       return 'supplements';
+    case 'iridology':
+      return 'iridology';
     default:
       return 'all';
   }

@@ -59,6 +59,7 @@ export function getSitemapEntries() {
     { loc: '/plants', priority: '0.95', changefreq: 'weekly' },
     { loc: '/plants/herbs', priority: '0.88', changefreq: 'weekly' },
     { loc: '/plants/supplements', priority: '0.88', changefreq: 'weekly' },
+    { loc: '/plants/iridology', priority: '0.88', changefreq: 'weekly' },
     { loc: '/plants/holistic-remedies-and-protocols', priority: '0.88', changefreq: 'weekly' },
     { loc: '/plants/hypnosis-and-energy', priority: '0.88', changefreq: 'weekly' },
     { loc: '/plants/animal-health', priority: '0.88', changefreq: 'weekly' },

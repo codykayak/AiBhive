@@ -9,6 +9,7 @@ import { HOLISTIC_LIBRARY } from './holisticLibrary';
 import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
 import { PLANT_LIBRARY } from './plantLibrary';
 import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
+import { IRIDOLOGY_LIBRARY } from './iridologyLibrary';
 
 export type LivingKnowledgeScope =
   | 'all'
@@ -18,7 +19,8 @@ export type LivingKnowledgeScope =
   | 'hypnosis'
   | 'animal-health'
   | 'herbs'
-  | 'supplements';
+  | 'supplements'
+  | 'iridology';
 
 export type LivingKnowledgeDocKind = 'plant' | 'topic' | 'essay';
 
@@ -35,7 +37,7 @@ export type LivingKnowledgeDoc = {
   /** Open plant detail or research topic */
   plantId?: string;
   topicId?: string;
-  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
+  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
 };
 
 export type LivingKnowledgeHit = LivingKnowledgeDoc & {
@@ -215,6 +217,22 @@ function buildIndex(): LivingKnowledgeDoc[] {
       tags: [t.category, ...t.relatedPlantIds],
       topicId: t.id,
       topicLibrary: 'supplements',
+    });
+  }
+
+  for (const t of IRIDOLOGY_LIBRARY) {
+    docs.push({
+      id: `iridology:${t.id}`,
+      kind: 'topic',
+      library: 'iridology',
+      title: t.title,
+      subtitle: t.category,
+      summary: t.summary,
+      body: [t.summary, t.deepDive, t.whenPeopleExplore, ...(t.approaches ?? [])].join('\n'),
+      safety: t.safetyWarnings ?? [],
+      tags: [t.category, ...t.relatedPlantIds],
+      topicId: t.id,
+      topicLibrary: 'iridology',
     });
   }
 
@@ -491,6 +509,8 @@ export function buildLivingKnowledgeClarifier(scope: LivingKnowledgeScope, text:
       'For herbs: Western, Chinese (TCM), or Ayurvedic? Name the herb or what you hope it may support (sleep, stress, digestion, immunity) — and note any medications you take.',
     supplements:
       'For supplements: which nutrient or product (vitamin D, magnesium, omega-3, probiotic)? Are you asking about dosing, evidence, or drug interactions?',
+    iridology:
+      'For iridology: are you exploring zone charts, constitutional types, fiber signs, or photo capture? This is educational only — not medical diagnosis.',
   };
   const base = probes[scope] || probes.all;
   if (/id|identify|look|mushroom|plant/i.test(text)) {

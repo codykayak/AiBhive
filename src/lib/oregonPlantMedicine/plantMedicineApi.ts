@@ -220,7 +220,7 @@ export function deletePlantPost(user: User, postId: string): Promise<void> {
   });
 }
 
-export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements';
+export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
 
 export async function fetchTopicPosts(
   library: TopicLibraryId,
@@ -568,6 +568,97 @@ export async function sendPlantPhotoIdentify(
     candidates: Array.isArray(data.candidates) ? data.candidates : [],
     dangerousLookalikes: Array.isArray(data.dangerousLookalikes) ? data.dangerousLookalikes : [],
     certaintyNote: data.certaintyNote,
+    chargedUsd: data.chargedUsd,
+    creditBalanceUsd: data.account?.creditBalanceUsd,
+  };
+}
+
+export type IridologyMethodology = 'integrated' | 'jensen' | 'physical' | 'all';
+
+export type IridologyEyeHint = 'left' | 'right' | 'both' | 'unknown';
+
+export type IridologyObservation = {
+  zone: string;
+  sign: string;
+  meaning: string;
+  confidence: 'high' | 'medium' | 'low';
+  sources: string[];
+};
+
+export type IridologyStructuredResult = {
+  photoQuality: 'good' | 'fair' | 'poor';
+  methodology: IridologyMethodology | 'all';
+  eye: IridologyEyeHint;
+  constitutionalType: {
+    label: string;
+    confidence: 'high' | 'medium' | 'low';
+    rationale: string;
+  } | null;
+  observations: IridologyObservation[];
+  wellnessTendencies: string[];
+  cautions: string[];
+  retakeAdvice: string | null;
+};
+
+/** Paid Bhive Credits iris photo analysis — educational iridology only. */
+export async function sendIridologyAnalyze(
+  user: User,
+  opts: {
+    methodology?: IridologyMethodology | 'all';
+    eye?: IridologyEyeHint;
+    notes?: string;
+    attachment?: PlantPhotoAttachment;
+    attachments?: PlantPhotoAttachment[];
+  },
+): Promise<{
+  reply: string;
+  structured: IridologyStructuredResult;
+  chargedUsd?: number;
+  creditBalanceUsd?: number;
+}> {
+  const token = await user.getIdToken();
+  const res = await fetch('/api/plant-medicine/iridology/analyze', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      methodology: opts.methodology || 'integrated',
+      eye: opts.eye || 'unknown',
+      notes: opts.notes || '',
+      attachment: opts.attachment
+        ? {
+            base64: opts.attachment.base64,
+            mimeType: opts.attachment.mimeType || 'image/jpeg',
+          }
+        : undefined,
+      attachments: opts.attachments?.map((a) => ({
+        base64: a.base64,
+        mimeType: a.mimeType || 'image/jpeg',
+      })),
+    }),
+  });
+  const data = (await res.json()) as {
+    ok?: boolean;
+    reply?: string;
+    structured?: IridologyStructuredResult;
+    error?: string;
+    needPayment?: boolean;
+    amountUsd?: number;
+    chargedUsd?: number;
+    account?: { creditBalanceUsd?: number };
+  };
+
+  if (res.status === 401) throw new Error(data.error || 'Sign in for iris photo analysis');
+  if (res.status === 402 || data.needPayment) {
+    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
+  }
+  if (!res.ok || !data.reply || !data.structured) throw new Error(data.error || 'Iridology analyze failed');
+
+  return {
+    reply: data.reply,
+    structured: data.structured,
     chargedUsd: data.chargedUsd,
     creditBalanceUsd: data.account?.creditBalanceUsd,
   };
