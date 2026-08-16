@@ -2,17 +2,29 @@
 
 The cloud agent cannot write to `C:\Users\...` directly. Use one of these methods on your Windows machine.
 
-## Option A — Batch script (easiest)
+## Option A — PowerShell (recommended with other Composer sessions)
 
-1. Make sure this repo folder on your PC includes:
-   - `local-sync/iridology-bundle/` (all iridology source files)
-   - `scripts/Apply-Iridology-Local.bat`
+From PowerShell (repo root can be anywhere you copied this folder):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\Apply-Iridology-Local.ps1
+```
+
+Custom path:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\Apply-Iridology-Local.ps1 -Repo "D:\your\aibhive-main-fixed"
+```
+
+Copies `local-sync/iridology-bundle/` into your repo and commits iridology paths only.
+
+## Option B — Batch script
+
+1. Include `local-sync/iridology-bundle/` and `scripts/Apply-Iridology-Local.bat` on your PC.
 2. Double-click **`scripts\Apply-Iridology-Local.bat`**
-3. It copies files into `C:\Users\AiBhive\aibhiverepo\aibhive-main-fixed\aibhive-main-fixed` and runs `git commit`.
+3. Edit the `REPO=` line if your path differs.
 
-Edit the `REPO=` line in the `.bat` if your path differs.
-
-## Option B — Git patch
+## Option C — Git patch
 
 From your local repo root:
 
@@ -25,7 +37,7 @@ git commit -m "Add AI Iridology: camera, analysis, history, follow-up chat (loca
 
 The patch file is at the repo root: **`iridology-local.patch`**
 
-## Option C — Manual copy
+## Option D — Manual copy
 
 Copy everything under `local-sync/iridology-bundle/` into your repo root (merge folders), then:
 
