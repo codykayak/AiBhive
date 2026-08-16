@@ -20,8 +20,29 @@ import {
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import { HIVE_RESEARCH_LABEL, HIVE_RESEARCH_POWERED_BY } from '../../../lib/oregonPlantMedicine/branding';
+import { buildLocalAnalysisRecord } from '../../../lib/oregonPlantMedicine/iridologyHistoryApi';
+import {
+  saveLocalIridologyAnalysis,
+  type IridologySavedAnalysis,
+} from '../../../lib/oregonPlantMedicine/iridologyHistoryStorage';
 import IridologyCameraModal from './IridologyCameraModal';
+import IridologyFollowUpChat from './IridologyFollowUpChat';
+import IridologyHistoryPanel from './IridologyHistoryPanel';
 import IridologyResults from './IridologyResults';
+
+function buildFollowUpContext(record: IridologySavedAnalysis): string {
+  const s = record.structured;
+  return [
+    '--- SAVED IRIS ANALYSIS (follow-up context) ---',
+    `Eye: ${s.eye}`,
+    `Photo quality: ${s.photoQuality}`,
+    s.integratedSummary ? `Summary: ${s.integratedSummary}` : '',
+    s.constitutionalType ? `Constitutional: ${s.constitutionalType.label} — ${s.constitutionalType.rationale}` : '',
+    record.reply.slice(0, 5000),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
 
 type Props = {
   user: User | null;
@@ -45,6 +66,9 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [reply, setReply] = useState('');
   const [structured, setStructured] = useState<IridologyStructuredResult | null>(null);
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [savedAnalysis, setSavedAnalysis] = useState<IridologySavedAnalysis | null>(null);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
   const [chargedUsd, setChargedUsd] = useState<number | undefined>();
   const [creditBalanceUsd, setCreditBalanceUsd] = useState<number | undefined>();
   const [guideOpen, setGuideOpen] = useState(true);
@@ -119,6 +143,10 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
     setCreditsNeeded(false);
     setReply('');
     setStructured(null);
+    setAnalysisId(null);
+    setSavedAnalysis(null);
+
+    const previewUrls = attachments.map((a) => a.previewUrl).filter((u): u is string => !!u);
 
     try {
       const result = await sendIridologyAnalyze(user, {
@@ -132,6 +160,21 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
       setStructured(result.structured);
       setChargedUsd(result.chargedUsd);
       setCreditBalanceUsd(result.creditBalanceUsd);
+
+      const id = result.analysisId || `local_${Date.now()}`;
+      const record = buildLocalAnalysisRecord({
+        id,
+        methodology,
+        eye,
+        notes: notes.trim(),
+        reply: result.reply,
+        structured: result.structured,
+        photoPreviewUrls: previewUrls,
+      });
+      saveLocalIridologyAnalysis(user.uid, record);
+      setAnalysisId(id);
+      setSavedAnalysis(record);
+      setHistoryRefresh((v) => v + 1);
     } catch (err) {
       if (err instanceof PlantCreditsError) {
         setCreditsNeeded(true);
@@ -146,6 +189,20 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
 
   const openCamera = (slot: 'left' | 'right') => {
     setCameraSlot(slot);
+  };
+
+  const loadSavedAnalysis = (record: IridologySavedAnalysis) => {
+    setReply(record.reply);
+    setStructured(record.structured);
+    setAnalysisId(record.id);
+    setSavedAnalysis(record);
+    setMethodology(
+      (record.structured.methodology as IridologyMethodology) || (record.methodology as IridologyMethodology) || 'integrated',
+    );
+    if (record.eye === 'both') setEyeMode('both');
+    else if (record.eye === 'right') setEyeMode('right');
+    else setEyeMode('left');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -210,6 +267,13 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
           </div>
         ) : null}
       </div>
+
+      <IridologyHistoryPanel
+        user={user}
+        activeId={analysisId}
+        refreshKey={historyRefresh}
+        onSelect={loadSavedAnalysis}
+      />
 
       <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs text-amber-100/90 mb-4 flex gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
@@ -329,7 +393,7 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
       </button>
 
       {structured && reply ? (
-        <div className="mt-6 pt-6 border-t border-indigo-500/20">
+        <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-4">
           <IridologyResults
             reply={reply}
             structured={structured}
@@ -337,6 +401,16 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
             creditBalanceUsd={creditBalanceUsd}
             onAddCredits={() => void addCredits()}
           />
+          {analysisId ? (
+            <IridologyFollowUpChat
+              key={analysisId}
+              analysisId={analysisId}
+              user={user}
+              onSignIn={onSignIn}
+              initialMessages={savedAnalysis?.chatMessages}
+              localContext={savedAnalysis ? buildFollowUpContext(savedAnalysis) : undefined}
+            />
+          ) : null}
         </div>
       ) : null}
 

@@ -9,6 +9,12 @@ import {
   resolvePlantHiveUserId,
 } from './plantMedicineChat.js';
 import { runIridologyAnalyze } from './iridologyAnalysis.js';
+import {
+  getIridologyAnalysis,
+  listIridologyAnalyses,
+  runIridologyFollowUpChat,
+  saveIridologyAnalysis,
+} from './iridologyHistory.js';
 import { isHiveBillingExempt } from './hiveAdmin.js';
 import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
 import {
@@ -587,10 +593,68 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
         return res.status(status).json(result);
       }
 
-      return res.json(result);
+      let analysisId = null;
+      try {
+        const saved = await saveIridologyAnalysis(db, user.uid, {
+          methodology: req.body?.methodology || 'integrated',
+          eye: req.body?.eye || result.structured?.eye,
+          notes: req.body?.notes,
+          reply: result.reply,
+          structured: result.structured,
+        });
+        analysisId = saved.id;
+      } catch (saveErr) {
+        console.warn('[plant-medicine/iridology/analyze] history save failed:', saveErr?.message || saveErr);
+      }
+
+      return res.json({ ...result, analysisId });
     } catch (err) {
       console.error('[plant-medicine/iridology/analyze]', err);
       return res.status(500).json({ error: err.message || 'Iridology analyze failed' });
+    }
+  });
+
+  app.get('/api/plant-medicine/iridology/history', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const analyses = await listIridologyAnalyses(db, user.uid, 25);
+      return res.json({ analyses });
+    } catch (err) {
+      console.error('[plant-medicine/iridology/history GET]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load history' });
+    }
+  });
+
+  app.get('/api/plant-medicine/iridology/history/:analysisId', async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const analysis = await getIridologyAnalysis(db, user.uid, String(req.params.analysisId || ''));
+      if (!analysis) return res.status(404).json({ error: 'Analysis not found' });
+      return res.json({ analysis });
+    } catch (err) {
+      console.error('[plant-medicine/iridology/history GET one]', err);
+      return res.status(500).json({ error: err.message || 'Failed to load analysis' });
+    }
+  });
+
+  app.post('/api/plant-medicine/iridology/history/:analysisId/chat', express.json({ limit: '512kb' }), async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const { message, history = [] } = req.body || {};
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      const result = await runIridologyFollowUpChat(db, hiveUserId, user.uid, String(req.params.analysisId || ''), {
+        message,
+        history,
+        email: user.email,
+      });
+      if (!result.ok) return res.status(400).json(result);
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/iridology/history chat]', err);
+      return res.status(500).json({ error: err.message || 'Follow-up chat failed' });
     }
   });
 }
