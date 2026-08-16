@@ -18,6 +18,7 @@ import {
   Sparkles,
   Sprout,
   Star,
+  Eye,
   Home,
   User as UserIcon,
   X,
@@ -57,9 +58,11 @@ import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnerg
 import AnimalHealthPanel from './oregon-plant-medicine/AnimalHealthPanel';
 import HerbsPanel from './oregon-plant-medicine/HerbsPanel';
 import SupplementsPanel from './oregon-plant-medicine/SupplementsPanel';
+import IridologyPanel from './oregon-plant-medicine/IridologyPanel';
 import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDisclaimerModal';
 import HerbsDisclaimerModal from './oregon-plant-medicine/HerbsDisclaimerModal';
 import SupplementsDisclaimerModal from './oregon-plant-medicine/SupplementsDisclaimerModal';
+import IridologyDisclaimerModal from './oregon-plant-medicine/IridologyDisclaimerModal';
 import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
@@ -98,6 +101,8 @@ import {
   HERBS_TAB_SHORT_LABEL,
   SUPPLEMENTS_PATH,
   SUPPLEMENTS_TAB_SHORT_LABEL,
+  IRIDOLOGY_PATH,
+  IRIDOLOGY_TAB_SHORT_LABEL,
   STATE_CONTRIBUTION_USD,
 } from '../../lib/oregonPlantMedicine/branding';
 import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
@@ -105,6 +110,7 @@ import { hasAcceptedHypnosisEnergyDisclaimer } from '../../lib/oregonPlantMedici
 import { hasAcceptedAnimalHealthDisclaimer } from '../../lib/oregonPlantMedicine/animalHealthDisclaimer';
 import { hasAcceptedHerbsDisclaimer } from '../../lib/oregonPlantMedicine/herbsDisclaimer';
 import { hasAcceptedSupplementsDisclaimer } from '../../lib/oregonPlantMedicine/supplementsDisclaimer';
+import { hasAcceptedIridologyDisclaimer } from '../../lib/oregonPlantMedicine/iridologyDisclaimer';
 import {
   isSupportedLocation,
   locationLabel,
@@ -115,7 +121,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
 
 type Props = { expanded?: boolean; initialTab?: Tab };
 
-type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'guide' | 'resources';
+type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology' | 'guide' | 'resources';
 type UseFilter = 'all' | PlantUse;
 
 function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber' | 'teal' {
@@ -130,6 +136,8 @@ function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber
       return 'amber';
     case 'supplements':
       return 'teal';
+    case 'iridology':
+      return 'violet';
     default:
       return 'emerald';
   }
@@ -141,6 +149,7 @@ const TAB_PAGE_LABELS: Record<Tab, string> = {
   plants: 'Plants & foraging',
   herbs: 'Herbs',
   supplements: 'Supplements',
+  iridology: 'AI Iridology',
   holistic: 'Holistic protocols',
   hypnosis: 'Hypnosis & energy',
   'animal-health': 'Animal health',
@@ -164,6 +173,7 @@ const NAV_GROUPS = [
     items: [
       ['herbs', HERBS_TAB_SHORT_LABEL, Leaf],
       ['supplements', SUPPLEMENTS_TAB_SHORT_LABEL, FlaskConical],
+      ['iridology', IRIDOLOGY_TAB_SHORT_LABEL, Eye],
       ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
       ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
       ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
@@ -172,7 +182,7 @@ const NAV_GROUPS = [
 ] as const;
 
 function isResearchNavTab(id: string) {
-  return id === 'holistic' || id === 'hypnosis' || id === 'animal-health' || id === 'herbs' || id === 'supplements';
+  return id === 'holistic' || id === 'hypnosis' || id === 'animal-health' || id === 'herbs' || id === 'supplements' || id === 'iridology';
 }
 
 function navTabShortLabel(id: string, label: string) {
@@ -475,6 +485,10 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
   const [supplementsDisclaimerReview, setSupplementsDisclaimerReview] = useState(false);
   const [supplementsAccepted, setSupplementsAccepted] = useState(() => hasAcceptedSupplementsDisclaimer());
   const [pendingSupplementsTab, setPendingSupplementsTab] = useState(false);
+  const [iridologyDisclaimerOpen, setIridologyDisclaimerOpen] = useState(false);
+  const [iridologyDisclaimerReview, setIridologyDisclaimerReview] = useState(false);
+  const [iridologyAccepted, setIridologyAccepted] = useState(() => hasAcceptedIridologyDisclaimer());
+  const [pendingIridologyTab, setPendingIridologyTab] = useState(false);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [askFallbackOpen, setAskFallbackOpen] = useState(false);
@@ -506,6 +520,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
     setAnimalAccepted(hasAcceptedAnimalHealthDisclaimer(userId));
     setHerbsAccepted(hasAcceptedHerbsDisclaimer(userId));
     setSupplementsAccepted(hasAcceptedSupplementsDisclaimer(userId));
+    setIridologyAccepted(hasAcceptedIridologyDisclaimer(userId));
   }, [userId]);
 
   useEffect(() => {
@@ -554,6 +569,11 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
       setSupplementsDisclaimerReview(false);
       setSupplementsDisclaimerOpen(true);
       setPendingSupplementsTab(true);
+    }
+    if (initialTab === 'iridology' && !hasAcceptedIridologyDisclaimer(userId)) {
+      setIridologyDisclaimerReview(false);
+      setIridologyDisclaimerOpen(true);
+      setPendingIridologyTab(true);
     }
   }, [initialTab, userId]);
 
@@ -622,6 +642,19 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
     }
   }, [expanded, supplementsAccepted]);
 
+  const openIridologyTab = useCallback(() => {
+    if (!iridologyAccepted) {
+      setIridologyDisclaimerReview(false);
+      setPendingIridologyTab(true);
+      setIridologyDisclaimerOpen(true);
+      return;
+    }
+    setTab('iridology');
+    if (expanded && typeof window !== 'undefined') {
+      window.history.replaceState(null, '', IRIDOLOGY_PATH);
+    }
+  }, [expanded, iridologyAccepted]);
+
   const selectTab = useCallback(
     (id: Tab) => {
       if (id === 'holistic') {
@@ -644,12 +677,16 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
         openSupplementsTab();
         return;
       }
+      if (id === 'iridology') {
+        openIridologyTab();
+        return;
+      }
       setTab(id);
       if (expanded && typeof window !== 'undefined') {
         window.history.replaceState(null, '', '/plants');
       }
     },
-    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab, openHerbsTab, openSupplementsTab],
+    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab, openHerbsTab, openSupplementsTab, openIridologyTab],
   );
 
   const footerView: FooterView =
@@ -763,6 +800,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
         'animal-health': 'animal-health',
         herbs: 'herbs',
         supplements: 'supplements',
+        iridology: 'iridology',
       };
       const library = libraryMap[result.kind];
       if (library) {
@@ -1290,6 +1328,18 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
           />
         ) : null}
 
+        {tab === 'iridology' && iridologyAccepted ? (
+          <IridologyPanel
+            user={user}
+            onSignIn={() => void handleSignIn()}
+            onOpenPlant={(plant) => setSelected(plant)}
+            onCreatePost={() => setShowCreatePost(true)}
+            onAskAi={openAskAi}
+            focusTopicId={focusTopic?.library === 'iridology' ? focusTopic.topicId : null}
+            onFocusTopicConsumed={clearFocusTopic}
+          />
+        ) : null}
+
         {tab === 'resources' ? <ResourcesPanel /> : null}
 
         {tab === 'guide' ? <FieldGuidePanel /> : null}
@@ -1515,6 +1565,35 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
               setTab('supplements');
               if (expanded && typeof window !== 'undefined') {
                 window.history.replaceState(null, '', SUPPLEMENTS_PATH);
+              }
+            }
+          }}
+        />
+      ) : null}
+      {iridologyDisclaimerOpen ? (
+        <IridologyDisclaimerModal
+          reviewOnly={iridologyDisclaimerReview}
+          userId={userId}
+          onCancel={() => {
+            setIridologyDisclaimerOpen(false);
+            setIridologyDisclaimerReview(false);
+            setPendingIridologyTab(false);
+            if (tab === 'iridology' && !iridologyAccepted) {
+              setTab('plants');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', '/plants');
+              }
+            }
+          }}
+          onAccepted={() => {
+            if (!iridologyDisclaimerReview) setIridologyAccepted(true);
+            setIridologyDisclaimerOpen(false);
+            setIridologyDisclaimerReview(false);
+            if (pendingIridologyTab && !iridologyDisclaimerReview) {
+              setPendingIridologyTab(false);
+              setTab('iridology');
+              if (expanded && typeof window !== 'undefined') {
+                window.history.replaceState(null, '', IRIDOLOGY_PATH);
               }
             }
           }}

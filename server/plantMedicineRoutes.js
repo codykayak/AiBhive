@@ -8,6 +8,7 @@ import {
   runCommunityPostEnrich,
   resolvePlantHiveUserId,
 } from './plantMedicineChat.js';
+import { runIridologyAnalyze } from './iridologyAnalysis.js';
 import { isHiveBillingExempt } from './hiveAdmin.js';
 import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
 import {
@@ -34,9 +35,9 @@ import {
 } from './plantMedicine.js';
 
 const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
-const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health|herbs|supplements)$/;
+const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health|herbs|supplements|iridology)$/;
 const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
-const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|herbs|supplements|essay)$/;
+const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|herbs|supplements|iridology|essay)$/;
 
 function requireAuth(req, res) {
   return verifyHiveAuth(req).then((user) => {
@@ -561,6 +562,35 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
     } catch (err) {
       console.error('[plant-medicine/identify]', err);
       return res.status(500).json({ error: err.message || 'Photo identify failed' });
+    }
+  });
+
+  /** Paid Bhive Credits iris photo analysis — educational iridology only. */
+  app.post('/api/plant-medicine/iridology/analyze', express.json({ limit: '12mb' }), async (req, res) => {
+    try {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const { methodology = 'integrated', eye, notes, attachment, attachments } = req.body || {};
+      const hiveUserId = resolvePlantHiveUserId(user.uid);
+      const result = await runIridologyAnalyze(db, hiveUserId, {
+        methodology,
+        eye,
+        notes,
+        attachment,
+        attachments,
+        email: user.email,
+      });
+
+      if (!result.ok) {
+        const status = result.needPayment ? 402 : 400;
+        return res.status(status).json(result);
+      }
+
+      return res.json(result);
+    } catch (err) {
+      console.error('[plant-medicine/iridology/analyze]', err);
+      return res.status(500).json({ error: err.message || 'Iridology analyze failed' });
     }
   });
 }

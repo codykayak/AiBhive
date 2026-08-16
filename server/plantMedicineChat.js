@@ -24,7 +24,7 @@ const PLANT_VISION_RAW_COST = Number(process.env.PLANT_MEDICINE_VISION_RAW_COST 
 /** Ask AiBhive uses Hive credits — only paid feature besides adding states. */
 const PLANT_CHAT_FREE = false;
 
-function collectVisionAttachments(opts) {
+export function collectVisionAttachments(opts) {
   const list = [];
   if (opts.attachment?.base64) list.push(opts.attachment);
   if (Array.isArray(opts.attachments)) list.push(...opts.attachments);

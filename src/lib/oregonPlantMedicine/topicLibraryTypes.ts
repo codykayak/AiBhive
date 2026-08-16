@@ -1,7 +1,7 @@
 import type { ExternalLink } from './types';
 
 /** Research libraries that support community posts and upvotes. */
-export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements';
+export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
 
 export type ResearchTopicBase = {
   id: string;
