@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Iridology safety">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="hsl(268,45%,12%)"/>
+      <stop offset="100%" stop-color="hsl(298,55%,22%)"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="hsl(268,70%,55%)"/>
+      <stop offset="70%" stop-color="hsl(298,60%,35%)"/>
+      <stop offset="100%" stop-color="hsl(268,50%,15%)"/>
+    </radialGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#bg)"/>
+  <circle cx="480" cy="250" r="120" fill="url(#iris)" opacity="0.95"/>
+  <circle cx="480" cy="250" r="118" fill="none" stroke="hsl(298,80%,70%)" stroke-width="2" opacity="0.4"/>
+  <line x1="520" y1="250" x2="595" y2="250" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="514.6410161513776" y1="270" x2="579.5929214352104" y2="307.5" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="500" y1="284.6410161513775" x2="537.5" y2="349.5929214352104" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="480" y1="290" x2="480" y2="365" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="460" y1="284.6410161513775" x2="422.5" y2="349.5929214352104" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="445.3589838486225" y1="270" x2="380.4070785647896" y2="307.5" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="440" y1="250" x2="365" y2="250" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="445.3589838486225" y1="230" x2="380.4070785647896" y2="192.5" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="460" y1="215.35898384862247" x2="422.49999999999994" y2="150.40707856478957" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="480" y1="210" x2="480" y2="135" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="500" y1="215.35898384862247" x2="537.5" y2="150.40707856478957" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <line x1="514.6410161513776" y1="229.99999999999997" x2="579.5929214352104" y2="192.49999999999994" stroke="hsl(268,60%,60%)" stroke-width="1" opacity="0.35"/>
+  <text x="480" y="430" text-anchor="middle" fill="hsl(298,30%,88%)" font-family="system-ui,sans-serif" font-size="22" font-weight="700">Iridology safety</text>
+  <text x="480" y="460" text-anchor="middle" fill="hsl(268,25%,65%)" font-family="system-ui,sans-serif" font-size="13">AiBhive Living Knowledge · Iridology</text>
+</svg>

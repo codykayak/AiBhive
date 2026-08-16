@@ -6,6 +6,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/iridologyLibrary';
 import { IRIDOLOGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/iridologyTypes';
 import { IRIDOLOGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
+import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { AskAiContext } from './AskAiBhivePanel';
 import IridologyAnalyzePanel from './IridologyAnalyzePanel';
@@ -76,6 +77,7 @@ export default function IridologyPanel({
         askAccent="violet"
         focusTopicId={focusTopicId}
         onFocusTopicConsumed={onFocusTopicConsumed}
+        featuredEssay={getFeaturedEssay('iridology')}
       />
     </div>
   );

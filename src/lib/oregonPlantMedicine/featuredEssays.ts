@@ -1,7 +1,14 @@
 import type { ExternalLink } from './types';
 
 /** Where a featured Living Knowledge essay appears. */
-export type FeaturedEssayPage = 'plants-home' | 'holistic' | 'hypnosis' | 'edibles' | 'herbs' | 'animal-health';
+export type FeaturedEssayPage =
+  | 'plants-home'
+  | 'holistic'
+  | 'hypnosis'
+  | 'edibles'
+  | 'herbs'
+  | 'animal-health'
+  | 'iridology';
 
 export type FeaturedEssay = {
   id: string;
@@ -759,6 +766,114 @@ Home ramps / flooring / beds | Fall risk, rise difficulty | Owner | Pain with ha
 Rehab / PT / acupuncture | Strength, mobility, comfort | Vet or rehab clinician | Not a DIY substitute for imaging
 Supplements (omega-3, etc.) | Possible adjunct support | Vet-guided | Quality varies; interactions possible
 Kitchen herbs / oils from social media | Mostly noise for OA | Avoid unsupervised | Toxicity risk in dogs`,
+  },
+  {
+    id: 'ai-iridology-educational-guide',
+    page: 'iridology',
+    title: 'AI Iridology on AiBhive — How Grok Vision Reads Your Iris (Educational Only)',
+    categoryLabel: 'Featured · AI Iridology',
+    accent: 'violet',
+    imageUrl: '/oregon-plant-medicine/iridology/ai-iridology-featured.svg',
+    imageCredit: 'AiBhive Living Knowledge — AI iridology hero illustration',
+    summary:
+      'A featured guide to AiBhive’s AI Iridology section: how integrated methodology works, what Grok vision actually analyzes, how to capture a usable iris photo, what Bhive Credits buy, and why this is wellness education — not a medical diagnosis.',
+    whenPeopleExplore:
+      'First visit to AI Iridology, after an alarming AI report, or when comparing Jensen zones vs European physical signs vs constitutional typing.',
+    approaches: [
+      'Accept the disclaimer — iridology is controversial and unproven as clinical science.',
+      'Capture one eye at a time in indirect window light using the in-app camera guide.',
+      'Choose integrated methodology for the most conservative educational read.',
+      'Save your report and use follow-up chat to ask about specific zones or fiber patterns.',
+      'Escalate real symptoms to an ophthalmologist or primary care — never only the iris.',
+    ],
+    relatedPlantIds: [],
+    safetyWarnings: [
+      'Controlled trials have not validated iridology for disease detection.',
+      'Sudden vision loss, eye pain, flashes, or floaters → urgent medical care, not iris AI.',
+      'Pigment spots may be benign nevi — only an eye doctor can evaluate pathology.',
+      'Children’s irises change — extra caution and parental supervision for minors.',
+      'Bhive Credits buy computational interpretation, not medical truth.',
+    ],
+    videoLinks: [],
+    sources: [
+      {
+        label: 'IIPA — International Iridology Practitioners Association',
+        url: 'https://www.iridologyassn.org/',
+        description: 'Professional iridology education framing (not clinical validation).',
+      },
+      {
+        label: 'Wikipedia — Iridology (evidence overview)',
+        url: 'https://en.wikipedia.org/wiki/Iridology',
+        description: 'Historical context and mainstream skepticism summary.',
+      },
+      {
+        label: 'NIH NCCIH — Complementary health',
+        url: 'https://www.nccih.nih.gov/',
+        description: 'General guidance on evaluating alternative wellness claims.',
+      },
+    ],
+    deepDive: `Your iris is one of the most photographed structures on the planet — yet most phone photos are useless for iridology-style fiber reading. AiBhive’s AI Iridology section exists to bridge that gap: capture a usable iris image, run it through Grok vision with strict educational prompting, and return a structured report you can revisit, discuss, and question in follow-up chat.
+
+This featured article explains what the feature actually does, what it cannot do, and how to get results that respect both iridology’s pedagogical traditions and mainstream medicine’s skepticism.
+
+What “AI iridology” means on AiBhive
+
+We do not claim the iris diagnoses disease. We use Grok vision — the same family of models that powers our plant photo ID — to describe visible iris architecture in the vocabulary of iridology literature: zone sectors (Bernard Jensen clock-face maps), physical signs (lacunae, crypts, nerve rings, pigment deposits), and constitutional color/fiber typing (lymphatic, biliary, hematogenic patterns).
+
+The model is prompted for integrated methodology by default. That means it cross-checks multiple sign types before using strong language, gates low-quality photos, and labels uncertainty explicitly. Rayid personality reads may appear only when you choose “all schools” — always tagged non-medical.
+
+Does it really work?
+
+The vision model reliably sees what is in the photo: iris color, visible fiber density, obvious pigment spots, arcus at the limbus, and whether the image is too blurry or glare-filled to read. That part works when you follow the capture guide.
+
+What does not “work” in a medical sense is iridology itself as a diagnostic science. Multiple controlled studies have failed to show practitioners detect diseases from iris photographs better than chance. AiBhive is honest about that gap. The AI gives you a structured, cautious educational interpretation — tendencies in the language of iridology texts, not lab results or prescriptions.
+
+Think of it as an intelligent study companion for a controversial wellness tradition — not a replacement for an ophthalmologist.
+
+How to capture a photo the AI can use
+
+1. Indirect daylight near a window — no direct flash or LED in the eye.
+2. One eye per photo; label left vs right in notes when you know.
+3. Fill at least 40% of the frame with the iris; use the in-app circular guide.
+4. Remove contact lenses; wait after eye drops that cloud the surface.
+5. Hold steady — blur destroys fiber detail our compression cannot recover.
+
+If the report says photo quality is poor, believe it. Integrated iridology refuses to guess from bad data — and so do we.
+
+What you get after analysis
+
+A typical report includes: photo quality assessment, global overview, zone observations (with lateralization if both eyes uploaded), fiber and texture notes, constitutional suggestions with confidence levels, integrated summary, safety escalations when patterns could reflect real pathology (without diagnosing), and practical next steps including retake advice.
+
+Signed-in users with Firestore enabled save reports to history. Everyone gets localStorage fallback. Follow-up chat loads your saved report as context so you can ask “what does a lacuna in the 9 o’clock sector mean in Jensen charts?” without re-uploading photos.
+
+Bhive Credits and Hive Research
+
+Iris analysis uses the iridology_vision feature id under our plant medicine billing — same credit wallet as photo plant ID unless your account has a local exemption. Credits pay for Grok API compute and structured parsing, not for medical certainty. Check your balance in the app bar before running analysis.
+
+When to stop reading the iris and call a doctor
+
+Eye pain, sudden vision change, new floaters with flashes, a curtain over part of the visual field, trauma, or a pupil that will not react — these are medical emergencies. An educational iris report is irrelevant in those moments.
+
+For chronic symptoms you already have — fatigue, digestion, anxiety — iridology may offer metaphorical language for journaling, but it must not delay screening, labs, or treatment you would otherwise pursue.
+
+How to use the library below this article
+
+The topic tiles cover integrated methodology, Jensen zones, European physical signs, constitutional types, photo guides, Rayid personality context (non-medical), bilateral reading, and safety limits. Each tile supports community comments, upvotes, and Ask AiBhive for deeper questions.
+
+Start with Safety & limits if you are new. Then Photo capture guide. Then Integrated methodology before diving into zone charts — otherwise every pigment spot looks like a verdict.
+
+Closing posture
+
+AiBhive built AI Iridology because thousands of people explore iris reading with phone cameras and no guardrails. We prefer structured education, visible uncertainty, and clear disclaimers over viral “your iris shows disease X” screenshots.
+
+Use this section to learn, photograph carefully, save your reports, and ask follow-up questions with curiosity — not fear. When in doubt, see an eye doctor. The iris can be a mirror for wellness conversation; it is not a courtroom for your health.`,
+    chartBlock: `Step | Action | Success signal | Stop / escalate
+---|---|---|---
+1 | Read safety disclaimer | You understand this is not diagnosis | Skip if you want medical answers only
+2 | Capture iris in window light | AI rates photo quality good/fair | Retake if poor — do not force a read
+3 | Run integrated analysis | Structured report with uncertainty labels | Alarming language → verify with clinician
+4 | Save + follow-up chat | Questions answered in context | Chat cannot replace emergency care
+5 | Community + library | Deeper study on zones, fibers, types | Ignore social-media cure claims`,
   },
 ];
 
