@@ -255,7 +255,15 @@ export function createTopicPost(
   ).then((d) => (d as { post: PlantMedicinePost }).post);
 }
 
-export type ContentEngagementKind = 'plant' | 'holistic' | 'hypnosis' | 'animal-health' | 'essay';
+export type ContentEngagementKind =
+  | 'plant'
+  | 'holistic'
+  | 'hypnosis'
+  | 'animal-health'
+  | 'herbs'
+  | 'supplements'
+  | 'iridology'
+  | 'essay';
 
 export type ContentEngagement = {
   upvoteCount: number;

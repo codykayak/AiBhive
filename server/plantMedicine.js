@@ -7,7 +7,7 @@ const PROFILES = 'plant_medicine_profiles';
 const POSTS = 'plant_medicine_posts';
 const CONTENT_ENGAGEMENT = 'plant_medicine_content_engagement';
 
-const TOPIC_LIBRARIES = new Set(['hypnosis', 'holistic', 'animal-health', 'herbs', 'supplements']);
+const TOPIC_LIBRARIES = new Set(['hypnosis', 'holistic', 'animal-health', 'herbs', 'supplements', 'iridology']);
 const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
 
 function clip(s, max) {

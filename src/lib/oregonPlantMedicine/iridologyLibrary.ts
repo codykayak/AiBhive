@@ -1,22 +1,25 @@
 import type { IridologyCategory, IridologyTopic } from './iridologyTypes';
-import { commonsImage } from './commonsImage';
+
+/** Local hero art — run `node scripts/generate-iridology-images.mjs` with XAI_API_KEY for Grok JPGs. */
+function iridologyImage(id: string): string {
+  return `/oregon-plant-medicine/iridology/${id}.svg`;
+}
 
 const W = {
-  eye: commonsImage('Human eye close up.jpg'),
-  iris: commonsImage('Iris recognition eye.jpg'),
-  chart: commonsImage('Iridology chart.jpg'),
-  fibers: commonsImage('Iris fibers.jpg'),
+  integrated: iridologyImage('integrated-methodology'),
+  chart: iridologyImage('jensen-zone-chart'),
+  fibers: iridologyImage('physical-european-signs'),
+  constitutional: iridologyImage('constitutional-types'),
+  photo: iridologyImage('iris-photo-guide'),
+  safety: iridologyImage('iridology-safety-limits'),
+  rayid: iridologyImage('rayid-personality-read'),
+  bilateral: iridologyImage('left-right-eye-reading'),
 };
 
 export const IRIDOLOGY_LIBRARY: IridologyTopic[] = [
   {
-    id: 'integrated-methodology',
-    title: 'Integrated iridology — how schools combine',
-    category: 'methodology',
-    summary:
-      'Integrated iridology cross-checks zone signs, fiber structure, and constitutional typing before stating a tendency. Multiple converging signs raise confidence; single isolated marks stay speculative.',
-    imageUrl: W.chart,
-    imageCredit: 'Iridology chart — Wikimedia Commons',
+    imageUrl: W.integrated,
+    imageCredit: 'AiBhive Living Knowledge — integrated iridology illustration',
     whenPeopleExplore:
       'After reading conflicting iridology books, or when a single pigment spot seems to “diagnose” everything.',
     approaches: [
@@ -40,13 +43,8 @@ A lacuna in the lung sector alone does not justify strong language about respira
 AiBhive’s AI analyzer defaults to integrated methodology for this reason. It is the most conservative educational stance available within iridology’s own pedagogical traditions.`,
   },
   {
-    id: 'jensen-zone-chart',
-    title: 'Bernard Jensen zone iridology — clock-face organ map',
-    category: 'zone-chart',
-    summary:
-      'Classic zone iridology maps organ reflex areas on the iris like a clock face: right iris reflects right body side, left iris left side. Used for educational correlation, not clinical proof.',
     imageUrl: W.chart,
-    imageCredit: 'Iridology chart — Wikimedia Commons',
+    imageCredit: 'AiBhive Living Knowledge — Jensen zone chart illustration',
     whenPeopleExplore:
       'Learning the “7–8 o’clock lung sector” references, or comparing right vs left eye charts.',
     approaches: [
@@ -75,7 +73,7 @@ Photo orientation errors are common. If the eyelids obscure sectors or the iris 
     summary:
       'European physical iridology emphasizes stromal texture: open vs dense fibers, lacunae, crypts, pigment spots, nerve rings, and arcus senilis as constitutional and terrain markers.',
     imageUrl: W.fibers,
-    imageCredit: 'Iris detail — Wikimedia Commons',
+    imageCredit: 'AiBhive Living Knowledge — iris fiber detail illustration',
     whenPeopleExplore:
       'Noticing “holes” in the iris, white rings, or brown spots and wondering what iridology texts say about them.',
     approaches: [
@@ -99,13 +97,8 @@ Nerve rings (concentric white arcs) are interpreted as markers of autonomic stre
 AiBhive’s vision model is prompted to describe only what is visible at photo resolution and to recommend retakes when fiber detail is ambiguous.`,
   },
   {
-    id: 'constitutional-types',
-    title: 'Constitutional iris types — lymphatic, biliary, hematogenic',
-    category: 'constitutional',
-    summary:
-      'Classic iridology typing links iris color and fiber texture to broad constitutional tendencies — lymphatic (blue-grey, open), biliary (mixed yellow-brown, dense), hematogenic (brown, dense), neurogenic (nerve rings).',
-    imageUrl: W.eye,
-    imageCredit: 'Human eye — Wikimedia Commons',
+    imageUrl: W.constitutional,
+    imageCredit: 'AiBhive Living Knowledge — constitutional iris types illustration',
     whenPeopleExplore:
       'Wondering why two irises look completely different, or what “lymphatic constitution” means in iridology books.',
     approaches: [
@@ -129,13 +122,8 @@ These types function like Ayurvedic doshas or TCM patterns: heuristic maps for e
 When AI confidence is low, the structured JSON omits a firm type and recommends better photos or professional iridology study — not self-diagnosis.`,
   },
   {
-    id: 'iris-photo-guide',
-    title: 'How to photograph your iris for AI analysis',
-    category: 'photo-guide',
-    summary:
-      'Natural light, no flash, fill the frame with the iris, hold steady, remove contact lenses, and capture left and right eyes separately for zone comparison.',
-    imageUrl: W.iris,
-    imageCredit: 'Eye close-up — Wikimedia Commons',
+    imageUrl: W.photo,
+    imageCredit: 'AiBhive Living Knowledge — iris photo capture guide',
     whenPeopleExplore:
       'Before uploading to AiBhive iridology analysis, or after a “poor photo quality” retake prompt.',
     approaches: [
@@ -155,13 +143,8 @@ When AI confidence is low, the structured JSON omits a firm type and recommends 
 Contact lenses and recent eye drops create artifacts. Post-LASIK irises may show surgical ring patterns unrelated to iridology “signs.” For bilateral comparison, capture matching angles on left and right eyes separately rather than one wide face photo. If the AI returns photoQuality: poor or populated retakeAdvice, follow it — guessing from bad data contradicts integrated methodology and our safety prompts.`,
   },
   {
-    id: 'iridology-safety-limits',
-    title: 'Safety, controversy, and what iridology cannot do',
-    category: 'safety',
-    summary:
-      'Iridology is not validated as clinical diagnostic science. AiBhive provides educational interpretation only — never delay emergency or primary care based on iris photos.',
-    imageUrl: W.eye,
-    imageCredit: 'Human eye — Wikimedia Commons',
+    imageUrl: W.safety,
+    imageCredit: 'AiBhive Living Knowledge — iridology safety illustration',
     whenPeopleExplore:
       'Before first use of AI iris analysis, or after alarming “findings” that cause anxiety.',
     approaches: [
@@ -186,13 +169,8 @@ Our AI iridology feature uses Grok vision with strict prompting: educational phr
 If you feel frightened by an AI iris report, step back. Note what is explicitly labeled low confidence. Schedule appropriate medical care for symptoms you already have. Iridology is best treated as a lens for curiosity and wellness journaling — not a verdict on your health.`,
   },
   {
-    id: 'rayid-personality-read',
-    title: 'Rayid model — personality patterns (non-medical)',
-    category: 'methodology',
-    summary:
-      'Rayid iridology maps iris structure to personality and emotional patterns. AiBhive labels Rayid content as exploratory and non-medical — optional read-only context in “all schools” mode.',
-    imageUrl: W.iris,
-    imageCredit: 'Iris — Wikimedia Commons',
+    imageUrl: W.rayid,
+    imageCredit: 'AiBhive Living Knowledge — Rayid personality iridology illustration',
     whenPeopleExplore:
       'Curiosity about emotional/personality iridology after seeing Rayid charts online.',
     approaches: [
@@ -211,13 +189,8 @@ If you feel frightened by an AI iris report, step back. Note what is explicitly 
 AiBhive includes Rayid in the knowledge corpus only so the AI does not invent unsupported medical claims from personality frameworks. When methodology is "all", Rayid observations may appear clearly tagged as non-medical personality exploration. Default integrated analysis de-emphasizes Rayid unless the user’s notes request it. This protects users from conflating emotional metaphors with organ zone pathology language.`,
   },
   {
-    id: 'left-right-eye-reading',
-    title: 'Left vs right eye — bilateral reading basics',
-    category: 'zone-chart',
-    summary:
-      'Traditional iridology treats each iris as a lateralized map: right iris for right-side body reflexes, left iris for left-side. Bilateral comparison can highlight asymmetry in educational reports.',
-    imageUrl: W.chart,
-    imageCredit: 'Iridology chart — Wikimedia Commons',
+    imageUrl: W.bilateral,
+    imageCredit: 'AiBhive Living Knowledge — bilateral iris reading illustration',
     whenPeopleExplore:
       'Uploading both eyes, or wondering which eye photo to send first.',
     approaches: [
