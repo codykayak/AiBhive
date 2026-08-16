@@ -56,7 +56,8 @@ export const SECTION_VIDEOS = {
   },
   iridology: {
     sources: [
-      ...videoSources('ai-iridology-aibhive'),
+      videoPath('ai-iridology-aibhive.mp4'),
+      videoPath('ai-iridology-aibhive.webm'),
       videoPath('ai-iridology-aibhive.mov'),
     ],
     title: 'AI Iridology on AiBhive',
