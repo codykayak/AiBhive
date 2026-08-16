@@ -598,6 +598,12 @@ export type IridologyStructuredResult = {
   wellnessTendencies: string[];
   cautions: string[];
   retakeAdvice: string | null;
+  /** In-depth report sections from vision model */
+  photoAssessment?: string;
+  globalOverview?: string;
+  fiberAndTexture?: string;
+  integratedSummary?: string;
+  nextSteps?: string[];
 };
 
 /** Paid Bhive Credits iris photo analysis — educational iridology only. */
