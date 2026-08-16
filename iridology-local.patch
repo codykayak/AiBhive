@@ -1,0 +1,3382 @@
+diff --git a/scripts/public-routes.mjs b/scripts/public-routes.mjs
+index 54f0a2a..f465b90 100644
+--- a/scripts/public-routes.mjs
++++ b/scripts/public-routes.mjs
+@@ -59,6 +59,7 @@ export function getSitemapEntries() {
+     { loc: '/plants', priority: '0.95', changefreq: 'weekly' },
+     { loc: '/plants/herbs', priority: '0.88', changefreq: 'weekly' },
+     { loc: '/plants/supplements', priority: '0.88', changefreq: 'weekly' },
++    { loc: '/plants/iridology', priority: '0.88', changefreq: 'weekly' },
+     { loc: '/plants/holistic-remedies-and-protocols', priority: '0.88', changefreq: 'weekly' },
+     { loc: '/plants/hypnosis-and-energy', priority: '0.88', changefreq: 'weekly' },
+     { loc: '/plants/animal-health', priority: '0.88', changefreq: 'weekly' },
+diff --git a/server/iridologyAnalysis.js b/server/iridologyAnalysis.js
+new file mode 100644
+index 0000000..84702db
+--- /dev/null
++++ b/server/iridologyAnalysis.js
+@@ -0,0 +1,284 @@
++/**
++ * AI iridology iris photo analysis — Grok vision + Hive credits (feature: iridology_vision).
++ */
++import fs from 'fs';
++import path from 'path';
++import { fileURLToPath } from 'url';
++import * as hiveUsage from './hiveUsage.js';
++import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
++import { grokChatMessages } from './socialPosts/grokProvider.js';
++import {
++  getCachedGrokVisionModel,
++  resolveLatestGrokModels,
++} from './grokModelResolver.js';
++import { DIAGNOSE_GROK_VISION_RAW } from './diagnoseBilling.js';
++import { buildGrokUserContent, MAX_VISION_ATTACHMENTS } from './prosGrokMessage.js';
++import { collectVisionAttachments } from './plantMedicineChat.js';
++
++const __dirname = path.dirname(fileURLToPath(import.meta.url));
++const IRIDOLOGY_VISION_FEATURE_ID = 'iridology_vision';
++const IRIDOLOGY_VISION_RAW_COST = Number(
++  process.env.PLANT_MEDICINE_VISION_RAW_COST ?? process.env.IRIDOLOGY_VISION_RAW_COST ?? DIAGNOSE_GROK_VISION_RAW,
++);
++
++function visionRawCostForCount(imageCount) {
++  const n = Math.max(1, Math.min(MAX_VISION_ATTACHMENTS, imageCount || 1));
++  return IRIDOLOGY_VISION_RAW_COST * (1 + 0.18 * (n - 1));
++}
++
++let knowledgeCache = null;
++
++function loadIridologyKnowledge() {
++  if (!knowledgeCache) {
++    const p = path.join(__dirname, 'iridologyKnowledge.json');
++    knowledgeCache = JSON.parse(fs.readFileSync(p, 'utf8'));
++  }
++  return knowledgeCache;
++}
++
++function buildIridologyRagContext() {
++  const k = loadIridologyKnowledge();
++  const parts = [
++    '--- IRIDOLOGY KNOWLEDGE (educational RAG) ---',
++    JSON.stringify(
++      {
++        methodologies: k.methodologies,
++        zones: k.zones,
++        signs: k.signs,
++        constitutionalTypes: k.constitutionalTypes,
++        photoQualityTips: k.photoQualityTips,
++        cautions: k.cautions,
++      },
++      null,
++      0,
++    ).slice(0, 6000),
++  ];
++  return parts.join('\n');
++}
++
++const IRIDOLOGY_VISION_SYSTEM = `You are AiBhive Living Knowledge educational iridology analysis powered by Bhive Credits (Grok vision).
++
++STRICT RULES:
++- NOT medical diagnosis. Use phrasing: "iridology literature associates…", "possible tendency…", "educational interpretation only".
++- Iridology is controversial and NOT validated clinical science — acknowledge uncertainty in every report.
++- Photo quality gate: if blur, glare, partial iris, contact lens artifacts, or extreme darkness → set photoQuality poor/fair and fill retakeAdvice; do not invent fine fiber detail.
++- Left vs right eye: respect user hint; if unknown, state uncertainty in eye field.
++- Methodology requested by user: jensen | physical | integrated | all — weight observations accordingly.
++- Integrated: require multiple converging signs before medium/high confidence tendencies.
++- Rayid/personality reads only when methodology is "all", clearly labeled non-medical.
++- Urgent symptoms or serious patterns → cautions must say seek licensed medical / emergency care, not iris reading.
++- Never state "you have disease X".
++
++PROSE REPORT (required before JSON — educational, in-depth):
++Write 5–8 sections with markdown headings exactly as shown when photoQuality is good or fair; if poor, still write Photo assessment + Retake guidance (shorter):
++## Photo assessment
++## Global iris overview
++## Fiber & texture (physical iridology)
++## Zone & sign findings
++## Constitutional read
++## Integrated summary
++## What to do next
++Each section: 2–4 sentences, specific to THIS photo. Cite visible features; admit limits. Total prose target 450–900 words for good photos.
++
++Return prose PLUS structured JSON wrapped exactly like:
++<<<IRIDOLOGY_JSON>>>
++{
++  "photoQuality": "good|fair|poor",
++  "methodology": "integrated|jensen|physical|all",
++  "eye": "left|right|both|unknown",
++  "constitutionalType": { "label": "lymphatic|biliary|hematogenic|neurogenic|mixed|unknown", "confidence": "high|medium|low", "rationale": "..." },
++  "photoAssessment": "1-3 sentences on lighting, focus, framing, artifacts",
++  "globalOverview": "color, symmetry, visible stroma pattern",
++  "fiberAndTexture": "open/dense fibers, rings, arcus if visible",
++  "integratedSummary": "cross-check of signs with uncertainty",
++  "nextSteps": ["retake tip or professional care if needed"],
++  "observations": [
++    { "zone": "7-8 o'clock lung sector", "sign": "lacuna", "meaning": "...", "confidence": "low|medium|high", "sources": ["jensen"] }
++  ],
++  "wellnessTendencies": ["..."],
++  "cautions": ["..."],
++  "retakeAdvice": null
++}
++<<<END_IRIDOLOGY_JSON>>>`;
++
++function parseIridologyJson(reply) {
++  const marked = reply.match(/<<<IRIDOLOGY_JSON>>>\s*([\s\S]*?)\s*<<<END_IRIDOLOGY_JSON>>>/);
++  const raw = marked?.[1] || reply.match(/\{[\s\S]*"photoQuality"[\s\S]*\}/)?.[0];
++  if (!raw) return null;
++  try {
++    return JSON.parse(raw);
++  } catch {
++    return null;
++  }
++}
++
++function normalizeConfidence(value) {
++  const v = String(value || 'low').toLowerCase();
++  return v === 'high' || v === 'medium' ? v : 'low';
++}
++
++function normalizeObservations(rows) {
++  if (!Array.isArray(rows)) return [];
++  return rows.slice(0, 12).map((row) => ({
++    zone: String(row.zone || row.sector || 'general iris').slice(0, 120),
++    sign: String(row.sign || row.pattern || 'observation').slice(0, 80),
++    meaning: String(row.meaning || row.interpretation || '').slice(0, 500),
++    confidence: normalizeConfidence(row.confidence),
++    sources: Array.isArray(row.sources) ? row.sources.map((s) => String(s).slice(0, 40)).slice(0, 4) : [],
++  }));
++}
++
++/**
++ * @param {import('firebase-admin/firestore').Firestore} db
++ * @param {string} hiveUserId
++ * @param {object} opts
++ */
++export async function runIridologyAnalyze(db, hiveUserId, opts) {
++  const methodology = ['integrated', 'jensen', 'physical', 'all'].includes(String(opts.methodology || 'integrated'))
++    ? String(opts.methodology)
++    : 'integrated';
++  const eyeHint = ['left', 'right', 'both', 'unknown'].includes(String(opts.eye || 'unknown'))
++    ? String(opts.eye)
++    : 'unknown';
++  const notes = String(opts.notes || '').trim().slice(0, 2000);
++  const visionImages = collectVisionAttachments(opts);
++  if (!visionImages.length) return { ok: false, error: 'At least one iris photo is required.' };
++
++  const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
++  if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
++
++  await ensureHiveUser(db, hiveUserId);
++
++  const rawCost = visionRawCostForCount(visionImages.length);
++  const { markedUsd: markedEstimate } = await hiveUsage.markCostForUser(db, hiveUserId, rawCost);
++  const budget = await hiveUsage.checkTokenBudget(db, hiveUserId, markedEstimate, IRIDOLOGY_VISION_FEATURE_ID, {
++    email: opts.email,
++  });
++  if (!budget.ok) {
++    return {
++      ok: false,
++      needPayment: true,
++      code: 'credits_depleted',
++      error: 'Hive credits depleted — add credits for iris photo analysis.',
++      amountUsd: budget.amountUsd ?? markedEstimate,
++      budget: budget.budget,
++    };
++  }
++
++  await resolveLatestGrokModels();
++  const model =
++    process.env.PLANT_MEDICINE_VISION_MODEL ||
++    process.env.GROK_DIAGNOSE_VISION_MODEL ||
++    getCachedGrokVisionModel();
++
++  const multiNote =
++    visionImages.length > 1
++      ? `\nThe user attached ${visionImages.length} iris photo(s) — compare if left/right pair; note asymmetry cautiously.\n`
++      : '';
++  const system = [IRIDOLOGY_VISION_SYSTEM, multiNote, buildIridologyRagContext()].join('\n');
++
++  const userMessage = [
++    `Analyze this iris photo using ${methodology} iridology methodology.`,
++    eyeHint !== 'unknown' ? `Eye side hint: ${eyeHint}.` : '',
++    notes ? `User notes: ${notes}` : '',
++    'Educational interpretation only — structured JSON required.',
++  ]
++    .filter(Boolean)
++    .join(' ');
++
++  const userContent = buildGrokUserContent(
++    userMessage,
++    visionImages.length === 1 ? { base64: visionImages[0].base64, mimeType: visionImages[0].mimeType } : null,
++    visionImages.length > 1 ? visionImages : null,
++  );
++
++  let reply;
++  try {
++    reply = await grokChatMessages(
++      apiKey,
++      model,
++      [
++        { role: 'system', content: system.slice(0, 14000) },
++        { role: 'user', content: userContent },
++      ],
++      {
++        temperature: 0.25,
++        max_tokens: 3600,
++        vision: true,
++      },
++    );
++  } catch (err) {
++    console.error('[iridology/analyze] Bhive Credits vision failed:', err?.message || err, { model });
++    return {
++      ok: false,
++      error:
++        err?.message ||
++        'Bhive Credits could not read this iris photo — try natural light, fill the frame, and use JPEG/PNG.',
++      code: 'grok_vision_failed',
++    };
++  }
++
++  if (!reply) return { ok: false, error: 'No response from Hive AI.' };
++
++  const usage = await hiveUsage.recordTokenUsage(db, hiveUserId, {
++    rawCostUsd: rawCost,
++    feature: IRIDOLOGY_VISION_FEATURE_ID,
++    summary: 'Living Knowledge iridology iris analysis',
++    email: opts.email,
++  });
++
++  if (!usage.ok) {
++    return {
++      ok: false,
++      needPayment: !!usage.needUpgrade,
++      code: usage.needUpgrade ? 'credits_depleted' : 'billing_failed',
++      error: usage.needUpgrade ? 'Hive credits depleted' : usage.error || 'Billing failed',
++      budget: usage.budget,
++    };
++  }
++
++  const parsed = parseIridologyJson(reply);
++  const prose = reply.replace(/<<<IRIDOLOGY_JSON>>>[\s\S]*?<<<END_IRIDOLOGY_JSON>>>/g, '').trim();
++
++  const structured = {
++    photoQuality: ['good', 'fair', 'poor'].includes(String(parsed?.photoQuality)) ? parsed.photoQuality : 'fair',
++    methodology: ['integrated', 'jensen', 'physical', 'all'].includes(String(parsed?.methodology))
++      ? parsed.methodology
++      : methodology,
++    eye: ['left', 'right', 'both', 'unknown'].includes(String(parsed?.eye)) ? parsed.eye : eyeHint,
++    constitutionalType: parsed?.constitutionalType
++      ? {
++          label: String(parsed.constitutionalType.label || 'unknown').slice(0, 40),
++          confidence: normalizeConfidence(parsed.constitutionalType.confidence),
++          rationale: String(parsed.constitutionalType.rationale || '').slice(0, 600),
++        }
++      : null,
++    observations: normalizeObservations(parsed?.observations),
++    wellnessTendencies: Array.isArray(parsed?.wellnessTendencies)
++      ? parsed.wellnessTendencies.map((t) => String(t).slice(0, 300)).slice(0, 8)
++      : [],
++    cautions: Array.isArray(parsed?.cautions) ? parsed.cautions.map((c) => String(c).slice(0, 400)).slice(0, 8) : [],
++    retakeAdvice: parsed?.retakeAdvice ? String(parsed.retakeAdvice).slice(0, 500) : null,
++    photoAssessment: parsed?.photoAssessment ? String(parsed.photoAssessment).slice(0, 800) : undefined,
++    globalOverview: parsed?.globalOverview ? String(parsed.globalOverview).slice(0, 800) : undefined,
++    fiberAndTexture: parsed?.fiberAndTexture ? String(parsed.fiberAndTexture).slice(0, 800) : undefined,
++    integratedSummary: parsed?.integratedSummary ? String(parsed.integratedSummary).slice(0, 1000) : undefined,
++    nextSteps: Array.isArray(parsed?.nextSteps)
++      ? parsed.nextSteps.map((s) => String(s).slice(0, 400)).slice(0, 6)
++      : undefined,
++  };
++
++  const account = await getHiveAccount(db, hiveUserId);
++  return {
++    ok: true,
++    reply: prose || reply,
++    structured,
++    source: 'grok-vision',
++    model,
++    chargedUsd: usage.chargedUsd ?? markedEstimate,
++    account: {
++      creditBalanceUsd: account.creditBalanceUsd,
++      usage: account.usage,
++    },
++  };
++}
+diff --git a/server/iridologyHistory.js b/server/iridologyHistory.js
+new file mode 100644
+index 0000000..4eb4c6d
+--- /dev/null
++++ b/server/iridologyHistory.js
+@@ -0,0 +1,178 @@
++/**
++ * Persist iridology analyses and follow-up chat per user (Firestore).
++ */
++import { FieldValue } from 'firebase-admin/firestore';
++import { grokChatMessages } from './socialPosts/grokProvider.js';
++import { getCachedGrokChatModel, resolveLatestGrokModels } from './grokModelResolver.js';
++import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
++import fs from 'fs';
++import path from 'path';
++import { fileURLToPath } from 'url';
++
++const COLLECTION = 'plant_medicine_iridology_analyses';
++const ANALYSIS_ID_RE = /^[a-zA-Z0-9_-]{8,64}$/;
++
++const __dirname = path.dirname(fileURLToPath(import.meta.url));
++
++const IRIDOLOGY_FOLLOWUP_SYSTEM = `You are AiBhive Living Knowledge — educational iridology follow-up assistant.
++
++The user already received an AI iris photo analysis (NOT medical diagnosis). Answer follow-up questions about THAT report only.
++
++RULES:
++- Reference their saved analysis findings — do not invent new iris signs they did not have in the report.
++- Educational iridology language only; never diagnose disease.
++- Iridology is not validated clinical science — repeat uncertainty when asked about serious health topics.
++- If they ask about symptoms, urge licensed medical care.
++- Use conversation history; short replies may answer your prior clarifier.
++- Warm, concise answers (under ~300 words unless they ask for depth).
++- Scope: iridology methodology, zones, constitutional types, fiber signs, retake tips, comparing schools.`;
++
++function clip(s, max) {
++  return String(s ?? '')
++    .trim()
++    .slice(0, max);
++}
++
++function buildAnalysisContext(record) {
++  const structured = record.structured || {};
++  const parts = [
++    '--- USER IRIS ANALYSIS REPORT (reference only) ---',
++    `Date: ${record.createdAt || 'unknown'}`,
++    `Methodology: ${structured.methodology || record.methodology || 'integrated'}`,
++    `Eye: ${structured.eye || record.eye || 'unknown'}`,
++    `Photo quality: ${structured.photoQuality || 'unknown'}`,
++    structured.photoAssessment ? `Photo assessment: ${structured.photoAssessment}` : '',
++    structured.globalOverview ? `Global overview: ${structured.globalOverview}` : '',
++    structured.fiberAndTexture ? `Fiber & texture: ${structured.fiberAndTexture}` : '',
++    structured.integratedSummary ? `Integrated summary: ${structured.integratedSummary}` : '',
++    structured.constitutionalType
++      ? `Constitutional: ${structured.constitutionalType.label} (${structured.constitutionalType.confidence}) — ${structured.constitutionalType.rationale}`
++      : '',
++    Array.isArray(structured.observations) && structured.observations.length
++      ? `Observations:\n${structured.observations
++          .map((o) => `- ${o.sign} @ ${o.zone}: ${o.meaning} (${o.confidence})`)
++          .join('\n')}`
++      : '',
++    Array.isArray(structured.wellnessTendencies) && structured.wellnessTendencies.length
++      ? `Wellness tendencies: ${structured.wellnessTendencies.join('; ')}`
++      : '',
++    record.reply ? `\nNarrative report:\n${clip(record.reply, 4000)}` : '',
++  ];
++  return parts.filter(Boolean).join('\n');
++}
++
++export async function saveIridologyAnalysis(db, uid, payload) {
++  const ref = db.collection(COLLECTION).doc();
++  const now = new Date().toISOString();
++  const doc = {
++    uid,
++    createdAt: now,
++    updatedAt: now,
++    methodology: clip(payload.methodology, 40),
++    eye: clip(payload.eye, 20),
++    notes: clip(payload.notes, 2000),
++    reply: clip(payload.reply, 12000),
++    structured: payload.structured || {},
++    chatMessages: [],
++  };
++  await ref.set(doc);
++  return { id: ref.id, ...doc };
++}
++
++export async function listIridologyAnalyses(db, uid, limit = 20) {
++  const snap = await db.collection(COLLECTION).where('uid', '==', uid).limit(50).get();
++
++  return snap.docs
++    .map((d) => {
++      const data = d.data();
++      return {
++        id: d.id,
++        createdAt: data.createdAt,
++        methodology: data.methodology,
++        eye: data.eye,
++        photoQuality: data.structured?.photoQuality,
++        constitutionalLabel: data.structured?.constitutionalType?.label,
++        summaryLine: clip(data.structured?.integratedSummary || data.reply, 160),
++        chatCount: Array.isArray(data.chatMessages) ? data.chatMessages.length : 0,
++      };
++    })
++    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
++    .slice(0, limit);
++}
++
++export async function getIridologyAnalysis(db, uid, analysisId) {
++  if (!ANALYSIS_ID_RE.test(analysisId)) return null;
++  const snap = await db.collection(COLLECTION).doc(analysisId).get();
++  if (!snap.exists) return null;
++  const data = snap.data();
++  if (data.uid !== uid) return null;
++  return { id: snap.id, ...data };
++}
++
++export async function runIridologyFollowUpChat(db, hiveUserId, uid, analysisId, opts) {
++  const message = clip(opts.message, 2000);
++  if (!message) return { ok: false, error: 'Message is required.' };
++
++  const record = await getIridologyAnalysis(db, uid, analysisId);
++  if (!record) return { ok: false, error: 'Analysis not found.' };
++
++  const apiKey = process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
++  if (!apiKey) return { ok: false, error: 'Hive AI is temporarily unavailable.' };
++
++  await ensureHiveUser(db, hiveUserId);
++  await resolveLatestGrokModels();
++  const model = process.env.PLANT_MEDICINE_CHAT_MODEL || getCachedGrokChatModel();
++
++  const storedHistory = Array.isArray(record.chatMessages) ? record.chatMessages : [];
++  const clientHistory = (opts.history || [])
++    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && m.content)
++    .slice(-10);
++
++  const history =
++    clientHistory.length > 0
++      ? clientHistory.map((m) => ({ role: m.role, content: clip(m.content, 2500) }))
++      : storedHistory.slice(-10).map((m) => ({ role: m.role, content: clip(m.content, 2500) }));
++
++  let ragSnippet = '';
++  try {
++    const kPath = path.join(__dirname, 'iridologyKnowledge.json');
++    ragSnippet = clip(JSON.stringify(JSON.parse(fs.readFileSync(kPath, 'utf8')).cautions), 1500);
++  } catch {
++    ragSnippet = '';
++  }
++
++  const system = [
++    IRIDOLOGY_FOLLOWUP_SYSTEM,
++    buildAnalysisContext(record),
++    ragSnippet ? `\n--- SAFETY REMINDERS ---\n${ragSnippet}` : '',
++  ].join('\n');
++
++  const reply = await grokChatMessages(
++    apiKey,
++    model,
++    [{ role: 'system', content: system.slice(0, 14000) }, ...history, { role: 'user', content: message }],
++    { temperature: 0.35, max_tokens: 1400 },
++  );
++
++  if (!reply) return { ok: false, error: 'No response from Hive AI.' };
++
++  const now = new Date().toISOString();
++  const ref = db.collection(COLLECTION).doc(analysisId);
++  await ref.update({
++    updatedAt: now,
++    chatMessages: FieldValue.arrayUnion(
++      { role: 'user', content: message, createdAt: now },
++      { role: 'assistant', content: reply, createdAt: now },
++    ),
++  });
++
++  const account = await getHiveAccount(db, hiveUserId);
++  return {
++    ok: true,
++    reply,
++    source: 'grok',
++    model,
++    chargedUsd: 0,
++    account: { creditBalanceUsd: account.creditBalanceUsd, usage: account.usage },
++  };
++}
+diff --git a/server/iridologyKnowledge.json b/server/iridologyKnowledge.json
+new file mode 100644
+index 0000000..a828893
+--- /dev/null
++++ b/server/iridologyKnowledge.json
+@@ -0,0 +1,61 @@
++{
++  "methodologies": [
++    {
++      "id": "jensen",
++      "name": "Bernard Jensen zone iridology",
++      "summary": "Clock-face organ zones mapped on the iris; right iris reflects right side of body, left iris left side. Used for educational organ-sector correlation, not clinical proof."
++    },
++    {
++      "id": "physical",
++      "name": "Physical / European iridology",
++      "summary": "Focus on fiber density (open vs dense), lacunae, crypts, pigment spots, nerve rings, and arcus senilis as constitutional and terrain signs."
++    },
++    {
++      "id": "integrated",
++      "name": "Integrated iridology",
++      "summary": "Cross-check zone signs with fiber structure and constitution before stating a tendency; require multiple converging signs and express uncertainty."
++    },
++    {
++      "id": "rayid",
++      "name": "Rayid (personality)",
++      "summary": "Personality and emotional pattern reading — label as non-medical, exploratory only."
++    }
++  ],
++  "zones": [
++    { "position": "12 o'clock brain / head", "jensenNotes": "Cerebral zone, pituitary/pineal references in classic charts" },
++    { "position": "1-2 o'clock throat / thyroid", "jensenNotes": "Neck, thyroid, larynx sector in many charts" },
++    { "position": "3 o'clock liver / gallbladder (right eye)", "jensenNotes": "Right iris — hepatic/biliary sector in Jensen tradition" },
++    { "position": "5-6 o'clock digestive / colon", "jensenNotes": "Lower digestive tract, colon reflex zones" },
++    { "position": "7-8 o'clock lung / breast", "jensenNotes": "Respiratory and chest sectors — use cautious language only" },
++    { "position": "9 o'clock kidney / adrenal", "jensenNotes": "Filtration, adrenal stress themes in iridology texts" },
++    { "position": "6 o'clock legs / pelvis", "jensenNotes": "Lower extremity and pelvic reflex areas" }
++  ],
++  "signs": [
++    { "sign": "lacuna", "physicalMeaning": "Pit or cavity in iris stroma — often linked to inherited weakness or chronic irritation in iridology texts" },
++    { "sign": "crypt", "physicalMeaning": "Deep closed pit — stronger emphasis on inherited tendency in European iridology" },
++    { "sign": "nerve ring", "physicalMeaning": "Concentric white ring — nervous system stress or sensitivity in traditional readings" },
++    { "sign": "pigment spot", "physicalMeaning": "Brown/rust deposit — localized sign; map to nearest zone cautiously" },
++    { "sign": "open fibers", "physicalMeaning": "Loose iris texture — lymphatic or reactive constitution in Jensen typing" },
++    { "sign": "dense fibers", "physicalMeaning": "Tight iris texture — hematogenic or biliary tendencies in classic typing" },
++    { "sign": "arcus senilis", "physicalMeaning": "White/grey ring at limbus — age-related; iridologists note cardiovascular themes (not diagnostic)" }
++  ],
++  "constitutionalTypes": [
++    { "type": "lymphatic", "patterns": "Blue-grey iris, open fibers, mucus congestion themes in iridology literature" },
++    { "type": "biliary", "patterns": "Mixed brown-yellow, dense fibers, digestive and inflammatory themes" },
++    { "type": "hematogenic", "patterns": "Brown iris, dense structure, blood/iron and metabolic themes" },
++    { "type": "neurogenic", "patterns": "Nerve rings, fine radial lines, nervous system sensitivity themes" }
++  ],
++  "photoQualityTips": [
++    "Use natural daylight; avoid direct flash.",
++    "Fill the frame with the iris; minimize eyelid coverage.",
++    "Hold steady; blur invalidates fine fiber reading.",
++    "Remove contact lenses if possible.",
++    "Capture left and right eyes separately when comparing zones."
++  ],
++  "cautions": [
++    "Never state a disease diagnosis from an iris photo.",
++    "Use phrasing: iridology literature associates…, possible tendency…, consider professional evaluation.",
++    "Poor photo quality → recommend retake, do not guess.",
++    "Iridology is controversial; acknowledge uncertainty in every report."
++  ]
++}
+diff --git a/server/plantMedicineChat.js b/server/plantMedicineChat.js
+index df90c67..8d39a06 100644
+--- a/server/plantMedicineChat.js
++++ b/server/plantMedicineChat.js
+@@ -24,7 +24,7 @@ const PLANT_VISION_RAW_COST = Number(process.env.PLANT_MEDICINE_VISION_RAW_COST
+ /** Ask AiBhive uses Hive credits — only paid feature besides adding states. */
+ const PLANT_CHAT_FREE = false;
+ 
+-function collectVisionAttachments(opts) {
++export function collectVisionAttachments(opts) {
+   const list = [];
+   if (opts.attachment?.base64) list.push(opts.attachment);
+   if (Array.isArray(opts.attachments)) list.push(...opts.attachments);
+diff --git a/server/plantMedicineRoutes.js b/server/plantMedicineRoutes.js
+index 228dcd2..d03cfee 100644
+--- a/server/plantMedicineRoutes.js
++++ b/server/plantMedicineRoutes.js
+@@ -8,6 +8,13 @@ import {
+   runCommunityPostEnrich,
+   resolvePlantHiveUserId,
+ } from './plantMedicineChat.js';
++import { runIridologyAnalyze } from './iridologyAnalysis.js';
++import {
++  getIridologyAnalysis,
++  listIridologyAnalyses,
++  runIridologyFollowUpChat,
++  saveIridologyAnalysis,
++} from './iridologyHistory.js';
+ import { isHiveBillingExempt } from './hiveAdmin.js';
+ import { ensureHiveUser, getHiveAccount } from './hiveBilling.js';
+ import {
+@@ -34,9 +41,9 @@ import {
+ } from './plantMedicine.js';
+ 
+ const PLANT_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
+-const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health|herbs|supplements)$/;
++const TOPIC_LIBRARY_RE = /^(hypnosis|holistic|animal-health|herbs|supplements|iridology)$/;
+ const TOPIC_ID_RE = /^[a-z0-9][a-z0-9-]{1,78}[a-z0-9]$/;
+-const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|herbs|supplements|essay)$/;
++const CONTENT_KIND_RE = /^(plant|holistic|hypnosis|animal-health|herbs|supplements|iridology|essay)$/;
+ 
+ function requireAuth(req, res) {
+   return verifyHiveAuth(req).then((user) => {
+@@ -563,4 +570,91 @@ export function registerPlantMedicineRoutes(app, db, { isPlatformAdmin, gcsBucke
+       return res.status(500).json({ error: err.message || 'Photo identify failed' });
+     }
+   });
++
++  /** Paid Bhive Credits iris photo analysis — educational iridology only. */
++  app.post('/api/plant-medicine/iridology/analyze', express.json({ limit: '12mb' }), async (req, res) => {
++    try {
++      const user = await requireAuth(req, res);
++      if (!user) return;
++
++      const { methodology = 'integrated', eye, notes, attachment, attachments } = req.body || {};
++      const hiveUserId = resolvePlantHiveUserId(user.uid);
++      const result = await runIridologyAnalyze(db, hiveUserId, {
++        methodology,
++        eye,
++        notes,
++        attachment,
++        attachments,
++        email: user.email,
++      });
++
++      if (!result.ok) {
++        const status = result.needPayment ? 402 : 400;
++        return res.status(status).json(result);
++      }
++
++      let analysisId = null;
++      try {
++        const saved = await saveIridologyAnalysis(db, user.uid, {
++          methodology: req.body?.methodology || 'integrated',
++          eye: req.body?.eye || result.structured?.eye,
++          notes: req.body?.notes,
++          reply: result.reply,
++          structured: result.structured,
++        });
++        analysisId = saved.id;
++      } catch (saveErr) {
++        console.warn('[plant-medicine/iridology/analyze] history save failed:', saveErr?.message || saveErr);
++      }
++
++      return res.json({ ...result, analysisId });
++    } catch (err) {
++      console.error('[plant-medicine/iridology/analyze]', err);
++      return res.status(500).json({ error: err.message || 'Iridology analyze failed' });
++    }
++  });
++
++  app.get('/api/plant-medicine/iridology/history', async (req, res) => {
++    try {
++      const user = await requireAuth(req, res);
++      if (!user) return;
++      const analyses = await listIridologyAnalyses(db, user.uid, 25);
++      return res.json({ analyses });
++    } catch (err) {
++      console.error('[plant-medicine/iridology/history GET]', err);
++      return res.status(500).json({ error: err.message || 'Failed to load history' });
++    }
++  });
++
++  app.get('/api/plant-medicine/iridology/history/:analysisId', async (req, res) => {
++    try {
++      const user = await requireAuth(req, res);
++      if (!user) return;
++      const analysis = await getIridologyAnalysis(db, user.uid, String(req.params.analysisId || ''));
++      if (!analysis) return res.status(404).json({ error: 'Analysis not found' });
++      return res.json({ analysis });
++    } catch (err) {
++      console.error('[plant-medicine/iridology/history GET one]', err);
++      return res.status(500).json({ error: err.message || 'Failed to load analysis' });
++    }
++  });
++
++  app.post('/api/plant-medicine/iridology/history/:analysisId/chat', express.json({ limit: '512kb' }), async (req, res) => {
++    try {
++      const user = await requireAuth(req, res);
++      if (!user) return;
++      const { message, history = [] } = req.body || {};
++      const hiveUserId = resolvePlantHiveUserId(user.uid);
++      const result = await runIridologyFollowUpChat(db, hiveUserId, user.uid, String(req.params.analysisId || ''), {
++        message,
++        history,
++        email: user.email,
++      });
++      if (!result.ok) return res.status(400).json(result);
++      return res.json(result);
++    } catch (err) {
++      console.error('[plant-medicine/iridology/history chat]', err);
++      return res.status(500).json({ error: err.message || 'Follow-up chat failed' });
++    }
++  });
+ }
+diff --git a/src/App.tsx b/src/App.tsx
+index 66f83da..9349a0c 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -60,6 +60,7 @@ const HypnosisEnergyPage = lazy(() => import('./pages/plants/HypnosisEnergyPage'
+ const AnimalHealthPage = lazy(() => import('./pages/plants/AnimalHealthPage'));
+ const HerbsPage = lazy(() => import('./pages/plants/HerbsPage'));
+ const SupplementsPage = lazy(() => import('./pages/plants/SupplementsPage'));
++const IridologyPage = lazy(() => import('./pages/plants/IridologyPage'));
+ const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
+ const DmtMatrixDecoderPage = lazy(() => import('./pages/research-lab/DmtMatrixDecoderPage'));
+ const DmtMatrixLibraryPage = lazy(() => import('./pages/research-lab/DmtMatrixLibraryPage'));
+@@ -190,6 +191,7 @@ function AnimatedRoutes() {
+             <Route path="/plants/animal-health" element={<AnimalHealthPage />} />
+             <Route path="/plants/herbs" element={<HerbsPage />} />
+             <Route path="/plants/supplements" element={<SupplementsPage />} />
++            <Route path="/plants/iridology" element={<IridologyPage />} />
+             <Route path="/plants" element={<PlantsPage />} />
+             <Route path="/hive-apps/run/example-old-tartar-research" element={<AppRedirect to="/research-lab" />} />
+             <Route
+diff --git a/src/components/hive-apps/OregonPlantMedicineWebApp.tsx b/src/components/hive-apps/OregonPlantMedicineWebApp.tsx
+index bd2a829..63e175c 100644
+--- a/src/components/hive-apps/OregonPlantMedicineWebApp.tsx
++++ b/src/components/hive-apps/OregonPlantMedicineWebApp.tsx
+@@ -18,6 +18,7 @@ import {
+   Sparkles,
+   Sprout,
+   Star,
++  Eye,
+   Home,
+   User as UserIcon,
+   X,
+@@ -57,9 +58,11 @@ import HypnosisEnergyDisclaimerModal from './oregon-plant-medicine/HypnosisEnerg
+ import AnimalHealthPanel from './oregon-plant-medicine/AnimalHealthPanel';
+ import HerbsPanel from './oregon-plant-medicine/HerbsPanel';
+ import SupplementsPanel from './oregon-plant-medicine/SupplementsPanel';
++import IridologyPanel from './oregon-plant-medicine/IridologyPanel';
+ import AnimalHealthDisclaimerModal from './oregon-plant-medicine/AnimalHealthDisclaimerModal';
+ import HerbsDisclaimerModal from './oregon-plant-medicine/HerbsDisclaimerModal';
+ import SupplementsDisclaimerModal from './oregon-plant-medicine/SupplementsDisclaimerModal';
++import IridologyDisclaimerModal from './oregon-plant-medicine/IridologyDisclaimerModal';
+ import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
+ import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
+ import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
+@@ -98,6 +101,8 @@ import {
+   HERBS_TAB_SHORT_LABEL,
+   SUPPLEMENTS_PATH,
+   SUPPLEMENTS_TAB_SHORT_LABEL,
++  IRIDOLOGY_PATH,
++  IRIDOLOGY_TAB_SHORT_LABEL,
+   STATE_CONTRIBUTION_USD,
+ } from '../../lib/oregonPlantMedicine/branding';
+ import { hasAcceptedHolisticDisclaimer } from '../../lib/oregonPlantMedicine/holisticDisclaimer';
+@@ -105,6 +110,7 @@ import { hasAcceptedHypnosisEnergyDisclaimer } from '../../lib/oregonPlantMedici
+ import { hasAcceptedAnimalHealthDisclaimer } from '../../lib/oregonPlantMedicine/animalHealthDisclaimer';
+ import { hasAcceptedHerbsDisclaimer } from '../../lib/oregonPlantMedicine/herbsDisclaimer';
+ import { hasAcceptedSupplementsDisclaimer } from '../../lib/oregonPlantMedicine/supplementsDisclaimer';
++import { hasAcceptedIridologyDisclaimer } from '../../lib/oregonPlantMedicine/iridologyDisclaimer';
+ import {
+   isSupportedLocation,
+   locationLabel,
+@@ -115,7 +121,7 @@ import { loadUserLocation, saveUserLocation } from '../../lib/oregonPlantMedicin
+ 
+ type Props = { expanded?: boolean; initialTab?: Tab };
+ 
+-type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'guide' | 'resources';
++type Tab = 'home' | 'community' | 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology' | 'guide' | 'resources';
+ type UseFilter = 'all' | PlantUse;
+ 
+ function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber' | 'teal' {
+@@ -130,6 +136,8 @@ function tabAskAccent(tab: Tab): 'emerald' | 'violet' | 'cyan' | 'rose' | 'amber
+       return 'amber';
+     case 'supplements':
+       return 'teal';
++    case 'iridology':
++      return 'violet';
+     default:
+       return 'emerald';
+   }
+@@ -141,6 +149,7 @@ const TAB_PAGE_LABELS: Record<Tab, string> = {
+   plants: 'Plants & foraging',
+   herbs: 'Herbs',
+   supplements: 'Supplements',
++  iridology: 'AI Iridology',
+   holistic: 'Holistic protocols',
+   hypnosis: 'Hypnosis & energy',
+   'animal-health': 'Animal health',
+@@ -164,6 +173,7 @@ const NAV_GROUPS = [
+     items: [
+       ['herbs', HERBS_TAB_SHORT_LABEL, Leaf],
+       ['supplements', SUPPLEMENTS_TAB_SHORT_LABEL, FlaskConical],
++      ['iridology', IRIDOLOGY_TAB_SHORT_LABEL, Eye],
+       ['holistic', HOLISTIC_TAB_SHORT_LABEL, HeartPulse],
+       ['hypnosis', HYPNOSIS_ENERGY_TAB_SHORT_LABEL, Sparkles],
+       ['animal-health', ANIMAL_HEALTH_TAB_SHORT_LABEL, PawPrint],
+@@ -172,7 +182,7 @@ const NAV_GROUPS = [
+ ] as const;
+ 
+ function isResearchNavTab(id: string) {
+-  return id === 'holistic' || id === 'hypnosis' || id === 'animal-health' || id === 'herbs' || id === 'supplements';
++  return id === 'holistic' || id === 'hypnosis' || id === 'animal-health' || id === 'herbs' || id === 'supplements' || id === 'iridology';
+ }
+ 
+ function navTabShortLabel(id: string, label: string) {
+@@ -475,6 +485,10 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+   const [supplementsDisclaimerReview, setSupplementsDisclaimerReview] = useState(false);
+   const [supplementsAccepted, setSupplementsAccepted] = useState(() => hasAcceptedSupplementsDisclaimer());
+   const [pendingSupplementsTab, setPendingSupplementsTab] = useState(false);
++  const [iridologyDisclaimerOpen, setIridologyDisclaimerOpen] = useState(false);
++  const [iridologyDisclaimerReview, setIridologyDisclaimerReview] = useState(false);
++  const [iridologyAccepted, setIridologyAccepted] = useState(() => hasAcceptedIridologyDisclaimer());
++  const [pendingIridologyTab, setPendingIridologyTab] = useState(false);
+   const [userLocation, setUserLocation] = useState<UserLocation | null>(() => loadUserLocation());
+   const [showLocationModal, setShowLocationModal] = useState(false);
+   const [askFallbackOpen, setAskFallbackOpen] = useState(false);
+@@ -506,6 +520,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+     setAnimalAccepted(hasAcceptedAnimalHealthDisclaimer(userId));
+     setHerbsAccepted(hasAcceptedHerbsDisclaimer(userId));
+     setSupplementsAccepted(hasAcceptedSupplementsDisclaimer(userId));
++    setIridologyAccepted(hasAcceptedIridologyDisclaimer(userId));
+   }, [userId]);
+ 
+   useEffect(() => {
+@@ -555,6 +570,11 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+       setSupplementsDisclaimerOpen(true);
+       setPendingSupplementsTab(true);
+     }
++    if (initialTab === 'iridology' && !hasAcceptedIridologyDisclaimer(userId)) {
++      setIridologyDisclaimerReview(false);
++      setIridologyDisclaimerOpen(true);
++      setPendingIridologyTab(true);
++    }
+   }, [initialTab, userId]);
+ 
+   const openHolisticTab = useCallback(() => {
+@@ -622,6 +642,19 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+     }
+   }, [expanded, supplementsAccepted]);
+ 
++  const openIridologyTab = useCallback(() => {
++    if (!iridologyAccepted) {
++      setIridologyDisclaimerReview(false);
++      setPendingIridologyTab(true);
++      setIridologyDisclaimerOpen(true);
++      return;
++    }
++    setTab('iridology');
++    if (expanded && typeof window !== 'undefined') {
++      window.history.replaceState(null, '', IRIDOLOGY_PATH);
++    }
++  }, [expanded, iridologyAccepted]);
++
+   const selectTab = useCallback(
+     (id: Tab) => {
+       if (id === 'holistic') {
+@@ -644,12 +677,16 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+         openSupplementsTab();
+         return;
+       }
++      if (id === 'iridology') {
++        openIridologyTab();
++        return;
++      }
+       setTab(id);
+       if (expanded && typeof window !== 'undefined') {
+         window.history.replaceState(null, '', '/plants');
+       }
+     },
+-    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab, openHerbsTab, openSupplementsTab],
++    [expanded, openHolisticTab, openHypnosisTab, openAnimalHealthTab, openHerbsTab, openSupplementsTab, openIridologyTab],
+   );
+ 
+   const footerView: FooterView =
+@@ -763,6 +800,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+         'animal-health': 'animal-health',
+         herbs: 'herbs',
+         supplements: 'supplements',
++        iridology: 'iridology',
+       };
+       const library = libraryMap[result.kind];
+       if (library) {
+@@ -1290,6 +1328,18 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+           />
+         ) : null}
+ 
++        {tab === 'iridology' && iridologyAccepted ? (
++          <IridologyPanel
++            user={user}
++            onSignIn={() => void handleSignIn()}
++            onOpenPlant={(plant) => setSelected(plant)}
++            onCreatePost={() => setShowCreatePost(true)}
++            onAskAi={openAskAi}
++            focusTopicId={focusTopic?.library === 'iridology' ? focusTopic.topicId : null}
++            onFocusTopicConsumed={clearFocusTopic}
++          />
++        ) : null}
++
+         {tab === 'resources' ? <ResourcesPanel /> : null}
+ 
+         {tab === 'guide' ? <FieldGuidePanel /> : null}
+@@ -1520,6 +1570,35 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
+           }}
+         />
+       ) : null}
++      {iridologyDisclaimerOpen ? (
++        <IridologyDisclaimerModal
++          reviewOnly={iridologyDisclaimerReview}
++          userId={userId}
++          onCancel={() => {
++            setIridologyDisclaimerOpen(false);
++            setIridologyDisclaimerReview(false);
++            setPendingIridologyTab(false);
++            if (tab === 'iridology' && !iridologyAccepted) {
++              setTab('plants');
++              if (expanded && typeof window !== 'undefined') {
++                window.history.replaceState(null, '', '/plants');
++              }
++            }
++          }}
++          onAccepted={() => {
++            if (!iridologyDisclaimerReview) setIridologyAccepted(true);
++            setIridologyDisclaimerOpen(false);
++            setIridologyDisclaimerReview(false);
++            if (pendingIridologyTab && !iridologyDisclaimerReview) {
++              setPendingIridologyTab(false);
++              setTab('iridology');
++              if (expanded && typeof window !== 'undefined') {
++                window.history.replaceState(null, '', IRIDOLOGY_PATH);
++              }
++            }
++          }}
++        />
++      ) : null}
+       {showLocationModal && tab === 'plants' ? (
+         <LocationOnboardingModal
+           initial={userLocation}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyAnalyzePanel.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyAnalyzePanel.tsx
+new file mode 100644
+index 0000000..05c5776
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyAnalyzePanel.tsx
+@@ -0,0 +1,492 @@
++import type { User } from 'firebase/auth';
++import { useRef, useState } from 'react';
++import { AlertTriangle, Camera, ChevronDown, ChevronUp, Eye, ImagePlus, Loader2, Sparkles } from 'lucide-react';
++import {
++  IRIDOLOGY_METHODOLOGY_LABELS,
++  type IridologyMethodology,
++} from '../../../lib/oregonPlantMedicine/iridologyTypes';
++import {
++  IRIDOLOGY_PHOTO_DONTS,
++  IRIDOLOGY_PHOTO_DOS,
++  IRIDOLOGY_PHOTO_STEPS,
++} from '../../../lib/oregonPlantMedicine/iridologyPhotoGuide';
++import {
++  PlantCreditsError,
++  filesToVisionAttachments,
++  sendIridologyAnalyze,
++  type IridologyEyeHint,
++  type IridologyStructuredResult,
++  type PlantPhotoAttachment,
++} from '../../../lib/oregonPlantMedicine/plantMedicineApi';
++import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
++import { HIVE_RESEARCH_LABEL, HIVE_RESEARCH_POWERED_BY } from '../../../lib/oregonPlantMedicine/branding';
++import { buildLocalAnalysisRecord } from '../../../lib/oregonPlantMedicine/iridologyHistoryApi';
++import {
++  saveLocalIridologyAnalysis,
++  type IridologySavedAnalysis,
++} from '../../../lib/oregonPlantMedicine/iridologyHistoryStorage';
++import IridologyCameraModal from './IridologyCameraModal';
++import IridologyFollowUpChat from './IridologyFollowUpChat';
++import IridologyHistoryPanel from './IridologyHistoryPanel';
++import IridologyResults from './IridologyResults';
++
++function buildFollowUpContext(record: IridologySavedAnalysis): string {
++  const s = record.structured;
++  return [
++    '--- SAVED IRIS ANALYSIS (follow-up context) ---',
++    `Eye: ${s.eye}`,
++    `Photo quality: ${s.photoQuality}`,
++    s.integratedSummary ? `Summary: ${s.integratedSummary}` : '',
++    s.constitutionalType ? `Constitutional: ${s.constitutionalType.label} — ${s.constitutionalType.rationale}` : '',
++    record.reply.slice(0, 5000),
++  ]
++    .filter(Boolean)
++    .join('\n');
++}
++
++type Props = {
++  user: User | null;
++  onSignIn: () => void;
++};
++
++type EyeMode = 'left' | 'right' | 'both';
++
++export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
++  const fileRef = useRef<HTMLInputElement>(null);
++  const [pickSlot, setPickSlot] = useState<'left' | 'right'>('left');
++  const [cameraSlot, setCameraSlot] = useState<'left' | 'right' | null>(null);
++  const [methodology, setMethodology] = useState<IridologyMethodology>('integrated');
++  const [eyeMode, setEyeMode] = useState<EyeMode>('left');
++  const [notes, setNotes] = useState('');
++  const [leftPhoto, setLeftPhoto] = useState<PlantPhotoAttachment | null>(null);
++  const [rightPhoto, setRightPhoto] = useState<PlantPhotoAttachment | null>(null);
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState('');
++  const [creditsNeeded, setCreditsNeeded] = useState(false);
++  const [checkoutBusy, setCheckoutBusy] = useState(false);
++  const [reply, setReply] = useState('');
++  const [structured, setStructured] = useState<IridologyStructuredResult | null>(null);
++  const [analysisId, setAnalysisId] = useState<string | null>(null);
++  const [savedAnalysis, setSavedAnalysis] = useState<IridologySavedAnalysis | null>(null);
++  const [historyRefresh, setHistoryRefresh] = useState(0);
++  const [chargedUsd, setChargedUsd] = useState<number | undefined>();
++  const [creditBalanceUsd, setCreditBalanceUsd] = useState<number | undefined>();
++  const [guideOpen, setGuideOpen] = useState(true);
++
++  const maxPhotos = eyeMode === 'both' ? 2 : 1;
++
++  const assignPhoto = (slot: 'left' | 'right', photo: PlantPhotoAttachment) => {
++    if (slot === 'left') setLeftPhoto(photo);
++    else setRightPhoto(photo);
++    setError('');
++    setCreditsNeeded(false);
++  };
++
++  const onPickFiles = async (fileList: FileList | null, slot: 'left' | 'right') => {
++    if (!fileList?.length) return;
++    try {
++      const batch = await filesToVisionAttachments(Array.from(fileList).slice(0, 1));
++      if (!batch.length) {
++        setError('Please choose an image file (JPEG, PNG, or HEIC).');
++        return;
++      }
++      assignPhoto(slot, batch[0]);
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Could not read photo');
++    }
++  };
++
++  const addCredits = async () => {
++    setCheckoutBusy(true);
++    try {
++      const url = await startLivingKnowledgeCreditsCheckout();
++      window.location.href = url;
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Checkout failed');
++    } finally {
++      setCheckoutBusy(false);
++    }
++  };
++
++  const analyze = async () => {
++    if (!user) {
++      onSignIn();
++      setError('Sign in to use paid iris photo analysis (Bhive Credits).');
++      return;
++    }
++
++    const attachments: PlantPhotoAttachment[] = [];
++    if (eyeMode === 'both') {
++      if (leftPhoto) attachments.push(leftPhoto);
++      if (rightPhoto) attachments.push(rightPhoto);
++    } else if (eyeMode === 'left' && leftPhoto) {
++      attachments.push(leftPhoto);
++    } else if (eyeMode === 'right' && rightPhoto) {
++      attachments.push(rightPhoto);
++    }
++
++    if (!attachments.length) {
++      setError('Take or upload at least one clear iris photo using the camera above.');
++      return;
++    }
++
++    if (eyeMode === 'both' && attachments.length < 2) {
++      setError('Both mode needs a left and right eye photo — capture each eye separately.');
++      return;
++    }
++
++    const eye: IridologyEyeHint =
++      eyeMode === 'both' ? 'both' : eyeMode === 'left' ? 'left' : eyeMode === 'right' ? 'right' : 'unknown';
++
++    setBusy(true);
++    setError('');
++    setCreditsNeeded(false);
++    setReply('');
++    setStructured(null);
++    setAnalysisId(null);
++    setSavedAnalysis(null);
++
++    const previewUrls = attachments.map((a) => a.previewUrl).filter((u): u is string => !!u);
++
++    try {
++      const result = await sendIridologyAnalyze(user, {
++        methodology,
++        eye,
++        notes: notes.trim(),
++        attachment: attachments.length === 1 ? attachments[0] : undefined,
++        attachments: attachments.length > 1 ? attachments : undefined,
++      });
++      setReply(result.reply);
++      setStructured(result.structured);
++      setChargedUsd(result.chargedUsd);
++      setCreditBalanceUsd(result.creditBalanceUsd);
++
++      const id = result.analysisId || `local_${Date.now()}`;
++      const record = buildLocalAnalysisRecord({
++        id,
++        methodology,
++        eye,
++        notes: notes.trim(),
++        reply: result.reply,
++        structured: result.structured,
++        photoPreviewUrls: previewUrls,
++      });
++      saveLocalIridologyAnalysis(user.uid, record);
++      setAnalysisId(id);
++      setSavedAnalysis(record);
++      setHistoryRefresh((v) => v + 1);
++    } catch (err) {
++      if (err instanceof PlantCreditsError) {
++        setCreditsNeeded(true);
++        setError(err.message);
++      } else {
++        setError(err instanceof Error ? err.message : 'Analysis failed');
++      }
++    } finally {
++      setBusy(false);
++    }
++  };
++
++  const openCamera = (slot: 'left' | 'right') => {
++    setCameraSlot(slot);
++  };
++
++  const loadSavedAnalysis = (record: IridologySavedAnalysis) => {
++    setReply(record.reply);
++    setStructured(record.structured);
++    setAnalysisId(record.id);
++    setSavedAnalysis(record);
++    setMethodology(
++      (record.structured.methodology as IridologyMethodology) || (record.methodology as IridologyMethodology) || 'integrated',
++    );
++    if (record.eye === 'both') setEyeMode('both');
++    else if (record.eye === 'right') setEyeMode('right');
++    else setEyeMode('left');
++    window.scrollTo({ top: 0, behavior: 'smooth' });
++  };
++
++  return (
++    <section className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 via-slate-950/80 to-slate-950 p-4 sm:p-5 mb-6">
++      <div className="flex items-start gap-3 mb-4">
++        <div className="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/25">
++          <Eye className="w-6 h-6 text-indigo-300" />
++        </div>
++        <div>
++          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Hive Research vision</p>
++          <h2 className="text-lg sm:text-xl font-bold text-white">AI iris photo analysis</h2>
++          <p className="text-sm text-slate-400 mt-1">
++            {HIVE_RESEARCH_LABEL} · {HIVE_RESEARCH_POWERED_BY}. Educational iridology only — not diagnosis.
++          </p>
++        </div>
++      </div>
++
++      <div className="rounded-xl border border-indigo-500/25 bg-indigo-500/5 mb-4 overflow-hidden">
++        <button
++          type="button"
++          onClick={() => setGuideOpen((o) => !o)}
++          className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-indigo-500/10"
++        >
++          <span className="text-sm font-bold text-indigo-100 flex items-center gap-2">
++            <Camera className="w-4 h-4 text-indigo-300" />
++            How to take a clear iris photo
++          </span>
++          {guideOpen ? <ChevronUp className="w-4 h-4 text-indigo-300" /> : <ChevronDown className="w-4 h-4 text-indigo-300" />}
++        </button>
++        {guideOpen ? (
++          <div className="px-4 pb-4 space-y-3 border-t border-indigo-500/15">
++            <ol className="mt-3 space-y-2">
++              {IRIDOLOGY_PHOTO_STEPS.map((step, i) => (
++                <li key={step.title} className="flex gap-2 text-xs text-slate-300 leading-relaxed">
++                  <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-200 font-bold flex items-center justify-center text-[10px]">
++                    {i + 1}
++                  </span>
++                  <span>
++                    <strong className="text-white">{step.title}.</strong> {step.detail}
++                  </span>
++                </li>
++              ))}
++            </ol>
++            <div className="grid sm:grid-cols-2 gap-3 text-[11px]">
++              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5">
++                <p className="font-bold text-emerald-300 mb-1">Do</p>
++                <ul className="text-emerald-100/90 space-y-0.5">
++                  {IRIDOLOGY_PHOTO_DOS.map((t) => (
++                    <li key={t}>✓ {t}</li>
++                  ))}
++                </ul>
++              </div>
++              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-2.5">
++                <p className="font-bold text-rose-300 mb-1">Avoid</p>
++                <ul className="text-rose-100/85 space-y-0.5">
++                  {IRIDOLOGY_PHOTO_DONTS.map((t) => (
++                    <li key={t}>✗ {t}</li>
++                  ))}
++                </ul>
++              </div>
++            </div>
++          </div>
++        ) : null}
++      </div>
++
++      <IridologyHistoryPanel
++        user={user}
++        activeId={analysisId}
++        refreshKey={historyRefresh}
++        onSelect={loadSavedAnalysis}
++      />
++
++      <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs text-amber-100/90 mb-4 flex gap-2">
++        <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
++        <span>
++          Tap <strong className="text-amber-100">Take iris photo</strong> to open the live camera with an on-screen iris
++          guide. Blurry or partial photos produce limited reports — retake if quality is poor.
++        </span>
++      </div>
++
++      <div className="grid sm:grid-cols-2 gap-3 mb-4">
++        <label className="block text-xs font-semibold text-slate-300">
++          Methodology
++          <select
++            value={methodology}
++            onChange={(e) => setMethodology(e.target.value as IridologyMethodology)}
++            className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:border-indigo-500/50"
++          >
++            {(Object.keys(IRIDOLOGY_METHODOLOGY_LABELS) as IridologyMethodology[]).map((key) => (
++              <option key={key} value={key}>
++                {IRIDOLOGY_METHODOLOGY_LABELS[key]}
++              </option>
++            ))}
++          </select>
++        </label>
++
++        <fieldset className="text-xs font-semibold text-slate-300">
++          <legend className="mb-1">Eye</legend>
++          <div className="flex flex-wrap gap-2">
++            {(['left', 'right', 'both'] as EyeMode[]).map((mode) => (
++              <button
++                key={mode}
++                type="button"
++                onClick={() => setEyeMode(mode)}
++                className={`px-3 py-2 rounded-lg border text-sm capitalize ${
++                  eyeMode === mode
++                    ? 'border-indigo-500/50 bg-indigo-500/15 text-indigo-100'
++                    : 'border-slate-700 text-slate-400 hover:border-slate-600'
++                }`}
++              >
++                {mode}
++              </button>
++            ))}
++          </div>
++        </fieldset>
++      </div>
++
++      <div className={`grid gap-3 mb-4 ${eyeMode === 'both' ? 'sm:grid-cols-2' : ''}`}>
++        {(eyeMode === 'left' || eyeMode === 'both') && (
++          <PhotoSlot
++            label={eyeMode === 'both' ? 'Left eye' : 'Iris photo'}
++            photo={leftPhoto}
++            onClear={() => setLeftPhoto(null)}
++            onTakePhoto={() => openCamera('left')}
++            onGallery={() => {
++              setPickSlot('left');
++              fileRef.current?.click();
++            }}
++          />
++        )}
++        {(eyeMode === 'right' || eyeMode === 'both') && (
++          <PhotoSlot
++            label={eyeMode === 'both' ? 'Right eye' : 'Iris photo'}
++            photo={rightPhoto}
++            onClear={() => setRightPhoto(null)}
++            onTakePhoto={() => openCamera('right')}
++            onGallery={() => {
++              setPickSlot('right');
++              fileRef.current?.click();
++            }}
++          />
++        )}
++      </div>
++
++      <input
++        ref={fileRef}
++        type="file"
++        accept="image/*"
++        className="hidden"
++        onChange={(e) => {
++          void onPickFiles(e.target.files, pickSlot);
++          e.target.value = '';
++        }}
++      />
++
++      <label className="block text-xs font-semibold text-slate-300 mb-4">
++        Optional notes
++        <textarea
++          value={notes}
++          onChange={(e) => setNotes(e.target.value)}
++          rows={2}
++          placeholder="e.g. window light, no contacts, which eye feels easier to photograph"
++          className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:border-indigo-500/50 resize-none"
++        />
++      </label>
++
++      {error ? <p className="text-sm text-rose-300 mb-3">{error}</p> : null}
++
++      {creditsNeeded ? (
++        <button
++          type="button"
++          disabled={checkoutBusy}
++          onClick={() => void addCredits()}
++          className="mb-3 text-sm font-bold text-indigo-300 hover:underline disabled:opacity-50"
++        >
++          Add Bhive Credits to continue →
++        </button>
++      ) : null}
++
++      <button
++        type="button"
++        disabled={busy}
++        onClick={() => void analyze()}
++        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm"
++      >
++        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
++        {busy ? 'Analyzing iris…' : 'Analyze iris'}
++      </button>
++
++      {structured && reply ? (
++        <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-4">
++          <IridologyResults
++            reply={reply}
++            structured={structured}
++            chargedUsd={chargedUsd}
++            creditBalanceUsd={creditBalanceUsd}
++            onAddCredits={() => void addCredits()}
++          />
++          {analysisId ? (
++            <IridologyFollowUpChat
++              key={analysisId}
++              analysisId={analysisId}
++              user={user}
++              onSignIn={onSignIn}
++              initialMessages={savedAnalysis?.chatMessages}
++              localContext={savedAnalysis ? buildFollowUpContext(savedAnalysis) : undefined}
++            />
++          ) : null}
++        </div>
++      ) : null}
++
++      <p className="text-[10px] text-slate-500 mt-4">
++        Up to {maxPhotos} photo{maxPhotos > 1 ? 's' : ''} per request. Uses Bhive Credits unless admin-exempt.
++      </p>
++
++      {cameraSlot ? (
++        <IridologyCameraModal
++          eye={cameraSlot}
++          onCapture={(photo) => assignPhoto(cameraSlot, photo)}
++          onClose={() => setCameraSlot(null)}
++        />
++      ) : null}
++    </section>
++  );
++}
++
++function PhotoSlot({
++  label,
++  photo,
++  onClear,
++  onTakePhoto,
++  onGallery,
++}: {
++  label: string;
++  photo: PlantPhotoAttachment | null;
++  onClear: () => void;
++  onTakePhoto: () => void;
++  onGallery: () => void;
++}) {
++  return (
++    <div className="rounded-xl border border-dashed border-slate-600 bg-slate-900/40 p-3">
++      <p className="text-xs font-bold text-slate-300 mb-2">{label}</p>
++      {photo?.previewUrl ? (
++        <div className="relative mb-2">
++          <img
++            src={photo.previewUrl}
++            alt={`${label} preview`}
++            className="w-full h-40 object-cover rounded-lg border border-slate-700"
++          />
++          <div className="absolute bottom-2 left-2 flex gap-2">
++            <button
++              type="button"
++              onClick={onTakePhoto}
++              className="text-[10px] font-bold bg-indigo-600/90 px-2 py-1 rounded text-white"
++            >
++              Retake
++            </button>
++            <button
++              type="button"
++              onClick={onClear}
++              className="text-[10px] font-bold bg-black/70 px-2 py-1 rounded text-white"
++            >
++              Remove
++            </button>
++          </div>
++        </div>
++      ) : (
++        <div className="space-y-2">
++          <button
++            type="button"
++            onClick={onTakePhoto}
++            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-indigo-500/40 bg-indigo-600/20 text-indigo-100 text-sm font-bold hover:bg-indigo-600/30"
++          >
++            <Camera className="w-5 h-5" /> Take iris photo
++          </button>
++          <button
++            type="button"
++            onClick={onGallery}
++            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-slate-600 text-slate-300 text-xs font-bold hover:bg-slate-800"
++          >
++            <ImagePlus className="w-4 h-4" /> Choose from gallery
++          </button>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyCameraModal.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyCameraModal.tsx
+new file mode 100644
+index 0000000..c86159e
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyCameraModal.tsx
+@@ -0,0 +1,253 @@
++import { useCallback, useEffect, useRef, useState } from 'react';
++import { Camera, FlipHorizontal, Loader2, X } from 'lucide-react';
++import { compressPlantImageFile } from '../../../lib/oregonPlantMedicine/compressPlantImage';
++import {
++  IRIDOLOGY_PHOTO_DONTS,
++  IRIDOLOGY_PHOTO_DOS,
++  IRIDOLOGY_PHOTO_STEPS,
++  iridologyEyeCaptureLabel,
++} from '../../../lib/oregonPlantMedicine/iridologyPhotoGuide';
++import type { PlantPhotoAttachment } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
++
++type Props = {
++  eye: 'left' | 'right';
++  onCapture: (photo: PlantPhotoAttachment) => void;
++  onClose: () => void;
++};
++
++type Facing = 'user' | 'environment';
++
++export default function IridologyCameraModal({ eye, onCapture, onClose }: Props) {
++  const videoRef = useRef<HTMLVideoElement>(null);
++  const streamRef = useRef<MediaStream | null>(null);
++  const fallbackRef = useRef<HTMLInputElement>(null);
++  const [facing, setFacing] = useState<Facing>('user');
++  const [starting, setStarting] = useState(true);
++  const [capturing, setCapturing] = useState(false);
++  const [error, setError] = useState('');
++  const [showTips, setShowTips] = useState(true);
++
++  const stopStream = useCallback(() => {
++    streamRef.current?.getTracks().forEach((t) => t.stop());
++    streamRef.current = null;
++  }, []);
++
++  const startCamera = useCallback(async (mode: Facing) => {
++    setStarting(true);
++    setError('');
++    stopStream();
++    try {
++      if (!navigator.mediaDevices?.getUserMedia) {
++        throw new Error('Camera not available in this browser — use Gallery instead.');
++      }
++      const stream = await navigator.mediaDevices.getUserMedia({
++        video: {
++          facingMode: mode,
++          width: { ideal: 1920 },
++          height: { ideal: 1080 },
++        },
++        audio: false,
++      });
++      streamRef.current = stream;
++      const video = videoRef.current;
++      if (video) {
++        video.srcObject = stream;
++        await video.play();
++      }
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Could not open camera');
++    } finally {
++      setStarting(false);
++    }
++  }, [stopStream]);
++
++  useEffect(() => {
++    void startCamera(facing);
++    return () => stopStream();
++  }, [facing, startCamera, stopStream]);
++
++  const captureFrame = async () => {
++    const video = videoRef.current;
++    if (!video || !video.videoWidth) {
++      setError('Camera not ready — wait a moment and try again.');
++      return;
++    }
++    setCapturing(true);
++    setError('');
++    try {
++      const canvas = document.createElement('canvas');
++      canvas.width = video.videoWidth;
++      canvas.height = video.videoHeight;
++      const ctx = canvas.getContext('2d');
++      if (!ctx) throw new Error('Could not capture frame');
++      if (facing === 'user') {
++        ctx.translate(canvas.width, 0);
++        ctx.scale(-1, 1);
++      }
++      ctx.drawImage(video, 0, 0);
++      const blob = await new Promise<Blob>((resolve, reject) => {
++        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Capture failed'))), 'image/jpeg', 0.92);
++      });
++      const file = new File([blob], `iris-${eye}-${Date.now()}.jpg`, { type: 'image/jpeg' });
++      const compressed = await compressPlantImageFile(file, { forVision: true });
++      onCapture({
++        base64: compressed.base64,
++        mimeType: compressed.mimeType,
++        previewUrl: compressed.previewUrl,
++      });
++      stopStream();
++      onClose();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Capture failed');
++    } finally {
++      setCapturing(false);
++    }
++  };
++
++  const onFallbackPick = async (fileList: FileList | null) => {
++    const file = fileList?.[0];
++    if (!file) return;
++    setCapturing(true);
++    setError('');
++    try {
++      const compressed = await compressPlantImageFile(file, { forVision: true });
++      onCapture({
++        base64: compressed.base64,
++        mimeType: compressed.mimeType,
++        previewUrl: compressed.previewUrl,
++      });
++      stopStream();
++      onClose();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Could not read photo');
++    } finally {
++      setCapturing(false);
++    }
++  };
++
++  return (
++    <div className="fixed inset-0 z-[80] flex flex-col bg-black">
++      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-slate-950/95">
++        <div>
++          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Iris camera</p>
++          <h2 className="text-sm font-bold text-white">{iridologyEyeCaptureLabel(eye)}</h2>
++        </div>
++        <button
++          type="button"
++          onClick={() => {
++            stopStream();
++            onClose();
++          }}
++          className="p-2 rounded-full hover:bg-white/10 text-slate-300"
++          aria-label="Close camera"
++        >
++          <X className="w-5 h-5" />
++        </button>
++      </div>
++
++      <div className="relative flex-1 min-h-0 bg-black">
++        {starting ? (
++          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
++            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
++          </div>
++        ) : null}
++        <video
++          ref={videoRef}
++          playsInline
++          muted
++          className={`absolute inset-0 w-full h-full object-cover ${facing === 'user' ? '-scale-x-100' : ''}`}
++        />
++        {/* Iris framing guide */}
++        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
++          <div className="w-[min(72vw,280px)] aspect-square rounded-full border-2 border-indigo-400/70 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]" />
++        </div>
++        <p className="absolute bottom-24 left-0 right-0 text-center text-xs text-white/90 px-6 drop-shadow">
++          Center the iris inside the circle · {facing === 'user' ? 'Front camera' : 'Rear camera (mirror mode)'}
++        </p>
++      </div>
++
++      {showTips ? (
++        <div className="max-h-[38vh] overflow-y-auto border-t border-indigo-500/20 bg-slate-950/95 px-4 py-3 space-y-3">
++          <div className="flex items-center justify-between">
++            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Clear photo checklist</p>
++            <button type="button" onClick={() => setShowTips(false)} className="text-[10px] text-slate-500 hover:text-slate-300">
++              Hide
++            </button>
++          </div>
++          <ol className="space-y-2">
++            {IRIDOLOGY_PHOTO_STEPS.map((step, i) => (
++              <li key={step.title} className="flex gap-2 text-xs text-slate-300">
++                <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-200 font-bold flex items-center justify-center text-[10px]">
++                  {i + 1}
++                </span>
++                <span>
++                  <strong className="text-white">{step.title}.</strong> {step.detail}
++                </span>
++              </li>
++            ))}
++          </ol>
++          <div className="grid sm:grid-cols-2 gap-2 text-[11px]">
++            <ul className="text-emerald-200/90 space-y-1">
++              {IRIDOLOGY_PHOTO_DOS.map((t) => (
++                <li key={t}>✓ {t}</li>
++              ))}
++            </ul>
++            <ul className="text-rose-200/80 space-y-1">
++              {IRIDOLOGY_PHOTO_DONTS.map((t) => (
++                <li key={t}>✗ {t}</li>
++              ))}
++            </ul>
++          </div>
++        </div>
++      ) : (
++        <button
++          type="button"
++          onClick={() => setShowTips(true)}
++          className="text-center text-[10px] text-indigo-300 py-2 border-t border-indigo-500/20 bg-slate-950/95"
++        >
++          Show photo tips
++        </button>
++      )}
++
++      {error ? <p className="px-4 py-2 text-xs text-rose-300 bg-rose-950/40">{error}</p> : null}
++
++      <div className="flex items-center justify-center gap-4 px-4 py-4 bg-slate-950 border-t border-white/10">
++        <button
++          type="button"
++          onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))}
++          className="p-3 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-800"
++          aria-label="Switch camera"
++        >
++          <FlipHorizontal className="w-5 h-5" />
++        </button>
++        <button
++          type="button"
++          disabled={capturing || starting}
++          onClick={() => void captureFrame()}
++          className="flex items-center gap-2 px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm shadow-lg shadow-indigo-500/25"
++        >
++          {capturing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
++          Capture iris
++        </button>
++        <button
++          type="button"
++          onClick={() => fallbackRef.current?.click()}
++          className="text-xs font-semibold text-slate-400 hover:text-white px-2"
++        >
++          Gallery
++        </button>
++        <input
++          ref={fallbackRef}
++          type="file"
++          accept="image/*"
++          capture="user"
++          className="hidden"
++          onChange={(e) => {
++            void onFallbackPick(e.target.files);
++            e.target.value = '';
++          }}
++        />
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyDisclaimerModal.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyDisclaimerModal.tsx
+new file mode 100644
+index 0000000..985dac7
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyDisclaimerModal.tsx
+@@ -0,0 +1,105 @@
++import { useState } from 'react';
++import { AlertTriangle, FileText, X } from 'lucide-react';
++import {
++  IRIDOLOGY_DISCLAIMER_SECTIONS,
++  IRIDOLOGY_DISCLAIMER_TITLE,
++  acceptIridologyDisclaimer,
++} from '../../../lib/oregonPlantMedicine/iridologyDisclaimer';
++
++type Props = {
++  onAccepted: () => void;
++  onCancel?: () => void;
++  reviewOnly?: boolean;
++  userId?: string | null;
++};
++
++/** Required gate before viewing iridology content or AI iris analysis. */
++export default function IridologyDisclaimerModal({ onAccepted, onCancel, reviewOnly = false, userId }: Props) {
++  const [agreed, setAgreed] = useState(reviewOnly);
++
++  return (
++    <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-sm">
++      <div
++        className="bg-slate-950 border border-indigo-500/35 rounded-t-2xl sm:rounded-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto shadow-2xl"
++        role="dialog"
++        aria-modal="true"
++        aria-labelledby="iridology-disclaimer-title"
++      >
++        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 p-4 border-b border-indigo-500/20 bg-slate-950/95 backdrop-blur">
++          <div className="flex gap-3">
++            <div className="p-2 rounded-lg bg-indigo-500/15 shrink-0">
++              <AlertTriangle className="w-5 h-5 text-indigo-400" />
++            </div>
++            <div>
++              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Hold document</p>
++              <h2 id="iridology-disclaimer-title" className="text-lg font-bold text-white mt-0.5">
++                {IRIDOLOGY_DISCLAIMER_TITLE}
++              </h2>
++            </div>
++          </div>
++          {onCancel ? (
++            <button
++              type="button"
++              onClick={onCancel}
++              className="p-2 rounded-full hover:bg-white/10 text-slate-400"
++              aria-label="Go back"
++            >
++              <X className="w-5 h-5" />
++            </button>
++          ) : null}
++        </div>
++
++        <div className="p-5 space-y-4 text-sm text-slate-300 leading-relaxed">
++          {IRIDOLOGY_DISCLAIMER_SECTIONS.map((section) => (
++            <section key={section.heading}>
++              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300/90">{section.heading}</h3>
++              <p className="mt-1.5">{section.body}</p>
++            </section>
++          ))}
++
++          {reviewOnly ? (
++            <button
++              type="button"
++              onClick={onAccepted}
++              className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm"
++            >
++              Close
++            </button>
++          ) : (
++            <>
++              <label className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/60 p-4 cursor-pointer">
++                <input
++                  type="checkbox"
++                  checked={agreed}
++                  onChange={(e) => setAgreed(e.target.checked)}
++                  className="mt-1 rounded border-slate-600 accent-indigo-500"
++                />
++                <span className="text-sm text-slate-200">
++                  I understand this is educational iridology only — not medical diagnosis. I will seek licensed care for
++                  health concerns and emergencies.
++                </span>
++              </label>
++
++              <button
++                type="button"
++                disabled={!agreed}
++                onClick={() => {
++                  acceptIridologyDisclaimer(userId);
++                  onAccepted();
++                }}
++                className="w-full py-3 rounded-xl bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 text-white font-bold text-sm"
++              >
++                I agree — open AI Iridology
++              </button>
++
++              <p className="text-[10px] text-slate-500 flex items-center gap-1.5 justify-center">
++                <FileText className="w-3 h-3" />
++                You only need to accept once per account.
++              </p>
++            </>
++          )}
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyFollowUpChat.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyFollowUpChat.tsx
+new file mode 100644
+index 0000000..e4020c8
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyFollowUpChat.tsx
+@@ -0,0 +1,180 @@
++import type { User } from 'firebase/auth';
++import { useCallback, useEffect, useRef, useState } from 'react';
++import { Loader2, MessageCircle, Send } from 'lucide-react';
++import type { PlantChatMessage } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
++import { sendIridologyFollowUpChat } from '../../../lib/oregonPlantMedicine/iridologyHistoryApi';
++import { sendLivingKnowledgeChat } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
++import { updateLocalIridologyChat } from '../../../lib/oregonPlantMedicine/iridologyHistoryStorage';
++import { HIVE_RESEARCH_LABEL } from '../../../lib/oregonPlantMedicine/branding';
++
++type ChatMsg = PlantChatMessage & { id: string };
++
++type Props = {
++  analysisId: string;
++  user: User | null;
++  onSignIn: () => void;
++  initialMessages?: PlantChatMessage[];
++  /** Used when analysis is stored locally only (no Firestore id). */
++  localContext?: string;
++};
++
++function uid() {
++  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
++}
++
++export default function IridologyFollowUpChat({
++  analysisId,
++  user,
++  onSignIn,
++  initialMessages = [],
++  localContext,
++}: Props) {
++  const [messages, setMessages] = useState<ChatMsg[]>(() =>
++    initialMessages.map((m) => ({ ...m, id: uid() })),
++  );
++  const [input, setInput] = useState('');
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState('');
++  const bottomRef = useRef<HTMLDivElement>(null);
++
++  useEffect(() => {
++    setMessages(initialMessages.map((m) => ({ ...m, id: uid() })));
++  }, [analysisId]);
++
++  const isLocal = analysisId.startsWith('local_');
++
++  useEffect(() => {
++    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
++  }, [messages, busy]);
++
++  const persistLocal = useCallback(
++    (next: ChatMsg[]) => {
++      if (!user) return;
++      updateLocalIridologyChat(
++        user.uid,
++        analysisId,
++        next.map(({ role, content }) => ({ role, content })),
++      );
++    },
++    [analysisId, user],
++  );
++
++  const send = async () => {
++    const trimmed = input.trim();
++    if (!trimmed || busy) return;
++    if (!user) {
++      onSignIn();
++      setError('Sign in to ask follow-up questions about your iris analysis.');
++      return;
++    }
++
++    const userMsg: ChatMsg = { id: uid(), role: 'user', content: trimmed };
++    const next = [...messages, userMsg];
++    setMessages(next);
++    setInput('');
++    setBusy(true);
++    setError('');
++
++    try {
++      const history = next.slice(0, -1).map(({ role, content }) => ({ role, content }));
++      let replyText: string;
++      if (isLocal && localContext) {
++        const result = await sendLivingKnowledgeChat(user, {
++          message: trimmed,
++          context: localContext,
++          scope: 'iridology',
++          history,
++        });
++        replyText = result.reply;
++      } else {
++        const result = await sendIridologyFollowUpChat(user, analysisId, {
++          message: trimmed,
++          history,
++        });
++        replyText = result.reply;
++      }
++      const assistantMsg: ChatMsg = { id: uid(), role: 'assistant', content: replyText };
++      const withReply = [...next, assistantMsg];
++      setMessages(withReply);
++      persistLocal(withReply);
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Could not send message');
++      setMessages(messages);
++    } finally {
++      setBusy(false);
++    }
++  };
++
++  const suggestions = [
++    'What does my constitutional type mean in plain language?',
++    'Which observations had the lowest confidence and why?',
++    'How should I retake the photo for better fiber detail?',
++    'What would integrated iridology say vs Jensen zones here?',
++  ];
++
++  return (
++    <div className="rounded-xl border border-indigo-500/30 bg-slate-950/60 p-4 space-y-3">
++      <div className="flex items-center gap-2">
++        <MessageCircle className="w-5 h-5 text-indigo-400" />
++        <div>
++          <h3 className="text-sm font-bold text-white">Ask about your analysis</h3>
++          <p className="text-[11px] text-slate-400">
++            Follow-up chat references your saved report · {HIVE_RESEARCH_LABEL} · educational only
++          </p>
++        </div>
++      </div>
++
++      {messages.length > 0 ? (
++        <div className="max-h-64 overflow-y-auto space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3">
++          {messages.map((msg) => (
++            <div
++              key={msg.id}
++              className={`rounded-lg px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
++                msg.role === 'user'
++                  ? 'ml-8 bg-indigo-600/25 border border-indigo-500/25 text-indigo-50'
++                  : 'mr-6 bg-slate-800/80 border border-slate-700 text-slate-200'
++              }`}
++            >
++              {msg.content}
++            </div>
++          ))}
++          <div ref={bottomRef} />
++        </div>
++      ) : (
++        <div className="flex flex-wrap gap-2">
++          {suggestions.map((s) => (
++            <button
++              key={s}
++              type="button"
++              onClick={() => setInput(s)}
++              className="text-left text-[11px] px-2.5 py-1.5 rounded-lg border border-indigo-500/25 bg-indigo-500/10 text-indigo-100 hover:bg-indigo-500/20"
++            >
++              {s}
++            </button>
++          ))}
++        </div>
++      )}
++
++      {error ? <p className="text-xs text-rose-300">{error}</p> : null}
++
++      <div className="flex gap-2">
++        <input
++          value={input}
++          onChange={(e) => setInput(e.target.value)}
++          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && void send()}
++          placeholder="Ask a follow-up about your iris report…"
++          className="flex-1 rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:border-indigo-500/50"
++        />
++        <button
++          type="button"
++          disabled={busy || !input.trim()}
++          onClick={() => void send()}
++          className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm"
++        >
++          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
++          Send
++        </button>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyHistoryPanel.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyHistoryPanel.tsx
+new file mode 100644
+index 0000000..f7723d5
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyHistoryPanel.tsx
+@@ -0,0 +1,133 @@
++import type { User } from 'firebase/auth';
++import { useEffect, useState } from 'react';
++import { Clock, Loader2 } from 'lucide-react';
++import { fetchIridologyHistory, fetchIridologyAnalysis } from '../../../lib/oregonPlantMedicine/iridologyHistoryApi';
++import {
++  loadLocalIridologyHistory,
++  mergeHistoryLists,
++  saveLocalIridologyAnalysis,
++  type IridologyHistoryListItem,
++  type IridologySavedAnalysis,
++} from '../../../lib/oregonPlantMedicine/iridologyHistoryStorage';
++
++type Props = {
++  user: User | null;
++  activeId: string | null;
++  onSelect: (analysis: IridologySavedAnalysis) => void;
++  refreshKey?: number;
++};
++
++export default function IridologyHistoryPanel({ user, activeId, onSelect, refreshKey = 0 }: Props) {
++  const [items, setItems] = useState<IridologyHistoryListItem[]>([]);
++  const [loading, setLoading] = useState(false);
++
++  useEffect(() => {
++    const local = loadLocalIridologyHistory(user?.uid ?? null);
++    if (!user) {
++      setItems(
++        local.map((l) => ({
++          id: l.id,
++          createdAt: l.createdAt,
++          methodology: l.methodology,
++          eye: l.eye,
++          photoQuality: l.structured.photoQuality,
++          constitutionalLabel: l.structured.constitutionalType?.label,
++          summaryLine: l.structured.integratedSummary?.slice(0, 160) || l.reply.slice(0, 160),
++          chatCount: l.chatMessages?.length ?? 0,
++        })),
++      );
++      return;
++    }
++
++    let cancelled = false;
++    setLoading(true);
++    void fetchIridologyHistory(user)
++      .then((remote) => {
++        if (cancelled) return;
++        setItems(mergeHistoryLists(remote, local));
++      })
++      .catch(() => {
++        if (!cancelled) {
++          setItems(
++            local.map((l) => ({
++              id: l.id,
++              createdAt: l.createdAt,
++              methodology: l.methodology,
++              eye: l.eye,
++              photoQuality: l.structured.photoQuality,
++              constitutionalLabel: l.structured.constitutionalType?.label,
++              summaryLine: l.structured.integratedSummary?.slice(0, 160) || l.reply.slice(0, 160),
++              chatCount: l.chatMessages?.length ?? 0,
++            })),
++          );
++        }
++      })
++      .finally(() => {
++        if (!cancelled) setLoading(false);
++      });
++
++    return () => {
++      cancelled = true;
++    };
++  }, [user, refreshKey]);
++
++  if (!items.length && !loading) return null;
++
++  return (
++    <div className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-4 mb-4">
++      <div className="flex items-center gap-2 mb-3">
++        <Clock className="w-4 h-4 text-indigo-300" />
++        <h3 className="text-sm font-bold text-white">Your saved analyses</h3>
++        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-500" /> : null}
++      </div>
++      <div className="space-y-2 max-h-48 overflow-y-auto">
++        {items.map((item) => (
++          <button
++            key={item.id}
++            type="button"
++            onClick={() => {
++              const local = loadLocalIridologyHistory(user?.uid ?? null).find((a) => a.id === item.id);
++              if (local) {
++                onSelect(local);
++                return;
++              }
++              if (!user) return;
++              void fetchIridologyAnalysis(user, item.id)
++                .then((remote) => {
++                  saveLocalIridologyAnalysis(user.uid, {
++                    ...remote,
++                    structured: remote.structured,
++                    chatMessages: remote.chatMessages ?? [],
++                  });
++                  onSelect({
++                    ...remote,
++                    structured: remote.structured,
++                    chatMessages: remote.chatMessages ?? [],
++                  });
++                })
++                .catch(() => {
++                  /* ignore */
++                });
++            }}
++            className={`w-full text-left rounded-lg border px-3 py-2 transition-colors ${
++              activeId === item.id
++                ? 'border-indigo-500/50 bg-indigo-500/15'
++                : 'border-slate-700 hover:border-indigo-500/30 hover:bg-slate-800/60'
++            }`}
++          >
++            <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase font-bold tracking-wider text-slate-400">
++              <span>{new Date(item.createdAt).toLocaleString()}</span>
++              <span className="text-indigo-300">{item.eye} eye</span>
++              {item.photoQuality ? <span>photo: {item.photoQuality}</span> : null}
++              {item.chatCount ? <span>{item.chatCount} chat msgs</span> : null}
++            </div>
++            <p className="text-xs text-slate-300 mt-1 line-clamp-2">
++              {item.constitutionalLabel ? `${item.constitutionalLabel} · ` : ''}
++              {item.summaryLine || 'Iris analysis'}
++            </p>
++          </button>
++        ))}
++      </div>
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyPanel.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyPanel.tsx
+new file mode 100644
+index 0000000..fd076ce
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyPanel.tsx
+@@ -0,0 +1,82 @@
++import type { User } from 'firebase/auth';
++import {
++  IRIDOLOGY_CATEGORY_ORDER,
++  IRIDOLOGY_LIBRARY,
++  matchesIridologyCategory,
++} from '../../../lib/oregonPlantMedicine/iridologyLibrary';
++import { IRIDOLOGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/iridologyTypes';
++import { IRIDOLOGY_TAB_LABEL } from '../../../lib/oregonPlantMedicine/branding';
++import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
++import type { AskAiContext } from './AskAiBhivePanel';
++import IridologyAnalyzePanel from './IridologyAnalyzePanel';
++import ResearchLibraryPanel from './ResearchLibraryPanel';
++
++const IRIDOLOGY_THEME = {
++  introBorder: 'border-indigo-500/30',
++  introBg: 'bg-indigo-500/10',
++  introText: 'text-indigo-100/90',
++  introLabel: 'text-indigo-300',
++  cardHover: 'hover:border-indigo-500/40',
++  categoryLabel: 'text-indigo-400',
++  accentButton: 'bg-indigo-600 hover:bg-indigo-500',
++  detailBorder: 'border-indigo-500/30',
++  sectionLabel: 'text-indigo-400',
++  contributeBorder: 'border-indigo-500/40',
++  contributeText: 'text-indigo-200',
++  communityAccent: 'text-indigo-300',
++  searchFocus: 'focus:border-indigo-500/50',
++  videoAccent: 'text-indigo-300',
++  videoBorder: 'border-indigo-500/35 hover:border-indigo-500/50',
++};
++
++type Props = {
++  user: User | null;
++  onSignIn: () => void;
++  onOpenPlant: (plant: PlantEntry) => void;
++  onCreatePost: () => void;
++  onAskAi: (ctx: AskAiContext) => void;
++  focusTopicId?: string | null;
++  onFocusTopicConsumed?: () => void;
++};
++
++export default function IridologyPanel({
++  user,
++  onSignIn,
++  onOpenPlant,
++  onCreatePost,
++  onAskAi,
++  focusTopicId,
++  onFocusTopicConsumed,
++}: Props) {
++  return (
++    <div className="space-y-0">
++      <IridologyAnalyzePanel user={user} onSignIn={onSignIn} />
++      <ResearchLibraryPanel
++        library="iridology"
++        tabLabel={IRIDOLOGY_TAB_LABEL}
++        introText={
++          <p>
++            Jensen zone charts, European physical signs, constitutional typing, and integrated methodology — educational
++            iridology literature with photo capture guides and safety limits.{' '}
++            <strong className="text-white">Not medical diagnosis.</strong>
++          </p>
++        }
++        searchPlaceholder="Search zone chart, lacuna, lymphatic constitution, Jensen, photo tips…"
++        topics={IRIDOLOGY_LIBRARY}
++        categoryLabels={IRIDOLOGY_CATEGORY_LABELS}
++        categoryOrder={IRIDOLOGY_CATEGORY_ORDER}
++        matchesCategory={matchesIridologyCategory}
++        theme={IRIDOLOGY_THEME}
++        user={user}
++        onSignIn={onSignIn}
++        onOpenPlant={onOpenPlant}
++        onCreatePost={onCreatePost}
++        onAskAi={onAskAi}
++        askScope="iridology"
++        askAccent="violet"
++        focusTopicId={focusTopicId}
++        onFocusTopicConsumed={onFocusTopicConsumed}
++      />
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/IridologyResults.tsx b/src/components/hive-apps/oregon-plant-medicine/IridologyResults.tsx
+new file mode 100644
+index 0000000..1442acf
+--- /dev/null
++++ b/src/components/hive-apps/oregon-plant-medicine/IridologyResults.tsx
+@@ -0,0 +1,213 @@
++import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList } from 'lucide-react';
++import type { IridologyStructuredResult } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
++import { IRIDOLOGY_METHODOLOGY_LABELS } from '../../../lib/oregonPlantMedicine/iridologyTypes';
++import type { IridologyMethodology } from '../../../lib/oregonPlantMedicine/iridologyTypes';
++
++type Props = {
++  reply: string;
++  structured: IridologyStructuredResult;
++  chargedUsd?: number;
++  creditBalanceUsd?: number;
++  onAddCredits?: () => void;
++};
++
++const CONFIDENCE_STYLES = {
++  high: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30',
++  medium: 'bg-amber-500/20 text-amber-100 border-amber-500/30',
++  low: 'bg-slate-700/60 text-slate-300 border-slate-600/40',
++};
++
++const QUALITY_STYLES = {
++  good: 'text-emerald-300',
++  fair: 'text-amber-300',
++  poor: 'text-rose-300',
++};
++
++const QUALITY_LABELS = {
++  good: 'Good — fine detail readable',
++  fair: 'Fair — some limits; interpret cautiously',
++  poor: 'Poor — retake recommended',
++};
++
++function ReportSection({ title, body, icon: Icon }: { title: string; body: string; icon: typeof BookOpen }) {
++  if (!body.trim()) return null;
++  return (
++    <section className="rounded-lg border border-slate-700/60 bg-slate-950/40 p-4">
++      <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300 flex items-center gap-2 mb-2">
++        <Icon className="w-3.5 h-3.5" />
++        {title}
++      </h3>
++      <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{body}</p>
++    </section>
++  );
++}
++
++function renderMarkdownLite(text: string) {
++  const lines = text.split('\n');
++  return lines.map((line, i) => {
++    if (line.startsWith('## ')) {
++      return (
++        <h3 key={i} className="text-sm font-bold text-indigo-200 mt-4 mb-2 first:mt-0">
++          {line.replace(/^##\s+/, '')}
++        </h3>
++      );
++    }
++    if (!line.trim()) return <br key={i} />;
++    return (
++      <p key={i} className="text-sm text-slate-200 leading-relaxed mb-2">
++        {line}
++      </p>
++    );
++  });
++}
++
++export default function IridologyResults({ reply, structured, chargedUsd, creditBalanceUsd, onAddCredits }: Props) {
++  const methodologyLabel =
++    IRIDOLOGY_METHODOLOGY_LABELS[structured.methodology as IridologyMethodology] || structured.methodology;
++
++  const hasStructuredSections =
++    structured.photoAssessment ||
++    structured.globalOverview ||
++    structured.fiberAndTexture ||
++    structured.integratedSummary ||
++    (structured.nextSteps && structured.nextSteps.length > 0);
++
++  return (
++    <div className="space-y-4">
++      <div className="flex items-center gap-2">
++        <CheckCircle2 className="w-5 h-5 text-indigo-400" />
++        <h2 className="text-lg font-bold text-white">Your iris analysis report</h2>
++      </div>
++
++      <div className="rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 flex gap-3">
++        <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
++        <div className="text-sm text-rose-100/90 leading-relaxed">
++          <strong className="text-rose-200">Not medical diagnosis.</strong> Educational iridology interpretation only.
++          Iridology is not validated clinical science. Seek licensed care for symptoms and emergencies.
++        </div>
++      </div>
++
++      <div className="rounded-xl border border-indigo-500/25 bg-slate-900/50 p-4 space-y-3">
++        <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-widest">
++          <span className={`px-2 py-1 rounded-full border ${QUALITY_STYLES[structured.photoQuality]}`}>
++            {QUALITY_LABELS[structured.photoQuality]}
++          </span>
++          <span className="px-2 py-1 rounded-full border border-indigo-500/30 text-indigo-200 bg-indigo-500/10">
++            {methodologyLabel}
++          </span>
++          {structured.eye !== 'unknown' ? (
++            <span className="px-2 py-1 rounded-full border border-slate-600 text-slate-300">Eye: {structured.eye}</span>
++          ) : null}
++        </div>
++
++        {structured.retakeAdvice ? (
++          <p className="text-sm text-amber-200/90 bg-amber-500/10 border border-amber-500/25 rounded-lg p-3">
++            <strong className="text-amber-100">Retake advice:</strong> {structured.retakeAdvice}
++          </p>
++        ) : null}
++      </div>
++
++      {hasStructuredSections ? (
++        <div className="space-y-3">
++          <ReportSection title="Photo assessment" body={structured.photoAssessment || ''} icon={ClipboardList} />
++          <ReportSection title="Global iris overview" body={structured.globalOverview || ''} icon={BookOpen} />
++          <ReportSection title="Fiber & texture" body={structured.fiberAndTexture || ''} icon={BookOpen} />
++          <ReportSection title="Integrated summary" body={structured.integratedSummary || ''} icon={BookOpen} />
++          {structured.nextSteps && structured.nextSteps.length > 0 ? (
++            <section className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
++              <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300 mb-2">What to do next</h3>
++              <ul className="list-disc list-inside text-sm text-slate-200 space-y-1.5">
++                {structured.nextSteps.map((step) => (
++                  <li key={step}>{step}</li>
++                ))}
++              </ul>
++            </section>
++          ) : null}
++        </div>
++      ) : null}
++
++      {reply ? (
++        <div className="rounded-xl border border-slate-700/80 bg-slate-950/50 p-4">
++          <h3 className="text-xs font-black uppercase tracking-widest text-indigo-300 mb-3">Full narrative report</h3>
++          <div>{renderMarkdownLite(reply)}</div>
++        </div>
++      ) : null}
++
++      {structured.constitutionalType ? (
++        <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
++          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-1">Constitutional type</p>
++          <p className="text-white font-semibold capitalize">{structured.constitutionalType.label}</p>
++          <span
++            className={`inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${CONFIDENCE_STYLES[structured.constitutionalType.confidence]}`}
++          >
++            {structured.constitutionalType.confidence} confidence
++          </span>
++          <p className="text-sm text-slate-300 mt-2 leading-relaxed">{structured.constitutionalType.rationale}</p>
++        </div>
++      ) : null}
++
++      {structured.observations.length > 0 ? (
++        <div className="space-y-2">
++          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Zone & sign observations</p>
++          <div className="grid gap-2 sm:grid-cols-2">
++            {structured.observations.map((obs, i) => (
++              <div key={`${obs.zone}-${obs.sign}-${i}`} className="rounded-xl border border-slate-700/80 bg-slate-900/40 p-3">
++                <div className="flex flex-wrap items-center gap-2 mb-1">
++                  <span className="text-xs font-bold text-white">{obs.sign}</span>
++                  <span
++                    className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border ${CONFIDENCE_STYLES[obs.confidence]}`}
++                  >
++                    {obs.confidence}
++                  </span>
++                </div>
++                <p className="text-[11px] text-indigo-200/80 mb-1">{obs.zone}</p>
++                <p className="text-sm text-slate-300 leading-relaxed">{obs.meaning}</p>
++                {obs.sources.length > 0 ? (
++                  <p className="text-[10px] text-slate-500 mt-2">Schools: {obs.sources.join(', ')}</p>
++                ) : null}
++              </div>
++            ))}
++          </div>
++        </div>
++      ) : null}
++
++      {structured.wellnessTendencies.length > 0 ? (
++        <div className="rounded-lg border border-slate-700/60 bg-slate-900/30 p-4">
++          <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300 mb-2">
++            Wellness tendencies (iridology literature)
++          </p>
++          <ul className="list-disc list-inside text-sm text-slate-300 space-y-1.5">
++            {structured.wellnessTendencies.map((t) => (
++              <li key={t}>{t}</li>
++            ))}
++          </ul>
++        </div>
++      ) : null}
++
++      {structured.cautions.length > 0 ? (
++        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
++          <p className="text-[10px] font-black uppercase tracking-widest text-amber-300 mb-2">Cautions</p>
++          <ul className="list-disc list-inside text-sm text-amber-100/90 space-y-1.5">
++            {structured.cautions.map((c) => (
++              <li key={c}>{c}</li>
++            ))}
++          </ul>
++        </div>
++      ) : null}
++
++      {(chargedUsd != null || creditBalanceUsd != null) && (
++        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 border-t border-slate-800 pt-3">
++          <span>
++            {chargedUsd != null ? `Hive Research used ~$${chargedUsd.toFixed(2)}` : null}
++            {creditBalanceUsd != null ? ` · Balance ~$${creditBalanceUsd.toFixed(2)}` : null}
++          </span>
++          {onAddCredits ? (
++            <button type="button" onClick={onAddCredits} className="text-indigo-300 hover:underline font-semibold">
++              Add Bhive Credits
++            </button>
++          ) : null}
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/components/hive-apps/oregon-plant-medicine/OregonPlantMedicineHome.tsx b/src/components/hive-apps/oregon-plant-medicine/OregonPlantMedicineHome.tsx
+index b428bfb..bf7d8fb 100644
+--- a/src/components/hive-apps/oregon-plant-medicine/OregonPlantMedicineHome.tsx
++++ b/src/components/hive-apps/oregon-plant-medicine/OregonPlantMedicineHome.tsx
+@@ -8,6 +8,7 @@ import {
+   MessageCircle,
+   PawPrint,
+   Sparkles,
++  Eye,
+   Sprout,
+   ThumbsUp,
+   Users,
+@@ -19,6 +20,7 @@ import { HYPNOSIS_ENERGY_LIBRARY } from '../../../lib/oregonPlantMedicine/hypnos
+ import { ANIMAL_HEALTH_LIBRARY } from '../../../lib/oregonPlantMedicine/animalHealthLibrary';
+ import { HERBS_LIBRARY } from '../../../lib/oregonPlantMedicine/herbsLibrary';
+ import { SUPPLEMENTS_LIBRARY } from '../../../lib/oregonPlantMedicine/supplementsLibrary';
++import { IRIDOLOGY_LIBRARY } from '../../../lib/oregonPlantMedicine/iridologyLibrary';
+ import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
+ import { SEED_COMMUNITY_POSTS, type SeedCommunityPost } from '../../../lib/oregonPlantMedicine/communitySeedData';
+ import { applySeedVotes, loadSeedVotes, sortFeedByUpvotes, toggleSeedVote } from '../../../lib/oregonPlantMedicine/communitySeedVotes';
+@@ -46,7 +48,8 @@ type HomeTab =
+   | 'hypnosis'
+   | 'animal-health'
+   | 'herbs'
+-  | 'supplements';
++  | 'supplements'
++  | 'iridology';
+ 
+ type Props = {
+   onNavigate: (tab: HomeTab) => void;
+@@ -169,6 +172,18 @@ const THEMES: Record<HomeTab | 'edibles', SectionTheme> = {
+     button: 'bg-teal-600 hover:bg-teal-500',
+     glow: 'shadow-teal-500/10',
+   },
++  iridology: {
++    icon: Eye,
++    label: 'AI Iridology',
++    headline: 'Educational iris analysis',
++    blurb:
++      'Jensen zones, physical signs, constitutional typing, and Hive Research iris photo analysis — with strong disclaimers. Not medical diagnosis.',
++    gradient: 'from-indigo-950/80 via-slate-950/40 to-transparent',
++    border: 'border-indigo-500/25',
++    accent: 'text-indigo-300',
++    button: 'bg-indigo-600 hover:bg-indigo-500',
++    glow: 'shadow-indigo-500/10',
++  },
+ };
+ 
+ function plantForTopic(relatedPlantIds: string[]): PlantEntry | undefined {
+@@ -536,7 +551,7 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
+   onNavigate,
+   hideImages = false,
+ }: {
+-  tab: 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
++  tab: 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
+   topics: T[];
+   onNavigate: (tab: HomeTab) => void;
+   hideImages?: boolean;
+@@ -557,6 +572,8 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
+                   ? 'hover:border-amber-500/40'
+                   : tab === 'supplements'
+                     ? 'hover:border-teal-500/40'
++                    : tab === 'iridology'
++                      ? 'hover:border-indigo-500/40'
+                     : 'hover:border-rose-500/40'
+             }`}
+           >
+@@ -606,6 +623,7 @@ export default function OregonPlantMedicineHome({
+   const animalTopics = ANIMAL_HEALTH_LIBRARY.slice(0, 3) as AnimalHealthTopic[];
+   const herbsTopics = HERBS_LIBRARY.slice(0, 3);
+   const supplementsTopics = SUPPLEMENTS_LIBRARY.slice(0, 3);
++  const iridologyTopics = IRIDOLOGY_LIBRARY.slice(0, 3);
+   const featuredEssay = getFeaturedEssay('plants-home');
+ 
+   return (
+@@ -657,6 +675,8 @@ export default function OregonPlantMedicineHome({
+ 
+       <ResearchCardsSection tab="herbs" topics={herbsTopics} onNavigate={onNavigate} />
+ 
++      <ResearchCardsSection tab="iridology" topics={iridologyTopics} onNavigate={onNavigate} />
++
+       <ResearchCardsSection tab="supplements" topics={supplementsTopics} onNavigate={onNavigate} hideImages />
+ 
+       <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-500/10 via-slate-900/80 to-violet-500/10 p-6 sm:p-8 text-center">
+diff --git a/src/lib/oregonPlantMedicine/branding.ts b/src/lib/oregonPlantMedicine/branding.ts
+index f1f753f..0f65023 100644
+--- a/src/lib/oregonPlantMedicine/branding.ts
++++ b/src/lib/oregonPlantMedicine/branding.ts
+@@ -134,3 +134,15 @@ export const SUPPLEMENTS_TAB_SHORT_LABEL = 'Supplements';
+ 
+ export const SUPPLEMENTS_SEO_DESCRIPTION =
+   'Supplements library — vitamins, minerals, omega-3, probiotics, and specialty compounds with evidence summaries, dosing context, drug interaction notes, and quality guidance. Not medical advice.';
++
++/** Canonical URL segment for AI iridology education + iris photo analysis. */
++export const IRIDOLOGY_SLUG = 'iridology';
++
++export const IRIDOLOGY_PATH = `${PLANTS_PUBLIC_PATH}/${IRIDOLOGY_SLUG}`;
++
++export const IRIDOLOGY_TAB_LABEL = 'AI Iridology';
++
++export const IRIDOLOGY_TAB_SHORT_LABEL = 'Iridology';
++
++export const IRIDOLOGY_SEO_DESCRIPTION =
++  'Educational iridology library — Jensen zone charts, physical/European signs, constitutional typing, and integrated methodology. AI iris photo analysis via Hive Research (Grok vision) with strong disclaimers. Not medical diagnosis.';
+diff --git a/src/lib/oregonPlantMedicine/iridologyDisclaimer.ts b/src/lib/oregonPlantMedicine/iridologyDisclaimer.ts
+new file mode 100644
+index 0000000..d576be7
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyDisclaimer.ts
+@@ -0,0 +1,43 @@
++import { hasStoredDisclaimer, storeDisclaimerAcceptance } from './disclaimerStorage';
++
++export const IRIDOLOGY_DISCLAIMER_VERSION = 'v1';
++
++export const IRIDOLOGY_DISCLAIMER_STORAGE_KEY = 'living_knowledge_iridology_disclaimer_v1';
++
++export const IRIDOLOGY_DISCLAIMER_TITLE = 'Educational iridology only — not medical diagnosis';
++
++export const IRIDOLOGY_DISCLAIMER_SECTIONS = [
++  {
++    heading: 'Not a medical diagnosis',
++    body:
++      'AI iris analysis in AiBhivePlants is for educational exploration of traditional iridology frameworks only. It does not diagnose, treat, cure, or prevent any disease. Iridology is not accepted as validated clinical science by mainstream medicine. Never use iris readings to delay emergency care or replace exams by a licensed physician.',
++  },
++  {
++    heading: 'Photo limitations',
++    body:
++      'Camera photos, lighting, and compression limit what can be seen. AI may miss or misread signs. A clear retake in natural light is often required. Contact lenses, surgery, and eye disease change iris appearance.',
++  },
++  {
++    heading: 'Serious symptoms',
++    body:
++      'Chest pain, stroke signs, severe infection, pregnancy complications, or any urgent symptom requires immediate medical care — not iridology interpretation.',
++  },
++  {
++    heading: 'Hive Research & credits',
++    body:
++      'Photo analysis uses Hive Research (Grok vision) and Bhive Credits unless you are on a local dev or admin-exempt account. Results are probabilistic tendencies in iridology literature, not prescriptions.',
++  },
++  {
++    heading: 'App store & liability',
++    body:
++      'This feature is reference and educational software similar to a wellness encyclopedia. By continuing, you agree to use it at your own risk and hold AiBhive harmless for health decisions based on AI iridology output.',
++  },
++] as const;
++
++export function hasAcceptedIridologyDisclaimer(uid?: string | null): boolean {
++  return hasStoredDisclaimer(IRIDOLOGY_DISCLAIMER_STORAGE_KEY, IRIDOLOGY_DISCLAIMER_VERSION, uid);
++}
++
++export function acceptIridologyDisclaimer(uid?: string | null): void {
++  storeDisclaimerAcceptance(IRIDOLOGY_DISCLAIMER_STORAGE_KEY, IRIDOLOGY_DISCLAIMER_VERSION, uid);
++}
+diff --git a/src/lib/oregonPlantMedicine/iridologyHistoryApi.ts b/src/lib/oregonPlantMedicine/iridologyHistoryApi.ts
+new file mode 100644
+index 0000000..3084176
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyHistoryApi.ts
+@@ -0,0 +1,69 @@
++import type { User } from 'firebase/auth';
++import type { IridologyStructuredResult, PlantChatMessage } from './plantMedicineApi';
++import type { IridologyHistoryListItem, IridologySavedAnalysis } from './iridologyHistoryStorage';
++
++export async function fetchIridologyHistory(user: User): Promise<IridologyHistoryListItem[]> {
++  const token = await user.getIdToken();
++  const res = await fetch('/api/plant-medicine/iridology/history', {
++    headers: { Authorization: `Bearer ${token}` },
++  });
++  const data = (await res.json()) as { analyses?: IridologyHistoryListItem[]; error?: string };
++  if (!res.ok) throw new Error(data.error || 'Could not load history');
++  return Array.isArray(data.analyses) ? data.analyses : [];
++}
++
++export async function fetchIridologyAnalysis(user: User, analysisId: string): Promise<IridologySavedAnalysis> {
++  const token = await user.getIdToken();
++  const res = await fetch(`/api/plant-medicine/iridology/history/${encodeURIComponent(analysisId)}`, {
++    headers: { Authorization: `Bearer ${token}` },
++  });
++  const data = (await res.json()) as { analysis?: IridologySavedAnalysis; error?: string };
++  if (!res.ok || !data.analysis) throw new Error(data.error || 'Analysis not found');
++  return data.analysis;
++}
++
++export async function sendIridologyFollowUpChat(
++  user: User,
++  analysisId: string,
++  opts: { message: string; history?: PlantChatMessage[] },
++): Promise<{ reply: string }> {
++  const token = await user.getIdToken();
++  const res = await fetch(`/api/plant-medicine/iridology/history/${encodeURIComponent(analysisId)}/chat`, {
++    method: 'POST',
++    headers: {
++      Authorization: `Bearer ${token}`,
++      'Content-Type': 'application/json',
++    },
++    body: JSON.stringify({
++      message: opts.message,
++      history: opts.history ?? [],
++    }),
++  });
++  const data = (await res.json()) as { ok?: boolean; reply?: string; error?: string };
++  if (!res.ok || !data.reply) throw new Error(data.error || 'Follow-up chat failed');
++  return { reply: data.reply };
++}
++
++export function buildLocalAnalysisRecord(opts: {
++  id: string;
++  methodology: string;
++  eye: string;
++  notes?: string;
++  reply: string;
++  structured: IridologyStructuredResult;
++  photoPreviewUrls?: string[];
++}): IridologySavedAnalysis {
++  const now = new Date().toISOString();
++  return {
++    id: opts.id,
++    createdAt: now,
++    updatedAt: now,
++    methodology: opts.methodology,
++    eye: opts.eye,
++    notes: opts.notes,
++    reply: opts.reply,
++    structured: opts.structured,
++    chatMessages: [],
++    photoPreviewUrls: opts.photoPreviewUrls,
++  };
++}
+diff --git a/src/lib/oregonPlantMedicine/iridologyHistoryStorage.ts b/src/lib/oregonPlantMedicine/iridologyHistoryStorage.ts
+new file mode 100644
+index 0000000..ac4ba4a
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyHistoryStorage.ts
+@@ -0,0 +1,86 @@
++import type { IridologyStructuredResult, PlantChatMessage } from './plantMedicineApi';
++
++export type IridologySavedAnalysis = {
++  id: string;
++  createdAt: string;
++  updatedAt?: string;
++  methodology: string;
++  eye: string;
++  notes?: string;
++  reply: string;
++  structured: IridologyStructuredResult;
++  chatMessages?: PlantChatMessage[];
++  /** Local-only thumbnail previews (not synced to server). */
++  photoPreviewUrls?: string[];
++};
++
++export type IridologyHistoryListItem = {
++  id: string;
++  createdAt: string;
++  methodology: string;
++  eye: string;
++  photoQuality?: string;
++  constitutionalLabel?: string;
++  summaryLine?: string;
++  chatCount?: number;
++};
++
++const STORAGE_PREFIX = 'lk_iridology_history_v1';
++
++function storageKey(uid: string | null) {
++  return `${STORAGE_PREFIX}_${uid || 'anonymous'}`;
++}
++
++export function loadLocalIridologyHistory(uid: string | null): IridologySavedAnalysis[] {
++  if (typeof localStorage === 'undefined') return [];
++  try {
++    const raw = localStorage.getItem(storageKey(uid));
++    if (!raw) return [];
++    const parsed = JSON.parse(raw) as IridologySavedAnalysis[];
++    return Array.isArray(parsed) ? parsed : [];
++  } catch {
++    return [];
++  }
++}
++
++export function saveLocalIridologyAnalysis(uid: string | null, analysis: IridologySavedAnalysis) {
++  if (typeof localStorage === 'undefined') return;
++  const existing = loadLocalIridologyHistory(uid).filter((a) => a.id !== analysis.id);
++  const next = [analysis, ...existing].slice(0, 30);
++  localStorage.setItem(storageKey(uid), JSON.stringify(next));
++}
++
++export function getLocalIridologyAnalysis(uid: string | null, id: string): IridologySavedAnalysis | null {
++  return loadLocalIridologyHistory(uid).find((a) => a.id === id) ?? null;
++}
++
++export function updateLocalIridologyChat(uid: string | null, id: string, chatMessages: PlantChatMessage[]) {
++  const list = loadLocalIridologyHistory(uid);
++  const idx = list.findIndex((a) => a.id === id);
++  if (idx < 0) return;
++  list[idx] = { ...list[idx], chatMessages, updatedAt: new Date().toISOString() };
++  localStorage.setItem(storageKey(uid), JSON.stringify(list));
++}
++
++export function mergeHistoryLists(
++  remote: IridologyHistoryListItem[],
++  local: IridologySavedAnalysis[],
++): IridologyHistoryListItem[] {
++  const map = new Map<string, IridologyHistoryListItem>();
++  for (const r of remote) map.set(r.id, r);
++  for (const l of local) {
++    if (!map.has(l.id)) {
++      map.set(l.id, {
++        id: l.id,
++        createdAt: l.createdAt,
++        methodology: l.methodology,
++        eye: l.eye,
++        photoQuality: l.structured.photoQuality,
++        constitutionalLabel: l.structured.constitutionalType?.label,
++        summaryLine: l.structured.integratedSummary?.slice(0, 160) || l.reply.slice(0, 160),
++        chatCount: l.chatMessages?.length ?? 0,
++      });
++    }
++  }
++  return [...map.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
++}
+diff --git a/src/lib/oregonPlantMedicine/iridologyLibrary.ts b/src/lib/oregonPlantMedicine/iridologyLibrary.ts
+new file mode 100644
+index 0000000..e01915c
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyLibrary.ts
+@@ -0,0 +1,251 @@
++import type { IridologyCategory, IridologyTopic } from './iridologyTypes';
++import { commonsImage } from './commonsImage';
++
++const W = {
++  eye: commonsImage('Human eye close up.jpg'),
++  iris: commonsImage('Iris recognition eye.jpg'),
++  chart: commonsImage('Iridology chart.jpg'),
++  fibers: commonsImage('Iris fibers.jpg'),
++};
++
++export const IRIDOLOGY_LIBRARY: IridologyTopic[] = [
++  {
++    id: 'integrated-methodology',
++    title: 'Integrated iridology — how schools combine',
++    category: 'methodology',
++    summary:
++      'Integrated iridology cross-checks zone signs, fiber structure, and constitutional typing before stating a tendency. Multiple converging signs raise confidence; single isolated marks stay speculative.',
++    imageUrl: W.chart,
++    imageCredit: 'Iridology chart — Wikimedia Commons',
++    whenPeopleExplore:
++      'After reading conflicting iridology books, or when a single pigment spot seems to “diagnose” everything.',
++    approaches: [
++      'Start with photo quality — blur and glare invalidate fine fiber reading.',
++      'Note iris color and fiber density (constitutional layer) before mapping zones.',
++      'Require two or more independent signs before calling a “tendency” in educational language.',
++      'Label Rayid or personality reads as non-medical if mentioned at all.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Integrated iridology is still not validated clinical science — educational framing only.',
++      'Never skip medical evaluation for symptoms based on iris patterns.',
++    ],
++    sources: [
++      { label: 'IIPA — professional iridology education', url: 'https://www.iridologyassn.org/' },
++    ],
++    deepDive: `Integrated iridology emerged as practitioners noticed that Bernard Jensen’s clock-face zones, European physical signs (lacunae, nerve rings, arcus), and constitutional color typing sometimes pointed in different directions. Integrated teachers train students to treat the iris as layered evidence: first assess whether the photograph is usable, then note global texture and color, then map localized signs to zone charts with explicit uncertainty.
++
++A lacuna in the lung sector alone does not justify strong language about respiratory disease. Integrated practice asks: Is fiber density open or closed? Is there a constitutional lymphatic or biliary pattern? Are there corroborating nerve rings or pigment clusters? Only when multiple independent markers align does the literature support a cautious “tendency” phrase — and even then, mainstream medicine does not accept iridology as diagnosis.
++
++AiBhive’s AI analyzer defaults to integrated methodology for this reason. It is the most conservative educational stance available within iridology’s own pedagogical traditions.`,
++  },
++  {
++    id: 'jensen-zone-chart',
++    title: 'Bernard Jensen zone iridology — clock-face organ map',
++    category: 'zone-chart',
++    summary:
++      'Classic zone iridology maps organ reflex areas on the iris like a clock face: right iris reflects right body side, left iris left side. Used for educational correlation, not clinical proof.',
++    imageUrl: W.chart,
++    imageCredit: 'Iridology chart — Wikimedia Commons',
++    whenPeopleExplore:
++      'Learning the “7–8 o’clock lung sector” references, or comparing right vs left eye charts.',
++    approaches: [
++      'Orient the photo: 12 o’clock is superior (toward forehead), 6 o’clock inferior.',
++      'Right iris → right side zones; left iris → left side (classic Jensen convention).',
++      'Map pigment spots and lacunae to nearest sector with low-confidence language.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Zone charts vary between authors — treat mapping as approximate.',
++      'Chest or abdominal symptoms require medical evaluation, not iris zone reads alone.',
++    ],
++    sources: [
++      { label: 'Bernard Jensen — iridology literature (historical)', url: 'https://en.wikipedia.org/wiki/Iridology' },
++    ],
++    deepDive: `Bernard Jensen (1898–2001) popularized zone iridology in North America, describing the iris as a miniature map of the body arranged radially like a clock. Head and brain zones sit toward 12 o’clock; digestive bands toward 5–6 o’clock; kidney/adrenal sectors near 9 o’clock in many charts. Practitioners locate lacunae, crypts, and pigment deposits and relate them to organ “reflex” areas.
++
++The right-left mirroring rule is foundational: the right iris is read for the right side of the body, the left iris for the left. Bilateral signs may indicate systemic themes in iridology texts, but this remains controversial and unproven in controlled trials. AiBhive presents Jensen zones as historical educational vocabulary — “iridology literature associates this sector with respiratory themes” — never as “you have lung disease.”
++
++Photo orientation errors are common. If the eyelids obscure sectors or the iris is photographed at an angle, zone placement should be withheld. Our AI analysis includes a photo quality gate for this reason.`,
++  },
++  {
++    id: 'physical-european-signs',
++    title: 'Physical / European iridology — fibers, lacunae, rings',
++    category: 'signs-fibers',
++    summary:
++      'European physical iridology emphasizes stromal texture: open vs dense fibers, lacunae, crypts, pigment spots, nerve rings, and arcus senilis as constitutional and terrain markers.',
++    imageUrl: W.fibers,
++    imageCredit: 'Iris detail — Wikimedia Commons',
++    whenPeopleExplore:
++      'Noticing “holes” in the iris, white rings, or brown spots and wondering what iridology texts say about them.',
++    approaches: [
++      'Assess global fiber density before interpreting local pits.',
++      'Lacunae (open pits) vs crypts (closed pits) carry different traditional emphases.',
++      'Nerve rings suggest nervous-system sensitivity themes — not anxiety diagnoses.',
++      'Arcus senilis at the limbus is age-related; cardiovascular themes in texts are speculative.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Pigment spots can be benign nevi — only an ophthalmologist can evaluate pathology.',
++      'Sudden iris changes or vision loss are medical emergencies.',
++    ],
++    sources: [
++      { label: 'Wikipedia — Iridology (controversy overview)', url: 'https://en.wikipedia.org/wiki/Iridology' },
++    ],
++    deepDive: `Physical iridology, strong in German and Eastern European lineages, reads the iris stroma as a record of inherited tendencies and chronic irritation. Open fibers (loosely arranged trabeculae) are classically linked to lymphatic/reactive constitutions; dense fibers to biliary or hematogenic patterns. Lacunae appear as dark pits — open cavities in the stroma — while crypts are deeper closed variants emphasized in some European texts.
++
++Nerve rings (concentric white arcs) are interpreted as markers of autonomic stress or heightened sensitivity — useful language for wellness exploration but not a DSM diagnosis. Pigment spots (rust-brown deposits) are mapped to nearest zones with caution; they may be benign melanin clusters visible to any camera. Arcus senilis, a grey-white ring at the corneal limbus, appears with age and is associated in iridology with cardiovascular “terrain” themes — epidemiology links arcus to lipid metabolism in some populations, but iridology extrapolations remain unproven.
++
++AiBhive’s vision model is prompted to describe only what is visible at photo resolution and to recommend retakes when fiber detail is ambiguous.`,
++  },
++  {
++    id: 'constitutional-types',
++    title: 'Constitutional iris types — lymphatic, biliary, hematogenic',
++    category: 'constitutional',
++    summary:
++      'Classic iridology typing links iris color and fiber texture to broad constitutional tendencies — lymphatic (blue-grey, open), biliary (mixed yellow-brown, dense), hematogenic (brown, dense), neurogenic (nerve rings).',
++    imageUrl: W.eye,
++    imageCredit: 'Human eye — Wikimedia Commons',
++    whenPeopleExplore:
++      'Wondering why two irises look completely different, or what “lymphatic constitution” means in iridology books.',
++    approaches: [
++      'Observe base iris color in daylight — camera white balance skews typing.',
++      'Pair color with fiber density before assigning a type.',
++      'Use types as wellness vocabulary, not destiny or diagnosis.',
++      'Integrated readers treat mixed patterns as common — avoid forced labels.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Constitutional typing is subjective between practitioners.',
++      'Ethnic iris pigmentation varies — avoid stereotyped health claims.',
++    ],
++    sources: [
++      { label: 'Iridology constitutional typing (educational overview)', url: 'https://www.iridologyassn.org/' },
++    ],
++    deepDive: `Constitutional iridology attempts to summarize global iris architecture into a handful of types. The lymphatic type — blue, grey, or blue-grey with open fibers — is associated in texts with mucus congestion, reactive immunity, and sluggish drainage themes. Biliary types show mixed brown-yellow hues with denser fibers and digestive/inflammatory narratives. Hematogenic types feature brown irises with tight structure and metabolic/blood themes. Neurogenic patterns highlight nerve rings, fine radial stress lines, and autonomic sensitivity.
++
++These types function like Ayurvedic doshas or TCM patterns: heuristic maps for education and lifestyle conversation, not lab results. Mixed irises are the norm; forcing a single label violates integrated methodology. AiBhive reports constitutional suggestions with explicit confidence levels and rationale tied to visible color and texture — always paired with disclaimers that genetics, lighting, and photography alter appearance.
++
++When AI confidence is low, the structured JSON omits a firm type and recommends better photos or professional iridology study — not self-diagnosis.`,
++  },
++  {
++    id: 'iris-photo-guide',
++    title: 'How to photograph your iris for AI analysis',
++    category: 'photo-guide',
++    summary:
++      'Natural light, no flash, fill the frame with the iris, hold steady, remove contact lenses, and capture left and right eyes separately for zone comparison.',
++    imageUrl: W.iris,
++    imageCredit: 'Eye close-up — Wikimedia Commons',
++    whenPeopleExplore:
++      'Before uploading to AiBhive iridology analysis, or after a “poor photo quality” retake prompt.',
++    approaches: [
++      'Stand near a window — indirect daylight works best.',
++      'Use rear camera macro if available; pull eyelids gently without distorting the globe.',
++      'One eye per photo unless comparing both deliberately.',
++      'Avoid red-eye reduction flash — it washes out fiber detail.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Never shine lasers or bright LEDs directly into the eye.',
++      'If eyes are painful, red, or vision is changing — see an ophthalmologist, do not photograph for iridology.',
++    ],
++    sources: [],
++    deepDive: `Iridology reads fine stromal detail that consumer phone cameras compress away. AiBhive applies vision-grade compression (forVision mode) but cannot recover blur, glare, or cropped irises. The best results come from indirect daylight: stand sideways to a window, stabilize the phone on both hands, and fill at least 40% of the frame with the iris. Pull the upper eyelid up slightly while looking straight ahead — avoid rolling the eye, which rotates zone orientation.
++
++Contact lenses and recent eye drops create artifacts. Post-LASIK irises may show surgical ring patterns unrelated to iridology “signs.” For bilateral comparison, capture matching angles on left and right eyes separately rather than one wide face photo. If the AI returns photoQuality: poor or populated retakeAdvice, follow it — guessing from bad data contradicts integrated methodology and our safety prompts.`,
++  },
++  {
++    id: 'iridology-safety-limits',
++    title: 'Safety, controversy, and what iridology cannot do',
++    category: 'safety',
++    summary:
++      'Iridology is not validated as clinical diagnostic science. AiBhive provides educational interpretation only — never delay emergency or primary care based on iris photos.',
++    imageUrl: W.eye,
++    imageCredit: 'Human eye — Wikimedia Commons',
++    whenPeopleExplore:
++      'Before first use of AI iris analysis, or after alarming “findings” that cause anxiety.',
++    approaches: [
++      'Treat all AI output as literature-based tendencies with uncertainty.',
++      'Confirm serious concerns with licensed medical providers and ophthalmology when indicated.',
++      'Use iridology alongside — not instead of — conventional screening.',
++      'Re-read disclaimers before sharing results with others.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Controlled trials have not validated iridology for disease detection.',
++      'Urgent symptoms → emergency services, not iris reading.',
++      'Children’s irises change — extra caution with minors.',
++    ],
++    sources: [
++      { label: 'NIH — complementary health overview', url: 'https://www.nccih.nih.gov/' },
++    ],
++    deepDive: `Mainstream medicine classifies iridology as a pseudoscientific diagnostic method: multiple controlled studies have failed to show practitioners can detect diseases from iris photographs at rates better than chance. That does not stop iridology from persisting as a holistic education tradition — but AiBhive must be explicit about the evidentiary gap.
++
++Our AI iridology feature uses Grok vision with strict prompting: educational phrasing only, mandatory uncertainty, photo quality gates, and “see a doctor” escalations for patterns that could reflect real pathology (even when the model should not diagnose). Users must accept a hold-harmless disclaimer before access. Hive Research billing applies unless locally exempt — credits buy computational interpretation, not medical truth.
++
++If you feel frightened by an AI iris report, step back. Note what is explicitly labeled low confidence. Schedule appropriate medical care for symptoms you already have. Iridology is best treated as a lens for curiosity and wellness journaling — not a verdict on your health.`,
++  },
++  {
++    id: 'rayid-personality-read',
++    title: 'Rayid model — personality patterns (non-medical)',
++    category: 'methodology',
++    summary:
++      'Rayid iridology maps iris structure to personality and emotional patterns. AiBhive labels Rayid content as exploratory and non-medical — optional read-only context in “all schools” mode.',
++    imageUrl: W.iris,
++    imageCredit: 'Iris — Wikimedia Commons',
++    whenPeopleExplore:
++      'Curiosity about emotional/personality iridology after seeing Rayid charts online.',
++    approaches: [
++      'Separate Rayid reads from physical health implications entirely.',
++      'Use as reflective journaling prompts, not psychological diagnosis.',
++      'Prefer integrated or physical methodology for wellness-oriented exploration.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'Rayid is not psychotherapy or psychiatric assessment.',
++      'Do not use personality iris reads to justify avoiding mental health care.',
++    ],
++    sources: [],
++    deepDive: `Rayid (sometimes linked to Denny Johnson’s work) interprets iris shapes and patterns as reflections of personality structure — jewels, flowers, streams, and related metaphors. It sits outside medical iridology entirely. Some integrated teachers mention Rayid for client communication; others exclude it.
++
++AiBhive includes Rayid in the knowledge corpus only so the AI does not invent unsupported medical claims from personality frameworks. When methodology is "all", Rayid observations may appear clearly tagged as non-medical personality exploration. Default integrated analysis de-emphasizes Rayid unless the user’s notes request it. This protects users from conflating emotional metaphors with organ zone pathology language.`,
++  },
++  {
++    id: 'left-right-eye-reading',
++    title: 'Left vs right eye — bilateral reading basics',
++    category: 'zone-chart',
++    summary:
++      'Traditional iridology treats each iris as a lateralized map: right iris for right-side body reflexes, left iris for left-side. Bilateral comparison can highlight asymmetry in educational reports.',
++    imageUrl: W.chart,
++    imageCredit: 'Iridology chart — Wikimedia Commons',
++    whenPeopleExplore:
++      'Uploading both eyes, or wondering which eye photo to send first.',
++    approaches: [
++      'Label photos left or right when uploading both.',
++      'Compare symmetric zones only when photo quality matches on both sides.',
++      'Asymmetry in iridology texts may suggest localized themes — state uncertainty.',
++    ],
++    relatedPlantIds: [],
++    safetyWarnings: [
++      'One-sided eye pain or redness — medical evaluation, not iridology.',
++    ],
++    sources: [],
++    deepDive: `Bilateral iris analysis is standard in professional iridology sessions but technically demanding on phones. Each eye must be photographed with the same lighting and magnification for fair comparison. AiBhive accepts one or two attachments per request; when both are provided, the vision model is prompted to note lateralization and avoid merging zones across eyes.
++
++If only one eye is uploaded, analysis proceeds with eye: left|right|unknown in structured JSON. Unknown orientation triggers conservative zone language (“if this is the right iris, sector X…”). Users should specify eye side in the optional notes field when known. Integrated methodology treats conflicting signs between eyes as a reason to lower confidence rather than double the number of alarming tendencies.`,
++  },
++];
++
++export const IRIDOLOGY_CATEGORY_ORDER: IridologyCategory[] = [
++  'methodology',
++  'zone-chart',
++  'constitutional',
++  'signs-fibers',
++  'photo-guide',
++  'safety',
++];
++
++export function matchesIridologyCategory(topic: IridologyTopic, category: IridologyCategory | 'all'): boolean {
++  if (category === 'all') return true;
++  return topic.category === category;
++}
+diff --git a/src/lib/oregonPlantMedicine/iridologyPhotoGuide.ts b/src/lib/oregonPlantMedicine/iridologyPhotoGuide.ts
+new file mode 100644
+index 0000000..785e0fc
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyPhotoGuide.ts
+@@ -0,0 +1,47 @@
++/** Shared copy for iris photo capture UI and camera modal. */
++
++export type IridologyPhotoStep = {
++  title: string;
++  detail: string;
++};
++
++export const IRIDOLOGY_PHOTO_STEPS: IridologyPhotoStep[] = [
++  {
++    title: 'Find soft daylight',
++    detail: 'Stand near a window with indirect light. Avoid direct sun, flash, and overhead LEDs that create glare on the cornea.',
++  },
++  {
++    title: 'Remove contacts & glasses',
++    detail: 'Contact lenses and smudged glasses add artifacts. Take glasses off unless you need them to see the screen.',
++  },
++  {
++    title: 'Fill the frame with the iris',
++    detail: 'Pull the upper eyelid up gently. The colored iris should cover most of the photo — not your whole face.',
++  },
++  {
++    title: 'Hold steady for 2 seconds',
++    detail: 'Blur hides fiber detail. Rest your phone on something stable or use both hands before tapping capture.',
++  },
++  {
++    title: 'One eye at a time',
++    detail: 'Close the other eye. For left/right comparison, repeat with matching light and distance.',
++  },
++];
++
++export const IRIDOLOGY_PHOTO_DOS = [
++  'Use the front camera or mirror + rear camera in bright light',
++  'Keep 4–8 inches (10–20 cm) from the eye',
++  'Look straight ahead — do not roll the eye',
++  'Wipe the lens clean before shooting',
++];
++
++export const IRIDOLOGY_PHOTO_DONTS = [
++  'No flash — it washes out iris fibers',
++  'No filters or beauty mode',
++  'No extreme zoom (digital zoom blurs detail)',
++  'Do not photograph if the eye is red, painful, or vision is changing — see a doctor',
++];
++
++export function iridologyEyeCaptureLabel(eye: 'left' | 'right'): string {
++  return eye === 'left' ? 'Left eye — close your right eye' : 'Right eye — close your left eye';
++}
+diff --git a/src/lib/oregonPlantMedicine/iridologyTypes.ts b/src/lib/oregonPlantMedicine/iridologyTypes.ts
+new file mode 100644
+index 0000000..3c489b7
+--- /dev/null
++++ b/src/lib/oregonPlantMedicine/iridologyTypes.ts
+@@ -0,0 +1,31 @@
++import type { ResearchTopicBase } from './topicLibraryTypes';
++
++export type IridologyMethodology = 'integrated' | 'jensen' | 'physical' | 'all';
++
++export type IridologyCategory =
++  | 'methodology'
++  | 'zone-chart'
++  | 'constitutional'
++  | 'signs-fibers'
++  | 'photo-guide'
++  | 'safety';
++
++export type IridologyTopic = ResearchTopicBase & {
++  category: IridologyCategory;
++};
++
++export const IRIDOLOGY_CATEGORY_LABELS: Record<IridologyCategory, string> = {
++  methodology: 'Methodologies',
++  'zone-chart': 'Zone charts',
++  constitutional: 'Constitutional types',
++  'signs-fibers': 'Signs & fiber patterns',
++  'photo-guide': 'Photo capture guide',
++  safety: 'Safety & limits',
++};
++
++export const IRIDOLOGY_METHODOLOGY_LABELS: Record<IridologyMethodology, string> = {
++  integrated: 'Integrated (recommended)',
++  jensen: 'Jensen zone chart',
++  physical: 'Physical / European',
++  all: 'All schools (compare)',
++};
+diff --git a/src/lib/oregonPlantMedicine/livingKnowledgeAsk.ts b/src/lib/oregonPlantMedicine/livingKnowledgeAsk.ts
+index 76fba36..861cc23 100644
+--- a/src/lib/oregonPlantMedicine/livingKnowledgeAsk.ts
++++ b/src/lib/oregonPlantMedicine/livingKnowledgeAsk.ts
+@@ -16,6 +16,8 @@ export function livingKnowledgeScopeForTab(tab: string): LivingKnowledgeScope {
+       return 'herbs';
+     case 'supplements':
+       return 'supplements';
++    case 'iridology':
++      return 'iridology';
+     default:
+       return 'all';
+   }
+diff --git a/src/lib/oregonPlantMedicine/livingKnowledgeRag.ts b/src/lib/oregonPlantMedicine/livingKnowledgeRag.ts
+index 7e06382..2ac2fb4 100644
+--- a/src/lib/oregonPlantMedicine/livingKnowledgeRag.ts
++++ b/src/lib/oregonPlantMedicine/livingKnowledgeRag.ts
+@@ -9,6 +9,7 @@ import { HOLISTIC_LIBRARY } from './holisticLibrary';
+ import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
+ import { PLANT_LIBRARY } from './plantLibrary';
+ import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
++import { IRIDOLOGY_LIBRARY } from './iridologyLibrary';
+ 
+ export type LivingKnowledgeScope =
+   | 'all'
+@@ -18,7 +19,8 @@ export type LivingKnowledgeScope =
+   | 'hypnosis'
+   | 'animal-health'
+   | 'herbs'
+-  | 'supplements';
++  | 'supplements'
++  | 'iridology';
+ 
+ export type LivingKnowledgeDocKind = 'plant' | 'topic' | 'essay';
+ 
+@@ -35,7 +37,7 @@ export type LivingKnowledgeDoc = {
+   /** Open plant detail or research topic */
+   plantId?: string;
+   topicId?: string;
+-  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements';
++  topicLibrary?: 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
+ };
+ 
+ export type LivingKnowledgeHit = LivingKnowledgeDoc & {
+@@ -218,6 +220,22 @@ function buildIndex(): LivingKnowledgeDoc[] {
+     });
+   }
+ 
++  for (const t of IRIDOLOGY_LIBRARY) {
++    docs.push({
++      id: `iridology:${t.id}`,
++      kind: 'topic',
++      library: 'iridology',
++      title: t.title,
++      subtitle: t.category,
++      summary: t.summary,
++      body: [t.summary, t.deepDive, t.whenPeopleExplore, ...(t.approaches ?? [])].join('\n'),
++      safety: t.safetyWarnings ?? [],
++      tags: [t.category, ...t.relatedPlantIds],
++      topicId: t.id,
++      topicLibrary: 'iridology',
++    });
++  }
++
+   for (const e of FEATURED_ESSAYS) {
+     const library: LivingKnowledgeScope =
+       e.page === 'plants-home'
+@@ -491,6 +509,8 @@ export function buildLivingKnowledgeClarifier(scope: LivingKnowledgeScope, text:
+       'For herbs: Western, Chinese (TCM), or Ayurvedic? Name the herb or what you hope it may support (sleep, stress, digestion, immunity) — and note any medications you take.',
+     supplements:
+       'For supplements: which nutrient or product (vitamin D, magnesium, omega-3, probiotic)? Are you asking about dosing, evidence, or drug interactions?',
++    iridology:
++      'For iridology: are you exploring zone charts, constitutional types, fiber signs, or photo capture? This is educational only — not medical diagnosis.',
+   };
+   const base = probes[scope] || probes.all;
+   if (/id|identify|look|mushroom|plant/i.test(text)) {
+diff --git a/src/lib/oregonPlantMedicine/plantMedicineApi.ts b/src/lib/oregonPlantMedicine/plantMedicineApi.ts
+index 485c643..e1a8de8 100644
+--- a/src/lib/oregonPlantMedicine/plantMedicineApi.ts
++++ b/src/lib/oregonPlantMedicine/plantMedicineApi.ts
+@@ -220,7 +220,7 @@ export function deletePlantPost(user: User, postId: string): Promise<void> {
+   });
+ }
+ 
+-export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements';
++export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
+ 
+ export async function fetchTopicPosts(
+   library: TopicLibraryId,
+@@ -573,6 +573,106 @@ export async function sendPlantPhotoIdentify(
+   };
+ }
+ 
++export type IridologyMethodology = 'integrated' | 'jensen' | 'physical' | 'all';
++
++export type IridologyEyeHint = 'left' | 'right' | 'both' | 'unknown';
++
++export type IridologyObservation = {
++  zone: string;
++  sign: string;
++  meaning: string;
++  confidence: 'high' | 'medium' | 'low';
++  sources: string[];
++};
++
++export type IridologyStructuredResult = {
++  photoQuality: 'good' | 'fair' | 'poor';
++  methodology: IridologyMethodology | 'all';
++  eye: IridologyEyeHint;
++  constitutionalType: {
++    label: string;
++    confidence: 'high' | 'medium' | 'low';
++    rationale: string;
++  } | null;
++  observations: IridologyObservation[];
++  wellnessTendencies: string[];
++  cautions: string[];
++  retakeAdvice: string | null;
++  /** In-depth report sections from vision model */
++  photoAssessment?: string;
++  globalOverview?: string;
++  fiberAndTexture?: string;
++  integratedSummary?: string;
++  nextSteps?: string[];
++};
++
++/** Paid Bhive Credits iris photo analysis — educational iridology only. */
++export async function sendIridologyAnalyze(
++  user: User,
++  opts: {
++    methodology?: IridologyMethodology | 'all';
++    eye?: IridologyEyeHint;
++    notes?: string;
++    attachment?: PlantPhotoAttachment;
++    attachments?: PlantPhotoAttachment[];
++  },
++): Promise<{
++  reply: string;
++  structured: IridologyStructuredResult;
++  analysisId?: string | null;
++  chargedUsd?: number;
++  creditBalanceUsd?: number;
++}> {
++  const token = await user.getIdToken();
++  const res = await fetch('/api/plant-medicine/iridology/analyze', {
++    method: 'POST',
++    headers: {
++      Authorization: `Bearer ${token}`,
++      'Content-Type': 'application/json',
++    },
++    body: JSON.stringify({
++      methodology: opts.methodology || 'integrated',
++      eye: opts.eye || 'unknown',
++      notes: opts.notes || '',
++      attachment: opts.attachment
++        ? {
++            base64: opts.attachment.base64,
++            mimeType: opts.attachment.mimeType || 'image/jpeg',
++          }
++        : undefined,
++      attachments: opts.attachments?.map((a) => ({
++        base64: a.base64,
++        mimeType: a.mimeType || 'image/jpeg',
++      })),
++    }),
++  });
++  const data = (await res.json()) as {
++    ok?: boolean;
++    reply?: string;
++    structured?: IridologyStructuredResult;
++    analysisId?: string | null;
++    error?: string;
++    needPayment?: boolean;
++    amountUsd?: number;
++    chargedUsd?: number;
++    account?: { creditBalanceUsd?: number };
++  };
++
++  if (res.status === 401) throw new Error(data.error || 'Sign in for iris photo analysis');
++  if (res.status === 402 || data.needPayment) {
++    throw new PlantCreditsError(data.error || 'Hive credits depleted', data.amountUsd);
++  }
++  if (!res.ok || !data.reply || !data.structured) throw new Error(data.error || 'Iridology analyze failed');
++
++  return {
++    reply: data.reply,
++    structured: data.structured,
++    analysisId: data.analysisId ?? null,
++    chargedUsd: data.chargedUsd,
++    creditBalanceUsd: data.account?.creditBalanceUsd,
++  };
++}
++
+ export async function fileToPlantPhotoAttachment(
+   file: File,
+   opts?: { forVision?: boolean },
+diff --git a/src/lib/oregonPlantMedicine/siteSearch.ts b/src/lib/oregonPlantMedicine/siteSearch.ts
+index 5702a39..a8f1d19 100644
+--- a/src/lib/oregonPlantMedicine/siteSearch.ts
++++ b/src/lib/oregonPlantMedicine/siteSearch.ts
+@@ -5,6 +5,7 @@ import { HOLISTIC_LIBRARY } from './holisticLibrary';
+ import { HYPNOSIS_ENERGY_LIBRARY } from './hypnosisEnergyLibrary';
+ import { PLANT_LIBRARY } from './plantLibrary';
+ import { SUPPLEMENTS_LIBRARY } from './supplementsLibrary';
++import { IRIDOLOGY_LIBRARY } from './iridologyLibrary';
+ 
+ export type SiteSearchResultKind =
+   | 'plant'
+@@ -13,6 +14,7 @@ export type SiteSearchResultKind =
+   | 'animal-health'
+   | 'herbs'
+   | 'supplements'
++  | 'iridology'
+   | 'essay'
+   | 'tab';
+ 
+@@ -21,7 +23,7 @@ export type SiteSearchResult = {
+   kind: SiteSearchResultKind;
+   title: string;
+   subtitle: string;
+-  tab: 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'community' | 'home';
++  tab: 'plants' | 'holistic' | 'hypnosis' | 'animal-health' | 'herbs' | 'supplements' | 'iridology' | 'community' | 'home';
+   haystack: string;
+ };
+ 
+@@ -113,6 +115,17 @@ export function buildSiteSearchIndex(): SiteSearchResult[] {
+     });
+   }
+ 
++  for (const t of IRIDOLOGY_LIBRARY) {
++    results.push({
++      id: t.id,
++      kind: 'iridology',
++      title: t.title,
++      subtitle: 'AI Iridology',
++      tab: 'iridology',
++      haystack: [t.title, t.summary, t.deepDive, t.whenPeopleExplore, ...t.approaches].join(' '),
++    });
++  }
++
+   for (const e of FEATURED_ESSAYS) {
+     results.push({
+       id: e.id,
+diff --git a/src/lib/oregonPlantMedicine/topicLibraryTypes.ts b/src/lib/oregonPlantMedicine/topicLibraryTypes.ts
+index 28ce295..a128f6d 100644
+--- a/src/lib/oregonPlantMedicine/topicLibraryTypes.ts
++++ b/src/lib/oregonPlantMedicine/topicLibraryTypes.ts
+@@ -1,7 +1,7 @@
+ import type { ExternalLink } from './types';
+ 
+ /** Research libraries that support community posts and upvotes. */
+-export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements';
++export type TopicLibraryId = 'hypnosis' | 'holistic' | 'animal-health' | 'herbs' | 'supplements' | 'iridology';
+ 
+ export type ResearchTopicBase = {
+   id: string;
+diff --git a/src/pages/plants/IridologyPage.tsx b/src/pages/plants/IridologyPage.tsx
+new file mode 100644
+index 0000000..e8b00ae
+--- /dev/null
++++ b/src/pages/plants/IridologyPage.tsx
+@@ -0,0 +1,29 @@
++import { SEO } from '../../components/SEO';
++import OregonPlantMedicineWebApp from '../../components/hive-apps/OregonPlantMedicineWebApp';
++import {
++  AIBHIVE_PLANTS_APP_NAME,
++  IRIDOLOGY_PATH,
++  IRIDOLOGY_SEO_DESCRIPTION,
++  IRIDOLOGY_TAB_LABEL,
++  LIVING_KNOWLEDGE_SEO_KEYWORDS,
++} from '../../lib/oregonPlantMedicine/branding';
++import { plantsTopicPageJsonLd } from '../../lib/oregonPlantMedicine/plantsSeo';
++
++/** Canonical URL: aibhive.com/plants/iridology */
++export default function IridologyPage() {
++  return (
++    <div className="min-h-screen">
++      <SEO
++        title={`${IRIDOLOGY_TAB_LABEL} | ${AIBHIVE_PLANTS_APP_NAME}`}
++        description={IRIDOLOGY_SEO_DESCRIPTION}
++        keywords={`iridology, iris analysis, Jensen zone chart, constitutional iris, ${LIVING_KNOWLEDGE_SEO_KEYWORDS}`}
++        jsonLd={plantsTopicPageJsonLd({
++          name: IRIDOLOGY_TAB_LABEL,
++          description: IRIDOLOGY_SEO_DESCRIPTION,
++          path: IRIDOLOGY_PATH,
++        })}
++      />
++      <OregonPlantMedicineWebApp expanded initialTab="iridology" />
++    </div>
++  );
++}
