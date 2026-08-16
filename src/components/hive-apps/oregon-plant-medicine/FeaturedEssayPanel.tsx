@@ -318,6 +318,8 @@ type Props = {
   onAskAi?: (ctx: AskAiContext) => void;
   startOpen?: boolean;
   onDetailClose?: () => void;
+  /** When true, skip the grid card and only render the detail modal (hero layouts). */
+  hideCard?: boolean;
 };
 
 /** Large featured essay card + detail modal for Living Knowledge pages. */
@@ -331,12 +333,14 @@ export default function FeaturedEssayPanel({
   onAskAi,
   startOpen = false,
   onDetailClose,
+  hideCard = false,
 }: Props) {
   const [open, setOpen] = useState(startOpen);
   const theme = ACCENT[essay.accent];
 
   return (
     <>
+      {hideCard ? null : (
       <article
         role="button"
         tabIndex={0}
@@ -399,6 +403,7 @@ export default function FeaturedEssayPanel({
           </div>
         </div>
       </article>
+      )}
 
       {open ? (
         <FeaturedEssayDetail

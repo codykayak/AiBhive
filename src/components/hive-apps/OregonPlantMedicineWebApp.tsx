@@ -42,7 +42,6 @@ import AskAiBhivePanel, { type AskAiContext } from './oregon-plant-medicine/AskA
 import PostEngagementBar from './oregon-plant-medicine/PostEngagementBar';
 import LivingKnowledgeSiteSearch from './oregon-plant-medicine/LivingKnowledgeSiteSearch';
 import CreateCommunityPostModal from './oregon-plant-medicine/CreateCommunityPostModal';
-import { interleaveFeaturedTile } from './oregon-plant-medicine/gridFeaturedInsert';
 import RegionalOfflinePackButton from './oregon-plant-medicine/RegionalOfflinePackButton';
 import OregonPlantMedicineHero from './oregon-plant-medicine/OregonPlantMedicineHero';
 import ContributeModal from './oregon-plant-medicine/ContributeModal';
@@ -67,7 +66,7 @@ import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import LivingKnowledgeAppBar from './oregon-plant-medicine/LivingKnowledgeAppBar';
-import GridSectionVideo from './oregon-plant-medicine/GridSectionVideo';
+import LibraryFeaturedHero from './oregon-plant-medicine/LibraryFeaturedHero';
 import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
 import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
@@ -859,7 +858,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
     });
   }, [query, region, favoritesOnly, favorites]);
 
-  const ediblesFeaturedEssay = getFeaturedEssay('edibles');
+  const plantsFeaturedEssay = getFeaturedEssay('plants-home');
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -913,6 +912,9 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
           {plant.scientificName}
         </p>
         <h3 className="font-bold text-white mt-0.5">{plant.commonName}</h3>
+        <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
+          {plant.edibleNotes || plant.medicinalNotes || plant.identification}
+        </p>
         <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
           <div className="flex flex-wrap items-center gap-1.5">
             {variant === 'edibles' && plant.category === 'mushroom' ? (
@@ -1224,6 +1226,19 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
               <RegionalOfflinePackButton region={region} />
             </div>
 
+            {plantsFeaturedEssay ? (
+              <LibraryFeaturedHero
+                video={SECTION_VIDEOS.edibles}
+                essay={plantsFeaturedEssay}
+                videoAccentClass="text-lime-300"
+                videoBorderClass="border-lime-500/35"
+                onOpenPlant={(plant) => setSelected(plant)}
+                user={user}
+                onSignIn={() => void handleSignIn()}
+                onAskAi={openAskAi}
+              />
+            ) : null}
+
             <p className="text-xs text-slate-500 mb-4">{filtered.length} plants in library</p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
@@ -1246,24 +1261,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
             </p>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <GridSectionVideo
-                video={SECTION_VIDEOS.edibles}
-                accentClass="text-lime-300"
-                borderClass="border-lime-500/35 hover:border-lime-500/50"
-              />
-              {interleaveFeaturedTile(
-                edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles')),
-                ediblesFeaturedEssay ? (
-                  <FeaturedEssayPanel
-                    key="edibles-featured-essay"
-                    essay={ediblesFeaturedEssay}
-                    onOpenPlant={(plant) => setSelected(plant)}
-                    user={user}
-                    onSignIn={() => void handleSignIn()}
-                    onAskAi={openAskAi}
-                  />
-                ) : null,
-              )}
+              {edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles'))}
             </div>
           </>
         ) : null}

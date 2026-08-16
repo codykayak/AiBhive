@@ -54,6 +54,13 @@ export const SECTION_VIDEOS = {
       'Past-life regression, clinical hypnotherapy, and energy-work overviews — mind-body approaches for research and exploration. Not licensed therapy.',
     page: 'Hypnosis & Energy',
   },
+  iridology: {
+    sources: videoSources('ai-iridology-aibhive'),
+    title: 'AI Iridology on AiBhive',
+    caption:
+      'Capture your iris, run Grok vision analysis, and explore Jensen zones, fiber signs, and constitutional typing — educational wellness research with saved reports and follow-up chat.',
+    page: 'AI Iridology',
+  },
 } as const satisfies Record<string, SectionVideo>;
 
 export type SectionVideoKey = keyof typeof SECTION_VIDEOS;

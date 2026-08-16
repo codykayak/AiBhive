@@ -770,29 +770,23 @@ Kitchen herbs / oils from social media | Mostly noise for OA | Avoid unsupervise
   {
     id: 'ai-iridology-educational-guide',
     page: 'iridology',
-    title: 'AI Iridology on AiBhive — How Grok Vision Reads Your Iris (Educational Only)',
+    title: 'AI Iridology on AiBhive — Grok Vision Iris Analysis',
     categoryLabel: 'Featured · AI Iridology',
     accent: 'violet',
     imageUrl: '/oregon-plant-medicine/iridology/ai-iridology-featured.svg',
     imageCredit: 'AiBhive Living Knowledge — AI iridology hero illustration',
     summary:
-      'A featured guide to AiBhive’s AI Iridology section: how integrated methodology works, what Grok vision actually analyzes, how to capture a usable iris photo, what Bhive Credits buy, and why this is wellness education — not a medical diagnosis.',
+      'Upload a clear iris photo, pick integrated methodology, and get a structured Grok vision report — zones, fiber patterns, constitutional notes, saved history, and follow-up chat. Educational wellness research only.',
     whenPeopleExplore:
-      'First visit to AI Iridology, after an alarming AI report, or when comparing Jensen zones vs European physical signs vs constitutional typing.',
+      'First visit to AI Iridology, or when comparing Jensen zones vs European physical signs vs constitutional typing.',
     approaches: [
-      'Accept the disclaimer — iridology is controversial and unproven as clinical science.',
       'Capture one eye at a time in indirect window light using the in-app camera guide.',
       'Choose integrated methodology for the most conservative educational read.',
       'Save your report and use follow-up chat to ask about specific zones or fiber patterns.',
-      'Escalate real symptoms to an ophthalmologist or primary care — never only the iris.',
     ],
     relatedPlantIds: [],
     safetyWarnings: [
-      'Controlled trials have not validated iridology for disease detection.',
-      'Sudden vision loss, eye pain, flashes, or floaters → urgent medical care, not iris AI.',
-      'Pigment spots may be benign nevi — only an eye doctor can evaluate pathology.',
-      'Children’s irises change — extra caution and parental supervision for minors.',
-      'Bhive Credits buy computational interpretation, not medical truth.',
+      'Not medical diagnosis — see an eye doctor for symptoms or urgent vision changes.',
     ],
     videoLinks: [],
     sources: [
