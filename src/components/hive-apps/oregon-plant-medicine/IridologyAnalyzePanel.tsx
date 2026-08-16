@@ -1,10 +1,15 @@
 import type { User } from 'firebase/auth';
 import { useRef, useState } from 'react';
-import { AlertTriangle, Camera, Eye, ImagePlus, Loader2, Sparkles } from 'lucide-react';
+import { AlertTriangle, Camera, ChevronDown, ChevronUp, Eye, ImagePlus, Loader2, Sparkles } from 'lucide-react';
 import {
   IRIDOLOGY_METHODOLOGY_LABELS,
   type IridologyMethodology,
 } from '../../../lib/oregonPlantMedicine/iridologyTypes';
+import {
+  IRIDOLOGY_PHOTO_DONTS,
+  IRIDOLOGY_PHOTO_DOS,
+  IRIDOLOGY_PHOTO_STEPS,
+} from '../../../lib/oregonPlantMedicine/iridologyPhotoGuide';
 import {
   PlantCreditsError,
   filesToVisionAttachments,
@@ -15,6 +20,7 @@ import {
 } from '../../../lib/oregonPlantMedicine/plantMedicineApi';
 import { startLivingKnowledgeCreditsCheckout } from '../../../lib/oregonPlantMedicine/plantMedicineCredits';
 import { HIVE_RESEARCH_LABEL, HIVE_RESEARCH_POWERED_BY } from '../../../lib/oregonPlantMedicine/branding';
+import IridologyCameraModal from './IridologyCameraModal';
 import IridologyResults from './IridologyResults';
 
 type Props = {
@@ -26,8 +32,8 @@ type EyeMode = 'left' | 'right' | 'both';
 
 export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const [pickSlot, setPickSlot] = useState<'left' | 'right' | 'auto'>('auto');
+  const [pickSlot, setPickSlot] = useState<'left' | 'right'>('left');
+  const [cameraSlot, setCameraSlot] = useState<'left' | 'right' | null>(null);
   const [methodology, setMethodology] = useState<IridologyMethodology>('integrated');
   const [eyeMode, setEyeMode] = useState<EyeMode>('left');
   const [notes, setNotes] = useState('');
@@ -41,10 +47,18 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
   const [structured, setStructured] = useState<IridologyStructuredResult | null>(null);
   const [chargedUsd, setChargedUsd] = useState<number | undefined>();
   const [creditBalanceUsd, setCreditBalanceUsd] = useState<number | undefined>();
+  const [guideOpen, setGuideOpen] = useState(true);
 
   const maxPhotos = eyeMode === 'both' ? 2 : 1;
 
-  const onPickFiles = async (fileList: FileList | null, slot: 'left' | 'right' | 'auto') => {
+  const assignPhoto = (slot: 'left' | 'right', photo: PlantPhotoAttachment) => {
+    if (slot === 'left') setLeftPhoto(photo);
+    else setRightPhoto(photo);
+    setError('');
+    setCreditsNeeded(false);
+  };
+
+  const onPickFiles = async (fileList: FileList | null, slot: 'left' | 'right') => {
     if (!fileList?.length) return;
     try {
       const batch = await filesToVisionAttachments(Array.from(fileList).slice(0, 1));
@@ -52,14 +66,7 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
         setError('Please choose an image file (JPEG, PNG, or HEIC).');
         return;
       }
-      const photo = batch[0];
-      if (slot === 'left' || (slot === 'auto' && eyeMode !== 'right')) {
-        setLeftPhoto(photo);
-      } else {
-        setRightPhoto(photo);
-      }
-      setError('');
-      setCreditsNeeded(false);
+      assignPhoto(slot, batch[0]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not read photo');
     }
@@ -92,14 +99,15 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
       attachments.push(leftPhoto);
     } else if (eyeMode === 'right' && rightPhoto) {
       attachments.push(rightPhoto);
-    } else if (leftPhoto) {
-      attachments.push(leftPhoto);
-    } else if (rightPhoto) {
-      attachments.push(rightPhoto);
     }
 
     if (!attachments.length) {
-      setError('Add at least one iris photo.');
+      setError('Take or upload at least one clear iris photo using the camera above.');
+      return;
+    }
+
+    if (eyeMode === 'both' && attachments.length < 2) {
+      setError('Both mode needs a left and right eye photo — capture each eye separately.');
       return;
     }
 
@@ -136,6 +144,10 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
     }
   };
 
+  const openCamera = (slot: 'left' | 'right') => {
+    setCameraSlot(slot);
+  };
+
   return (
     <section className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 via-slate-950/80 to-slate-950 p-4 sm:p-5 mb-6">
       <div className="flex items-start gap-3 mb-4">
@@ -151,11 +163,59 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
         </div>
       </div>
 
+      <div className="rounded-xl border border-indigo-500/25 bg-indigo-500/5 mb-4 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setGuideOpen((o) => !o)}
+          className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-indigo-500/10"
+        >
+          <span className="text-sm font-bold text-indigo-100 flex items-center gap-2">
+            <Camera className="w-4 h-4 text-indigo-300" />
+            How to take a clear iris photo
+          </span>
+          {guideOpen ? <ChevronUp className="w-4 h-4 text-indigo-300" /> : <ChevronDown className="w-4 h-4 text-indigo-300" />}
+        </button>
+        {guideOpen ? (
+          <div className="px-4 pb-4 space-y-3 border-t border-indigo-500/15">
+            <ol className="mt-3 space-y-2">
+              {IRIDOLOGY_PHOTO_STEPS.map((step, i) => (
+                <li key={step.title} className="flex gap-2 text-xs text-slate-300 leading-relaxed">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-200 font-bold flex items-center justify-center text-[10px]">
+                    {i + 1}
+                  </span>
+                  <span>
+                    <strong className="text-white">{step.title}.</strong> {step.detail}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div className="grid sm:grid-cols-2 gap-3 text-[11px]">
+              <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-2.5">
+                <p className="font-bold text-emerald-300 mb-1">Do</p>
+                <ul className="text-emerald-100/90 space-y-0.5">
+                  {IRIDOLOGY_PHOTO_DOS.map((t) => (
+                    <li key={t}>✓ {t}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-2.5">
+                <p className="font-bold text-rose-300 mb-1">Avoid</p>
+                <ul className="text-rose-100/85 space-y-0.5">
+                  {IRIDOLOGY_PHOTO_DONTS.map((t) => (
+                    <li key={t}>✗ {t}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
       <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3 text-xs text-amber-100/90 mb-4 flex gap-2">
         <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
         <span>
-          Use natural light, no flash, fill the frame with the iris. Remove contact lenses if possible. Capture left and
-          right eyes separately when comparing zones.
+          Tap <strong className="text-amber-100">Take iris photo</strong> to open the live camera with an on-screen iris
+          guide. Blurry or partial photos produce limited reports — retake if quality is poor.
         </span>
       </div>
 
@@ -202,13 +262,10 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
             label={eyeMode === 'both' ? 'Left eye' : 'Iris photo'}
             photo={leftPhoto}
             onClear={() => setLeftPhoto(null)}
+            onTakePhoto={() => openCamera('left')}
             onGallery={() => {
               setPickSlot('left');
               fileRef.current?.click();
-            }}
-            onCamera={() => {
-              setPickSlot('left');
-              cameraRef.current?.click();
             }}
           />
         )}
@@ -217,13 +274,10 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
             label={eyeMode === 'both' ? 'Right eye' : 'Iris photo'}
             photo={rightPhoto}
             onClear={() => setRightPhoto(null)}
+            onTakePhoto={() => openCamera('right')}
             onGallery={() => {
               setPickSlot('right');
               fileRef.current?.click();
-            }}
-            onCamera={() => {
-              setPickSlot('right');
-              cameraRef.current?.click();
             }}
           />
         )}
@@ -235,41 +289,8 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
         accept="image/*"
         className="hidden"
         onChange={(e) => {
-          const slot =
-            pickSlot === 'auto'
-              ? eyeMode === 'right'
-                ? 'right'
-                : eyeMode === 'both' && !leftPhoto
-                  ? 'left'
-                  : eyeMode === 'both' && leftPhoto && !rightPhoto
-                    ? 'right'
-                    : 'auto'
-              : pickSlot;
-          void onPickFiles(e.target.files, slot);
+          void onPickFiles(e.target.files, pickSlot);
           e.target.value = '';
-          setPickSlot('auto');
-        }}
-      />
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          const slot =
-            pickSlot === 'auto'
-              ? eyeMode === 'right'
-                ? 'right'
-                : eyeMode === 'both' && !leftPhoto
-                  ? 'left'
-                  : eyeMode === 'both' && leftPhoto && !rightPhoto
-                    ? 'right'
-                    : 'auto'
-              : pickSlot;
-          void onPickFiles(e.target.files, slot);
-          e.target.value = '';
-          setPickSlot('auto');
         }}
       />
 
@@ -279,7 +300,7 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
-          placeholder="e.g. natural window light, no contacts"
+          placeholder="e.g. window light, no contacts, which eye feels easier to photograph"
           className="mt-1 w-full rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-white focus:border-indigo-500/50 resize-none"
         />
       </label>
@@ -304,7 +325,7 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
         className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-sm"
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-        Analyze iris
+        {busy ? 'Analyzing iris…' : 'Analyze iris'}
       </button>
 
       {structured && reply ? (
@@ -322,6 +343,14 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
       <p className="text-[10px] text-slate-500 mt-4">
         Up to {maxPhotos} photo{maxPhotos > 1 ? 's' : ''} per request. Uses Bhive Credits unless admin-exempt.
       </p>
+
+      {cameraSlot ? (
+        <IridologyCameraModal
+          eye={cameraSlot}
+          onCapture={(photo) => assignPhoto(cameraSlot, photo)}
+          onClose={() => setCameraSlot(null)}
+        />
+      ) : null}
     </section>
   );
 }
@@ -330,44 +359,57 @@ function PhotoSlot({
   label,
   photo,
   onClear,
+  onTakePhoto,
   onGallery,
-  onCamera,
 }: {
   label: string;
   photo: PlantPhotoAttachment | null;
   onClear: () => void;
+  onTakePhoto: () => void;
   onGallery: () => void;
-  onCamera: () => void;
 }) {
   return (
     <div className="rounded-xl border border-dashed border-slate-600 bg-slate-900/40 p-3">
       <p className="text-xs font-bold text-slate-300 mb-2">{label}</p>
       {photo?.previewUrl ? (
         <div className="relative mb-2">
-          <img src={photo.previewUrl} alt="" className="w-full h-36 object-cover rounded-lg border border-slate-700" />
-          <button
-            type="button"
-            onClick={onClear}
-            className="absolute top-2 right-2 text-[10px] font-bold bg-black/70 px-2 py-1 rounded text-white"
-          >
-            Remove
-          </button>
+          <img
+            src={photo.previewUrl}
+            alt={`${label} preview`}
+            className="w-full h-40 object-cover rounded-lg border border-slate-700"
+          />
+          <div className="absolute bottom-2 left-2 flex gap-2">
+            <button
+              type="button"
+              onClick={onTakePhoto}
+              className="text-[10px] font-bold bg-indigo-600/90 px-2 py-1 rounded text-white"
+            >
+              Retake
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-[10px] font-bold bg-black/70 px-2 py-1 rounded text-white"
+            >
+              Remove
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <button
             type="button"
-            onClick={onCamera}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-indigo-500/30 text-indigo-200 text-xs font-bold hover:bg-indigo-500/10"
+            onClick={onTakePhoto}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-lg border border-indigo-500/40 bg-indigo-600/20 text-indigo-100 text-sm font-bold hover:bg-indigo-600/30"
           >
-            <Camera className="w-4 h-4" /> Camera
+            <Camera className="w-5 h-5" /> Take iris photo
           </button>
           <button
             type="button"
             onClick={onGallery}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-slate-600 text-slate-300 text-xs font-bold hover:bg-slate-800"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-slate-600 text-slate-300 text-xs font-bold hover:bg-slate-800"
           >
-            <ImagePlus className="w-4 h-4" /> Gallery
+            <ImagePlus className="w-4 h-4" /> Choose from gallery
           </button>
         </div>
       )}

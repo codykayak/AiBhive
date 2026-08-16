@@ -69,13 +69,29 @@ STRICT RULES:
 - Urgent symptoms or serious patterns → cautions must say seek licensed medical / emergency care, not iris reading.
 - Never state "you have disease X".
 
-Return prose for humans PLUS structured JSON wrapped exactly like:
+PROSE REPORT (required before JSON — educational, in-depth):
+Write 5–8 sections with markdown headings exactly as shown when photoQuality is good or fair; if poor, still write Photo assessment + Retake guidance (shorter):
+## Photo assessment
+## Global iris overview
+## Fiber & texture (physical iridology)
+## Zone & sign findings
+## Constitutional read
+## Integrated summary
+## What to do next
+Each section: 2–4 sentences, specific to THIS photo. Cite visible features; admit limits. Total prose target 450–900 words for good photos.
+
+Return prose PLUS structured JSON wrapped exactly like:
 <<<IRIDOLOGY_JSON>>>
 {
   "photoQuality": "good|fair|poor",
   "methodology": "integrated|jensen|physical|all",
   "eye": "left|right|both|unknown",
   "constitutionalType": { "label": "lymphatic|biliary|hematogenic|neurogenic|mixed|unknown", "confidence": "high|medium|low", "rationale": "..." },
+  "photoAssessment": "1-3 sentences on lighting, focus, framing, artifacts",
+  "globalOverview": "color, symmetry, visible stroma pattern",
+  "fiberAndTexture": "open/dense fibers, rings, arcus if visible",
+  "integratedSummary": "cross-check of signs with uncertainty",
+  "nextSteps": ["retake tip or professional care if needed"],
   "observations": [
     { "zone": "7-8 o'clock lung sector", "sign": "lacuna", "meaning": "...", "confidence": "low|medium|high", "sources": ["jensen"] }
   ],
@@ -187,7 +203,7 @@ export async function runIridologyAnalyze(db, hiveUserId, opts) {
       ],
       {
         temperature: 0.25,
-        max_tokens: 2400,
+        max_tokens: 3600,
         vision: true,
       },
     );
@@ -243,6 +259,13 @@ export async function runIridologyAnalyze(db, hiveUserId, opts) {
       : [],
     cautions: Array.isArray(parsed?.cautions) ? parsed.cautions.map((c) => String(c).slice(0, 400)).slice(0, 8) : [],
     retakeAdvice: parsed?.retakeAdvice ? String(parsed.retakeAdvice).slice(0, 500) : null,
+    photoAssessment: parsed?.photoAssessment ? String(parsed.photoAssessment).slice(0, 800) : undefined,
+    globalOverview: parsed?.globalOverview ? String(parsed.globalOverview).slice(0, 800) : undefined,
+    fiberAndTexture: parsed?.fiberAndTexture ? String(parsed.fiberAndTexture).slice(0, 800) : undefined,
+    integratedSummary: parsed?.integratedSummary ? String(parsed.integratedSummary).slice(0, 1000) : undefined,
+    nextSteps: Array.isArray(parsed?.nextSteps)
+      ? parsed.nextSteps.map((s) => String(s).slice(0, 400)).slice(0, 6)
+      : undefined,
   };
 
   const account = await getHiveAccount(db, hiveUserId);
