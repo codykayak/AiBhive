@@ -619,6 +619,7 @@ export async function sendIridologyAnalyze(
 ): Promise<{
   reply: string;
   structured: IridologyStructuredResult;
+  analysisId?: string | null;
   chargedUsd?: number;
   creditBalanceUsd?: number;
 }> {
@@ -649,6 +650,7 @@ export async function sendIridologyAnalyze(
     ok?: boolean;
     reply?: string;
     structured?: IridologyStructuredResult;
+    analysisId?: string | null;
     error?: string;
     needPayment?: boolean;
     amountUsd?: number;
@@ -665,6 +667,7 @@ export async function sendIridologyAnalyze(
   return {
     reply: data.reply,
     structured: data.structured,
+    analysisId: data.analysisId ?? null,
     chargedUsd: data.chargedUsd,
     creditBalanceUsd: data.account?.creditBalanceUsd,
   };
