@@ -11,6 +11,7 @@ import type { SectionVideo } from '../../../lib/oregonPlantMedicine/sectionVideo
 import type { AskAiContext } from './AskAiBhivePanel';
 import FeaturedEssayPanel from './FeaturedEssayPanel';
 import GridSectionVideo from './GridSectionVideo';
+import LibraryFeaturedHero from './LibraryFeaturedHero';
 import { interleaveFeaturedTile } from './gridFeaturedInsert';
 import HolisticAskAgent from './HolisticAskAgent';
 import PostEngagementBar from './PostEngagementBar';
@@ -38,7 +39,7 @@ export type ResearchLibraryTheme = {
 type Props<T extends ResearchTopicBase & { category: string }> = {
   library: TopicLibraryId;
   tabLabel: string;
-  introText: ReactNode;
+  introText?: ReactNode;
   searchPlaceholder: string;
   topics: T[];
   categoryLabels: Record<string, string>;
@@ -52,6 +53,12 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   onAskAi: (ctx: AskAiContext) => void;
   gridVideo?: SectionVideo;
   featuredEssay?: FeaturedEssay;
+  /** When 'hero', featured video + essay render full-width above the grid (no interleaving). */
+  featuredLayout?: 'hero' | 'grid';
+  /** Hide intro box, ask agent, filters, and share row — tiles only below featured hero. */
+  hideChrome?: boolean;
+  /** Hide upvote/comment bar on grid cards (keeps preview text visible). */
+  hideGridEngagement?: boolean;
   focusTopicId?: string | null;
   onFocusTopicConsumed?: () => void;
   /** Living Knowledge ask-agent scope (defaults from library id) */
@@ -286,6 +293,9 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   onAskAi,
   gridVideo,
   featuredEssay,
+  featuredLayout = 'grid',
+  hideChrome = false,
+  hideGridEngagement = false,
   focusTopicId,
   onFocusTopicConsumed,
   askScope,
@@ -337,7 +347,8 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           {categoryLabels[topic.category]}
         </p>
         <h3 className="font-bold text-white mt-1 leading-snug line-clamp-2">{topic.title}</h3>
-        <p className="text-xs text-slate-400 mt-2 line-clamp-3 flex-1">{topic.summary}</p>
+        <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed min-h-[3.75rem]">{topic.summary}</p>
+        {hideGridEngagement ? null : (
         <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <PostEngagementBar
             target={{ kind: 'topic', library, topicId: topic.id }}
@@ -347,27 +358,47 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
             onAskAi={() => onAskAi(topicAskContext(topic, library))}
           />
         </div>
+        )}
       </div>
     </article>
   ));
 
-  const gridItems = interleaveFeaturedTile(
-    topicCards,
-    featuredEssay ? (
-      <FeaturedEssayPanel
-        key="featured-essay"
+  const gridItems =
+    featuredLayout === 'grid'
+      ? interleaveFeaturedTile(
+          topicCards,
+          featuredEssay ? (
+            <FeaturedEssayPanel
+              key="featured-essay"
+              essay={featuredEssay}
+              onOpenPlant={onOpenPlant}
+              user={user}
+              onSignIn={onSignIn}
+              onAskAi={onAskAi}
+            />
+          ) : null,
+        )
+      : topicCards;
+
+  const featuredHero =
+    featuredLayout === 'hero' && featuredEssay && gridVideo ? (
+      <LibraryFeaturedHero
+        video={gridVideo}
         essay={featuredEssay}
+        videoAccentClass={theme.videoAccent}
+        videoBorderClass={theme.videoBorder}
         onOpenPlant={onOpenPlant}
         user={user}
         onSignIn={onSignIn}
         onAskAi={onAskAi}
       />
-    ) : null,
-  );
+    ) : null;
 
   return (
     <>
       <div className="space-y-5">
+        {hideChrome ? null : (
+          <>
         <div className={`rounded-xl border ${theme.introBorder} ${theme.introBg} p-4 text-sm ${theme.introText} leading-relaxed`}>
           <p className={`text-xs font-black uppercase tracking-widest mb-2 ${theme.introLabel}`}>{tabLabel}</p>
           {introText}
@@ -416,9 +447,13 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
         </div>
 
         <p className="text-xs text-slate-500">{filtered.length} topics in library</p>
+          </>
+        )}
+
+        {featuredHero}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {gridVideo ? (
+          {featuredLayout === 'grid' && gridVideo ? (
             <GridSectionVideo
               video={gridVideo}
               accentClass={theme.videoAccent}
