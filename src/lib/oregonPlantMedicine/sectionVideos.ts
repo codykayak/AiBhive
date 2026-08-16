@@ -55,7 +55,10 @@ export const SECTION_VIDEOS = {
     page: 'Hypnosis & Energy',
   },
   iridology: {
-    sources: videoSources('ai-iridology-aibhive'),
+    sources: [
+      ...videoSources('ai-iridology-aibhive'),
+      videoPath('ai-iridology-aibhive.mov'),
+    ],
     title: 'AI Iridology on AiBhive',
     caption:
       'Capture your iris, run Grok vision analysis, and explore Jensen zones, fiber signs, and constitutional typing — educational wellness research with saved reports and follow-up chat.',

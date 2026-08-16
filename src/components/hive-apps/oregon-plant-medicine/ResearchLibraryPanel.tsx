@@ -54,11 +54,13 @@ type Props<T extends ResearchTopicBase & { category: string }> = {
   gridVideo?: SectionVideo;
   featuredEssay?: FeaturedEssay;
   /** When 'hero', featured video + essay render full-width above the grid (no interleaving). */
-  featuredLayout?: 'hero' | 'grid';
+  featuredLayout?: 'hero' | 'grid' | 'none';
   /** Hide intro box, ask agent, filters, and share row — tiles only below featured hero. */
   hideChrome?: boolean;
   /** Hide upvote/comment bar on grid cards (keeps preview text visible). */
   hideGridEngagement?: boolean;
+  /** Optional heading above the topic grid when chrome is hidden. */
+  sectionTitle?: string;
   focusTopicId?: string | null;
   onFocusTopicConsumed?: () => void;
   /** Living Knowledge ask-agent scope (defaults from library id) */
@@ -296,6 +298,7 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
   featuredLayout = 'grid',
   hideChrome = false,
   hideGridEngagement = false,
+  sectionTitle,
   focusTopicId,
   onFocusTopicConsumed,
   askScope,
@@ -347,7 +350,9 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
           {categoryLabels[topic.category]}
         </p>
         <h3 className="font-bold text-white mt-1 leading-snug line-clamp-2">{topic.title}</h3>
-        <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed min-h-[3.75rem]">{topic.summary}</p>
+        <p className="lk-topic-preview text-sm text-slate-300 mt-2 leading-relaxed">
+          {topic.summary}
+        </p>
         {hideGridEngagement ? null : (
         <div className="mt-3" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <PostEngagementBar
@@ -451,6 +456,10 @@ export default function ResearchLibraryPanel<T extends ResearchTopicBase & { cat
         )}
 
         {featuredHero}
+
+        {sectionTitle ? (
+          <h2 className="text-lg font-black text-white tracking-tight">{sectionTitle}</h2>
+        ) : null}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {featuredLayout === 'grid' && gridVideo ? (

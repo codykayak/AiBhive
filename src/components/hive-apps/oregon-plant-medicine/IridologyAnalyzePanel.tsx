@@ -206,7 +206,7 @@ export default function IridologyAnalyzePanel({ user, onSignIn }: Props) {
   };
 
   return (
-    <section className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 via-slate-950/80 to-slate-950 p-4 sm:p-5 mb-6">
+    <section className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-indigo-950/50 via-slate-950/80 to-slate-950 p-4 sm:p-5">
       <div className="flex items-start gap-3 mb-4">
         <div className="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/25">
           <Eye className="w-6 h-6 text-indigo-300" />

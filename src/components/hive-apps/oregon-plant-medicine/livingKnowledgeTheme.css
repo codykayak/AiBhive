@@ -132,6 +132,15 @@
   border-color: rgb(132 204 22 / 0.35) !important;
 }
 
+.lk-app[data-lk-theme='light'] .text-indigo-300,
+.lk-app[data-lk-theme='light'] .text-indigo-400 {
+  color: rgb(67 56 202) !important;
+}
+
+.lk-app[data-lk-theme='light'] .lk-topic-preview {
+  color: rgb(51 65 85) !important;
+}
+
 .lk-app[data-lk-theme='light'] .shadow-lg,
 .lk-app[data-lk-theme='light'] .shadow-xl,
 .lk-app[data-lk-theme='light'] .shadow-2xl {

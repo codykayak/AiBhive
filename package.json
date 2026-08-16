@@ -15,7 +15,7 @@
     "optimize:tartar-video": "node scripts/optimize-tartar-hero-video.mjs",
     "optimize:owr-video": "node scripts/optimize-owr-hero-video.mjs",
     "optimize:plant-medicine-video": "node scripts/optimize-oregon-plant-medicine-video.mjs",
-    "prebuild": "node scripts/optimize-tartar-hero-video.mjs || true && node scripts/optimize-owr-hero-video.mjs || true && node scripts/optimize-research-hero-video.mjs || true && node scripts/optimize-oregon-plant-medicine-video.mjs || true && node scripts/optimize-opm-section-videos.mjs || true && node scripts/export-plant-rag-index.mjs",
+    "prebuild": "node scripts/install-iridology-video.mjs || true && node scripts/optimize-tartar-hero-video.mjs || true && node scripts/optimize-owr-hero-video.mjs || true && node scripts/optimize-research-hero-video.mjs || true && node scripts/optimize-oregon-plant-medicine-video.mjs || true && node scripts/optimize-opm-section-videos.mjs || true && node scripts/export-plant-rag-index.mjs",
     "build": "vite build && node scripts/prerender.mjs && npm run build --prefix cody && npm run build --prefix autoposter/admin",
     "prerender": "node scripts/prerender.mjs",
     "guides:oregon-plants": "node scripts/generate-oregon-plant-guide-pdfs.mjs",
