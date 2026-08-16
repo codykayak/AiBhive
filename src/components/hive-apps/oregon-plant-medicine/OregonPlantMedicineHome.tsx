@@ -591,7 +591,7 @@ function ResearchCardsSection<T extends { id: string; title: string; summary: st
             )}
             <div className="p-4">
               <h3 className="font-bold text-white text-sm leading-snug">{topic.title}</h3>
-              <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">{topic.summary}</p>
+              <p className="lk-topic-preview text-sm text-slate-300 mt-2 leading-relaxed">{topic.summary}</p>
             </div>
           </article>
         ))}

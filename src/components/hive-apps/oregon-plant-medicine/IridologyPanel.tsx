@@ -5,12 +5,12 @@ import {
   matchesIridologyCategory,
 } from '../../../lib/oregonPlantMedicine/iridologyLibrary';
 import { IRIDOLOGY_CATEGORY_LABELS } from '../../../lib/oregonPlantMedicine/iridologyTypes';
-import { getFeaturedEssay } from '../../../lib/oregonPlantMedicine/featuredEssays';
 import { SECTION_VIDEOS } from '../../../lib/oregonPlantMedicine/sectionVideos';
 import type { PlantEntry } from '../../../lib/oregonPlantMedicine/types';
 import type { AskAiContext } from './AskAiBhivePanel';
 import IridologyAnalyzePanel from './IridologyAnalyzePanel';
 import ResearchLibraryPanel from './ResearchLibraryPanel';
+import SectionVideoHero from './SectionVideoHero';
 
 const IRIDOLOGY_THEME = {
   introBorder: 'border-indigo-500/30',
@@ -51,9 +51,17 @@ export default function IridologyPanel({
 }: Props) {
   return (
     <div className="space-y-8">
+      <SectionVideoHero
+        video={SECTION_VIDEOS.iridology}
+        accentClass={IRIDOLOGY_THEME.videoAccent}
+        borderClass={IRIDOLOGY_THEME.videoBorder}
+      />
+
+      <IridologyAnalyzePanel user={user} onSignIn={onSignIn} />
+
       <ResearchLibraryPanel
         library="iridology"
-        tabLabel="AI Iridology"
+        tabLabel="AI Iridology library"
         searchPlaceholder="Search zone chart, lacuna, lymphatic constitution, Jensen, photo tips…"
         topics={IRIDOLOGY_LIBRARY}
         categoryLabels={IRIDOLOGY_CATEGORY_LABELS}
@@ -69,14 +77,11 @@ export default function IridologyPanel({
         askAccent="violet"
         focusTopicId={focusTopicId}
         onFocusTopicConsumed={onFocusTopicConsumed}
-        featuredEssay={getFeaturedEssay('iridology')}
-        gridVideo={SECTION_VIDEOS.iridology}
-        featuredLayout="hero"
+        featuredLayout="none"
         hideChrome
         hideGridEngagement
+        sectionTitle="Iridology articles"
       />
-
-      <IridologyAnalyzePanel user={user} onSignIn={onSignIn} />
     </div>
   );
 }
