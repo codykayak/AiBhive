@@ -66,11 +66,10 @@ import FieldGuidePanel from './oregon-plant-medicine/FieldGuidePanel';
 import ResourcesPanel from './oregon-plant-medicine/ResourcesPanel';
 import LivingKnowledgeFooter, { type FooterView } from './oregon-plant-medicine/LivingKnowledgeFooter';
 import LivingKnowledgeAppBar from './oregon-plant-medicine/LivingKnowledgeAppBar';
-import LibraryFeaturedHero from './oregon-plant-medicine/LibraryFeaturedHero';
+import EdiblesFeaturedBlock from './oregon-plant-medicine/EdiblesFeaturedBlock';
 import CommunityFeedPanel from './oregon-plant-medicine/CommunityFeedPanel';
 import CommunityPostModal, { type CommunityPostView } from './oregon-plant-medicine/CommunityPostModal';
 import OregonPlantMedicineHome from './oregon-plant-medicine/OregonPlantMedicineHome';
-import { SECTION_VIDEOS } from '../../lib/oregonPlantMedicine/sectionVideos';
 import { getFeaturedEssay, getFeaturedEssayById } from '../../lib/oregonPlantMedicine/featuredEssays';
 import type { SiteSearchResult } from '../../lib/oregonPlantMedicine/siteSearch';
 import type { TopicLibraryId } from '../../lib/oregonPlantMedicine/plantMedicineApi';
@@ -858,7 +857,7 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
     });
   }, [query, region, favoritesOnly, favorites]);
 
-  const plantsFeaturedEssay = getFeaturedEssay('plants-home');
+  const ediblesFeaturedEssay = getFeaturedEssay('edibles');
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => {
@@ -1126,7 +1125,8 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
                   </p>
                   <p>
                     {EARTH_PLANT_MEDICINE_NAME} — foraging IDs, regions, look-alikes, and harvest notes. Wild edibles
-                    &amp; mushrooms are in the section below. Herbs, supplements, and holistic libraries are in the nav.
+                    &amp; mushrooms lead this tab; the full plant library follows. Herbs, supplements, and holistic
+                    libraries are in the nav.
                   </p>
                 </div>
               }
@@ -1226,42 +1226,23 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
               <RegionalOfflinePackButton region={region} />
             </div>
 
-            {plantsFeaturedEssay ? (
-              <LibraryFeaturedHero
-                video={SECTION_VIDEOS.edibles}
-                essay={plantsFeaturedEssay}
-                videoAccentClass="text-lime-300"
-                videoBorderClass="border-lime-500/35"
-                onOpenPlant={(plant) => setSelected(plant)}
-                user={user}
-                onSignIn={() => void handleSignIn()}
-                onAskAi={openAskAi}
-              />
-            ) : null}
+            <EdiblesFeaturedBlock
+              edibleCount={edibleFiltered.length}
+              essay={ediblesFeaturedEssay}
+              onOpenPlant={(plant) => setSelected(plant)}
+              user={user}
+              onSignIn={() => void handleSignIn()}
+              onAskAi={openAskAi}
+            />
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+              {edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles'))}
+            </div>
 
             <p className="text-xs text-slate-500 mb-4">{filtered.length} plants in library</p>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-              {filtered.map((plant) => renderPlantCard(plant, 'plants'))}
-            </div>
-
-            <div className="rounded-xl border border-lime-500/30 bg-lime-500/10 p-4 text-sm text-lime-100/90 leading-relaxed mb-6">
-              <p className="text-xs font-black uppercase tracking-widest text-lime-300 mb-2">
-                Wild edible foods &amp; mushrooms
-              </p>
-              <p>
-                Berries, greens, roots, and fungi — each entry includes ID photos, habitat notes, toxic look-alikes, and
-                preparation ideas.{' '}
-                <strong className="text-white">Never eat a wild plant or mushroom without 100% ID.</strong>
-              </p>
-            </div>
-
-            <p className="text-xs text-slate-500 mb-4">
-              {edibleFiltered.length} edible wild foods &amp; mushrooms
-            </p>
-
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles'))}
+              {filtered.map((plant) => renderPlantCard(plant, 'plants'))}
             </div>
           </>
         ) : null}
