@@ -17,6 +17,7 @@
     "optimize:plant-medicine-video": "node scripts/optimize-oregon-plant-medicine-video.mjs",
     "prebuild": "node scripts/install-iridology-video.mjs || true && node scripts/optimize-tartar-hero-video.mjs || true && node scripts/optimize-owr-hero-video.mjs || true && node scripts/optimize-research-hero-video.mjs || true && node scripts/optimize-oregon-plant-medicine-video.mjs || true && node scripts/optimize-opm-section-videos.mjs || true && node scripts/export-plant-rag-index.mjs",
     "build": "vite build && node scripts/prerender.mjs && npm run build --prefix cody && npm run build --prefix autoposter/admin",
+    "deploy:cloud-run": "bash scripts/deploy-cloud-run.sh",
     "prerender": "node scripts/prerender.mjs",
     "guides:oregon-plants": "node scripts/generate-oregon-plant-guide-pdfs.mjs",
     "preview": "vite preview --port 8080 --host 0.0.0.0",
