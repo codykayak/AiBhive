@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Deploy AiBhive web + server to Cloud Run from Cloud Agent or local shell.
-# Requires env vars: GCP_SA_KEY (JSON or base64), CLOUD_RUN_SERVICE, CLOUD_RUN_REGION
+# Deploy AiBhive web + server to Cloud Run.
+# Auth (any one): GOOGLE_APPLICATION_CREDENTIALS file, GCP_SA_KEY env, or gcloud auth login on host.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,29 +10,27 @@ SERVICE="${CLOUD_RUN_SERVICE:-aibhive}"
 REGION="${CLOUD_RUN_REGION:-us-central1}"
 PROJECT="${GCP_PROJECT_ID:-gen-lang-client-0787280773}"
 
-if [[ -z "${GCP_SA_KEY:-}" ]]; then
-  echo "ERROR: GCP_SA_KEY is not set."
-  echo "Add your GCP service-account JSON to Cursor Cloud environment secrets as GCP_SA_KEY,"
-  echo "plus CLOUD_RUN_SERVICE and CLOUD_RUN_REGION, then re-run: npm run deploy:cloud-run"
-  exit 1
-fi
-
 if ! command -v gcloud >/dev/null 2>&1; then
-  echo "Installing Google Cloud SDK..."
   curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME"
   export PATH="$HOME/google-cloud-sdk/bin:$PATH"
 fi
 
-KEY_FILE="$(mktemp)"
-trap 'rm -f "$KEY_FILE"' EXIT
-
-if echo "$GCP_SA_KEY" | base64 -d > "$KEY_FILE" 2>/dev/null && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$KEY_FILE" 2>/dev/null; then
-  :
-else
-  printf '%s' "$GCP_SA_KEY" > "$KEY_FILE"
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" && -f "${GOOGLE_APPLICATION_CREDENTIALS}" ]]; then
+  gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" --quiet
+elif [[ -n "${GCP_SA_KEY:-}" ]]; then
+  KEY_FILE="$(mktemp)"
+  trap 'rm -f "$KEY_FILE"' EXIT
+  if echo "$GCP_SA_KEY" | base64 -d > "$KEY_FILE" 2>/dev/null && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$KEY_FILE" 2>/dev/null; then
+    :
+  else
+    printf '%s' "$GCP_SA_KEY" > "$KEY_FILE"
+  fi
+  gcloud auth activate-service-account --key-file="$KEY_FILE" --quiet
+elif ! gcloud auth print-access-token >/dev/null 2>&1; then
+  echo "ERROR: No GCP credentials. gcloud auth login on this machine, or set GCP_SA_KEY / GOOGLE_APPLICATION_CREDENTIALS."
+  exit 1
 fi
 
-gcloud auth activate-service-account --key-file="$KEY_FILE" --quiet
 gcloud config set project "$PROJECT" --quiet
 
 echo "Building production bundle..."
@@ -46,4 +44,4 @@ gcloud run deploy "$SERVICE" \
   --project "$PROJECT" \
   --quiet
 
-echo "Deploy complete. Verify: curl -s https://aibhive.com/plants | head"
+echo "Deploy complete."
