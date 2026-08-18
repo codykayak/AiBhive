@@ -1116,6 +1116,15 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
 
         {tab === 'plants' ? (
           <>
+            <EdiblesFeaturedBlock
+              edibleCount={edibleFiltered.length}
+              essay={ediblesFeaturedEssay}
+              onOpenPlant={(plant) => setSelected(plant)}
+              user={user}
+              onSignIn={() => void handleSignIn()}
+              onAskAi={openAskAi}
+            />
+
             <LivingKnowledgeAskWithGuide
               accent="emerald"
               intro={
@@ -1225,15 +1234,6 @@ function OregonPlantMedicineWebAppContent({ expanded, initialTab = 'home' }: Pro
             <div className="mb-4">
               <RegionalOfflinePackButton region={region} />
             </div>
-
-            <EdiblesFeaturedBlock
-              edibleCount={edibleFiltered.length}
-              essay={ediblesFeaturedEssay}
-              onOpenPlant={(plant) => setSelected(plant)}
-              user={user}
-              onSignIn={() => void handleSignIn()}
-              onAskAi={openAskAi}
-            />
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
               {edibleFiltered.map((plant) => renderPlantCard(plant, 'edibles'))}
