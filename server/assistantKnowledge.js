@@ -26,7 +26,7 @@ CONTACT & BOOKING
 - Email: hello@aibhive.com
 - Book a strategy call (B2B): /book-consultation — detailed intake; team follows up to schedule live call
 - Checkout / instant transcription quote: /get-started (also /get-started#pricing)
-- About: /about | FAQ: /faq
+- About: /about | FAQ: /faq | Jobs (commission sales): /jobs
 
 === MANDATORY PRICING RESPONSES (use these messages closely) ===
 

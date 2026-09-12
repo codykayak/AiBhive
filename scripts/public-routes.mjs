@@ -103,6 +103,7 @@ export function getSitemapEntries() {
     })),
     { loc: '/get-started', priority: '0.9', changefreq: 'monthly' },
     { loc: '/book-consultation', priority: '0.9', changefreq: 'monthly' },
+    { loc: '/jobs', priority: '0.9', changefreq: 'weekly' },
     { loc: '/about', priority: '0.7', changefreq: 'monthly' },
     { loc: '/faq', priority: '0.8', changefreq: 'monthly' },
     { loc: '/llms.txt', priority: '0.5', changefreq: 'weekly' },

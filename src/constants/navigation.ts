@@ -50,3 +50,5 @@ export const TRANSCRIPTION_SERVICES_LINKS = [
 ] as const;
 
 export const BOOK_CONSULTATION_PATH = '/book-consultation';
+
+export const JOBS_PATH = '/jobs';

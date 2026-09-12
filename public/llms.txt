@@ -89,6 +89,7 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 - [House Flip Calculator demo](https://aibhive.com/hive-apps/run/example-house-flip): ARV, rehab, profit charts
 - [Get started / pricing quote](https://aibhive.com/get-started): Instant quotes for transcription, translation, voice cloning
 - [Book consultation](https://aibhive.com/book-consultation): Strategy call for custom agentic workflows
+- [Jobs / commission sales](https://aibhive.com/jobs): Hiring closers for AiBhive, ManyDoors AI, and MacroREI — pick the product you sell
 
 ## AiBhivePlants — Pacific Northwest field guide (web + Android)
 
