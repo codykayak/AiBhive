@@ -96,6 +96,7 @@ import { registerResearchLabRoutes } from './researchLabRoutes.js';
 import { registerProsRoutes } from './prosRoutes.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
 import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
+import { registerJobApplicationRoutes } from './jobApplicationRoutes.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -780,6 +781,9 @@ const defaultJsonParser = express.json({ limit: '2mb' });
 const plantMedicineUploadJson = express.json({ limit: '12mb' });
 app.use((req, res, next) => {
   if (req.method === 'POST' && req.path === '/api/homework/ocr-ingest') {
+    return next();
+  }
+  if (req.method === 'POST' && req.path === '/api/job-application') {
     return next();
   }
   if (req.method === 'POST' && req.path === '/api/plant-medicine/upload') {
@@ -1601,6 +1605,7 @@ registerResearchLabRoutes(app, db);
 registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });
+registerJobApplicationRoutes(app, { db, gcsBucket, transporter });
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {

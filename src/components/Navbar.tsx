@@ -7,11 +7,13 @@ import {
   SOLUTION_CATEGORIES,
   TRANSCRIPTION_SERVICES_LINKS,
   BOOK_CONSULTATION_PATH,
+  JOBS_PATH,
 } from '../constants/navigation';
 import { RESEARCH_LAB_NAV } from '../pages/research-lab/researchLabCategories';
 
 const aboutLinks = [
   { name: 'About Us', path: '/about' },
+  { name: 'Jobs', path: JOBS_PATH },
   { name: 'FAQ', path: '/faq' },
   { name: 'AI Tool Guides', path: '/tools' },
 ];
@@ -218,7 +220,7 @@ export default function Navbar() {
                 <HeadlessMenu.Button
                   className={cn(
                     'flex items-center text-sm font-semibold transition-all duration-300 hover:text-bee-amber outline-none',
-                    location.pathname === '/about' || location.pathname === '/faq'
+                    location.pathname === '/about' || location.pathname === '/faq' || location.pathname === JOBS_PATH
                       ? 'text-bee-amber'
                       : 'text-slate-300'
                   )}
