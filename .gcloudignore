@@ -1,18 +1,52 @@
+# Cloud Run deploy upload — keep this SMALL (code + public assets only).
+# Run: npm run repo:upload-report
+
 .git
 .github
 .worktrees
+**/.worktrees
+
+# Dependencies & build artifacts (rebuilt in Cloud Build)
 node_modules
 **/node_modules
 dist
-*.md
+coverage
+.tmp
+
+# Secrets & local config
 .env
 .env.*
 scripts/.auth-configured
-# Large / local-only trees — not needed for aibhive.com Cloud Run
-greenteam/
-aibhive-main-fixed/greenteam/
-aibhive-main-fixed/.cursor/
-aibhive-main-fixed/cody/
-aibhive-main-fixed/data/
+
+# Docs / markdown (not needed at runtime)
+*.md
+docs
+
+# Local-only / lab / duplicate trees — never needed on aibhive.com
+greenteam
+aibhive-main-fixed
+manydoorsai-main
+anticheat-lab
+steward
+taylored-mobile
+aibhive-diagnose
+aibhive-plants
+services
+
+# Archives & ebooks
 **/*.epub
+**/*.zip
+**/*.7z
+**/*.tgz
+**/*.dmg
+**/*.exe
+**/*.msi
+**/*.lnk
+
+# Source-tree duplicates (production uses public/ URLs)
+src/**/*.mp4
+src/**/*.webm
+**/*.source.mp4
+
+# Windows shortcuts
 **/*.lnk

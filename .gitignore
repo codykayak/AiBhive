@@ -1,9 +1,48 @@
+# Dependencies & build output
 node_modules/
+**/node_modules/
 build/
 dist/
 coverage/
-.DS_Store
+.tmp/
 *.log
+
+# Secrets
 .env*
 !.env.example
-.tmp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.lnk
+
+# Git worktrees & duplicate nested checkout (use repo root src/, not aibhive-main-fixed/)
+.worktrees/
+aibhive-main-fixed/
+
+# Green Team / pentest lab — local study only, never ship via git or Cloud Build
+greenteam/
+
+# Large binaries — store in GCS; link from public/ at deploy time if needed
+**/*.epub
+**/*.zip
+**/*.7z
+**/*.dmg
+**/*.exe
+**/*.msi
+steward/desktop/release*/
+**/*.source.mp4
+
+# Duplicate hero videos (site serves copies from public/)
+src/**/*.mp4
+src/**/*.webm
+
+# Mobile / sub-app source trees (APKs live under public/ when needed for deploy)
+taylored-mobile/
+aibhive-diagnose/
+aibhive-plants/
+
+# Optional local-only trees
+manydoorsai-main/
+anticheat-lab/fixtures/*.mp4
+services/dmt-matrix-decoder/catalog/

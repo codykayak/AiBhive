@@ -1,0 +1,13 @@
+#!/bin/sh
+# AiBhive — reject new blobs over 8 MB (use GCS for APKs/videos/ebooks)
+MAX=8388608
+git diff --cached --name-only --diff-filter=ACM | while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  [ -f "$f" ] || continue
+  size=$(wc -c < "$f" | tr -d ' ')
+  if [ "$size" -gt "$MAX" ]; then
+    echo "ERROR: $f is $size bytes (> 8 MB)."
+    echo "Large assets belong in GCS, not git. See docs/GIT-AND-DEPLOY.md"
+    exit 1
+  fi
+done
