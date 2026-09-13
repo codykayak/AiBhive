@@ -29,7 +29,13 @@ manydoorsai-main
 anticheat-lab
 steward
 taylored-mobile
-aibhive-diagnose
+# aibhive-diagnose/lib is required by vite (@diagnose alias) — exclude heavy mobile-only paths only
+aibhive-diagnose/node_modules
+aibhive-diagnose/.expo
+aibhive-diagnose/android
+aibhive-diagnose/ios
+aibhive-diagnose/assets/**/*.mp4
+aibhive-diagnose/assets/**/*.webm
 aibhive-plants
 services
 
