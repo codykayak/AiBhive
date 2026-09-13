@@ -54,6 +54,7 @@ import {
   MANUAL_SOURCE_INDEX,
   searchManualChunks,
 } from './prosManualKnowledge.js';
+import { registerProsVoiceRoutes } from './prosVoiceSession.js';
 
 const PROVIDERS = ['grok', 'claude', 'kimi', 'gemini'];
 
@@ -183,6 +184,8 @@ function serializeJob(id, data) {
 
 export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {}) {
   const platformAdmin = typeof isPlatformAdmin === 'function' ? isPlatformAdmin : () => false;
+
+  registerProsVoiceRoutes(app);
 
   // Bootstrap / me
   app.get('/api/pros/me', async (req, res) => {

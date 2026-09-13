@@ -1,0 +1,18 @@
+.git
+.github
+.worktrees
+node_modules
+**/node_modules
+dist
+*.md
+.env
+.env.*
+scripts/.auth-configured
+# Large / local-only trees — not needed for aibhive.com Cloud Run
+greenteam/
+aibhive-main-fixed/greenteam/
+aibhive-main-fixed/.cursor/
+aibhive-main-fixed/cody/
+aibhive-main-fixed/data/
+**/*.epub
+**/*.lnk
