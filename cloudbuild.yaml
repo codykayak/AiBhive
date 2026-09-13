@@ -1,18 +1,19 @@
 # Google Cloud Build — deploy aibhive.com (web + Express API) to Cloud Run
 #
-# From repo root (Cloud Shell or any machine with gcloud auth):
-#   gcloud builds submit --config cloudbuild.yaml . --project gen-lang-client-0787280773
+# Bash / Cloud Shell:
+#   gcloud builds submit --config=cloudbuild.yaml . --project=project-c223f844-6371-4c3f-a0c --async
 #
-# Override service/region:
-#   gcloud builds submit --config cloudbuild.yaml . \
-#     --substitutions=_SERVICE=aibhive,_REGION=us-central1
+# PowerShell (do NOT pass comma-separated --substitutions — PowerShell splits commas):
+#   .\scripts\deploy-cloud-build.ps1
+#
+# Optional overrides (bash only):
+#   gcloud builds submit --config=cloudbuild.yaml . --substitutions=_SERVICE=aibhive,_REGION=us-west1
 
 timeout: 2400s
 
 substitutions:
   _SERVICE: aibhive
-  _REGION: us-central1
-  _PROJECT: gen-lang-client-0787280773
+  _REGION: us-west1
 
 options:
   machineType: E2_HIGHCPU_8
@@ -39,7 +40,7 @@ steps:
         gcloud run deploy "${_SERVICE}" \
           --source . \
           --region "${_REGION}" \
-          --project "${_PROJECT}" \
+          --project "$PROJECT_ID" \
           --quiet
     waitFor:
       - build

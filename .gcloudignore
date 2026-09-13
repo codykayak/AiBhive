@@ -1,0 +1,58 @@
+# Cloud Run deploy upload — keep this SMALL (code + public assets only).
+# Run: npm run repo:upload-report
+
+.git
+.github
+.worktrees
+**/.worktrees
+
+# Dependencies & build artifacts (rebuilt in Cloud Build)
+node_modules
+**/node_modules
+dist
+coverage
+.tmp
+
+# Secrets & local config
+.env
+.env.*
+scripts/.auth-configured
+
+# Docs / markdown (not needed at runtime)
+*.md
+docs
+
+# Local-only / lab / duplicate trees — never needed on aibhive.com
+greenteam
+aibhive-main-fixed
+manydoorsai-main
+anticheat-lab
+steward
+taylored-mobile
+# aibhive-diagnose/lib is required by vite (@diagnose alias) — exclude heavy mobile-only paths only
+aibhive-diagnose/node_modules
+aibhive-diagnose/.expo
+aibhive-diagnose/android
+aibhive-diagnose/ios
+aibhive-diagnose/assets/**/*.mp4
+aibhive-diagnose/assets/**/*.webm
+aibhive-plants
+services
+
+# Archives & ebooks
+**/*.epub
+**/*.zip
+**/*.7z
+**/*.tgz
+**/*.dmg
+**/*.exe
+**/*.msi
+**/*.lnk
+
+# Source-tree duplicates (production uses public/ URLs)
+src/**/*.mp4
+src/**/*.webm
+**/*.source.mp4
+
+# Windows shortcuts
+**/*.lnk

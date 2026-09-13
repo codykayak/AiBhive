@@ -24,6 +24,11 @@ import {
   ProsKnowledgeGrowthChart,
 } from '../components/pros/ProsKnowledgeCharts';
 import { PROS_TRADE_LIST } from '../components/pros/prosTradePages';
+import ProsVoiceCallPanel from '../components/pros/ProsVoiceCallPanel';
+import {
+  PROS_GROK_VOICE_PHONE_DISPLAY,
+  PROS_GROK_VOICE_TEL,
+} from '../config/prosVoiceContact';
 
 const PILLARS = [
   {
@@ -107,9 +112,17 @@ export default function ProsLanding() {
                 <BookOpen className="w-5 h-5" />
                 See how it grows
               </a>
+              <a
+                href={PROS_GROK_VOICE_TEL}
+                className="inline-flex items-center gap-2 rounded-lg border border-amber-400/40 bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur font-bold px-6 py-3.5 text-amber-100"
+              >
+                <Radio className="w-5 h-5" />
+                Call {PROS_GROK_VOICE_PHONE_DISPLAY}
+              </a>
             </motion.div>
             <p className="mt-5 text-sm text-slate-400">
-              Field app: <strong className="text-slate-200">AiBhive Diagnose</strong> · Admin: aibhive.com/pros/app
+              Field app: <strong className="text-slate-200">AiBhive Diagnose</strong> · Admin: aibhive.com/pros/app ·{' '}
+              <strong className="text-slate-200">Grok voice</strong> on the phone or via Talk below
             </p>
           </motion.div>
         </div>
@@ -243,6 +256,53 @@ export default function ProsLanding() {
         </div>
       </section>
 
+      {/* Grok voice */}
+      <section className="py-16 bg-gradient-to-b from-amber-50 to-white border-y border-amber-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-900 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4">
+              <Radio className="w-3.5 h-3.5" />
+              Grok voice agent
+            </div>
+            <h2 className="text-3xl font-black tracking-tight">Talk dispatch through with AI</h2>
+            <p className="mt-4 text-slate-600 leading-relaxed">
+              Call <strong>{PROS_GROK_VOICE_PHONE_DISPLAY}</strong> or use the Talk button — same Grok agent trained for
+              HVAC, plumbing, electrical, pool, and property service workflows. Ask about Diagnose, dispatch, trade
+              playbooks, or how Pros HQ fits your shop.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href={PROS_GROK_VOICE_TEL}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-3"
+              >
+                <Radio className="w-5 h-5" />
+                {PROS_GROK_VOICE_PHONE_DISPLAY}
+              </a>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="w-12 h-12 rounded-xl bg-[#1E3A8A]/10 flex items-center justify-center mb-4">
+              <Radio className="w-6 h-6 text-[#1E3A8A]" />
+            </div>
+            <h3 className="font-bold text-lg">Same agent, two ways in</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-600">
+              <li>
+                <strong className="text-slate-900">Phone:</strong> dial {PROS_GROK_VOICE_PHONE_DISPLAY} from the truck or
+                office line.
+              </li>
+              <li>
+                <strong className="text-slate-900">Browser:</strong> hit Talk to Pros AI (bottom-right) for a live mic
+                session on this page.
+              </li>
+              <li>
+                <strong className="text-slate-900">Trades:</strong> HVAC, plumbing, electrical, pool, property, and fiber
+                playbooks built in.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <ProsPricingSection />
 
       {/* CTA */}
@@ -263,6 +323,8 @@ export default function ProsLanding() {
       </section>
 
       <ProsGetAppCta />
+
+      <ProsVoiceCallPanel />
     </div>
   );
 }
