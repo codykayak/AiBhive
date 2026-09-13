@@ -62,6 +62,8 @@ const AnimalHealthPage = lazy(() => import('./pages/plants/AnimalHealthPage'));
 const HerbsPage = lazy(() => import('./pages/plants/HerbsPage'));
 const SupplementsPage = lazy(() => import('./pages/plants/SupplementsPage'));
 const IridologyPage = lazy(() => import('./pages/plants/IridologyPage'));
+const OnlyFansPage = lazy(() => import('./pages/onlyfans/OnlyFansPage'));
+const OnlyFansAdminPage = lazy(() => import('./pages/onlyfans/OnlyFansAdminPage'));
 const ResearchLabLandingPage = lazy(() => import('./pages/research-lab/ResearchLabLandingPage'));
 const DmtMatrixDecoderPage = lazy(() => import('./pages/research-lab/DmtMatrixDecoderPage'));
 const DmtMatrixLibraryPage = lazy(() => import('./pages/research-lab/DmtMatrixLibraryPage'));
@@ -127,6 +129,8 @@ function AnimatedRoutes() {
             <Route path="/pros" element={<ProsLanding />} />
             <Route path="/pros/:tradeSlug" element={<ProsTradePage />} />
             <Route path="/diagnose" element={<DiagnoseWebLanding />} />
+            <Route path="/onlyfans/admin" element={<OnlyFansAdminPage />} />
+            <Route path="/onlyfans" element={<OnlyFansPage />} />
             <Route path="/test" element={<TestGetStarted />} />
             <Route path="/use-cases/podcasters" element={<Podcasters />} />
             <Route path="/use-cases/youtubers" element={<YouTubers />} />
@@ -221,12 +225,13 @@ function AppShell() {
   const isProsAdminRoute = pathname.startsWith('/pros/app');
   const isProsPublicRoute = pathname.startsWith('/pros') && !pathname.startsWith('/pros/app');
   const isDiagnosePublicRoute = pathname === '/diagnose';
+  const isOnlyFansRoute = pathname.startsWith('/onlyfans');
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
-  const hideSiteAssistant = pathname.startsWith('/plants');
+  const hideSiteAssistant = pathname.startsWith('/plants') || isOnlyFansRoute;
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/research-lab/workspace') ||
@@ -239,7 +244,7 @@ function AppShell() {
   return (
     <AssistantDockProvider>
       <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
-        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isPlantsMobileShell && (
+        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
@@ -248,7 +253,7 @@ function AppShell() {
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main
-          className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
+          className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute || isOnlyFansRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
         >
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
@@ -282,7 +287,7 @@ function AppShell() {
             <AnimatedRoutes />
           )}
         </main>
-        {!isPrivateRoute && !hideFooter && (
+        {!isPrivateRoute && !hideFooter && !isOnlyFansRoute && (
           <footer className="relative z-10">
             <Footer />
           </footer>

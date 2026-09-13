@@ -1,0 +1,46 @@
+# Auto-ship (GitHub PR + GCP) — default for user-visible site work
+
+When the user asks for site features, landing pages, or says **ship**, **push**, **PR**, or **make it live**:
+
+## 1. Commit (scoped only)
+
+- Stage only files for the current feature (never greenteam/diagnose/steward release binaries).
+- Exclude `steward/desktop/release*/**` from every commit.
+- Commit message: one line, outcome-focused.
+
+## 2. Branch + push (GitHub)
+
+- **Never reuse** a `cursor/*` branch after its PR merged (squash merge rewrites history).
+- Fresh branch from latest production base:
+
+  ```powershell
+  git fetch origin main-fixed
+  git checkout -B cursor/<feature-slug>-c7f3 origin/main-fixed
+  ```
+
+- Push: `git push -u origin HEAD`
+- Open PR to **`main-fixed`** (not `master`). Merged PR link pattern: `https://github.com/codykayak/AiBhive/pull/<n>`
+- **`cursor/*` PRs auto-merge** via `.github/workflows/auto-merge-cursor-prs.yml` — no manual merge needed after push.
+
+## 3. Deploy aibhive.com (GCP)
+
+Production is **Cloud Run `aibhive`**, not `manydoorsai`.
+
+```powershell
+cd aibhive-main-fixed
+$env:OPERATOR_DIRECT='1'
+npm run operator -- action submit-cloud-build --service aibhive
+```
+
+- Do this after user-visible work even if GitHub PR is still merging.
+- Confirm: `npm run operator -- gcp` shows a new SUCCESS build; hard-refresh https://aibhive.com
+
+## 4. Path hygiene (avoid “merged but 404”)
+
+GitHub Actions deploy builds from **repo-root** `src/` and `cloudbuild.yaml`. App source in this monorepo lives under `aibhive-main-fixed/`. If a feature only lands under the nested prefix, **also mirror routes/assets into root paths on GitHub** or update root `cloudbuild.yaml` to build from `aibhive-main-fixed/`. Until then, **local operator deploy to `aibhive`** is the reliable ship path.
+
+## 5. Do not
+
+- Push `cursor/legal-compliance-preface-c7f3` (contains >100MB desktop release binaries).
+- Default deploy to `manydoorsai` for aibhive.com work.
+- Give “open PR” links for already-merged branches — link the closed PR or open a **new** branch.
