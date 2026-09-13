@@ -21,30 +21,37 @@ function withDemoFlag(payload, demoPreview) {
   return { ...payload, demoPreview: true, demoDisclaimer: DEMO_DISCLAIMER };
 }
 
+/** Append demo rows not already present (by id / uid). */
+function appendDemo(real, demoItems, idKey = 'id') {
+  const seen = new Set(real.map((x) => x[idKey]));
+  return [...real, ...demoItems.filter((d) => !seen.has(d[idKey]))];
+}
+
+function mergeActivity(realActivity, demoActivity) {
+  const seen = new Set((realActivity || []).map((a) => a.id));
+  const merged = [...(realActivity || []), ...demoActivity.filter((a) => !seen.has(a.id))];
+  merged.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return merged.slice(0, 24);
+}
+
 export function mergeOverview(real, settings, counts) {
   const show = shouldShowDemoPreview(settings, counts);
   if (!show) return real;
 
   const demoJobs = getDemoJobsByStatus();
   const demoActivity = getDemoActivity();
-  const demoTechs = getDemoTeamMembers().length;
-
-  const jobsByStatus = real.jobsTotal > 0 ? real.jobsByStatus : demoJobs;
-  const jobsTotal = real.jobsTotal > 0 ? real.jobsTotal : 14;
-  const openJobs = real.jobsTotal > 0 ? real.openJobs : 6;
+  const demoTeam = getDemoTeamMembers();
+  const useDemoJobStats = (real.jobsTotal || 0) < 8;
 
   return withDemoFlag(
     {
       ...real,
-      members: real.techs > 0 ? real.members : real.members + demoTechs,
-      techs: real.techs > 0 ? real.techs : demoTechs,
-      jobsTotal,
-      jobsByStatus,
-      openJobs,
-      recentActivity:
-        real.recentActivity?.length > 0
-          ? real.recentActivity
-          : demoActivity,
+      members: real.techs > 0 ? Math.max(real.members, real.members + 1) : real.members + demoTeam.length,
+      techs: real.techs > 0 ? Math.max(real.techs, demoTeam.filter((m) => m.role === 'tech').length) : demoTeam.length,
+      jobsTotal: useDemoJobStats ? 28 : real.jobsTotal + getDemoJobs().length,
+      jobsByStatus: useDemoJobStats ? demoJobs : real.jobsByStatus,
+      openJobs: useDemoJobStats ? 8 : real.openJobs,
+      recentActivity: mergeActivity(real.recentActivity, demoActivity),
     },
     true
   );
@@ -56,7 +63,7 @@ export function mergeAnalytics(real, settings, counts) {
 
   const hasGrowth = real.knowledgeGrowth?.length > 0;
   const hasTotals =
-    (real.totals?.tips || 0) + (real.totals?.feedback || 0) + (real.totals?.jobsTotal || 0) >= 6;
+    (real.totals?.tips || 0) + (real.totals?.feedback || 0) + (real.totals?.jobsTotal || 0) >= 12;
 
   return withDemoFlag(
     {
@@ -71,53 +78,41 @@ export function mergeAnalytics(real, settings, counts) {
 
 export function mergeJobs(realJobs, settings, counts, { role, userUid } = {}) {
   const show = shouldShowDemoPreview(settings, counts);
-  let jobs = [...realJobs];
-  if (show && realJobs.length < 4) {
-    jobs = [...realJobs, ...getDemoJobs()];
-  }
+  let jobs = show ? appendDemo(realJobs, getDemoJobs()) : [...realJobs];
   if (role === 'tech') {
     jobs = jobs.filter((j) => !j.isDemo || j.assigneeUid === userUid);
   }
   jobs.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-  return withDemoFlag({ jobs }, show && realJobs.length < 4);
+  return withDemoFlag({ jobs }, show);
 }
 
 export function mergeTeam(realMembers, settings, counts) {
   const show = shouldShowDemoPreview(settings, counts);
-  const realTechs = realMembers.filter((m) => m.role === 'tech').length;
-  let members = [...realMembers];
-  if (show && realTechs === 0) {
-    members = [...realMembers, ...getDemoTeamMembers()];
-  }
-  return withDemoFlag({ members }, show && realTechs === 0);
+  const members = show ? appendDemo(realMembers, getDemoTeamMembers(), 'uid') : [...realMembers];
+  return withDemoFlag({ members }, show);
 }
 
 export function mergeNotifications(realItems, settings, counts) {
   const show = shouldShowDemoPreview(settings, counts);
-  let notifications = [...realItems];
-  if (show && realItems.length < 3) {
-    notifications = [...getDemoNotifications(), ...realItems];
-  }
-  return withDemoFlag({ notifications }, show && realItems.length < 3);
+  const notifications = show
+    ? appendDemo(realItems, getDemoNotifications())
+    : [...realItems];
+  notifications.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return withDemoFlag({ notifications }, show);
 }
 
 export function mergePartRequests(realRequests, settings, counts, statusFilter = 'all') {
   const show = shouldShowDemoPreview(settings, counts);
-  let requests = [...realRequests];
-  if (show && realRequests.length === 0) {
-    requests = getDemoPartRequests();
-  }
+  let requests = show ? appendDemo(realRequests, getDemoPartRequests()) : [...realRequests];
   if (statusFilter !== 'all') {
     requests = requests.filter((r) => r.status === statusFilter);
   }
-  return withDemoFlag({ requests }, show && realRequests.length === 0);
+  requests.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  return withDemoFlag({ requests }, show);
 }
 
 export function mergeLocations(realLocations, settings, counts) {
   const show = shouldShowDemoPreview(settings, counts);
-  let locations = [...realLocations];
-  if (show && realLocations.length === 0) {
-    locations = getDemoLocations();
-  }
-  return withDemoFlag({ locations }, show && realLocations.length === 0);
+  const locations = show ? appendDemo(realLocations, getDemoLocations(), 'uid') : [...realLocations];
+  return withDemoFlag({ locations }, show);
 }
