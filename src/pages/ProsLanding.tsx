@@ -5,9 +5,13 @@ import {
   Bell,
   BookOpen,
   Brain,
+  Mail,
   MapPinned,
+  MessageSquare,
+  Moon,
   Radio,
   Sparkles,
+  Truck,
   Users,
   Wrench,
   Zap,
@@ -59,6 +63,34 @@ const FLOW = [
   { step: '3', title: 'Knowledge compounds', detail: 'Tips, manuals, and job outcomes make the next call faster.' },
 ];
 
+const FULL_SERVICE = [
+  {
+    icon: MessageSquare,
+    title: 'Auto-response texts & emails',
+    body: 'Missed-call texts, appointment confirmations, and “we got your message” replies — so customers hear back in seconds, not tomorrow.',
+  },
+  {
+    icon: Mail,
+    title: 'Inbox that keeps moving',
+    body: 'Route service requests from email into Pros HQ. AI drafts replies you can approve, or sends templated updates when a tech is en route.',
+  },
+  {
+    icon: Radio,
+    title: 'Never miss a call',
+    body: 'Grok answers your shop line when the team is on a roof or under a sink — captures the issue, customer details, and urgency before you call back.',
+  },
+  {
+    icon: Truck,
+    title: 'Dispatch technicians',
+    body: 'Turn intake into assigned jobs, push updates to Diagnose, and see who is closest when GPS check-ins are enabled.',
+  },
+  {
+    icon: Moon,
+    title: 'After-hours triage',
+    body: 'Nights and weekends: AI separates true emergencies from “can wait till Monday,” documents symptoms, and queues the right morning dispatch.',
+  },
+];
+
 export default function ProsLanding() {
   return (
     <div className="min-h-screen bg-[#fafbfc] text-slate-900">
@@ -87,8 +119,8 @@ export default function ProsLanding() {
               <span className="text-[#F5A623]">grows</span> with every job.
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-slate-200 leading-relaxed max-w-2xl">
-              AiBhive Pros is HQ for trade companies — dispatch, team roster, periodic GPS, and a knowledge base
-              pulled from the techs actually turning wrenches. Diagnose in the truck; wisdom compounds in the cloud.
+              Full-service HQ for small trade shops — auto-response texts and emails, AI call answering, dispatch, and
+              field Diagnose in one place. Wisdom compounds in the cloud while Grok handles the front office.
             </p>
             <motion.div className="mt-10 flex flex-wrap gap-3">
               <Link
@@ -98,13 +130,13 @@ export default function ProsLanding() {
                 <Wrench className="w-5 h-5" />
                 Launch company HQ
               </Link>
-              <Link
-                to="/solutions/field-service-ai"
+              <a
+                href="#full-service"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 hover:bg-white/15 backdrop-blur font-bold px-6 py-3.5 text-white"
               >
-                Enterprise overview
-                <ArrowRight className="w-5 h-5" />
-              </Link>
+                <Sparkles className="w-5 h-5" />
+                Full-service front office
+              </a>
               <a
                 href="#how-it-grows"
                 className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 hover:bg-white/15 backdrop-blur font-bold px-6 py-3.5 text-white"
@@ -256,19 +288,54 @@ export default function ProsLanding() {
         </div>
       </section>
 
+      {/* Full-service front office */}
+      <section id="full-service" className="py-16 bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#1E3A8A]/10 text-[#1E3A8A] px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4">
+              Full-service for small shops
+            </div>
+            <h2 className="text-3xl font-black tracking-tight">Front office automation — not another enterprise stack</h2>
+            <p className="mt-4 text-slate-600 leading-relaxed">
+              Pool guys, HVAC crews, and one-truck electricians need the same things big shops buy CRMs for: customers
+              get answered, jobs get dispatched, and nothing falls through after 5 PM. Pros bundles it for teams your size.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-12">
+            {FULL_SERVICE.map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#F5A623]/15 flex items-center justify-center mb-4">
+                  <item.icon className="w-5 h-5 text-[#c47d00]" />
+                </div>
+                <h3 className="font-bold">{item.title}</h3>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.body}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Grok voice */}
       <section className="py-16 bg-gradient-to-b from-amber-50 to-white border-y border-amber-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 items-center">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-amber-100 text-amber-900 px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4">
               <Radio className="w-3.5 h-3.5" />
-              Grok voice agent
+              Never miss a call
             </div>
-            <h2 className="text-3xl font-black tracking-tight">Talk dispatch through with AI</h2>
+            <h2 className="text-3xl font-black tracking-tight">Grok voice — your after-hours & overflow line</h2>
             <p className="mt-4 text-slate-600 leading-relaxed">
-              Call <strong>{PROS_GROK_VOICE_PHONE_DISPLAY}</strong> or use the Talk button — same Grok agent trained for
-              HVAC, plumbing, electrical, pool, and property service workflows. Ask about Diagnose, dispatch, trade
-              playbooks, or how Pros HQ fits your shop.
+              Call <strong>{PROS_GROK_VOICE_PHONE_DISPLAY}</strong> or use <strong>Talk to Pros AI</strong> — the same
+              Grok agent handles intake, triage, and trade playbooks when your team is busy or off the clock. It captures
+              who called, what broke, and how urgent it is so dispatch can act first thing in the morning — or now, if
+              it cannot wait.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -287,12 +354,16 @@ export default function ProsLanding() {
             <h3 className="font-bold text-lg">Same agent, two ways in</h3>
             <ul className="mt-4 space-y-3 text-sm text-slate-600">
               <li>
-                <strong className="text-slate-900">Phone:</strong> dial {PROS_GROK_VOICE_PHONE_DISPLAY} from the truck or
-                office line.
+                <strong className="text-slate-900">Phone:</strong> dial {PROS_GROK_VOICE_PHONE_DISPLAY} — overflow and
+                after-hours triage without losing the customer.
               </li>
               <li>
                 <strong className="text-slate-900">Browser:</strong> hit Talk to Pros AI (bottom-right) for a live mic
                 session on this page.
+              </li>
+              <li>
+                <strong className="text-slate-900">Dispatch-ready:</strong> urgency, trade, and symptom captured for your
+                morning board or emergency callback list.
               </li>
               <li>
                 <strong className="text-slate-900">Trades:</strong> HVAC, plumbing, electrical, pool, property, and fiber
