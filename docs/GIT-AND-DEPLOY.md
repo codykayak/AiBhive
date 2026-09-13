@@ -1,61 +1,64 @@
 # Git & deploy — keep uploads tiny
 
-## The rule
+## The rule (routine work)
 
-| Action | Tool | Typical size |
-|--------|------|----------------|
-| **Ship aibhive.com** | Cloud Build → Cloud Run | See `npm run repo:upload-report` (target **< 200 MB**) |
-| **Save code on GitHub** | `git push` on a **small branch** | Usually **KB–few MB** per commit |
-| **Videos, APKs, ebooks** | **Google Cloud Storage** | Not git |
+| Action | Command | Size / time |
+|--------|---------|-------------|
+| **Ship aibhive.com** | `npm run ship` | Git push **KB–MB** → auto PR → auto merge → deploy **~10 min** |
+| **Emergency deploy** | `.\scripts\deploy-cloud-build.ps1` | ~350 MB upload + build (avoid) |
+| **APKs / videos / ebooks** | **Firebase / GCS** | Never git |
 
-Do **not** use `git push` as the production deploy path.
+**Do not** use `gcloud builds submit` for routine changes. Agents were doing that because an old Cursor rule said “don’t git push” — that bypassed `main-fixed` and broke production.
 
-## Before every deploy or push
+## Routine ship (every feature)
 
 ```powershell
 cd C:\Users\AiBhive\aibhiverepo\aibhive-main-fixed
-npm run repo:upload-report
+./scripts/cursor-fresh-branch.sh my-feature   # once per PR
+# edit, npm run build
+git add <only your files>
+git commit -m "…"
+npm run ship
 ```
 
-This prints Git pack size and estimated Cloud Build tarball size.
+GitHub Actions (automatic):
 
-## Deploy to production
+1. `open-cursor-pr.yml` — opens PR to `main-fixed`
+2. `auto-merge-cursor-prs.yml` — squash-merges `cursor/*` PRs
+3. `auto-deploy.yml` — builds + deploys Cloud Run **`aibhive`** in **`us-west1`**
 
-Project: **`project-c223f844-6371-4c3f-a0c`** · Service: **`aibhive`**
+Watch: https://github.com/codykayak/AiBhive/actions
 
-```powershell
-# PowerShell — use the script (avoids comma-split substitution bugs):
-.\scripts\deploy-cloud-build.ps1
-
-# Or manually (NO comma-separated --substitutions on PowerShell):
-gcloud builds submit --config=cloudbuild.yaml --project=project-c223f844-6371-4c3f-a0c --async .
-```
-
-`.gcloudignore` excludes `greenteam/`, `.worktrees/`, nested `aibhive-main-fixed/`, lab trees, and duplicate `src/**/*.mp4`.
-
-## One-time setup on each machine
+## Before ship
 
 ```powershell
+npm run repo:upload-report   # optional sanity check
 npm run repo:install-hooks   # block commits > 8 MB
-npm run repo:gc              # remove stuck tmp_pack_* garbage
 ```
+
+## What must never be committed
+
+- `greenteam/`, `.worktrees/`, nested `aibhive-main-fixed/`
+- `public/*.apk` (Firebase URLs in `public/diagnose-mobile-releases.json`)
+- `src/**/*.mp4` (use `public/` URLs)
+- Files **> 8 MB**
+
+## Emergency local Cloud Build
+
+Project: **`project-c223f844-6371-4c3f-a0c`** · Service: **`aibhive`** · Region: **`us-west1`**
+
+```powershell
+.\scripts\deploy-cloud-build.ps1
+```
+
+`.gcloudignore` excludes lab trees, APKs, and heavy mobile paths. **`aibhive-diagnose/lib`** is included (required by Vite `@diagnose`).
 
 ## If git push still takes hours
 
-Your **history** may contain old large blobs (~2 GB pack). New `.gitignore` stops **new** bloat; it does not shrink history.
+Old history may contain large blobs (~2 GB pack). New `.gitignore` stops **new** bloat only.
 
-One-time history shrink (destructive — coordinate before force-push):
+```powershell
+npm run repo:gc
+```
 
-1. Install [git-filter-repo](https://github.com/newren/git-filter-repo)
-2. Backup the repo
-3. Remove paths: `greenteam/`, `**/*.epub`, `steward/desktop/release*`
-4. `git push --force-with-lease origin main-fixed`
-
-## What must never be committed again
-
-- `greenteam/` (ebooks, pentest lab, crapi, pentagi)
-- `.worktrees/`
-- Nested `aibhive-main-fixed/` duplicate tree
-- `src/**/*.mp4` (use `public/` only)
-- Desktop release binaries under `steward/desktop/release*`
-- Files **> 8 MB** (pre-commit hook blocks these)
+See `AGENTS.md` for branch hygiene (never reuse `cursor/*` after merge).

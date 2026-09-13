@@ -1,0 +1,38 @@
+---
+description: Ship aibhive.com via GitHub PR auto-merge — not local gcloud upload
+alwaysApply: true
+---
+
+# Ship aibhive.com (default after product work)
+
+After user-visible work, **do not** run `gcloud builds submit` or `npm run deploy:gcp` for routine changes. That uploads ~350 MB, bypasses `main-fixed`, and caused tonight's wrong-region deploys.
+
+## The only routine ship path
+
+```powershell
+cd C:\Users\AiBhive\aibhiverepo\aibhive-main-fixed
+git add <only files you changed>
+git commit -m "…"
+npm run ship
+```
+
+GitHub then automatically:
+
+1. **Opens PR** → `open-cursor-pr.yml`
+2. **Squash-merges to `main-fixed`** → `auto-merge-cursor-prs.yml`
+3. **Deploys Cloud Run `aibhive` (us-west1)** → `auto-deploy.yml`
+
+Git push = **KB–MB**. Live in **~10 min**.
+
+## Before ship
+
+- Fresh branch: `./scripts/cursor-fresh-branch.sh my-feature`
+- Never reuse a `cursor/*` branch after merge
+- Never commit `greenteam/`, `.worktrees/`, `public/*.apk`, nested duplicate trees
+- `npm run build` passes
+
+## Emergency only
+
+`.\scripts\deploy-cloud-build.ps1` — us-west1, service `aibhive`.
+
+Docs: `AGENTS.md`, `docs/GIT-AND-DEPLOY.md`

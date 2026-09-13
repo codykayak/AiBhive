@@ -16,15 +16,12 @@ See [LOCAL_DEV.md](./LOCAL_DEV.md) for env vars, GCP credentials, and troublesho
 **Auto-publish + auto-merge (default):** After local tests pass, commit, push, open the PR as ready for review (`draft: false`) to `main-fixed`, then **always squash-merge immediately** — do not wait for manual approval.
 
 1. **Start a fresh branch** from latest `main-fixed` (see [Branch hygiene](#branch-hygiene) below).
-2. **Commit and push** to `cursor/<descriptive-name>-c7f3`.
-3. **Open PR** — `.github/workflows/auto-merge-cursor-prs.yml` syncs `main-fixed` into the branch, then squash-merges `cursor/*` PRs automatically.
-4. **Merge command** (run right after opening the PR if the workflow has not run yet):
+2. **Commit and push** to `cursor/<descriptive-name>-c7f3`, then run **`npm run ship`** (or `git push` — same effect).
+3. **PR opens automatically** — `.github/workflows/open-cursor-pr.yml`
+4. **Auto-merge** — `.github/workflows/auto-merge-cursor-prs.yml` squash-merges to `main-fixed`
+5. **Auto-deploy** — `.github/workflows/auto-deploy.yml` → Cloud Run `aibhive` (us-west1)
 
-```bash
-gh pr merge <number> --squash --delete-branch
-```
-
-Merge triggers deploy via `auto-deploy.yml` (Cloud Run) when `src/`, `server/`, `functions/`, etc. change.
+Do **not** use `gcloud builds submit` for routine work. See `docs/GIT-AND-DEPLOY.md`.
 
 ## GitLab (if GitHub is unavailable)
 

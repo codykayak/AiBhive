@@ -39,6 +39,10 @@ aibhive-diagnose/assets/**/*.webm
 aibhive-plants
 services
 
+# Mobile APKs — served from Firebase Storage (see public/diagnose-mobile-releases.json)
+public/*.apk
+public/**/*.apk
+
 # Archives & ebooks
 **/*.epub
 **/*.zip

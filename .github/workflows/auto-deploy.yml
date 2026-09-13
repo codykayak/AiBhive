@@ -27,6 +27,8 @@ on:
       - 'scripts/public-routes.mjs'
       - 'package.json'
       - 'package-lock.json'
+      - 'cloudbuild.yaml'
+      - '.gcloudignore'
       - 'firebase-applet-config.json'
       - '.github/workflows/auto-deploy.yml'
 

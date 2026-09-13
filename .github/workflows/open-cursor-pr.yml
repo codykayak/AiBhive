@@ -1,0 +1,65 @@
+# Auto-open a PR to main-fixed when a cursor/* branch is pushed.
+# Pairs with auto-merge-cursor-prs.yml (squash merge) and auto-deploy.yml (Cloud Run).
+name: Open cursor PR to main-fixed
+
+on:
+  push:
+    branches:
+      - 'cursor/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: open-pr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  open-pr:
+    if: github.repository == 'codykayak/AiBhive'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.ref.replace('refs/heads/', '');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const { data: existing } = await github.rest.pulls.list({
+              owner,
+              repo,
+              head: `${owner}:${branch}`,
+              state: 'open',
+              base: 'main-fixed',
+            });
+
+            if (existing.length > 0) {
+              core.info(`Open PR already exists: #${existing[0].number} ${existing[0].html_url}`);
+              return;
+            }
+
+            const title = branch
+              .replace(/^cursor\//, '')
+              .replace(/-c7f3$/, '')
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, (c) => c.toUpperCase());
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner,
+              repo,
+              title,
+              head: branch,
+              base: 'main-fixed',
+              body: [
+                'Auto-opened when this branch was pushed.',
+                '',
+                '- **Auto-merge:** `.github/workflows/auto-merge-cursor-prs.yml`',
+                '- **Deploy:** `.github/workflows/auto-deploy.yml` on merge to `main-fixed`',
+                '',
+                'Do not reuse this branch after squash-merge — start a fresh `cursor/*` branch next time.',
+              ].join('\n'),
+            });
+
+            core.notice(`Created PR #${pr.number}: ${pr.html_url}`);

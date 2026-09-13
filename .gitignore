@@ -37,7 +37,10 @@ steward/desktop/release*/
 src/**/*.mp4
 src/**/*.webm
 
-# Mobile / sub-app source trees (APKs live under public/ when needed for deploy)
+# Mobile APKs — Firebase Storage only (not git / not Cloud Build)
+public/*.apk
+
+# Mobile / sub-app source trees
 taylored-mobile/
 aibhive-diagnose/
 aibhive-plants/
