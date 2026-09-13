@@ -42,7 +42,6 @@ const FieldServiceAi = lazy(() => import('./pages/solutions/FieldServiceAi'));
 const BookConsultation = lazy(() => import('./pages/BookConsultation'));
 const JobsPage = lazy(() => import('./pages/JobsPage'));
 const JobListingPage = lazy(() => import('./pages/JobListingPage'));
-const JobListingPage = lazy(() => import('./pages/JobListingPage'));
 const ResearchPage = lazy(() => import('./pages/app/ResearchPage'));
 const AppHub = lazy(() => import('./pages/app/AppHub'));
 const AppTopicPage = lazy(() => import('./pages/app/AppTopicPage'));
@@ -148,7 +147,6 @@ function AnimatedRoutes() {
             <Route path="/solutions/field-service-ai" element={<FieldServiceAi />} />
             <Route path="/book-consultation" element={<BookConsultation />} />
             <Route path="/jobs" element={<JobsPage />} />
-            <Route path="/jobs/:slug" element={<JobListingPage />} />
             <Route path="/jobs/:slug" element={<JobListingPage />} />
             <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
             <Route path="/research" element={<AppRedirect to="/app/research" />} />
