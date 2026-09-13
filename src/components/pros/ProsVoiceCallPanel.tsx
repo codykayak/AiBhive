@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Mic, MicOff, Phone, PhoneOff, Radio } from 'lucide-react';
+import { Loader2, MessageCircle, Mic, MicOff, Phone, PhoneOff, Radio, Sparkles } from 'lucide-react';
 import {
   PROS_GROK_VOICE_PHONE_DISPLAY,
   PROS_GROK_VOICE_TEL,
 } from '../../config/prosVoiceContact';
 import { startProsGrokVoiceCall } from '../../lib/grokVoiceCall';
 import { createProsVoiceSession } from '../../lib/prosVoiceApi';
+
+type TranscriptLine = {
+  role: string;
+  content: string;
+  itemId?: string;
+  channel?: string;
+};
 
 const CALL_STATUS: Record<string, string> = {
   idle: '',
@@ -16,13 +23,50 @@ const CALL_STATUS: Record<string, string> = {
   error: 'Call issue',
 };
 
+/** Same upsert logic as ManyDoors SiteChatbot — partial STT updates replace one bubble, not stack. */
+function upsertVoiceTranscript(prev: TranscriptLine[], entry: TranscriptLine): TranscriptLine[] {
+  const text = entry.content?.trim();
+  if (!text) return prev;
+
+  const { role, itemId } = entry;
+  if (itemId) {
+    const idx = prev.findLastIndex((m) => m.itemId === itemId && m.role === role);
+    if (idx >= 0) {
+      if (prev[idx].content === text) return prev;
+      const next = [...prev];
+      next[idx] = { ...prev[idx], content: text };
+      return next;
+    }
+  }
+
+  const last = prev[prev.length - 1];
+  if (last?.channel === 'voice' && last.role === role) {
+    if (last.content === text) return prev;
+    const sameItem = itemId && last.itemId && itemId === last.itemId;
+    const revised = text.startsWith(last.content) || last.content.startsWith(text);
+    if (sameItem || revised) {
+      return [
+        ...prev.slice(0, -1),
+        { ...last, content: text, itemId: itemId || last.itemId },
+      ];
+    }
+  }
+
+  if (prev.slice(-8).some((m) => m.role === role && m.channel === 'voice' && m.content === text)) {
+    return prev;
+  }
+
+  return [...prev, { role, content: text, channel: 'voice', itemId }];
+}
+
 export default function ProsVoiceCallPanel() {
   const [open, setOpen] = useState(false);
   const [callStatus, setCallStatus] = useState('idle');
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transcript, setTranscript] = useState<Array<{ role: string; content: string }>>([]);
+  const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const callRef = useRef<ReturnType<typeof startProsGrokVoiceCall> | null>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
   const inCall = callStatus !== 'idle' && callStatus !== 'error';
 
@@ -35,14 +79,21 @@ export default function ProsVoiceCallPanel() {
 
   useEffect(() => () => hangup(), [hangup]);
 
-  const appendTranscript = useCallback(
-    (entry: { role?: string; content?: string }) => {
-      const text = entry?.content?.trim();
-      if (!text) return;
-      setTranscript((prev) => [...prev.slice(-12), { role: entry.role || 'assistant', content: text }]);
-    },
-    [],
-  );
+  useEffect(() => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    }
+  }, [transcript, callStatus, open]);
+
+  const appendTranscript = useCallback((entry: { role?: string; content?: string; itemId?: string }) => {
+    setTranscript((prev) =>
+      upsertVoiceTranscript(prev, {
+        role: entry.role || 'assistant',
+        content: entry.content || '',
+        itemId: entry.itemId,
+      }),
+    );
+  }, []);
 
   const startCall = useCallback(async () => {
     if (inCall || callStatus === 'connecting') return;
@@ -92,24 +143,30 @@ export default function ProsVoiceCallPanel() {
   };
 
   return (
-    <>
+    <div
+      data-tour="pros-voice-assistant"
+      className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-[9998] flex flex-col items-end"
+    >
       {open ? (
         <div
-          className="fixed bottom-24 right-6 z-50 w-[min(100vw-2rem,22rem)] rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10 overflow-hidden"
+          className="mb-3 w-[min(100vw-2rem,26rem)] h-[32rem] flex flex-col overflow-hidden rounded-2xl border border-bee-amber/30 bg-[#050810] shadow-[0_0_30px_rgba(245,158,11,0.15)]"
           role="dialog"
           aria-label="AiBhive Pros voice assistant"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-900 px-4 py-3 text-white">
-            <div>
-              <div className="font-bold text-sm">Pros Grok Voice</div>
-              <div className="text-xs text-slate-400 mt-0.5">
-                {inCall ? CALL_STATUS[callStatus] || 'On call' : 'Browser demo · same agent as the phone line'}
+          <div className="flex items-center justify-between gap-2 border-b border-bee-amber/20 bg-bee-amber/10 px-4 py-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-5 h-5 text-bee-amber shrink-0" />
+              <div className="min-w-0">
+                <div className="font-bold text-sm text-white truncate">Pros Grok Voice</div>
+                <div className="text-xs text-slate-400 mt-0.5 truncate">
+                  {inCall ? CALL_STATUS[callStatus] || 'On call' : 'Browser demo · same agent as the phone line'}
+                </div>
               </div>
             </div>
             <button
               type="button"
               onClick={closePanel}
-              className="rounded-lg px-2 py-1 text-slate-400 hover:text-white text-lg leading-none"
+              className="rounded-lg p-1 text-slate-400 hover:text-white text-lg leading-none shrink-0"
               aria-label="Close"
             >
               ×
@@ -117,17 +174,17 @@ export default function ProsVoiceCallPanel() {
           </div>
 
           {inCall ? (
-            <div className="flex items-center gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-900">
-              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <div className="flex items-center gap-2 border-b border-bee-amber/15 bg-bee-amber/5 px-4 py-2 text-xs font-medium text-bee-amber">
+              <span className="h-2 w-2 rounded-full bg-bee-amber animate-pulse" />
               {muted ? 'Muted — AI cannot hear you' : CALL_STATUS[callStatus] || 'On call'}
             </div>
           ) : null}
 
-          <div className="max-h-40 overflow-y-auto px-4 py-3 space-y-2 text-sm">
+          <div ref={transcriptRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2 text-sm">
             {transcript.length === 0 ? (
-              <p className="text-slate-500 text-xs leading-relaxed">
+              <p className="text-slate-400 text-sm leading-relaxed">
                 Ask about dispatch, Diagnose, HVAC/plumbing playbooks, or how Pros HQ works. Or dial{' '}
-                <a href={PROS_GROK_VOICE_TEL} className="font-semibold text-[#c47d00] hover:underline">
+                <a href={PROS_GROK_VOICE_TEL} className="font-semibold text-bee-amber hover:underline">
                   {PROS_GROK_VOICE_PHONE_DISPLAY}
                 </a>{' '}
                 from any phone.
@@ -135,25 +192,27 @@ export default function ProsVoiceCallPanel() {
             ) : (
               transcript.map((line, i) => (
                 <div
-                  key={i}
-                  className={`rounded-lg px-3 py-2 text-xs leading-relaxed ${
-                    line.role === 'user' ? 'bg-slate-100 text-slate-800 ml-4' : 'bg-amber-50 text-slate-800 mr-4'
+                  key={line.itemId || `${line.role}-${i}`}
+                  className={`rounded-xl px-3 py-2.5 text-sm leading-relaxed ${
+                    line.role === 'user'
+                      ? 'bg-white/10 text-slate-100 ml-6'
+                      : 'bg-bee-amber/10 text-slate-100 mr-6 border border-bee-amber/20'
                   }`}
                 >
                   {line.content}
                 </div>
               ))
             )}
-            {error ? <p className="text-xs text-red-600">{error}</p> : null}
+            {error ? <p className="text-xs text-red-400">{error}</p> : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-3 bg-slate-50">
+          <div className="flex flex-wrap items-center gap-2 border-t border-bee-amber/20 px-4 py-3 bg-black/30">
             {inCall ? (
               <>
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
                 >
                   {muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                   {muted ? 'Unmute' : 'Mute'}
@@ -173,7 +232,7 @@ export default function ProsVoiceCallPanel() {
                   type="button"
                   onClick={startCall}
                   disabled={callStatus === 'connecting'}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#F5A623] hover:bg-[#e09510] px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-bee-amber hover:bg-bee-yellow px-3 py-2 text-xs font-bold text-bee-black disabled:opacity-60"
                 >
                   {callStatus === 'connecting' ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -184,7 +243,7 @@ export default function ProsVoiceCallPanel() {
                 </button>
                 <a
                   href={PROS_GROK_VOICE_TEL}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   {PROS_GROK_VOICE_PHONE_DISPLAY}
@@ -198,17 +257,23 @@ export default function ProsVoiceCallPanel() {
       <button
         type="button"
         onClick={() => (open ? closePanel() : setOpen(true))}
-        className={`fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 rounded-full font-bold px-5 py-3 shadow-lg transition-colors ${
+        className={`flex items-center gap-2 px-5 py-3.5 rounded-full font-extrabold transition-colors ${
           inCall
-            ? 'bg-red-600 text-white shadow-red-500/30 animate-pulse'
-            : 'bg-slate-900 text-white shadow-slate-900/25 hover:bg-slate-800'
+            ? 'bg-red-600 text-white shadow-[0_0_24px_rgba(220,38,38,0.35)] animate-pulse'
+            : 'bg-bee-amber text-bee-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:bg-bee-yellow'
         }`}
         aria-expanded={open}
         aria-label={open ? 'Close Pros voice panel' : 'Open Pros Grok voice'}
       >
-        {inCall ? <Radio className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
-        {inCall ? 'On call' : 'Talk to Pros AI'}
+        {inCall ? (
+          <Radio className="w-5 h-5" />
+        ) : open ? (
+          <MessageCircle className="w-5 h-5" />
+        ) : (
+          <Sparkles className="w-5 h-5" />
+        )}
+        {inCall ? 'On call' : open ? 'Pros Voice' : 'Talk to Pros AI'}
       </button>
-    </>
+    </div>
   );
 }

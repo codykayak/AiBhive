@@ -233,7 +233,8 @@ function AppShell() {
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
   const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
-  const hideSiteAssistant = pathname.startsWith('/plants') || isOnlyFansRoute;
+  const hideSiteAssistant =
+    pathname.startsWith('/plants') || isOnlyFansRoute || isProsPublicRoute;
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/research-lab/workspace') ||
