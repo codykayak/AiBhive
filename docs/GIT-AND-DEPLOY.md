@@ -24,10 +24,11 @@ This prints Git pack size and estimated Cloud Build tarball size.
 Project: **`project-c223f844-6371-4c3f-a0c`** · Service: **`aibhive`**
 
 ```powershell
-gcloud builds submit --config=cloudbuild.yaml `
-  --project=project-c223f844-6371-4c3f-a0c `
-  --substitutions=_PROJECT=project-c223f844-6371-4c3f-a0c,_SERVICE=aibhive,_REGION=us-central1 `
-  --async .
+# PowerShell — use the script (avoids comma-split substitution bugs):
+.\scripts\deploy-cloud-build.ps1
+
+# Or manually (NO comma-separated --substitutions on PowerShell):
+gcloud builds submit --config=cloudbuild.yaml --project=project-c223f844-6371-4c3f-a0c --async .
 ```
 
 `.gcloudignore` excludes `greenteam/`, `.worktrees/`, nested `aibhive-main-fixed/`, lab trees, and duplicate `src/**/*.mp4`.
