@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 SERVICE="${CLOUD_RUN_SERVICE:-aibhive}"
-REGION="${CLOUD_RUN_REGION:-us-central1}"
+REGION="${CLOUD_RUN_REGION:-us-west1}"
 PROJECT="${GCP_PROJECT_ID:-project-c223f844-6371-4c3f-a0c}"
 
 if ! command -v gcloud >/dev/null 2>&1; then
