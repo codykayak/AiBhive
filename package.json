@@ -20,6 +20,7 @@
     "deploy:cloud-run": "bash scripts/deploy-cloud-run.sh",
     "prerender": "node scripts/prerender.mjs",
     "guides:oregon-plants": "node scripts/generate-oregon-plant-guide-pdfs.mjs",
+    "hiring:pdfs": "node scripts/generate-job-posting-pdfs.mjs",
     "preview": "vite preview --port 8080 --host 0.0.0.0",
     "start": "node server/index.js",
     "sync:dmt-catalog": "node scripts/sync-dmt-symbol-catalogue.mjs --registry",

@@ -6,6 +6,7 @@ import {
   ORGANIZATION_SCHEMA,
   SITE_NAME,
   SITE_URL,
+  WEBSITE_SCHEMA,
 } from '../constants/site';
 
 export type FaqSchemaItem = { question: string; answer: string };
@@ -23,6 +24,11 @@ interface SEOProps {
   faqs?: FaqSchemaItem[];
   /** Block search engines from indexing this page */
   noIndex?: boolean;
+  /** Standalone JSON-LD script (e.g. Google JobPosting — not nested in @graph) */
+  standaloneJsonLd?: Record<string, unknown>;
+  /** Optional feature list for SoftwareApplication / WebApplication */
+  featureList?: string[];
+  applicationCategory?: string;
 }
 
 function resolveImageUrl(image?: string): string {
@@ -40,35 +46,50 @@ export const SEO = ({
   jsonLd = [],
   faqs,
   noIndex = false,
+  standaloneJsonLd,
+  featureList,
+  applicationCategory = 'BusinessApplication',
 }: SEOProps) => {
   const location = useLocation();
   const path = location.pathname === '/' ? '' : location.pathname;
   const currentUrl = `${SITE_URL}${path}`;
   const imageUrl = resolveImageUrl(image);
+  const displayTitle = title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`;
+  const isAppType = type === 'SoftwareApplication' || type === 'WebApplication';
+
+  const pageNode: Record<string, unknown> = {
+    '@type': type === 'WebSite' ? 'WebPage' : type,
+    '@id': `${currentUrl}#page`,
+    name: displayTitle,
+    headline: displayTitle,
+    url: currentUrl,
+    description,
+    image: imageUrl,
+    isPartOf: { '@id': `${SITE_URL}/#website` },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+    inLanguage: 'en-US',
+  };
+
+  if (isAppType) {
+    pageNode.applicationCategory = applicationCategory;
+    pageNode.operatingSystem = 'Web Browser, Android, Windows';
+    pageNode.browserRequirements = 'Requires JavaScript. Modern evergreen browser.';
+    pageNode.offers = {
+      '@type': 'Offer',
+      price: '0.00',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      url: currentUrl,
+    };
+    if (featureList?.length) {
+      pageNode.featureList = featureList.join(', ');
+    }
+  }
 
   const graph: Record<string, unknown>[] = [
     ORGANIZATION_SCHEMA,
-    {
-      '@type': 'WebSite',
-      name: SITE_NAME,
-      url: SITE_URL,
-      description: DEFAULT_SEO.description,
-      publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-    },
-    {
-      '@type': type,
-      name: title.includes(SITE_NAME) ? title : `${title} | ${SITE_NAME}`,
-      url: currentUrl,
-      description,
-      image: imageUrl,
-      applicationCategory: 'BusinessApplication',
-      operatingSystem: 'Web, Android',
-      offers: {
-        '@type': 'Offer',
-        price: '0.00',
-        priceCurrency: 'USD',
-      },
-    },
+    WEBSITE_SCHEMA,
+    pageNode,
     ...jsonLd,
   ];
 
@@ -102,9 +123,10 @@ export const SEO = ({
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords} />
       <meta name="author" content={SITE_NAME} />
+      <meta name="application-name" content={SITE_NAME} />
+      <meta name="theme-color" content="#020617" />
       <link rel="canonical" href={currentUrl} />
       <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms.txt`} title="LLM index" />
-      <link rel="alternate" type="text/plain" href={`${SITE_URL}/llms-full.txt`} title="LLM full corpus" />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:type" content="website" />
@@ -121,6 +143,9 @@ export const SEO = ({
       <meta name="twitter:image" content={imageUrl} />
       <meta name="twitter:image:alt" content={title} />
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
+      {standaloneJsonLd ? (
+        <script type="application/ld+json">{JSON.stringify(standaloneJsonLd)}</script>
+      ) : null}
     </Helmet>
   );
 };
