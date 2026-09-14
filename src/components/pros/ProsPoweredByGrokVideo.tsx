@@ -14,9 +14,9 @@ export default function ProsPoweredByGrokVideo({
 }: Props) {
   return (
     <div
-      className={`rounded-2xl border border-slate-200 bg-slate-900 overflow-hidden shadow-sm flex flex-col ${className}`}
+      className={`rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm flex flex-col ${className}`}
     >
-      <div className="relative aspect-[4/3] w-full bg-slate-950">
+      <div className="relative aspect-[4/3] w-full bg-slate-100">
         <video
           className="absolute inset-0 h-full w-full object-cover"
           autoPlay
@@ -28,11 +28,11 @@ export default function ProsPoweredByGrokVideo({
         >
           <source src={VIDEO_SRC} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-slate-900/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/20 pointer-events-none" />
       </div>
-      <div className="px-5 py-4 border-t border-white/10">
-        <p className="text-xs font-bold uppercase tracking-wider text-[#F5A623]">{title}</p>
-        <p className="text-sm text-slate-300 mt-1 leading-relaxed">{subtitle}</p>
+      <div className="px-5 py-4 border-t border-slate-200 bg-slate-50">
+        <p className="text-xs font-bold uppercase tracking-wider text-amber-700">{title}</p>
+        <p className="text-sm text-slate-600 mt-1 leading-relaxed">{subtitle}</p>
       </div>
     </div>
   );

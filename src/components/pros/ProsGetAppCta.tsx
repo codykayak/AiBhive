@@ -12,20 +12,20 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
     : 'Get AiBhive Pros on every truck';
 
   return (
-    <section className="py-16 sm:py-20 bg-slate-900 text-white border-t border-white/10">
+    <section className="py-16 sm:py-20 bg-amber-50 border-t border-slate-200 text-slate-900">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
         <div
-          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider mb-5"
-          style={{ borderColor: `${accentColor}55`, color: accentColor }}
+          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider mb-5 bg-white"
+          style={{ borderColor: `${accentColor}55`, color: '#b45309' }}
         >
           <Smartphone className="w-3.5 h-3.5" />
           Field app
         </div>
         <h2 className="text-3xl sm:text-4xl font-black tracking-tight">{headline}</h2>
-        <p className="mt-4 text-slate-400 leading-relaxed max-w-2xl mx-auto">
-          Install <strong className="text-white">AiBhive Pros</strong> on Android — voice, photo, and chat diagnosis
+        <p className="mt-4 text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          Install <strong className="text-slate-900">AiBhive Pros</strong> on Android — voice, photo, and chat diagnosis
           with offline trade packs. Sign in with your team code; managers wire up HQ at{' '}
-          <Link to="/pros/app" className="text-amber-400 hover:underline">
+          <Link to="/pros/app" className="text-[#1E3A8A] font-semibold hover:underline">
             aibhive.com/pros/app
           </Link>
           .
@@ -33,7 +33,7 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
             href="/download.html"
-            className="inline-flex items-center justify-center gap-2 rounded-lg font-bold px-8 py-4 text-slate-900 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-lg font-bold px-8 py-4 text-slate-900 w-full sm:w-auto shadow-sm"
             style={{ backgroundColor: accentColor }}
           >
             <Download className="w-5 h-5" />
@@ -41,21 +41,21 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
           </a>
           <a
             href="/api/download/diagnose-apk"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white hover:border-amber-400 font-bold px-8 py-4 text-slate-800 w-full sm:w-auto shadow-sm"
           >
             Direct APK
             <ArrowRight className="w-5 h-5" />
           </a>
           <Link
             to="/diagnose"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white hover:border-amber-400 font-bold px-8 py-4 text-slate-800 w-full sm:w-auto shadow-sm"
           >
             Try Diagnose on web
             <ArrowRight className="w-5 h-5" />
           </Link>
           <Link
             to="/pros/app"
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 font-bold px-8 py-4 w-full sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white hover:border-amber-400 font-bold px-8 py-4 text-slate-800 w-full sm:w-auto shadow-sm"
           >
             <Wrench className="w-5 h-5" />
             Launch company HQ
@@ -65,15 +65,15 @@ export default function ProsGetAppCta({ tradeName, accentColor = '#F5A623' }: Pr
           Android APK · Team code from your manager · Works offline with trade packs
         </p>
         <p className="mt-3 text-xs text-slate-500">
-          <a href="/privacy-policy.html" className="hover:text-amber-400 underline-offset-2 hover:underline">
+          <a href="/privacy-policy.html" className="hover:text-amber-700 underline-offset-2 hover:underline">
             Privacy Policy
           </a>
           {' · '}
-          <a href="/terms-of-service.html" className="hover:text-amber-400 underline-offset-2 hover:underline">
+          <a href="/terms-of-service.html" className="hover:text-amber-700 underline-offset-2 hover:underline">
             Terms of Service
           </a>
           {' · '}
-          <a href="mailto:support@aibhive.com" className="hover:text-amber-400 underline-offset-2 hover:underline">
+          <a href="mailto:support@aibhive.com" className="hover:text-amber-700 underline-offset-2 hover:underline">
             support@aibhive.com
           </a>
         </p>

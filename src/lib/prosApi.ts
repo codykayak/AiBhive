@@ -56,6 +56,7 @@ export type ProsCompanySettings = {
   defaultPack: string;
   billingStatus: string;
   demoPreviewEnabled?: boolean;
+  voiceConfig?: Record<string, unknown>;
 };
 
 export type ProsTeamLocation = {

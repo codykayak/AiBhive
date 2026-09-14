@@ -223,6 +223,7 @@ function AnimatedRoutes() {
 
 function AppShell() {
   const { pathname } = useLocation();
+  const isProsShell = pathname.startsWith('/pros');
   const isAdminRoute = pathname.startsWith('/admin');
   const isProsAdminRoute = pathname.startsWith('/pros/app');
   const isProsPublicRoute = pathname.startsWith('/pros') && !pathname.startsWith('/pros/app');
@@ -242,11 +243,16 @@ function AppShell() {
     pathname.startsWith('/hive-apps/run') ||
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build') ||
-    pathname.startsWith('/diagnose/app');
+    pathname.startsWith('/diagnose/app') ||
+    isProsShell;
 
   return (
     <AssistantDockProvider>
-      <div className="min-h-screen flex flex-col honeycomb-pattern selection:bg-bee-amber selection:text-bee-black">
+      <div
+        className={`min-h-screen flex flex-col selection:bg-bee-amber selection:text-bee-black ${
+          isProsShell ? 'bg-[#fafbfc] text-slate-900' : 'honeycomb-pattern'
+        }`}
+      >
         {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
