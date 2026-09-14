@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, MessageCircle, Mic, MicOff, Phone, PhoneOff, Radio, Sparkles } from 'lucide-react';
-import {
-  PROS_GROK_VOICE_PHONE_DISPLAY,
-  PROS_GROK_VOICE_TEL,
-} from '../../config/prosVoiceContact';
+import { PROS_VOICE_OPEN_EVENT } from '../../lib/prosVoiceEvents';
 import { startProsGrokVoiceCall } from '../../lib/grokVoiceCall';
 import { createProsVoiceSession } from '../../lib/prosVoiceApi';
 
@@ -16,7 +13,7 @@ type TranscriptLine = {
 
 const CALL_STATUS: Record<string, string> = {
   idle: '',
-  connecting: 'Connecting to Grok…',
+  connecting: 'Connecting to AiBhive Voice…',
   listening: 'Listening — ask about dispatch, Diagnose, or a trade',
   thinking: 'Thinking…',
   speaking: 'Pros AI is speaking',
@@ -67,6 +64,7 @@ export default function ProsVoiceCallPanel() {
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const callRef = useRef<ReturnType<typeof startProsGrokVoiceCall> | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const startCallRef = useRef<(() => Promise<void>) | null>(null);
 
   const inCall = callStatus !== 'idle' && callStatus !== 'error';
 
@@ -78,6 +76,18 @@ export default function ProsVoiceCallPanel() {
   }, []);
 
   useEffect(() => () => hangup(), [hangup]);
+
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const shouldStart = Boolean((event as CustomEvent<{ startCall?: boolean }>).detail?.startCall);
+      setOpen(true);
+      if (shouldStart) {
+        void startCallRef.current?.();
+      }
+    };
+    window.addEventListener(PROS_VOICE_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(PROS_VOICE_OPEN_EVENT, onOpen);
+  }, []);
 
   useEffect(() => {
     if (transcriptRef.current) {
@@ -131,6 +141,8 @@ export default function ProsVoiceCallPanel() {
     }
   }, [appendTranscript, callStatus, hangup, inCall]);
 
+  startCallRef.current = startCall;
+
   const toggleMute = () => {
     const next = !muted;
     setMuted(next);
@@ -149,24 +161,24 @@ export default function ProsVoiceCallPanel() {
     >
       {open ? (
         <div
-          className="mb-3 w-[min(100vw-2rem,26rem)] h-[32rem] flex flex-col overflow-hidden rounded-2xl border border-bee-amber/30 bg-[#050810] shadow-[0_0_30px_rgba(245,158,11,0.15)]"
+          className="mb-3 w-[min(100vw-2rem,26rem)] h-[32rem] flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60"
           role="dialog"
           aria-label="AiBhive Pros voice assistant"
         >
-          <div className="flex items-center justify-between gap-2 border-b border-bee-amber/20 bg-bee-amber/10 px-4 py-3">
+          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-amber-50 px-4 py-3">
             <div className="flex items-center gap-2 min-w-0">
-              <Sparkles className="w-5 h-5 text-bee-amber shrink-0" />
+              <Sparkles className="w-5 h-5 text-amber-600 shrink-0" />
               <div className="min-w-0">
-                <div className="font-bold text-sm text-white truncate">Pros Grok Voice</div>
-                <div className="text-xs text-slate-400 mt-0.5 truncate">
-                  {inCall ? CALL_STATUS[callStatus] || 'On call' : 'Browser demo · same agent as the phone line'}
+                <div className="font-bold text-sm text-slate-900 truncate">AiBhive Voice</div>
+                <div className="text-xs text-slate-500 mt-0.5 truncate">
+                  {inCall ? CALL_STATUS[callStatus] || 'On call' : 'Browser demo · same agent as your shop line'}
                 </div>
               </div>
             </div>
             <button
               type="button"
               onClick={closePanel}
-              className="rounded-lg p-1 text-slate-400 hover:text-white text-lg leading-none shrink-0"
+              className="rounded-lg p-1 text-slate-400 hover:text-slate-800 text-lg leading-none shrink-0"
               aria-label="Close"
             >
               ×
@@ -174,20 +186,17 @@ export default function ProsVoiceCallPanel() {
           </div>
 
           {inCall ? (
-            <div className="flex items-center gap-2 border-b border-bee-amber/15 bg-bee-amber/5 px-4 py-2 text-xs font-medium text-bee-amber">
-              <span className="h-2 w-2 rounded-full bg-bee-amber animate-pulse" />
+            <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50/80 px-4 py-2 text-xs font-medium text-amber-800">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               {muted ? 'Muted — AI cannot hear you' : CALL_STATUS[callStatus] || 'On call'}
             </div>
           ) : null}
 
-          <div ref={transcriptRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2 text-sm">
+          <div ref={transcriptRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2 text-sm bg-[#fafbfc]">
             {transcript.length === 0 ? (
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Ask about dispatch, Diagnose, HVAC/plumbing playbooks, or how Pros HQ works. Or dial{' '}
-                <a href={PROS_GROK_VOICE_TEL} className="font-semibold text-bee-amber hover:underline">
-                  {PROS_GROK_VOICE_PHONE_DISPLAY}
-                </a>{' '}
-                from any phone.
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Ask about dispatch, Diagnose, HVAC/plumbing playbooks, or how Pros HQ works. Tap{' '}
+                <strong className="text-amber-700">Try Ai Voice</strong> to start a live session.
               </p>
             ) : (
               transcript.map((line, i) => (
@@ -195,24 +204,24 @@ export default function ProsVoiceCallPanel() {
                   key={line.itemId || `${line.role}-${i}`}
                   className={`rounded-xl px-3 py-2.5 text-sm leading-relaxed ${
                     line.role === 'user'
-                      ? 'bg-white/10 text-slate-100 ml-6'
-                      : 'bg-bee-amber/10 text-slate-100 mr-6 border border-bee-amber/20'
+                      ? 'bg-slate-200 text-slate-900 ml-6'
+                      : 'bg-amber-50 text-slate-800 mr-6 border border-amber-200'
                   }`}
                 >
                   {line.content}
                 </div>
               ))
             )}
-            {error ? <p className="text-xs text-red-400">{error}</p> : null}
+            {error ? <p className="text-xs text-red-600">{error}</p> : null}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-bee-amber/20 px-4 py-3 bg-black/30">
+          <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 px-4 py-3 bg-white">
             {inCall ? (
               <>
                 <button
                   type="button"
                   onClick={toggleMute}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100"
                 >
                   {muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                   {muted ? 'Unmute' : 'Mute'}
@@ -232,22 +241,15 @@ export default function ProsVoiceCallPanel() {
                   type="button"
                   onClick={startCall}
                   disabled={callStatus === 'connecting'}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-bee-amber hover:bg-bee-yellow px-3 py-2 text-xs font-bold text-bee-black disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#F5A623] hover:bg-[#e09510] px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-60"
                 >
                   {callStatus === 'connecting' ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <Phone className="w-3.5 h-3.5" />
                   )}
-                  Talk in browser
+                  Try Ai Voice
                 </button>
-                <a
-                  href={PROS_GROK_VOICE_TEL}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-200 hover:bg-white/10"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  {PROS_GROK_VOICE_PHONE_DISPLAY}
-                </a>
               </>
             )}
           </div>
@@ -260,10 +262,10 @@ export default function ProsVoiceCallPanel() {
         className={`flex items-center gap-2 px-5 py-3.5 rounded-full font-extrabold transition-colors ${
           inCall
             ? 'bg-red-600 text-white shadow-[0_0_24px_rgba(220,38,38,0.35)] animate-pulse'
-            : 'bg-bee-amber text-bee-black shadow-[0_0_24px_rgba(245,158,11,0.35)] hover:bg-bee-yellow'
+            : 'bg-[#F5A623] text-slate-900 shadow-lg shadow-amber-500/25 hover:bg-[#e09510]'
         }`}
         aria-expanded={open}
-        aria-label={open ? 'Close Pros voice panel' : 'Open Pros Grok voice'}
+        aria-label={open ? 'Close AiBhive Voice panel' : 'Open AiBhive Voice'}
       >
         {inCall ? (
           <Radio className="w-5 h-5" />

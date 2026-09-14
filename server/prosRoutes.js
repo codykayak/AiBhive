@@ -1746,6 +1746,7 @@ export function registerProsRoutes(app, db, { isPlatformAdmin, gcsBucket } = {})
           defaultPack: settings.defaultPack || 'pool',
           billingStatus: settings.billingStatus || 'trial',
           demoPreviewEnabled: settings.demoPreviewEnabled !== false,
+          voiceConfig: settings.voiceConfig || null,
         },
       });
     } catch (err) {

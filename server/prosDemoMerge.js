@@ -10,6 +10,7 @@ import {
   getDemoNotifications,
   getDemoPartRequests,
   getDemoTeamMembers,
+  getDemoVoiceSummary,
   isDemoId,
   shouldShowDemoPreview,
 } from './prosDemoData.js';
@@ -52,6 +53,7 @@ export function mergeOverview(real, settings, counts) {
       jobsByStatus: useDemoJobStats ? demoJobs : real.jobsByStatus,
       openJobs: useDemoJobStats ? 8 : real.openJobs,
       recentActivity: mergeActivity(real.recentActivity, demoActivity),
+      voiceSummary: real.voiceSummary || getDemoVoiceSummary(),
     },
     true
   );

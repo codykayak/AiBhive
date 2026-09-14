@@ -949,7 +949,6 @@ export function getDemoActivity() {
   ];
 }
 
-/** Austin-area sample pins for Where is everybody? */
 export function getDemoLocations() {
   return [
     {
@@ -1001,6 +1000,51 @@ export function getDemoLocations() {
       isDemo: true,
     },
   ];
+}
+
+export function getDemoVoiceSummary() {
+  return {
+    callsToday: 7,
+    callsThisWeek: 34,
+    missedCallsHandled: 12,
+    appointmentsSet: 5,
+    afterHoursEscalations: 2,
+    avgHandleSec: 94,
+    recentCalls: [
+      {
+        id: 'demo-vc-1',
+        caller: 'Unknown · Brodie Ln',
+        summary: 'Main line backup — callback scheduled Thu 1 PM',
+        outcome: 'appointment',
+        createdAt: ago(3.5),
+        isDemo: true,
+      },
+      {
+        id: 'demo-vc-2',
+        caller: 'North Austin Medical',
+        summary: 'Frozen coil after-hours — Jordan dispatched',
+        outcome: 'escalation',
+        createdAt: ago(0.12),
+        isDemo: true,
+      },
+      {
+        id: 'demo-vc-3',
+        caller: 'Priya Shah',
+        summary: 'GFCI tripping — morning callback queued',
+        outcome: 'callback',
+        createdAt: ago(1.2),
+        isDemo: true,
+      },
+      {
+        id: 'demo-vc-4',
+        caller: 'Greenfield HOA',
+        summary: 'Pool open scheduling — Mon 7 AM route',
+        outcome: 'appointment',
+        createdAt: ago(0.5),
+        isDemo: true,
+      },
+    ],
+  };
 }
 
 export async function getCompanyDemoContext(db, companyId) {

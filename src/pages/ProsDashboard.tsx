@@ -20,6 +20,7 @@ import {
   Navigation,
   Package,
   Plus,
+  Radio,
   RefreshCw,
   Settings,
   Users,
@@ -42,6 +43,8 @@ import ProsAssistantPanel from '../components/pros/ProsAssistantPanel';
 import ProsAdminManualPanel from '../components/pros/ProsAdminManualPanel';
 import ProsPartsPanel from '../components/pros/ProsPartsPanel';
 import ProsDemoPreviewBanner, { DemoSampleBadge } from '../components/pros/ProsDemoPreviewBanner';
+import ProsVoiceAdminPanel from '../components/pros/ProsVoiceAdminPanel';
+import ProsVoiceOverviewSummary, { type ProsVoiceSummary } from '../components/pros/ProsVoiceOverviewSummary';
 import ProsTeamWeeklyReports from '../components/pros/ProsTeamWeeklyReports';
 import { prosAdmin as t } from '../components/pros/prosAdminTheme';
 import { formatScheduledFor } from '../lib/formatScheduledFor';
@@ -67,6 +70,7 @@ import {
 
 type Tab =
   | 'overview'
+  | 'voice'
   | 'dispatch'
   | 'parts'
   | 'whereabouts'
@@ -80,6 +84,7 @@ type Tab =
 
 const TABS: { id: Tab; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'voice', label: 'Voice', icon: Radio },
   { id: 'dispatch', label: 'Jobs', icon: ClipboardList },
   { id: 'parts', label: 'Parts', icon: Package },
   { id: 'whereabouts', label: 'Where is everybody?', icon: Navigation },
@@ -119,6 +124,7 @@ export default function ProsDashboard() {
     openJobs: number;
     jobsByStatus: Record<string, number>;
     recentActivity: Array<{ id: string; message?: string; type?: string; createdAt?: number | null }>;
+    voiceSummary?: ProsVoiceSummary | null;
   } | null>(null);
   const [analytics, setAnalytics] = useState<ProsAnalytics | null>(null);
   const [jobs, setJobs] = useState<ProsJob[]>([]);
@@ -363,7 +369,7 @@ export default function ProsDashboard() {
   );
 
   const pipelineChart = useMemo(() => {
-    if (!overview) return [];
+    if (!overview?.jobsByStatus) return [];
     return Object.entries(overview.jobsByStatus).map(([status, count]) => ({
       label: status.replace('_', ' '),
       count,
@@ -592,8 +598,8 @@ export default function ProsDashboard() {
                 <div>
                   <h2 className="font-bold text-lg">Living knowledge base</h2>
                   <p className="text-sm text-slate-600 mt-1 max-w-2xl">
-                    {analytics?.totals.tips ?? 0} field tips · {analytics?.totals.feedback ?? 0} diagnose feedback ·{' '}
-                    {analytics?.totals.fieldNotes ?? 0} job notes — compounded from techs in the field.
+                    {analytics?.totals?.tips ?? 0} field tips · {analytics?.totals?.feedback ?? 0} diagnose feedback ·{' '}
+                    {analytics?.totals?.fieldNotes ?? 0} job notes — compounded from techs in the field.
                   </p>
                 </div>
               </div>
@@ -606,26 +612,31 @@ export default function ProsDashboard() {
               </button>
             </div>
 
+            <ProsVoiceOverviewSummary
+              summary={overview.voiceSummary}
+              demoPreview={demoPreview}
+            />
+
             {analytics?.platformCosts ? (
               <div className={`${t.card} p-5`}>
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                   Platform API spend (estimate)
                 </div>
                 <p className="text-sm text-slate-700">
-                  Last {analytics.platformCosts.windowDays} days:{' '}
-                  <strong>${analytics.platformCosts.totalRawUsd.toFixed(2)}</strong> raw API across{' '}
-                  {analytics.platformCosts.countedOps} billed ops
-                  {analytics.platformCosts.ttsRawUsd > 0
-                    ? ` (Grok $${analytics.platformCosts.grokRawUsd.toFixed(2)} · Cartesia TTS $${analytics.platformCosts.ttsRawUsd.toFixed(2)}`
-                    : ` (Grok $${analytics.platformCosts.grokRawUsd.toFixed(2)}`}
-                  {analytics.platformCosts.transcribeRawUsd > 0
-                    ? ` · STT $${analytics.platformCosts.transcribeRawUsd.toFixed(2)}`
+                  Last {analytics.platformCosts?.windowDays ?? 0} days:{' '}
+                  <strong>${(analytics.platformCosts?.totalRawUsd ?? 0).toFixed(2)}</strong> raw API across{' '}
+                  {analytics.platformCosts?.countedOps ?? 0} billed ops
+                  {(analytics.platformCosts?.ttsRawUsd ?? 0) > 0
+                    ? ` (Grok $${(analytics.platformCosts?.grokRawUsd ?? 0).toFixed(2)} · Cartesia TTS $${(analytics.platformCosts?.ttsRawUsd ?? 0).toFixed(2)}`
+                    : ` (Grok $${(analytics.platformCosts?.grokRawUsd ?? 0).toFixed(2)}`}
+                  {(analytics.platformCosts?.transcribeRawUsd ?? 0) > 0
+                    ? ` · STT $${(analytics.platformCosts?.transcribeRawUsd ?? 0).toFixed(2)}`
                     : ''}
                   ).
                 </p>
                 <p className="text-xs text-slate-500 mt-2">
                   Typical diagnose + Cartesia voice: ~$
-                  {analytics.platformCosts.typicalDiagnoseWithVoiceUsd.toFixed(3)} per turn (Grok + TTS).
+                  {(analytics.platformCosts?.typicalDiagnoseWithVoiceUsd ?? 0).toFixed(3)} per turn (Grok + TTS).
                 </p>
               </div>
             ) : null}
@@ -648,9 +659,9 @@ export default function ProsDashboard() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Open jobs', value: overview.openJobs, icon: ClipboardList },
-                { label: 'Field tips', value: analytics?.totals.tips ?? 0, icon: BookOpen },
+                { label: 'Field tips', value: analytics?.totals?.tips ?? 0, icon: BookOpen },
                 { label: 'Techs', value: overview.techs, icon: Wrench },
-                { label: 'Jobs done', value: analytics?.totals.jobsDone ?? 0, icon: Briefcase },
+                { label: 'Jobs done', value: analytics?.totals?.jobsDone ?? 0, icon: Briefcase },
               ].map((card) => (
                 <div key={card.label} className={`${t.card} p-5`}>
                   <card.icon className="w-5 h-5 text-amber-600 mb-3" />
@@ -675,6 +686,15 @@ export default function ProsDashboard() {
               </div>
             </div>
           </div>
+        ) : null}
+
+        {activeTab === 'voice' && user ? (
+          <ProsVoiceAdminPanel
+            user={user}
+            settings={settings}
+            isManager={Boolean(isManager)}
+            onUpdated={setSettings}
+          />
         ) : null}
 
         {activeTab === 'dispatch' ? (
