@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "AiBhive Lead Agent",
+    "slug": "lead-agent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "leadagent",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1e4d2b"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1e4d2b"
+      },
+      "package": "com.aibhive.leadagent",
+      "permissions": [
+        "SEND_SMS",
+        "RECEIVE_SMS",
+        "READ_SMS",
+        "READ_PHONE_STATE",
+        "CALL_PHONE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "./plugins/withSmsBridge.js",
+      "expo-asset",
+      "expo-font"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "apiBaseUrl": "https://aibhive.com"
+    }
+  }
+}

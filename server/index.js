@@ -94,6 +94,8 @@ import { startAutoposterScheduler } from './socialPosts/scheduler.js';
 import { registerTartarRoutes } from './tartarRoutes.js';
 import { registerResearchLabRoutes } from './researchLabRoutes.js';
 import { registerProsRoutes } from './prosRoutes.js';
+import { registerLeadAgentRoutes } from './leadAgent/routes.js';
+import { registerMacroreiVoiceRoutes } from './macroreiVoiceSession.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
 import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
 import { registerJobApplicationRoutes } from './jobApplicationRoutes.js';
@@ -1603,6 +1605,8 @@ app.post('/api/homework/chat', verifyHomeworkUser, async (req, res) => {
 registerTartarRoutes(app, db);
 registerResearchLabRoutes(app, db);
 registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
+registerLeadAgentRoutes(app, db);
+registerMacroreiVoiceRoutes(app);
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });
 registerJobApplicationRoutes(app, { db, gcsBucket, transporter });
