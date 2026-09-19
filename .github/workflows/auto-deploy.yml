@@ -64,6 +64,9 @@ jobs:
       - name: Build website + cody
         run: npm run build
 
+      - name: Cloud upload guard (no Gradle/build leaks)
+        run: node scripts/gcp-upload-guard.mjs --max-mb=280
+
       - name: Authenticate to Google Cloud
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         uses: google-github-actions/auth@v2

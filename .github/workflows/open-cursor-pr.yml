@@ -8,7 +8,7 @@ on:
       - 'cursor/**'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 concurrency:
@@ -27,39 +27,44 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            const { data: existing } = await github.rest.pulls.list({
-              owner,
-              repo,
-              head: `${owner}:${branch}`,
-              state: 'open',
-              base: 'main-fixed',
-            });
+            try {
+              const { data: existing } = await github.rest.pulls.list({
+                owner,
+                repo,
+                head: `${owner}:${branch}`,
+                state: 'open',
+                base: 'main-fixed',
+              });
 
-            if (existing.length > 0) {
-              core.info(`Open PR already exists: #${existing[0].number} ${existing[0].html_url}`);
-              return;
+              if (existing.length > 0) {
+                core.info(`Open PR already exists: #${existing[0].number} ${existing[0].html_url}`);
+                return;
+              }
+
+              const title = branch
+                .replace(/^cursor\//, '')
+                .replace(/-c7f3$/, '')
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, (c) => c.toUpperCase());
+
+              const { data: pr } = await github.rest.pulls.create({
+                owner,
+                repo,
+                title: title || branch,
+                head: branch,
+                base: 'main-fixed',
+                body: [
+                  'Auto-opened when this branch was pushed.',
+                  '',
+                  '- **Auto-merge:** `.github/workflows/auto-merge-cursor-prs.yml`',
+                  '- **Deploy:** `.github/workflows/auto-deploy.yml` on merge to `main-fixed`',
+                  '',
+                  'Do not reuse this branch after squash-merge — start a fresh `cursor/*` branch next time.',
+                ].join('\n'),
+              });
+
+              core.notice(`Created PR #${pr.number}: ${pr.html_url}`);
+            } catch (e) {
+              core.setFailed(`Open cursor PR failed for ${branch}: ${e.message}`);
+              throw e;
             }
-
-            const title = branch
-              .replace(/^cursor\//, '')
-              .replace(/-c7f3$/, '')
-              .replace(/-/g, ' ')
-              .replace(/\b\w/g, (c) => c.toUpperCase());
-
-            const { data: pr } = await github.rest.pulls.create({
-              owner,
-              repo,
-              title,
-              head: branch,
-              base: 'main-fixed',
-              body: [
-                'Auto-opened when this branch was pushed.',
-                '',
-                '- **Auto-merge:** `.github/workflows/auto-merge-cursor-prs.yml`',
-                '- **Deploy:** `.github/workflows/auto-deploy.yml` on merge to `main-fixed`',
-                '',
-                'Do not reuse this branch after squash-merge — start a fresh `cursor/*` branch next time.',
-              ].join('\n'),
-            });
-
-            core.notice(`Created PR #${pr.number}: ${pr.html_url}`);

@@ -19,6 +19,7 @@
     "build": "vite build && node scripts/prerender.mjs && npm run build --prefix cody && npm run build --prefix autoposter/admin",
     "deploy:cloud-run": "bash scripts/deploy-cloud-run.sh",
     "repo:upload-report": "node scripts/repo-upload-report.mjs",
+    "gcp:upload-check": "node scripts/gcp-upload-guard.mjs",
     "repo:install-hooks": "node scripts/install-git-hooks.mjs",
     "repo:gc": "powershell -ExecutionPolicy Bypass -File scripts/repo-gc.ps1",
     "deploy:gcp": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloud-build.ps1",

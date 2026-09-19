@@ -1,13 +1,11 @@
-# Google Cloud Build — deploy aibhive.com (web + Express API) to Cloud Run
+# Google Cloud Build — EMERGENCY local deploy only (GitHub Actions is the routine path).
 #
-# Bash / Cloud Shell:
-#   gcloud builds submit --config=cloudbuild.yaml . --project=project-c223f844-6371-4c3f-a0c --async
+# Do NOT run from agents for routine work — use `npm run ship` instead.
+# GitHub: push main-fixed → .github/workflows/auto-deploy.yml (no PC tarball).
 #
-# PowerShell (do NOT pass comma-separated --substitutions — PowerShell splits commas):
-#   .\scripts\deploy-cloud-build.ps1
-#
-# Optional overrides (bash only):
-#   gcloud builds submit --config=cloudbuild.yaml . --substitutions=_SERVICE=aibhive,_REGION=us-west1
+# Emergency (GitHub down):
+#   ALLOW_LOCAL_GCP_DEPLOY=1 ./scripts/deploy-cloud-build.ps1
+#   (sync submit — no --async — plus gcp-upload-guard.mjs)
 
 timeout: 2400s
 

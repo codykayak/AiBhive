@@ -111,6 +111,14 @@ for (const f of top) {
 }
 
 console.log('\nTips:');
-console.log('  • Ship site changes: gcloud builds submit (NOT git push) — see docs/GIT-AND-DEPLOY.md');
+console.log('  • Ship site/server changes: npm run ship  (git push → GitHub Actions → Cloud Run ~10 min)');
+console.log('  • Do NOT use gcloud builds submit / npm run deploy:gcp for routine work (local tarball stalls on Windows)');
 console.log('  • Block huge commits: npm run repo:install-hooks');
 console.log('  • Clean stuck packs: npm run repo:gc');
+console.log('  • Pre-flight: npm run gcp:upload-check');
+
+const failArg = process.argv.includes('--fail-over-mb');
+if (failArg) {
+  const maxMb = Number(process.argv.find((a) => a.startsWith('--max-mb='))?.split('=')[1] || 80);
+  if (total > maxMb * 1024 * 1024) process.exit(1);
+}

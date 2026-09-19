@@ -1,47 +1,33 @@
 #!/usr/bin/env bash
-# Deploy AiBhive web + server to Cloud Run.
-# Auth (any one): GOOGLE_APPLICATION_CREDENTIALS file, GCP_SA_KEY env, or gcloud auth login on host.
+# EMERGENCY ONLY — same as deploy-cloud-build.ps1 but direct Cloud Run source deploy.
+# Routine: npm run ship
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+if [[ -z "${ALLOW_LOCAL_GCP_DEPLOY:-}" ]]; then
+  echo ""
+  echo "BLOCKED: Local gcloud run deploy --source uploads a tarball from this machine."
+  echo "  Routine: npm run ship"
+  echo "  Emergency: ALLOW_LOCAL_GCP_DEPLOY=1 $0"
+  echo ""
+  exit 1
+fi
+
+node scripts/gcp-upload-guard.mjs
 
 SERVICE="${CLOUD_RUN_SERVICE:-aibhive}"
 REGION="${CLOUD_RUN_REGION:-us-west1}"
 PROJECT="${GCP_PROJECT_ID:-project-c223f844-6371-4c3f-a0c}"
 
 if ! command -v gcloud >/dev/null 2>&1; then
-  curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME"
-  export PATH="$HOME/google-cloud-sdk/bin:$PATH"
-fi
-
-if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" && -f "${GOOGLE_APPLICATION_CREDENTIALS}" ]]; then
-  gcloud auth activate-service-account --key-file="$GOOGLE_APPLICATION_CREDENTIALS" --quiet
-elif [[ -n "${GCP_SA_KEY:-}" ]]; then
-  KEY_FILE="$(mktemp)"
-  trap 'rm -f "$KEY_FILE"' EXIT
-  if echo "$GCP_SA_KEY" | base64 -d > "$KEY_FILE" 2>/dev/null && python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$KEY_FILE" 2>/dev/null; then
-    :
-  else
-    printf '%s' "$GCP_SA_KEY" > "$KEY_FILE"
-  fi
-  gcloud auth activate-service-account --key-file="$KEY_FILE" --quiet
-elif ! gcloud auth print-access-token >/dev/null 2>&1; then
-  echo "ERROR: No GCP credentials. gcloud auth login on this machine, or set GCP_SA_KEY / GOOGLE_APPLICATION_CREDENTIALS."
+  echo "ERROR: gcloud not installed"
   exit 1
 fi
 
 gcloud config set project "$PROJECT" --quiet
-
-echo "Building production bundle..."
 npm ci
 npm run build
-
-echo "Deploying $SERVICE to Cloud Run ($REGION, $PROJECT)..."
-gcloud run deploy "$SERVICE" \
-  --source . \
-  --region "$REGION" \
-  --project "$PROJECT" \
-  --quiet
-
+gcloud run deploy "$SERVICE" --source . --region "$REGION" --project "$PROJECT" --quiet
 echo "Deploy complete."

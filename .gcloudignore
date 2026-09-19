@@ -9,6 +9,9 @@
 # Dependencies & build artifacts (rebuilt in Cloud Build)
 node_modules
 **/node_modules
+**/.gradle
+**/android/app/build
+**/.expo
 dist
 coverage
 .tmp
@@ -30,8 +33,10 @@ anticheat-lab
 steward
 taylored-mobile
 mobile/
-# aibhive-diagnose/lib is required by vite (@diagnose alias) — exclude heavy mobile-only paths only
+# aibhive-diagnose/lib required by Vite — exclude heavy mobile-only paths
 aibhive-diagnose/node_modules
+aibhive-diagnose/*.mp4
+aibhive-diagnose/**/*.mp4
 aibhive-diagnose/.expo
 aibhive-diagnose/android
 aibhive-diagnose/ios

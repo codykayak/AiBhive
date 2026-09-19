@@ -1,0 +1,43 @@
+---
+description: Never local gcloud tarball deploy for aibhive.com — use npm run ship
+alwaysApply: true
+---
+
+# GCP deploy — one path only
+
+## Routine (every feature)
+
+```powershell
+npm run ship
+```
+
+Git push → open PR → auto-merge `main-fixed` → **GitHub Actions** `auto-deploy.yml` → Cloud Run **aibhive** **us-west1**.
+
+No `gcloud builds submit` from the PC. No `npm run deploy:gcp` unless user explicitly says GitHub is down.
+
+## Forbidden for agents (causes hour-long tarball loops)
+
+- `gcloud builds submit` with `.` from Windows
+- `npm run deploy:gcp` / `deploy:cloud-run` without `ALLOW_LOCAL_GCP_DEPLOY=1`
+- `--async` on local Cloud Build (hides stuck uploads)
+- Retrying local deploy when Actions can ship instead
+
+## If user says “deploy to GCP”
+
+1. Commit scoped changes
+2. `npm run ship` (or merge to `main-fixed` if already reviewed)
+3. Watch https://github.com/codykayak/AiBhive/actions — **Auto-deploy (web + server)**
+4. Verify https://aibhive.com/api/health or feature endpoint
+
+## Emergency only
+
+```powershell
+$env:ALLOW_LOCAL_GCP_DEPLOY="1"
+.\scripts\deploy-cloud-build.ps1
+```
+
+Runs `gcp-upload-guard.mjs` first (blocks Gradle/build junk in the tarball).
+
+Project: `project-c223f844-6371-4c3f-a0c` · Service: `aibhive` · Region: `us-west1`
+
+Docs: `docs/GIT-AND-DEPLOY.md`
