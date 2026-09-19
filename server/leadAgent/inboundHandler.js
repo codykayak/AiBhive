@@ -92,4 +92,4 @@ export async function incrementDailySms(db, uid, businessId) {
     .set({ [key]: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
 }
 
-export { canSendOutbound, getSentTodayLocal, todayKey };
+export { canSendReplySms, canSendOutbound, getSentTodayLocal, todayKey } from './automation.js';
