@@ -29,10 +29,7 @@ manydoorsai-main
 anticheat-lab
 steward
 taylored-mobile
-mobile/lead-agent/android
-mobile/lead-agent/node_modules
-mobile/lead-agent/.expo
-mobile/lead-agent/dist
+mobile/
 # aibhive-diagnose/lib is required by vite (@diagnose alias) — exclude heavy mobile-only paths only
 aibhive-diagnose/node_modules
 aibhive-diagnose/.expo
