@@ -101,6 +101,13 @@ function serializeJobApplicationDoc(id, data) {
     createdAt: createdAtIso,
     status: data.status || 'new',
     source: data.source || '',
+    adminNotes: data.adminNotes || '',
+    hired: Boolean(data.hired),
+    grokScore: data.grokScore ?? null,
+    grokRelativeRank: data.grokRelativeRank ?? null,
+    grokRankSummary: data.grokRankSummary || '',
+    grokScoredAt: data.grokScoredAt || null,
+    resumeExcerpt: data.resumeExcerpt ? String(data.resumeExcerpt).slice(0, 500) : '',
   };
 }
 
@@ -166,33 +173,7 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         }
       }
 
-      let emailNotifiedAt = null;
-      let emailChannel = null;
-      try {
-        const delivery = await deliverJobApplicationEmail(transporter, {
-          id,
-          name,
-          email,
-          phone,
-          productLine: productLine(products),
-          callTime,
-          callTimeNote,
-          timezone: clip(body.timezone, 80),
-          aboutYou,
-          resumeName,
-          resumeBuffer: file.buffer,
-          resumeContentType: file.mimetype,
-        });
-        emailChannel = delivery.channel;
-        emailNotifiedAt = new Date().toISOString();
-      } catch (mailErr) {
-        console.error('[job-application] All email channels failed:', mailErr?.message || mailErr);
-        return res.status(502).json({
-          error:
-            'We could not deliver your application right now. Please email codykayak@gmail.com with subject "employee app".',
-        });
-      }
-
+      const productLineText = productLine(products);
       const doc = {
         name,
         email,
@@ -210,18 +191,60 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         source: 'aibhive.com/jobs',
         label: EMPLOYEE_APP_LABEL,
         notifyEmail: jobsNotifyTo(),
-        emailChannel,
-        emailNotifiedAt,
+        emailChannel: null,
+        emailNotifiedAt: null,
+        emailPending: true,
         createdAt: FieldValue.serverTimestamp(),
       };
 
       try {
         await db.collection('jobApplications').doc(id).set(doc);
       } catch (dbErr) {
-        console.error('[job-application] Firestore save failed (email was sent):', dbErr?.message || dbErr);
+        console.error('[job-application] Firestore save failed:', dbErr?.message || dbErr);
+        return res.status(503).json({
+          error: 'We could not save your application. Please email codykayak@gmail.com with subject "employee app".',
+        });
       }
 
-      return res.json({ success: true, id });
+      let emailDelivered = false;
+      let emailChannel = null;
+      let emailNotifiedAt = null;
+      try {
+        const delivery = await deliverJobApplicationEmail(transporter, {
+          id,
+          name,
+          email,
+          phone,
+          productLine: productLineText,
+          callTime,
+          callTimeNote,
+          timezone: clip(body.timezone, 80),
+          aboutYou,
+          resumeName,
+          resumeBuffer: file.buffer,
+          resumeContentType: file.mimetype,
+        });
+        emailChannel = delivery.channel;
+        emailNotifiedAt = new Date().toISOString();
+        emailDelivered = true;
+        await db.collection('jobApplications').doc(id).set(
+          { emailChannel, emailNotifiedAt, emailPending: false },
+          { merge: true }
+        );
+      } catch (mailErr) {
+        console.error(
+          '[job-application] Server email failed (client may notify):',
+          mailErr?.message || mailErr
+        );
+      }
+
+      return res.json({
+        success: true,
+        id,
+        emailDelivered,
+        notifyEmail: jobsNotifyTo(),
+        productLine: productLineText,
+      });
     } catch (err) {
       console.error('[job-application] Error:', err);
       return res.status(500).json({ error: 'Failed to submit application. Please email codykayak@gmail.com.' });
@@ -239,10 +262,51 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         .limit(limit)
         .get();
       const applications = snap.docs.map((d) => serializeJobApplicationDoc(d.id, d.data()));
+      applications.sort((a, b) => (b.grokScore ?? -1) - (a.grokScore ?? -1));
       return res.json({ applications, notifyEmail: jobsNotifyTo() });
     } catch (err) {
       console.error('[job-application] admin list failed:', err);
       return res.status(500).json({ error: err.message || 'Could not list applications.' });
+    }
+  });
+
+  app.patch('/api/admin/job-applications/:id', verifyAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ref = db.collection('jobApplications').doc(id);
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'Application not found.' });
+
+      const body = req.body || {};
+      const patch = { updatedAt: FieldValue.serverTimestamp() };
+      if (typeof body.adminNotes === 'string') patch.adminNotes = body.adminNotes.slice(0, 8000);
+      if (typeof body.hired === 'boolean') patch.hired = body.hired;
+      if (typeof body.status === 'string') patch.status = body.status.slice(0, 40);
+
+      await ref.set(patch, { merge: true });
+      const updated = await ref.get();
+      return res.json({ application: serializeJobApplicationDoc(id, updated.data()) });
+    } catch (err) {
+      console.error('[job-application] admin patch failed:', err);
+      return res.status(500).json({ error: err.message || 'Update failed.' });
+    }
+  });
+
+  app.get('/api/admin/job-applications/:id/resume', verifyAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const snap = await db.collection('jobApplications').doc(id).get();
+      if (!snap.exists) return res.status(404).json({ error: 'Application not found.' });
+      const data = snap.data();
+      const buf = await loadResumeBuffer(gcsBucket, data);
+      if (!buf) return res.status(404).json({ error: 'Resume file not found in storage.' });
+      const name = data.resumeFileName || 'resume.pdf';
+      res.setHeader('Content-Type', data.resumeContentType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${name.replace(/"/g, '')}"`);
+      return res.send(buf);
+    } catch (err) {
+      console.error('[job-application] resume download failed:', err);
+      return res.status(500).json({ error: err.message || 'Download failed.' });
     }
   });
 

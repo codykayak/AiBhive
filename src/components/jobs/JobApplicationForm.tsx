@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertCircle, ArrowRight, CheckCircle2, Loader2, Upload } from 'lucide-react';
 import { motion } from 'motion/react';
 import { JOB_LISTINGS, JobSlug } from '../../content/jobListings';
+import { notifyJobApplicationFromBrowser } from '../../lib/jobApplicationClientNotify';
 
 const CALL_OPTIONS = [
   { id: 'weekday-morning', label: 'Weekday mornings (8am–12pm PT)' },
@@ -81,9 +82,33 @@ export function JobApplicationForm({
           : '/api/job-application',
         { method: 'POST', body }
       );
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Submission failed. Email hello@aibhive.com.');
+      }
+      if (data.success && data.emailDelivered === false) {
+        const productLine =
+          data.productLine ||
+          selectedProducts
+            .map((slug) => JOB_LISTINGS.find((j) => j.slug === slug)?.orgName || slug)
+            .join(', ');
+        try {
+          await notifyJobApplicationFromBrowser({
+            id: data.id,
+            name,
+            email,
+            phone,
+            productLine,
+            callTime,
+            callTimeNote,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+            aboutYou,
+            resume,
+            notifyEmail: data.notifyEmail,
+          });
+        } catch (notifyErr) {
+          console.warn('[jobs] browser email notify failed:', notifyErr);
+        }
       }
       setStatus('success');
     } catch (err) {

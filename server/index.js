@@ -99,6 +99,7 @@ import { registerMacroreiVoiceRoutes } from './macroreiVoiceSession.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
 import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
 import { registerJobApplicationRoutes } from './jobApplicationRoutes.js';
+import { jobsNotifyTo, smtpConfigured } from './jobEmailDelivery.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
 import { runIntelResearchChat, intelLlmStatus } from './intelResearchChat.js';
@@ -821,6 +822,11 @@ app.get('/api/health', async (_req, res) => {
       firecrawl: intelCloudKeyStatus().firecrawl,
       serpapi: intelCloudKeyStatus().serpapi,
       anthropic: intelLlmStatus().claude,
+      jobsEmail: {
+        notifyTo: jobsNotifyTo(),
+        smtp: smtpConfigured(),
+        resend: Boolean(process.env.RESEND_API_KEY?.trim()),
+      },
     },
     firestore: { ok: firestoreOk, error: firestoreError },
   });

@@ -146,7 +146,10 @@ export async function deliverJobApplicationEmail(transporter, payload) {
   if (process.env.RESEND_API_KEY?.trim()) {
     attempts.push(['resend', () => sendViaResend(payload)]);
   }
-  attempts.push(['formsubmit', () => sendViaFormSubmit(payload)]);
+  // FormSubmit rejects Cloud Run / datacenter requests — browser fallback in JobApplicationForm.
+  if (process.env.JOB_EMAIL_ALLOW_FORMSUBMIT_SERVER === '1') {
+    attempts.push(['formsubmit', () => sendViaFormSubmit(payload)]);
+  }
 
   const errors = [];
   for (const [name, fn] of attempts) {

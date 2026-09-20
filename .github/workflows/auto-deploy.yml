@@ -89,6 +89,7 @@ jobs:
           service: ${{ secrets.CLOUD_RUN_SERVICE }}
           region: ${{ secrets.CLOUD_RUN_REGION }}
           source: .
+          flags: --update-env-vars=JOBS_NOTIFY_EMAIL=codykayak@gmail.com
           env_vars: |
             JOBS_NOTIFY_EMAIL=codykayak@gmail.com
 
