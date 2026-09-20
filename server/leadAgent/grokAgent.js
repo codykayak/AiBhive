@@ -1,6 +1,7 @@
 import { grokChatMessages } from '../socialPosts/grokProvider.js';
 import { isOptOutMessage } from './smsProvider.js';
 import { getWebsiteRagContext } from './ragKnowledge.js';
+import { personalizeOutbound } from './outboundMessage.js';
 
 function getXaiKey() {
   return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
@@ -88,8 +89,5 @@ export async function generateSmsReply({ business, lead, history, inbound }) {
 }
 
 export async function generateFirstOutbound({ business, lead }) {
-  const personalized = lead?.name ? `Hi ${lead.name.split(' ')[0]}, ` : 'Hi, ';
-  const base = business.greeting || 'Hello — following up on your property.';
-  if (base.toLowerCase().startsWith('hi')) return base;
-  return `${personalized}${base}`.slice(0, 480);
+  return personalizeOutbound(business, lead);
 }

@@ -1,69 +1,37 @@
-import type { Business } from './types';
-
-export const DEFAULT_BUSINESSES: Business[] = [
-  {
-    id: 'macrorei',
-    name: 'MacroREI',
-    tagline: 'Cash home buying — Eugene & Oregon',
-    brandColor: '#1e4d2b',
-    phoneDisplay: '(541) 321-2630',
-    phoneE164: '+15413212630',
-    website: 'https://macrorei.com',
-    dailySmsLimit: 40,
-    dailySmsSuggested: 25,
-    smsProvider: 'phone',
-    agentEnabled: true,
-    automationEnabled: true,
-    minDelayMinutes: 6,
-    maxDelayMinutes: 15,
-    sendWindowStart: 9,
-    sendWindowEnd: 18,
-    greeting:
-      'Hi, this is Cody with Macro Real Estate Investing. We buy houses as-is for cash in Eugene and western Oregon. Are you the owner, and would you ever consider selling?',
-    escalationKeywords: ['appointment', 'meet', 'call me', 'schedule', 'interested'],
-    escalationMessage: 'Great — our investor will reach out shortly. Best time to call you back?',
-    knowledge: 'MacroREI buys distressed/inherited Oregon homes. Appointment setting only — not a product pitch.',
-  },
-  {
-    id: 'manydoors',
-    name: 'ManyDoors AI',
-    tagline: 'Property management ops',
-    brandColor: '#2563eb',
-    website: 'https://manydoorsai.com',
-    dailySmsLimit: 35,
-    dailySmsSuggested: 20,
-    smsProvider: 'phone',
-    agentEnabled: true,
-    automationEnabled: true,
-    minDelayMinutes: 6,
-    maxDelayMinutes: 15,
-    sendWindowStart: 9,
-    sendWindowEnd: 18,
-    greeting: 'Hi, this is ManyDoors AI property management. How can we help with your portfolio today?',
-    escalationKeywords: ['demo', 'pricing', 'onboard'],
-    escalationMessage: 'Thanks — our team will follow up with next steps.',
-    knowledge: 'ManyDoors AI: rent roll, maintenance dispatch, portfolio sync.',
-  },
-  {
-    id: 'aibhive-pros',
-    name: 'AiBhive Pros',
-    tagline: 'Field service intelligence',
-    brandColor: '#F5A623',
-    phoneDisplay: '(217) 600-2129',
-    phoneE164: '+12176002129',
-    website: 'https://aibhive.com/pros',
-    dailySmsLimit: 50,
-    dailySmsSuggested: 30,
-    smsProvider: 'phone',
-    agentEnabled: true,
-    automationEnabled: true,
-    minDelayMinutes: 6,
-    maxDelayMinutes: 15,
-    sendWindowStart: 9,
-    sendWindowEnd: 18,
-    greeting: 'Hi, this is AiBhive Pros — dispatch and field playbooks for trade shops. What trade are you in?',
-    escalationKeywords: ['demo', 'signup', 'trial'],
-    escalationMessage: 'Got it — our team will reach out. Best callback number?',
-    knowledge: 'AiBhive Pros: HVAC, plumbing, electrical. Diagnose app + Pros HQ.',
-  },
-];
+import type { Business } from './types';
+
+/** MacroREI-only defaults for Lead Agent (Eugene investor SMS). */
+export const DEFAULT_BUSINESSES: Business[] = [
+  {
+    id: 'macrorei',
+    name: 'MacroREI',
+    tagline: 'Cash home buying — Eugene & western Oregon',
+    brandColor: '#1e4d2b',
+    phoneDisplay: '(541) 321-2630',
+    phoneE164: '+15413212630',
+    website: 'https://macrorei.com',
+    dailySmsLimit: 40,
+    dailySmsSuggested: 25,
+    smsProvider: 'phone',
+    agentEnabled: true,
+    automationEnabled: true,
+    minDelayMinutes: 6,
+    maxDelayMinutes: 15,
+    sendWindowStart: 9,
+    sendWindowEnd: 18,
+    sendTimezone: 'America/Los_Angeles',
+    outboundTemplate:
+      "my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?",
+    greeting:
+      "Hi, my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?",
+    escalationKeywords: ['appointment', 'meet', 'call me', 'talk', 'schedule', 'yes sell', 'interested', 'selling'],
+    escalationMessage:
+      'Great — I will have our investor reach out shortly to set a time. What is the best number and time to call you back?',
+    knowledge: `MacroREI (Macro Real Estate Investing) buys houses fast for cash in Eugene, Springfield, Corvallis, Roseburg, Bend, and western Oregon.
+Specialties: inherited properties, probate, distressed/as-is homes, no repairs required.
+This is NOT a product sales pitch. Ask if the homeowner wants to sell and book an appointment with the investor.
+Investor has done 100+ deals. Phone: (541) 321-2630. Email: cody@macrorei.com.
+Always be respectful, short, and one question at a time. Honor STOP/UNSUBSCRIBE immediately.`,
+  },
+];
+

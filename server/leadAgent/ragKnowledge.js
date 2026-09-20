@@ -1,7 +1,11 @@
 /** Cached website text for Grok SMS RAG (three businesses). */
 
 const SITE_BY_BUSINESS = {
-  macrorei: ['https://www.macrorei.com/', 'https://www.macrorei.com/llms.txt'],
+  macrorei: [
+    'https://www.macrorei.com/',
+    'https://www.macrorei.com/llms.txt',
+    'https://www.macrorei.com/about',
+  ],
   manydoors: ['https://manydoorsai.com/', 'https://manydoorsai.com/llms.txt'],
   'aibhive-pros': ['https://aibhive.com/pros', 'https://aibhive.com/llms.txt'],
 };

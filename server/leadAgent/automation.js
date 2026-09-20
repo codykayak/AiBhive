@@ -59,8 +59,8 @@ export function canSendReplySms(business) {
   return { ok: true, sent, limit: replyCap };
 }
 
-export function pickNextLead(leads) {
-  const pool = (leads || []).filter(
+export function pickNextLead(leads, business) {
+  let pool = (leads || []).filter(
     (l) =>
       l.phone &&
       !l.optedOut &&
@@ -68,18 +68,12 @@ export function pickNextLead(leads) {
       l.status !== 'dead' &&
       (l.status === 'new' || l.status === undefined),
   );
+  if (business?.id === 'macrorei') {
+    const withAddr = pool.filter((l) => resolvePropertyAddress(l));
+    if (withAddr.length) pool = withAddr;
+  }
   if (!pool.length) return null;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export function personalizeOutbound(business, lead) {
-  let body = business.greeting || business.outboundTemplate || 'Hi — following up.';
-  const first = lead?.name?.trim().split(/\s+/)[0];
-  if (first && !body.toLowerCase().includes(first.toLowerCase())) {
-    body = body.replace(/^Hi,?\s*/i, `Hi ${first}, `);
-  }
-  if (lead?.propertyAddress && body.length < 280) {
-    body = `${body} Re: ${lead.propertyAddress}`.slice(0, 480);
-  }
-  return body.slice(0, 480);
-}
+export { personalizeOutbound } from './outboundMessage.js';

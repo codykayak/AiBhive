@@ -8,6 +8,8 @@ import {
   saveLocalLeads,
   setActiveBusinessId,
 } from '../lib/storage';
+import { normalizePhone } from '../lib/api';
+import { importLeadsBulk } from '../lib/api';
 import type { Business, Lead } from '../lib/types';
 
 type Ctx = {
@@ -17,6 +19,7 @@ type Ctx = {
   setActive: (id: string) => Promise<void>;
   refresh: () => Promise<void>;
   upsertLead: (lead: Lead) => Promise<void>;
+  importLeads: (incoming: Lead[]) => Promise<{ added: number; total: number }>;
   updateBusiness: (patch: Partial<Business>) => Promise<void>;
   addBusiness: (b: Business) => Promise<void>;
 };
@@ -67,6 +70,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await saveLocalLeads(activeId, next);
   };
 
+  const importLeads = async (incoming: Lead[]) => {
+    const byPhone = new Map<string, Lead>();
+    for (const l of leads) byPhone.set(normalizePhone(l.phone), l);
+    let added = 0;
+    for (const l of incoming) {
+      const key = normalizePhone(l.phone);
+      if (!byPhone.has(key)) added++;
+      byPhone.set(key, { ...byPhone.get(key), ...l, phone: key, status: l.status || 'new' });
+    }
+    const next = Array.from(byPhone.values());
+    setLeads(next);
+    await saveLocalLeads(activeId, next);
+    try {
+      await importLeadsBulk(activeId, next);
+    } catch {
+      /* local list still works offline */
+    }
+    return { added, total: next.length };
+  };
+
   const updateBusiness = async (patch: Partial<Business>) => {
     if (!active) return;
     const next = businesses.map((b) => (b.id === active.id ? { ...b, ...patch } : b));
@@ -81,7 +104,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ businesses, active, leads, setActive, refresh, upsertLead, updateBusiness, addBusiness }),
+    () => ({ businesses, active, leads, setActive, refresh, upsertLead, importLeads, updateBusiness, addBusiness }),
     [businesses, active, leads],
   );
 

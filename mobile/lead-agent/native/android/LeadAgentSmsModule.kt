@@ -14,7 +14,12 @@ class LeadAgentSmsModule(private val ctx: ReactApplicationContext) : ReactContex
   fun sendSms(phone: String, body: String, promise: Promise) {
     try {
       val mgr = SmsManager.getDefault()
-      mgr.sendTextMessage(phone, null, body, null, null)
+      val parts = mgr.divideMessage(body)
+      if (parts.size > 1) {
+        mgr.sendMultipartTextMessage(phone, null, parts, null, null)
+      } else {
+        mgr.sendTextMessage(phone, null, body, null, null)
+      }
       promise.resolve(mapOf("ok" to true))
     } catch (e: Exception) {
       promise.reject("SMS_SEND_FAILED", e.message, e)

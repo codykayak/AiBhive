@@ -5,9 +5,12 @@ import {
   automationIsActive,
   getSentTodayForBusiness,
   isAutomationRunning,
+  sendNextLeadNow,
   startAutomation,
   stopAutomation,
 } from '../../lib/automationRunner';
+import { personalizeOutbound, pickNextLead } from '../../lib/localAutomation';
+import { ensureSmsPermissions } from '../../lib/permissions';
 
 export default function AutomationScreen() {
   const { active, businesses, setActive, leads, upsertLead, updateBusiness } = useApp();
@@ -48,11 +51,28 @@ export default function AutomationScreen() {
   const toggle = async (value: boolean) => {
     if (!active) return;
     if (value) {
+      const ok = await ensureSmsPermissions();
+      if (!ok) {
+        setLog((prev) => [`${new Date().toLocaleTimeString()} SMS permission required`, ...prev]);
+        return;
+      }
       await startAutomation(handlersRef.current);
       setOn(true);
     } else {
       await stopAutomation();
       setOn(false);
+    }
+  };
+
+  const nextLead = pickNextLead(leads);
+  const previewBody = active && nextLead ? personalizeOutbound(active, nextLead) : '';
+
+  const sendOneNow = async () => {
+    try {
+      await sendNextLeadNow(handlersRef.current);
+      if (active) setSentToday(await getSentTodayForBusiness(active.id));
+    } catch (e) {
+      setLog((prev) => [`${new Date().toLocaleTimeString()} ${e}`, ...prev]);
     }
   };
 
@@ -86,9 +106,27 @@ export default function AutomationScreen() {
         ))}
       </ScrollView>
       <Text style={styles.sub}>
-        Auto-sends your prescribed greeting to new leads (paced). Grok replies to inbound SMS using website RAG when
-        server + device secret are set in Settings.
+        Paced auto-SMS to new MacroREI leads from your uploaded list. Grok replies to inbound texts using macrorei.com
+        RAG (Settings → Test server / Refresh RAG).
       </Text>
+
+      {previewBody ? (
+        <View style={styles.preview}>
+          <Text style={styles.previewLabel}>Next message</Text>
+          <Text style={styles.previewText}>{previewBody}</Text>
+          {nextLead ? (
+            <Text style={styles.previewMeta}>
+              → {nextLead.name || 'Owner'} · {nextLead.propertyAddress || nextLead.notes}
+            </Text>
+          ) : null}
+        </View>
+      ) : (
+        <Text style={styles.warn}>Upload leads on the Leads tab (name, address, phone) before starting.</Text>
+      )}
+
+      <Pressable style={[styles.chip, { backgroundColor: active.brandColor || '#1e4d2b' }]} onPress={() => void sendOneNow()}>
+        <Text style={{ color: '#fff', fontWeight: '700', textAlign: 'center' }}>Send 1 test SMS now</Text>
+      </Pressable>
 
       <View style={styles.row}>
         <Text style={styles.label}>Run automation</Text>
@@ -132,6 +170,10 @@ const styles = StyleSheet.create({
   bizChip: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#e2e8f0', borderRadius: 20, marginRight: 8 },
   bizChipText: { fontWeight: '700', fontSize: 13 },
   sub: { color: '#555', marginTop: 8, marginBottom: 16, lineHeight: 20 },
+  preview: { backgroundColor: '#fff', padding: 12, borderRadius: 10, marginBottom: 12, borderLeftWidth: 4, borderLeftColor: '#1e4d2b' },
+  previewLabel: { fontSize: 12, fontWeight: '700', color: '#64748b' },
+  previewText: { marginTop: 6, lineHeight: 20, color: '#111' },
+  previewMeta: { marginTop: 8, fontSize: 12, color: '#64748b' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 8, gap: 8 },
   label: { fontWeight: '700', fontSize: 16 },
   stat: { color: '#333', marginBottom: 4 },

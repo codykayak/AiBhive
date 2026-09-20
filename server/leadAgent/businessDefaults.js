@@ -18,8 +18,10 @@ export const DEFAULT_BUSINESSES = [
     sendWindowStart: 9,
     sendWindowEnd: 18,
     sendTimezone: 'America/Los_Angeles',
+    outboundTemplate:
+      "my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?",
     greeting:
-      'Hi, this is Cody with Macro Real Estate Investing. We buy houses as-is for cash in Eugene and western Oregon. Are you the owner, and would you ever consider selling?',
+      "Hi, my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?",
     escalationKeywords: ['appointment', 'meet', 'call me', 'talk', 'schedule', 'yes sell', 'interested'],
     escalationAction: 'notify_owner',
     escalationMessage:

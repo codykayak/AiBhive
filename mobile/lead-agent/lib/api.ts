@@ -90,6 +90,13 @@ export async function reportDeviceSent(
   });
 }
 
+export async function importLeadsBulk(businessId: string, leads: Lead[]) {
+  return apiFetch(`/api/lead-agent/businesses/${businessId}/leads/import`, {
+    method: 'POST',
+    body: JSON.stringify({ leads }),
+  });
+}
+
 export async function refreshBusinessRag(businessId: string) {
   return apiFetch(`/api/lead-agent/device/refresh-rag/${businessId}`, { method: 'POST' });
 }

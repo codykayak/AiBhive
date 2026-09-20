@@ -153,6 +153,35 @@ export function registerLeadAgentRoutes(app, db) {
     return res.json({ lead: { id: snap.id, ...snap.data() } });
   });
 
+  app.post('/api/lead-agent/businesses/:businessId/leads/import', async (req, res) => {
+    const user = await requireAuth(req, res);
+    if (!user) return;
+    const { businessId } = req.params;
+    const items = Array.isArray(req.body?.leads) ? req.body.leads : [];
+    let imported = 0;
+    for (const item of items.slice(0, 500)) {
+      const phone = normalizePhone(item.phone);
+      if (phone.replace(/\D/g, '').length < 10) continue;
+      const id = String(item.id || randomUUID());
+      await leadsRef(db, user.uid, businessId).doc(id).set(
+        {
+          name: String(item.name || '').slice(0, 200),
+          phone,
+          propertyAddress: String(item.propertyAddress || item.notes || '').slice(0, 500),
+          notes: String(item.notes || item.propertyAddress || '').slice(0, 2000),
+          status: item.status || 'new',
+          talkedTo: Boolean(item.talkedTo),
+          agentPaused: Boolean(item.agentPaused),
+          updatedAt: FieldValue.serverTimestamp(),
+          createdAt: item.createdAt || FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      imported++;
+    }
+    return res.json({ imported, total: items.length });
+  });
+
   app.get('/api/lead-agent/businesses/:businessId/leads/:leadId/messages', async (req, res) => {
     const user = await requireAuth(req, res);
     if (!user) return;
@@ -217,11 +246,11 @@ export function registerLeadAgentRoutes(app, db) {
     if (!quota.ok) return res.status(429).json({ error: quota.reason, ...quota });
 
     const localLeads = Array.isArray(req.body?.leads) ? req.body.leads : null;
-    let lead = localLeads ? pickNextLead(localLeads) : null;
+    let lead = localLeads ? pickNextLead(localLeads, business) : null;
     if (!lead) {
       const snap = await leadsRef(db, user.uid, businessId).where('status', '==', 'new').limit(50).get();
       const fromDb = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      lead = pickNextLead(fromDb);
+      lead = pickNextLead(fromDb, business);
     }
     if (!lead) return res.json({ done: true, reason: 'no_leads', quota });
 

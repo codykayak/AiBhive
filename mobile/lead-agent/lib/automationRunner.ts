@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { postInbound, reportDeviceSent } from './api';
 import { canSendNow, dayKey, personalizeOutbound, pickNextLead, randomDelayMs } from './localAutomation';
+import { ensureSmsPermissions } from './permissions';
 import { sendSmsNative, subscribeInbound, pollInbound } from './sms';
 import { normalizePhone } from './api';
 import type { Business, Lead } from './types';
@@ -93,6 +94,12 @@ async function scheduleNext(h: Handlers) {
   timer = setTimeout(async () => {
     if (!running) return;
     try {
+      const ok = await ensureSmsPermissions();
+      if (!ok) {
+        h.onLog('SMS permission denied — enable Send SMS in Android settings.');
+        scheduleNext(h);
+        return;
+      }
       const body = personalizeOutbound(business, lead);
       await sendSmsNative(lead.phone, body);
       await bumpCount(business.id);
@@ -150,4 +157,25 @@ export async function isAutomationRunning() {
 
 export function automationIsActive() {
   return running;
+}
+
+/** Send one outbound SMS now (test / manual). */
+export async function sendNextLeadNow(h: Handlers) {
+  const business = h.getBusiness();
+  if (!business) throw new Error('Select MacroREI first.');
+  const lead = pickNextLead(h.getLeads());
+  if (!lead) throw new Error('No new leads with phone + property address.');
+  const ok = await ensureSmsPermissions();
+  if (!ok) throw new Error('SMS permission denied.');
+  const body = personalizeOutbound(business, lead);
+  await sendSmsNative(lead.phone, body);
+  await bumpCount(business.id);
+  try {
+    await reportDeviceSent(business.id, lead.id, lead.phone, body);
+  } catch {
+    /* optional */
+  }
+  await h.upsertLead({ ...lead, status: 'texted', lastContactAt: new Date().toISOString() });
+  h.onLog(`Sent now → ${lead.phone}`);
+  return { lead, body };
 }

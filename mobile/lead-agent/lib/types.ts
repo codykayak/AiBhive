@@ -20,6 +20,7 @@ export type Business = {
   sendWindowEnd?: number;
   sendTimezone?: string;
   greeting?: string;
+  outboundTemplate?: string;
   escalationKeywords?: string[];
   escalationMessage?: string;
   knowledge?: string;
