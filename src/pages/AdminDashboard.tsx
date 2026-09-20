@@ -20,6 +20,7 @@ import {
   Check,
   BarChart3,
   Ticket,
+  Briefcase,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -28,6 +29,7 @@ import RagSourcesPanel from '../components/admin/RagSourcesPanel';
 import AutoSocialPanel from '../components/admin/AutoSocialPanel';
 import AdminAnalyticsPanel from '../components/admin/AdminAnalyticsPanel';
 import AdminPromoCodesPanel from '../components/admin/AdminPromoCodesPanel';
+import AdminJobApplicationsPanel from '../components/admin/AdminJobApplicationsPanel';
 
 interface Lead {
   id: string;
@@ -73,11 +75,12 @@ export default function AdminDashboard() {
     tabParam === 'auto-social' ||
     tabParam === 'settings' ||
     tabParam === 'analytics' ||
-    tabParam === 'promos'
+    tabParam === 'promos' ||
+    tabParam === 'hiring'
       ? tabParam
       : 'leads';
   const [activeTab, setActiveTab] = useState<
-    'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos'
+    'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos' | 'hiring'
   >(initialTab);
 
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -132,7 +135,7 @@ export default function AdminDashboard() {
   }, [fetchAdminData]);
 
   const switchTab = useCallback(
-    (tab: 'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos') => {
+    (tab: 'leads' | 'settings' | 'auto-social' | 'analytics' | 'promos' | 'hiring') => {
       setActiveTab(tab);
       if (tab === 'leads') {
         searchParams.delete('tab');
@@ -149,7 +152,8 @@ export default function AdminDashboard() {
       tabParam === 'auto-social' ||
       tabParam === 'settings' ||
       tabParam === 'analytics' ||
-      tabParam === 'promos'
+      tabParam === 'promos' ||
+      tabParam === 'hiring'
     ) {
       setActiveTab(tabParam);
     } else if (!tabParam) {
@@ -399,6 +403,19 @@ export default function AdminDashboard() {
         </button>
         <button
           type="button"
+          onClick={() => switchTab('hiring')}
+          className={cn(
+            'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
+            activeTab === 'hiring'
+              ? 'bg-bee-amber text-bee-black shadow-[0_0_20px_rgba(245,158,11,0.3)]'
+              : 'bg-white/5 text-slate-300 hover:bg-white/10'
+          )}
+        >
+          <Briefcase className="w-5 h-5 mr-2" />
+          Hiring
+        </button>
+        <button
+          type="button"
           onClick={() => switchTab('settings')}
           className={cn(
             'px-6 py-3 rounded-xl font-medium transition-all flex items-center',
@@ -419,7 +436,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {loadingData && leads.length === 0 ? (
+      {loadingData && leads.length === 0 && activeTab === 'leads' ? (
         <div className="flex justify-center py-20">
           <Loader2 className="w-10 h-10 text-bee-amber animate-spin" />
         </div>
@@ -584,6 +601,8 @@ export default function AdminDashboard() {
               </div>
             </>
           )}
+
+          {activeTab === 'hiring' && user && <AdminJobApplicationsPanel user={user} />}
 
           {activeTab === 'auto-social' && <AutoSocialPanel user={user} />}
 

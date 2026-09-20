@@ -89,9 +89,8 @@ jobs:
           service: ${{ secrets.CLOUD_RUN_SERVICE }}
           region: ${{ secrets.CLOUD_RUN_REGION }}
           source: .
-          flags: --update-env-vars=JOBS_NOTIFY_EMAIL=codykayak@gmail.com
-          env_vars: |
-            JOBS_NOTIFY_EMAIL=codykayak@gmail.com
+          flags: >-
+            --update-env-vars=JOBS_NOTIFY_EMAIL=codykayak@gmail.com,EMAIL_USER=${{ secrets.EMAIL_USER }},EMAIL_PASS=${{ secrets.EMAIL_PASS }}
 
       - name: Skip notice
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CLOUD_RUN_SERVICE == '' }}

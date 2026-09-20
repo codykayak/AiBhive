@@ -103,6 +103,7 @@ function serializeJobApplicationDoc(id, data) {
     source: data.source || '',
     adminNotes: data.adminNotes || '',
     hired: Boolean(data.hired),
+    contacted: Boolean(data.contacted),
     grokScore: data.grokScore ?? null,
     grokRelativeRank: data.grokRelativeRank ?? null,
     grokRankSummary: data.grokRankSummary || '',
@@ -281,6 +282,7 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
       const patch = { updatedAt: FieldValue.serverTimestamp() };
       if (typeof body.adminNotes === 'string') patch.adminNotes = body.adminNotes.slice(0, 8000);
       if (typeof body.hired === 'boolean') patch.hired = body.hired;
+      if (typeof body.contacted === 'boolean') patch.contacted = body.contacted;
       if (typeof body.status === 'string') patch.status = body.status.slice(0, 40);
 
       await ref.set(patch, { merge: true });
