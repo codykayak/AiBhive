@@ -119,7 +119,11 @@ async function sendViaFormSubmit(payload) {
 
   const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(jobsNotifyTo())}`, {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      Referer: 'https://aibhive.com/jobs',
+      Origin: 'https://aibhive.com',
+    },
     body: form,
   });
 
