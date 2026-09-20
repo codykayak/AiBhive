@@ -5,6 +5,8 @@ $AppDir = Join-Path $Root 'mobile\lead-agent'
 $ApkRel = 'android\app\build\outputs\apk\debug\app-debug.apk'
 
 function Find-Jdk17 {
+  $portable = Join-Path $Root 'scripts\.jdk17-portable'
+  if (Test-Path (Join-Path $portable 'bin\java.exe')) { return (Resolve-Path $portable).Path }
   $candidates = @(
     (Get-ChildItem 'C:\Program Files\Eclipse Adoptium\jdk-17*-hotspot' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1),
     (Get-ChildItem 'C:\Program Files\Microsoft\jdk-17*' -ErrorAction SilentlyContinue | Select-Object -First 1),
@@ -35,7 +37,7 @@ Write-Host "Using JAVA_HOME=$jdk"
 Push-Location $AppDir
 try {
   if (-not (Test-Path 'node_modules')) { npm install }
-  npm run build:apk:debug
+  powershell -ExecutionPolicy Bypass -File scripts/build-apk-debug.ps1
 } finally {
   Pop-Location
 }

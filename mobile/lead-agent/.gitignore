@@ -4,5 +4,7 @@ dist/
 android/app/build/
 android/.gradle/
 android/build/
+.build-tmp/
+.metro-cache/
 *.apk
 *.aab

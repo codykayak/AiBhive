@@ -9,6 +9,8 @@ echo "==> SMS native bridge + bundle JS in APK"
 node scripts/post-prebuild-android.mjs
 
 echo "==> Gradle assembleDebug"
+export TMPDIR="${TMPDIR:-/tmp/lead-agent-build}"
+mkdir -p "$TMPDIR"
 cd android
 chmod +x gradlew
 ./gradlew assembleDebug --no-daemon

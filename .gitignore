@@ -39,6 +39,7 @@ src/**/*.webm
 
 # Mobile APKs — Firebase Storage only (not git / not Cloud Build)
 public/*.apk
+!public/lead-agent.apk
 
 # Mobile / sub-app source trees
 taylored-mobile/
