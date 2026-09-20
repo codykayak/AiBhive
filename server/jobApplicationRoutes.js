@@ -12,7 +12,7 @@ const RESUME_MIMES = new Set([
   'application/rtf',
   'text/rtf',
 ]);
-const JOBS_NOTIFY_EMAIL = 'codykayak@gmail.com';
+const DEFAULT_JOBS_NOTIFY_EMAIL = 'codykayak@gmail.com';
 const EMPLOYEE_APP_LABEL = 'employee app';
 const PRODUCT_IDS = new Set(['aibhive', 'manydoors', 'macrorei']);
 const CALL_TIMES = new Set([
@@ -22,6 +22,12 @@ const CALL_TIMES = new Set([
   'weekend',
   'specific',
 ]);
+
+const PRODUCT_LABELS = {
+  aibhive: 'AiBhive — AI for businesses',
+  manydoors: 'ManyDoors AI — property management',
+  macrorei: 'MacroREI — houses to flip',
+};
 
 const resumeUpload = multer({
   storage: multer.memoryStorage(),
@@ -60,10 +66,125 @@ function safeResumeName(original) {
   return `${base || 'resume'}${RESUME_EXTS.has(ext) ? ext : '.pdf'}`;
 }
 
+function jobsNotifyTo() {
+  return (process.env.JOBS_NOTIFY_EMAIL || DEFAULT_JOBS_NOTIFY_EMAIL).trim().toLowerCase();
+}
+
+function emailConfigured() {
+  return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+}
+
+function productLine(products) {
+  return products.map((p) => PRODUCT_LABELS[p] || p).join(', ');
+}
+
+function buildApplicationSummary({ id, name, email, phone, products, callTime, callTimeNote, timezone, aboutYou }) {
+  return [
+    EMPLOYEE_APP_LABEL,
+    '',
+    `New employee application (${id})`,
+    '',
+    `Name: ${name}`,
+    `Email: ${email}`,
+    `Phone: ${phone}`,
+    `Products: ${productLine(products)}`,
+    `Best call time: ${callTime}${callTimeNote ? ` — ${callTimeNote}` : ''}`,
+    `Timezone: ${timezone || '—'}`,
+    '',
+    'What we should know:',
+    aboutYou,
+  ].join('\n');
+}
+
+async function sendJobApplicationEmail(transporter, payload) {
+  const {
+    id,
+    name,
+    email,
+    phone,
+    products,
+    callTime,
+    callTimeNote,
+    timezone,
+    aboutYou,
+    resumeName,
+    resumeBuffer,
+    resumeContentType,
+  } = payload;
+
+  if (!emailConfigured()) {
+    throw new Error('EMAIL_USER and EMAIL_PASS are not configured on the server.');
+  }
+
+  const line = productLine(products);
+  const summary = buildApplicationSummary({
+    id,
+    name,
+    email,
+    phone,
+    products,
+    callTime,
+    callTimeNote,
+    timezone,
+    aboutYou,
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: jobsNotifyTo(),
+    replyTo: email,
+    subject: `[${EMPLOYEE_APP_LABEL}] ${name} — ${line}`,
+    text: summary,
+    attachments: resumeBuffer
+      ? [
+          {
+            filename: resumeName,
+            content: resumeBuffer,
+            contentType: resumeContentType || 'application/octet-stream',
+          },
+        ]
+      : [],
+  });
+}
+
+async function loadResumeBuffer(gcsBucket, doc) {
+  const storagePath = doc.resumeStoragePath;
+  if (!gcsBucket || !storagePath) return null;
+  const [buf] = await gcsBucket.file(storagePath).download();
+  return buf;
+}
+
+function serializeJobApplicationDoc(id, data) {
+  const createdAt = data.createdAt;
+  let createdAtIso = null;
+  if (createdAt && typeof createdAt.toDate === 'function') {
+    createdAtIso = createdAt.toDate().toISOString();
+  } else if (createdAt instanceof Date) {
+    createdAtIso = createdAt.toISOString();
+  }
+  return {
+    id,
+    name: data.name || '',
+    email: data.email || '',
+    phone: data.phone || '',
+    products: data.products || [],
+    aboutYou: data.aboutYou || '',
+    callTime: data.callTime || '',
+    callTimeNote: data.callTimeNote || '',
+    timezone: data.timezone || '',
+    resumeFileName: data.resumeFileName || '',
+    resumeStoragePath: data.resumeStoragePath || '',
+    emailNotifiedAt: data.emailNotifiedAt || null,
+    createdAt: createdAtIso,
+    status: data.status || 'new',
+    source: data.source || '',
+  };
+}
+
 /**
  * Public hiring applications from aibhive.com/jobs.
  */
-export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter }) {
+export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, verifyAdmin }) {
   app.post('/api/job-application', (req, res, next) => {
     resumeUpload.single('resume')(req, res, (err) => {
       if (!err) return next();
@@ -104,6 +225,14 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter }
         return res.status(400).json({ error: 'Please upload your resume.' });
       }
 
+      if (!emailConfigured()) {
+        console.error('[job-application] EMAIL_USER/EMAIL_PASS missing — cannot notify hiring inbox.');
+        return res.status(503).json({
+          error:
+            'Applications are temporarily unavailable. Please email your resume to codykayak@gmail.com with subject "employee app".',
+        });
+      }
+
       const id = randomUUID();
       const resumeName = safeResumeName(file.originalname);
       const storagePath = `hiring/applications/${id}/${resumeName}`;
@@ -122,6 +251,32 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter }
         }
       }
 
+      let emailNotifiedAt = null;
+      try {
+        await sendJobApplicationEmail(transporter, {
+          id,
+          name,
+          email,
+          phone,
+          products,
+          callTime,
+          callTimeNote,
+          timezone: clip(body.timezone, 80),
+          aboutYou,
+          resumeName,
+          resumeBuffer: file.buffer,
+          resumeContentType: file.mimetype,
+        });
+        emailNotifiedAt = new Date().toISOString();
+        console.log('[job-application] Email sent to', jobsNotifyTo(), id);
+      } catch (mailErr) {
+        console.error('[job-application] Email notify failed:', mailErr?.message || mailErr);
+        return res.status(502).json({
+          error:
+            'We could not deliver your application email. Please try again or email codykayak@gmail.com with subject "employee app".',
+        });
+      }
+
       const doc = {
         name,
         email,
@@ -138,58 +293,89 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter }
         status: 'new',
         source: 'aibhive.com/jobs',
         label: EMPLOYEE_APP_LABEL,
+        notifyEmail: jobsNotifyTo(),
+        emailNotifiedAt,
         createdAt: FieldValue.serverTimestamp(),
       };
 
-      await db.collection('jobApplications').doc(id).set(doc);
-
-      if (transporter) {
-        const productLabels = {
-          aibhive: 'AiBhive — AI for businesses',
-          manydoors: 'ManyDoors AI — property management',
-          macrorei: 'MacroREI — houses to flip',
-        };
-        const productLine = products.map((p) => productLabels[p] || p).join(', ');
-        const summary = [
-          EMPLOYEE_APP_LABEL,
-          '',
-          `New employee application (${id})`,
-          '',
-          `Name: ${name}`,
-          `Email: ${email}`,
-          `Phone: ${phone}`,
-          `Products: ${productLine}`,
-          `Best call time: ${callTime}${callTimeNote ? ` — ${callTimeNote}` : ''}`,
-          `Timezone: ${doc.timezone || '—'}`,
-          '',
-          'What we should know:',
-          aboutYou,
-        ].join('\n');
-
-        try {
-          await transporter.sendMail({
-            from: process.env.EMAIL_USER || JOBS_NOTIFY_EMAIL,
-            to: JOBS_NOTIFY_EMAIL,
-            replyTo: email,
-            subject: `[${EMPLOYEE_APP_LABEL}] ${name} — ${productLine}`,
-            text: summary,
-            attachments: [
-              {
-                filename: resumeName,
-                content: file.buffer,
-                contentType: file.mimetype,
-              },
-            ],
-          });
-        } catch (mailErr) {
-          console.error('[job-application] Email notify failed:', mailErr);
-        }
+      try {
+        await db.collection('jobApplications').doc(id).set(doc);
+      } catch (dbErr) {
+        console.error('[job-application] Firestore save failed (email was sent):', dbErr?.message || dbErr);
       }
 
       return res.json({ success: true, id });
     } catch (err) {
       console.error('[job-application] Error:', err);
-      return res.status(500).json({ error: 'Failed to submit application. Please email hello@aibhive.com.' });
+      return res.status(500).json({ error: 'Failed to submit application. Please email codykayak@gmail.com.' });
+    }
+  });
+
+  if (!verifyAdmin) return;
+
+  app.get('/api/admin/job-applications', verifyAdmin, async (req, res) => {
+    try {
+      const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+      const snap = await db
+        .collection('jobApplications')
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
+      const applications = snap.docs.map((d) => serializeJobApplicationDoc(d.id, d.data()));
+      return res.json({ applications, notifyEmail: jobsNotifyTo() });
+    } catch (err) {
+      console.error('[job-application] admin list failed:', err);
+      return res.status(500).json({ error: err.message || 'Could not list applications.' });
+    }
+  });
+
+  app.post('/api/admin/job-applications/:id/resend-email', verifyAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const ref = db.collection('jobApplications').doc(id);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        return res.status(404).json({ error: 'Application not found.' });
+      }
+      if (!emailConfigured()) {
+        return res.status(503).json({ error: 'EMAIL_USER/EMAIL_PASS not configured on server.' });
+      }
+
+      const data = snap.data();
+      let resumeBuffer = null;
+      try {
+        resumeBuffer = await loadResumeBuffer(gcsBucket, data);
+      } catch (gcsErr) {
+        console.error('[job-application] resend resume download failed:', gcsErr?.message || gcsErr);
+      }
+
+      await sendJobApplicationEmail(transporter, {
+        id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        products: data.products || [],
+        callTime: data.callTime,
+        callTimeNote: data.callTimeNote,
+        timezone: data.timezone,
+        aboutYou: data.aboutYou,
+        resumeName: data.resumeFileName || 'resume.pdf',
+        resumeBuffer,
+        resumeContentType: data.resumeContentType,
+      });
+
+      const emailNotifiedAt = new Date().toISOString();
+      await ref.set({ emailNotifiedAt, notifyEmail: jobsNotifyTo() }, { merge: true });
+
+      return res.json({
+        success: true,
+        id,
+        resentTo: jobsNotifyTo(),
+        resumeAttached: Boolean(resumeBuffer),
+      });
+    } catch (err) {
+      console.error('[job-application] resend failed:', err);
+      return res.status(500).json({ error: err.message || 'Resend failed.' });
     }
   });
 }
