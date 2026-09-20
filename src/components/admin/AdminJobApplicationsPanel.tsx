@@ -9,8 +9,11 @@ import {
   Save,
   Sparkles,
   ExternalLink,
+  UserPlus,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { adminFetch, adminJson } from '../../lib/adminApi';
+import { adminFetch, adminFormData, adminJson } from '../../lib/adminApi';
 import { cn } from '../../lib/utils';
 
 export type JobApplication = {
@@ -42,6 +45,16 @@ const PRODUCT_LABEL: Record<string, string> = {
   macrorei: 'MacroREI',
 };
 
+const PRODUCT_SLUGS = ['aibhive', 'manydoors', 'macrorei'] as const;
+
+const CALL_OPTIONS = [
+  { id: 'weekday-morning', label: 'Weekday mornings (8am–12pm PT)' },
+  { id: 'weekday-afternoon', label: 'Weekday afternoons (12pm–5pm PT)' },
+  { id: 'weekday-evening', label: 'Weekday evenings (5pm–8pm PT)' },
+  { id: 'weekend', label: 'Weekends' },
+  { id: 'specific', label: 'Specific / notes below' },
+] as const;
+
 function formatDate(iso: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
@@ -56,6 +69,19 @@ export default function AdminJobApplicationsPanel({ user }: { user: User }) {
   const [notesDraft, setNotesDraft] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [rescoringId, setRescoringId] = useState<string | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualName, setManualName] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualPhone, setManualPhone] = useState('');
+  const [manualProducts, setManualProducts] = useState<string[]>(['aibhive']);
+  const [manualAbout, setManualAbout] = useState('');
+  const [manualCallTime, setManualCallTime] = useState('specific');
+  const [manualCallNote, setManualCallNote] = useState('');
+  const [manualNotes, setManualNotes] = useState('');
+  const [manualResume, setManualResume] = useState<File | null>(null);
+  const [manualContacted, setManualContacted] = useState(false);
+  const [manualHired, setManualHired] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,6 +163,68 @@ export default function AdminJobApplicationsPanel({ user }: { user: User }) {
     }
   }
 
+  function toggleManualProduct(slug: string) {
+    setManualProducts((current) =>
+      current.includes(slug) ? current.filter((p) => p !== slug) : [...current, slug],
+    );
+  }
+
+  function resetManualForm() {
+    setManualName('');
+    setManualEmail('');
+    setManualPhone('');
+    setManualProducts(['aibhive']);
+    setManualAbout('');
+    setManualCallTime('specific');
+    setManualCallNote('');
+    setManualNotes('');
+    setManualResume(null);
+    setManualContacted(false);
+    setManualHired(false);
+  }
+
+  async function submitManualApplicant(event: React.FormEvent) {
+    event.preventDefault();
+    if (!manualName.trim()) {
+      setError('Name is required.');
+      return;
+    }
+    if (manualProducts.length === 0) {
+      setError('Pick at least one product desk.');
+      return;
+    }
+    setManualSaving(true);
+    setError('');
+    try {
+      const body = new FormData();
+      body.set('name', manualName.trim());
+      body.set('email', manualEmail.trim());
+      body.set('phone', manualPhone.trim());
+      body.set('products', manualProducts.join(','));
+      body.set('aboutYou', manualAbout.trim() || 'Added manually in admin.');
+      body.set('callTime', manualCallTime);
+      body.set('callTimeNote', manualCallNote.trim());
+      body.set('adminNotes', manualNotes.trim());
+      body.set('contacted', String(manualContacted));
+      body.set('hired', String(manualHired));
+      if (manualResume) body.set('resume', manualResume);
+
+      const data = await adminFormData<{ application: JobApplication }>(
+        '/api/admin/job-applications',
+        user,
+        body,
+      );
+      setApplications((prev) => [data.application, ...prev]);
+      setSelectedId(data.application.id);
+      resetManualForm();
+      setManualOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not add applicant');
+    } finally {
+      setManualSaving(false);
+    }
+  }
+
   async function resendEmail(id: string) {
     setSavingId(id);
     try {
@@ -186,6 +274,154 @@ export default function AdminJobApplicationsPanel({ user }: { user: User }) {
       {error ? (
         <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">{error}</div>
       ) : null}
+
+      <div className="mb-6 border border-white/10 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setManualOpen((open) => !open)}
+          className="w-full flex items-center justify-between gap-3 px-5 py-4 bg-white/5 hover:bg-white/[0.07] text-left transition-colors"
+        >
+          <span className="flex items-center gap-2 text-white font-semibold">
+            <UserPlus className="w-5 h-5 text-bee-amber" />
+            Add applicant manually
+          </span>
+          {manualOpen ? (
+            <ChevronUp className="w-5 h-5 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-slate-400" />
+          )}
+        </button>
+        {manualOpen ? (
+          <form onSubmit={submitManualApplicant} className="p-5 md:p-6 border-t border-white/10 space-y-4">
+            <p className="text-sm text-slate-400">
+              For referrals, Indeed DMs, or walk-ins — saves to the same list with resume in storage.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Full name *</label>
+                <input
+                  required
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Phone</label>
+                <input
+                  value={manualPhone}
+                  onChange={(e) => setManualPhone(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm"
+                />
+              </div>
+            </div>
+            <fieldset>
+              <legend className="text-xs font-semibold text-slate-400 mb-2">Product desk *</legend>
+              <div className="flex flex-wrap gap-3">
+                {PRODUCT_SLUGS.map((slug) => (
+                  <label key={slug} className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={manualProducts.includes(slug)}
+                      onChange={() => toggleManualProduct(slug)}
+                      className="accent-amber-500"
+                    />
+                    {PRODUCT_LABEL[slug]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">About them</label>
+              <textarea
+                value={manualAbout}
+                onChange={(e) => setManualAbout(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm resize-y"
+                placeholder="Background, how you found them, why they might fit…"
+              />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Call window</label>
+                <select
+                  value={manualCallTime}
+                  onChange={(e) => setManualCallTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm"
+                >
+                  {CALL_OPTIONS.map((opt) => (
+                    <option key={opt.id} value={opt.id}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 mb-1">Call note</label>
+                <input
+                  value={manualCallNote}
+                  onChange={(e) => setManualCallNote(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Your notes (optional)</label>
+              <textarea
+                value={manualNotes}
+                onChange={(e) => setManualNotes(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-black/30 border border-white/10 text-white text-sm resize-y"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 mb-1">Resume (PDF, Word, or text)</label>
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.rtf,application/pdf"
+                onChange={(e) => setManualResume(e.target.files?.[0] || null)}
+                className="block w-full text-sm text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-bee-amber file:text-bee-black file:font-semibold"
+              />
+            </div>
+            <div className="flex flex-wrap gap-5">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={manualContacted}
+                  onChange={(e) => setManualContacted(e.target.checked)}
+                  className="accent-amber-500"
+                />
+                Already contacted
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={manualHired}
+                  onChange={(e) => setManualHired(e.target.checked)}
+                  className="accent-amber-500"
+                />
+                Hired
+              </label>
+            </div>
+            <button
+              type="submit"
+              disabled={manualSaving}
+              className="px-5 py-2.5 rounded-xl bg-bee-amber text-bee-black font-bold text-sm inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {manualSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              Save applicant
+            </button>
+          </form>
+        ) : null}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-2 max-h-[520px] overflow-y-auto border border-white/10 rounded-2xl divide-y divide-white/5">

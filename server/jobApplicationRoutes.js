@@ -70,6 +70,72 @@ function productLine(products) {
   return products.map((p) => PRODUCT_LABELS[p] || p).join(', ');
 }
 
+async function storeResumeFile(gcsBucket, id, file) {
+  if (!file?.buffer) {
+    return { resumeName: '', resumeStored: false, storagePath: '' };
+  }
+  const resumeName = safeResumeName(file.originalname);
+  const storagePath = `hiring/applications/${id}/${resumeName}`;
+  let resumeStored = false;
+  if (gcsBucket) {
+    try {
+      await gcsBucket.file(storagePath).save(file.buffer, {
+        contentType: file.mimetype || 'application/octet-stream',
+        resumable: false,
+        metadata: { cacheControl: 'private, max-age=0' },
+      });
+      resumeStored = true;
+    } catch (gcsErr) {
+      console.error('[job-application] GCS save failed:', gcsErr?.message || gcsErr);
+    }
+  }
+  return { resumeName, resumeStored, storagePath: resumeStored ? storagePath : '' };
+}
+
+function buildApplicationDoc({
+  id,
+  name,
+  email,
+  phone,
+  products,
+  aboutYou,
+  callTime,
+  callTimeNote,
+  timezone,
+  file,
+  resumeName,
+  resumeStored,
+  storagePath,
+  source,
+  extra = {},
+}) {
+  return {
+    name,
+    email,
+    phone,
+    products,
+    aboutYou,
+    callTime,
+    callTimeNote,
+    timezone,
+    resumeFileName: resumeName,
+    resumeContentType: file?.mimetype || '',
+    resumeBytes: file?.size || 0,
+    resumeStoragePath: storagePath,
+    status: 'new',
+    source,
+    label: EMPLOYEE_APP_LABEL,
+    notifyEmail: jobsNotifyTo(),
+    emailChannel: null,
+    emailNotifiedAt: null,
+    emailPending: true,
+    adminNotes: extra.adminNotes || '',
+    hired: Boolean(extra.hired),
+    contacted: Boolean(extra.contacted),
+    createdAt: FieldValue.serverTimestamp(),
+  };
+}
+
 async function loadResumeBuffer(gcsBucket, doc) {
   const storagePath = doc.resumeStoragePath;
   if (!gcsBucket || !storagePath) return null;
@@ -157,25 +223,11 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
       }
 
       const id = randomUUID();
-      const resumeName = safeResumeName(file.originalname);
-      const storagePath = `hiring/applications/${id}/${resumeName}`;
-      let resumeStored = false;
-
-      if (gcsBucket) {
-        try {
-          await gcsBucket.file(storagePath).save(file.buffer, {
-            contentType: file.mimetype || 'application/octet-stream',
-            resumable: false,
-            metadata: { cacheControl: 'private, max-age=0' },
-          });
-          resumeStored = true;
-        } catch (gcsErr) {
-          console.error('[job-application] GCS save failed:', gcsErr?.message || gcsErr);
-        }
-      }
+      const { resumeName, resumeStored, storagePath } = await storeResumeFile(gcsBucket, id, file);
 
       const productLineText = productLine(products);
-      const doc = {
+      const doc = buildApplicationDoc({
+        id,
         name,
         email,
         phone,
@@ -184,19 +236,12 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         callTime,
         callTimeNote,
         timezone: clip(body.timezone, 80),
-        resumeFileName: resumeName,
-        resumeContentType: file.mimetype || '',
-        resumeBytes: file.size,
-        resumeStoragePath: resumeStored ? storagePath : '',
-        status: 'new',
+        file,
+        resumeName,
+        resumeStored,
+        storagePath,
         source: 'aibhive.com/jobs',
-        label: EMPLOYEE_APP_LABEL,
-        notifyEmail: jobsNotifyTo(),
-        emailChannel: null,
-        emailNotifiedAt: null,
-        emailPending: true,
-        createdAt: FieldValue.serverTimestamp(),
-      };
+      });
 
       try {
         await db.collection('jobApplications').doc(id).set(doc);
@@ -253,6 +298,67 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
   });
 
   if (!verifyAdmin) return;
+
+  app.post('/api/admin/job-applications', verifyAdmin, (req, res, next) => {
+    resumeUpload.single('resume')(req, res, (err) => {
+      if (!err) return next();
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Resume must be 8MB or smaller.' });
+      }
+      return res.status(400).json({ error: err.message || 'Could not read the resume file.' });
+    });
+  }, async (req, res) => {
+    try {
+      const body = req.body || {};
+      const name = clip(body.name, 120);
+      const email = clip(body.email, 200).toLowerCase();
+      const phone = clip(body.phone, 40);
+      const aboutYou = clip(body.aboutYou, 4000) || 'Added manually in admin.';
+      const callTime = CALL_TIMES.has(clip(body.callTime, 40)) ? clip(body.callTime, 40) : 'specific';
+      const callTimeNote = clip(body.callTimeNote, 500);
+      const products = parseProducts(body.products);
+      const file = req.file;
+
+      if (!name) return res.status(400).json({ error: 'Name is required.' });
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Email format is invalid.' });
+      }
+      if (!products.length) {
+        return res.status(400).json({ error: 'Pick at least one product desk.' });
+      }
+
+      const id = randomUUID();
+      const { resumeName, resumeStored, storagePath } = await storeResumeFile(gcsBucket, id, file);
+      const doc = buildApplicationDoc({
+        id,
+        name,
+        email,
+        phone,
+        products,
+        aboutYou,
+        callTime,
+        callTimeNote,
+        timezone: clip(body.timezone, 80),
+        file,
+        resumeName,
+        resumeStored,
+        storagePath,
+        source: 'admin-manual',
+        extra: {
+          adminNotes: clip(body.adminNotes, 8000),
+          hired: body.hired === 'true' || body.hired === true,
+          contacted: body.contacted === 'true' || body.contacted === true,
+        },
+      });
+
+      await db.collection('jobApplications').doc(id).set(doc);
+      const saved = serializeJobApplicationDoc(id, doc);
+      return res.status(201).json({ application: saved });
+    } catch (err) {
+      console.error('[job-application] admin create failed:', err);
+      return res.status(500).json({ error: err.message || 'Could not create application.' });
+    }
+  });
 
   app.get('/api/admin/job-applications', verifyAdmin, async (req, res) => {
     try {
