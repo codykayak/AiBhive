@@ -1,0 +1,72 @@
+# MacroREI Lead Agent — debug APK for physical phone install (no Metro).
+# After merge: open on Android Chrome → https://aibhive.com/api/download/lead-agent
+name: Build Lead Agent APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'mobile/lead-agent/**'
+      - '.github/workflows/build-lead-agent-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-lead-agent-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        working-directory: mobile/lead-agent
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+        run: bash scripts/ci-android-build.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lead-agent-apk
+          path: mobile/lead-agent/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish to public/ for aibhive.com download
+        run: |
+          cp mobile/lead-agent/android/app/build/outputs/apk/debug/app-debug.apk public/lead-agent.apk
+          ls -lh public/lead-agent.apk
+
+      - name: Commit APK
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/lead-agent.apk
+          if git diff --staged --quiet; then
+            echo "APK unchanged"
+            exit 0
+          fi
+          git commit -m "chore(lead-agent): ship debug APK for phone install [skip-apk]"
+          git pull --rebase origin main-fixed
+          git push origin HEAD:main-fixed
+
+      - name: Download link
+        if: always()
+        run: |
+          echo "Phone install: https://aibhive.com/api/download/lead-agent"

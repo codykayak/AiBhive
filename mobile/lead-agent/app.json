@@ -18,6 +18,7 @@
         "backgroundColor": "#1e4d2b"
       },
       "package": "com.aibhive.leadagent",
+      "versionCode": 2,
       "permissions": [
         "SEND_SMS",
         "RECEIVE_SMS",

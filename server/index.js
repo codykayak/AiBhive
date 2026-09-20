@@ -3162,6 +3162,28 @@ function resolveApkPath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
+function resolveLeadAgentApkPath() {
+  const candidates = [
+    path.join(__dirname, '../dist/lead-agent.apk'),
+    path.join(__dirname, '../public/lead-agent.apk'),
+  ];
+  return candidates.find((candidate) => fs.existsSync(candidate)) || null;
+}
+
+/** MacroREI Lead Agent — install on Android phone from Chrome (no PC). */
+app.get('/api/download/lead-agent', (req, res) => {
+  const apkPath = resolveLeadAgentApkPath();
+  if (!apkPath) {
+    return res.status(404).json({
+      error: 'Lead Agent APK not built yet.',
+      hint: 'Push mobile/lead-agent changes to main-fixed, wait for GitHub Actions “Build Lead Agent APK”, or run npm run lead-agent:phone on a PC.',
+    });
+  }
+  res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+  res.setHeader('Content-Disposition', 'attachment; filename="aibhive-lead-agent.apk"');
+  return res.sendFile(apkPath);
+});
+
 app.get('/api/download/apk', async (req, res) => {
   const manifest = await getMobileReleaseManifest();
   if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {

@@ -24,6 +24,7 @@
     "repo:gc": "powershell -ExecutionPolicy Bypass -File scripts/repo-gc.ps1",
     "deploy:gcp": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloud-build.ps1",
     "ship": "node scripts/ship-cursor-pr.mjs",
+    "lead-agent:phone": "powershell -ExecutionPolicy Bypass -File scripts/install-lead-agent-phone.ps1",
     "prerender": "node scripts/prerender.mjs",
     "guides:oregon-plants": "node scripts/generate-oregon-plant-guide-pdfs.mjs",
     "hiring:pdfs": "node scripts/generate-job-posting-pdfs.mjs",
