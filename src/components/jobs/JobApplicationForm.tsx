@@ -38,6 +38,7 @@ export function JobApplicationForm({
   const [resume, setResume] = useState<File | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [emailNotifyWarning, setEmailNotifyWarning] = useState<string | null>(null);
 
   const toggleProduct = (id: string) => {
     if (lockedProduct) return;
@@ -50,6 +51,7 @@ export function JobApplicationForm({
     event.preventDefault();
     setStatus('loading');
     setErrorMessage('');
+    setEmailNotifyWarning(null);
 
     if (!resume) {
       setStatus('error');
@@ -86,30 +88,46 @@ export function JobApplicationForm({
       if (!res.ok) {
         throw new Error(data.error || 'Submission failed. Email hello@aibhive.com.');
       }
-      if (data.success && data.emailDelivered === false) {
-        const productLine =
-          data.productLine ||
-          selectedProducts
-            .map((slug) => JOB_LISTINGS.find((j) => j.slug === slug)?.orgName || slug)
-            .join(', ');
-        try {
-          await notifyJobApplicationFromBrowser({
-            id: data.id,
-            name,
-            email,
-            phone,
-            productLine,
-            callTime,
-            callTimeNote,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
-            aboutYou,
-            resume,
-            notifyEmail: data.notifyEmail,
-          });
-        } catch (notifyErr) {
-          console.warn('[jobs] browser email notify failed:', notifyErr);
-        }
+      const productLine =
+        data.productLine ||
+        selectedProducts
+          .map((slug) => JOB_LISTINGS.find((j) => j.slug === slug)?.orgName || slug)
+          .join(', ');
+
+      const notifyPayload = {
+        id: data.id as string,
+        name,
+        email,
+        phone,
+        productLine,
+        callTime,
+        callTimeNote,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        aboutYou,
+        resume,
+        notifyEmail: data.notifyEmail as string | undefined,
+      };
+
+      let clientEmailOk = false;
+      let clientEmailError: unknown = null;
+      try {
+        await notifyJobApplicationFromBrowser(notifyPayload);
+        clientEmailOk = true;
+      } catch (notifyErr) {
+        clientEmailError = notifyErr;
+        console.warn('[jobs] browser email notify failed:', notifyErr);
       }
+
+      if (!clientEmailOk && data.emailDelivered !== true) {
+        const msg =
+          clientEmailError instanceof Error
+            ? clientEmailError.message
+            : 'Could not send the notification email to codykayak@gmail.com.';
+        setEmailNotifyWarning(
+          `${msg} Your application is saved — view it anytime at Admin → Hiring on aibhive.com/admin?tab=hiring.`
+        );
+      }
+
       setStatus('success');
     } catch (err) {
       setStatus('error');
@@ -126,10 +144,15 @@ export function JobApplicationForm({
       >
         <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-6" />
         <h2 className="text-3xl font-bold text-white mb-4">Application received</h2>
-        <p className="text-slate-400 leading-relaxed mb-8">
+        <p className="text-slate-400 leading-relaxed mb-4">
           We’ll review your resume and call you at the time you gave us. If anything’s urgent, email
           hello@aibhive.com.
         </p>
+        {emailNotifyWarning ? (
+          <p className="text-amber-200/90 text-sm leading-relaxed mb-6 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25">
+            {emailNotifyWarning}
+          </p>
+        ) : null}
         <Link to="/jobs" className="text-bee-amber font-semibold hover:text-bee-yellow">
           View all openings
         </Link>

@@ -62,6 +62,8 @@ jobs:
         run: npm ci
 
       - name: Build website + cody
+        env:
+          VITE_WEB3FORMS_ACCESS_KEY: ${{ secrets.WEB3FORMS_ACCESS_KEY }}
         run: npm run build
 
       - name: Cloud upload guard (no Gradle/build leaks)
@@ -90,7 +92,7 @@ jobs:
           region: ${{ secrets.CLOUD_RUN_REGION }}
           source: .
           flags: >-
-            --update-env-vars=JOBS_NOTIFY_EMAIL=codykayak@gmail.com,EMAIL_USER=${{ secrets.EMAIL_USER }},EMAIL_PASS=${{ secrets.EMAIL_PASS }}
+            --update-env-vars=JOBS_NOTIFY_EMAIL=codykayak@gmail.com,EMAIL_USER=${{ secrets.EMAIL_USER }},EMAIL_PASS=${{ secrets.EMAIL_PASS }},RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
 
       - name: Skip notice
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CLOUD_RUN_SERVICE == '' }}
