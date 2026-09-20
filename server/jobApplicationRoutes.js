@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import { FieldValue } from 'firebase-admin/firestore';
+import { deliverJobApplicationEmail, jobsNotifyTo } from './jobEmailDelivery.js';
 
 const RESUME_EXTS = new Set(['.pdf', '.doc', '.docx', '.txt', '.rtf']);
 const RESUME_MIMES = new Set([
@@ -12,7 +13,6 @@ const RESUME_MIMES = new Set([
   'application/rtf',
   'text/rtf',
 ]);
-const DEFAULT_JOBS_NOTIFY_EMAIL = 'codykayak@gmail.com';
 const EMPLOYEE_APP_LABEL = 'employee app';
 const PRODUCT_IDS = new Set(['aibhive', 'manydoors', 'macrorei']);
 const CALL_TIMES = new Set([
@@ -66,85 +66,8 @@ function safeResumeName(original) {
   return `${base || 'resume'}${RESUME_EXTS.has(ext) ? ext : '.pdf'}`;
 }
 
-function jobsNotifyTo() {
-  return (process.env.JOBS_NOTIFY_EMAIL || DEFAULT_JOBS_NOTIFY_EMAIL).trim().toLowerCase();
-}
-
-function emailConfigured() {
-  return Boolean(process.env.EMAIL_USER && process.env.EMAIL_PASS);
-}
-
 function productLine(products) {
   return products.map((p) => PRODUCT_LABELS[p] || p).join(', ');
-}
-
-function buildApplicationSummary({ id, name, email, phone, products, callTime, callTimeNote, timezone, aboutYou }) {
-  return [
-    EMPLOYEE_APP_LABEL,
-    '',
-    `New employee application (${id})`,
-    '',
-    `Name: ${name}`,
-    `Email: ${email}`,
-    `Phone: ${phone}`,
-    `Products: ${productLine(products)}`,
-    `Best call time: ${callTime}${callTimeNote ? ` — ${callTimeNote}` : ''}`,
-    `Timezone: ${timezone || '—'}`,
-    '',
-    'What we should know:',
-    aboutYou,
-  ].join('\n');
-}
-
-async function sendJobApplicationEmail(transporter, payload) {
-  const {
-    id,
-    name,
-    email,
-    phone,
-    products,
-    callTime,
-    callTimeNote,
-    timezone,
-    aboutYou,
-    resumeName,
-    resumeBuffer,
-    resumeContentType,
-  } = payload;
-
-  if (!emailConfigured()) {
-    throw new Error('EMAIL_USER and EMAIL_PASS are not configured on the server.');
-  }
-
-  const line = productLine(products);
-  const summary = buildApplicationSummary({
-    id,
-    name,
-    email,
-    phone,
-    products,
-    callTime,
-    callTimeNote,
-    timezone,
-    aboutYou,
-  });
-
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: jobsNotifyTo(),
-    replyTo: email,
-    subject: `[${EMPLOYEE_APP_LABEL}] ${name} — ${line}`,
-    text: summary,
-    attachments: resumeBuffer
-      ? [
-          {
-            filename: resumeName,
-            content: resumeBuffer,
-            contentType: resumeContentType || 'application/octet-stream',
-          },
-        ]
-      : [],
-  });
 }
 
 async function loadResumeBuffer(gcsBucket, doc) {
@@ -225,14 +148,6 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         return res.status(400).json({ error: 'Please upload your resume.' });
       }
 
-      if (!emailConfigured()) {
-        console.error('[job-application] EMAIL_USER/EMAIL_PASS missing — cannot notify hiring inbox.');
-        return res.status(503).json({
-          error:
-            'Applications are temporarily unavailable. Please email your resume to codykayak@gmail.com with subject "employee app".',
-        });
-      }
-
       const id = randomUUID();
       const resumeName = safeResumeName(file.originalname);
       const storagePath = `hiring/applications/${id}/${resumeName}`;
@@ -252,13 +167,14 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
       }
 
       let emailNotifiedAt = null;
+      let emailChannel = null;
       try {
-        await sendJobApplicationEmail(transporter, {
+        const delivery = await deliverJobApplicationEmail(transporter, {
           id,
           name,
           email,
           phone,
-          products,
+          productLine: productLine(products),
           callTime,
           callTimeNote,
           timezone: clip(body.timezone, 80),
@@ -267,13 +183,13 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
           resumeBuffer: file.buffer,
           resumeContentType: file.mimetype,
         });
+        emailChannel = delivery.channel;
         emailNotifiedAt = new Date().toISOString();
-        console.log('[job-application] Email sent to', jobsNotifyTo(), id);
       } catch (mailErr) {
-        console.error('[job-application] Email notify failed:', mailErr?.message || mailErr);
+        console.error('[job-application] All email channels failed:', mailErr?.message || mailErr);
         return res.status(502).json({
           error:
-            'We could not deliver your application email. Please try again or email codykayak@gmail.com with subject "employee app".',
+            'We could not deliver your application right now. Please email codykayak@gmail.com with subject "employee app".',
         });
       }
 
@@ -294,6 +210,7 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         source: 'aibhive.com/jobs',
         label: EMPLOYEE_APP_LABEL,
         notifyEmail: jobsNotifyTo(),
+        emailChannel,
         emailNotifiedAt,
         createdAt: FieldValue.serverTimestamp(),
       };
@@ -337,10 +254,6 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
       if (!snap.exists) {
         return res.status(404).json({ error: 'Application not found.' });
       }
-      if (!emailConfigured()) {
-        return res.status(503).json({ error: 'EMAIL_USER/EMAIL_PASS not configured on server.' });
-      }
-
       const data = snap.data();
       let resumeBuffer = null;
       try {
@@ -349,12 +262,12 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
         console.error('[job-application] resend resume download failed:', gcsErr?.message || gcsErr);
       }
 
-      await sendJobApplicationEmail(transporter, {
+      const delivery = await deliverJobApplicationEmail(transporter, {
         id,
         name: data.name,
         email: data.email,
         phone: data.phone,
-        products: data.products || [],
+        productLine: productLine(data.products || []),
         callTime: data.callTime,
         callTimeNote: data.callTimeNote,
         timezone: data.timezone,
@@ -365,12 +278,16 @@ export function registerJobApplicationRoutes(app, { db, gcsBucket, transporter, 
       });
 
       const emailNotifiedAt = new Date().toISOString();
-      await ref.set({ emailNotifiedAt, notifyEmail: jobsNotifyTo() }, { merge: true });
+      await ref.set(
+        { emailNotifiedAt, notifyEmail: jobsNotifyTo(), emailChannel: delivery.channel },
+        { merge: true }
+      );
 
       return res.json({
         success: true,
         id,
         resentTo: jobsNotifyTo(),
+        channel: delivery.channel,
         resumeAttached: Boolean(resumeBuffer),
       });
     } catch (err) {

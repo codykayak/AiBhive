@@ -89,6 +89,8 @@ jobs:
           service: ${{ secrets.CLOUD_RUN_SERVICE }}
           region: ${{ secrets.CLOUD_RUN_REGION }}
           source: .
+          env_vars: |
+            JOBS_NOTIFY_EMAIL=codykayak@gmail.com
 
       - name: Skip notice
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CLOUD_RUN_SERVICE == '' }}
