@@ -28,6 +28,12 @@ This uses **JDK 17**, builds the APK, copies it to your **Desktop**, and runs `a
 3. **Automation** → **Send 1 test SMS now** (try your own number first).
 4. **Settings** → **Test server** / **Refresh RAG** (macrorei.com for inbound Grok).
 
+### Share the marketing list with a partner
+
+1. On **Leads**, tap **Invite partner** and enter their **Google email** (or tap **Share link**).
+2. They install Lead Agent, tap **Sign in with Google**, and use the same email you invited.
+3. They get **view-only** access to your MacroREI owner list (synced from aibhive.com).
+
 Keep the app **open in the foreground** while automation runs.
 
 ## CSV example

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { verifyHiveAuth } from '../hiveAuth.js';
 import { DEFAULT_BUSINESSES, getDefaultBusiness } from './businessDefaults.js';
@@ -5,7 +6,16 @@ import { generateFirstOutbound, generateSmsReply } from './grokAgent.js';
 import { isOptOutMessage, normalizePhone, sendLeadSms } from './smsProvider.js';
 import { buildWorkModeGuide } from '../macroreiVoiceInstructions.js';
 import { resolveLeadAgentUser } from './deviceAuth.js';
+import { renderLeadAgentMobileAuthPage } from './mobileAuthHtml.js';
 import { clearRagCache, getWebsiteRagContext } from './ragKnowledge.js';
+import {
+  defaultWorkspaceUid,
+  inviteTeamMember,
+  listTeamMembers,
+  removeTeamMember,
+  resolveWorkspaceContext,
+  roleMeets,
+} from './workspaceAccess.js';
 import {
   canSendOutbound,
   pickNextLead,
@@ -32,13 +42,26 @@ function messagesRef(db, uid, businessId, leadId) {
   return leadsRef(db, uid, businessId).doc(leadId).collection('messages');
 }
 
-async function requireAuth(req, res) {
-  const user = await resolveLeadAgentUser(req, verifyHiveAuth);
-  if (!user) {
+function wsUid(user) {
+  return user.workspaceUid || user.uid;
+}
+
+async function requireAuth(req, res, db, { minRole = 'viewer' } = {}) {
+  const raw = await resolveLeadAgentUser(req, verifyHiveAuth);
+  if (!raw) {
     res.status(401).json({ error: 'Sign in required or set X-Lead-Agent-Secret on the phone app' });
     return null;
   }
-  return user;
+  const ctx = await resolveWorkspaceContext(db, raw);
+  if (!ctx?.workspaceUid) {
+    res.status(403).json({ error: 'No workspace access' });
+    return null;
+  }
+  if (!roleMeets(ctx.role, minRole)) {
+    res.status(403).json({ error: 'Insufficient permissions for this action', role: ctx.role, need: minRole });
+    return null;
+  }
+  return { ...raw, workspaceUid: ctx.workspaceUid, role: ctx.role, isOwner: ctx.isOwner };
 }
 
 function mergeBusiness(defaults, stored) {
@@ -63,6 +86,65 @@ async function canSendSms(business) {
 }
 
 export function registerLeadAgentRoutes(app, db) {
+  const auth = (req, res, opts) => requireAuth(req, res, db, opts);
+
+  /** Google sign-in for mobile app (redirects back with ?idToken=) */
+  app.get('/api/lead-agent/auth/mobile', (req, res) => {
+    const redirect = String(req.query.redirect || 'leadagent://auth').slice(0, 500);
+    res.type('html').send(renderLeadAgentMobileAuthPage(redirect));
+  });
+
+  app.get('/api/lead-agent/workspace/me', async (req, res) => {
+    const user = await auth(req, res);
+    if (!user) return;
+    const members = await listTeamMembers(db, wsUid(user));
+    const joinUrl = `${req.protocol}://${req.get('host')}/api/lead-agent/auth/mobile`;
+    return res.json({
+      workspaceUid: wsUid(user),
+      role: user.role,
+      email: user.email,
+      device: Boolean(user.device),
+      defaultWorkspaceUid: defaultWorkspaceUid(),
+      joinUrl,
+      inviteMessage: `Join our MacroREI marketing list on Lead Agent — sign in with Google: ${joinUrl}`,
+      ...members,
+    });
+  });
+
+  app.post('/api/lead-agent/workspace/invite', async (req, res) => {
+    const user = await auth(req, res, { minRole: 'owner' });
+    if (!user) return;
+    try {
+      const invited = await inviteTeamMember(
+        db,
+        wsUid(user),
+        user.role,
+        req.body?.email,
+        req.body?.role || 'viewer',
+      );
+      const joinUrl = `${req.protocol}://${req.get('host')}/api/lead-agent/auth/mobile`;
+      return res.json({
+        ok: true,
+        ...invited,
+        joinUrl,
+        message: `Ask them to install Lead Agent, sign in with Google (${invited.email}), then open MacroREI leads.`,
+      });
+    } catch (e) {
+      return res.status(400).json({ error: e.message || 'invite failed' });
+    }
+  });
+
+  app.delete('/api/lead-agent/workspace/members/:email', async (req, res) => {
+    const user = await auth(req, res, { minRole: 'owner' });
+    if (!user) return;
+    try {
+      const result = await removeTeamMember(db, wsUid(user), user.role, req.params.email);
+      return res.json(result);
+    } catch (e) {
+      return res.status(400).json({ error: e.message || 'remove failed' });
+    }
+  });
+
   /** Public health for mobile app connectivity check */
   app.get('/api/lead-agent/health', (_req, res) => {
     res.json({
@@ -89,9 +171,9 @@ export function registerLeadAgentRoutes(app, db) {
   });
 
   app.get('/api/lead-agent/businesses', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res);
     if (!user) return;
-    const snap = await db.collection(COL).doc(user.uid).collection('businesses').get();
+    const snap = await db.collection(COL).doc(wsUid(user)).collection('businesses').get();
     const stored = snap.docs.map((d) => d.data());
     const byId = new Map(stored.map((b) => [b.id, b]));
     const merged = DEFAULT_BUSINESSES.map((d) => mergeBusiness(d, byId.get(d.id) || {}));
@@ -102,7 +184,7 @@ export function registerLeadAgentRoutes(app, db) {
   });
 
   app.put('/api/lead-agent/businesses/:businessId', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'owner' });
     if (!user) return;
     const { businessId } = req.params;
     const body = req.body || {};
@@ -115,32 +197,32 @@ export function registerLeadAgentRoutes(app, db) {
     };
     delete payload.twilioToken;
     if (body.twilioToken) payload.twilioTokenSet = true;
-    await businessRef(db, user.uid, businessId).set(payload, { merge: true });
+    await businessRef(db, wsUid(user), businessId).set(payload, { merge: true });
     if (body.twilioToken) {
-      await businessRef(db, user.uid, businessId).collection('secrets').doc('twilio').set(
+      await businessRef(db, wsUid(user), businessId).collection('secrets').doc('twilio').set(
         { token: body.twilioToken, updatedAt: FieldValue.serverTimestamp() },
         { merge: true },
       );
     }
-    const merged = await getBusinessDoc(db, user.uid, businessId);
+    const merged = await getBusinessDoc(db, wsUid(user), businessId);
     return res.json({ business: { ...merged, twilioToken: undefined } });
   });
 
   app.get('/api/lead-agent/businesses/:businessId/leads', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res);
     if (!user) return;
     const { businessId } = req.params;
-    const snap = await leadsRef(db, user.uid, businessId).orderBy('updatedAt', 'desc').limit(500).get();
+    const snap = await leadsRef(db, wsUid(user), businessId).orderBy('updatedAt', 'desc').limit(500).get();
     return res.json({ leads: snap.docs.map((d) => ({ id: d.id, ...d.data() })) });
   });
 
   app.put('/api/lead-agent/businesses/:businessId/leads/:leadId', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId, leadId } = req.params;
     const body = req.body || {};
     const phone = normalizePhone(body.phone);
-    await leadsRef(db, user.uid, businessId).doc(leadId).set(
+    await leadsRef(db, wsUid(user), businessId).doc(leadId).set(
       {
         ...body,
         phone,
@@ -149,12 +231,12 @@ export function registerLeadAgentRoutes(app, db) {
       },
       { merge: true },
     );
-    const snap = await leadsRef(db, user.uid, businessId).doc(leadId).get();
+    const snap = await leadsRef(db, wsUid(user), businessId).doc(leadId).get();
     return res.json({ lead: { id: snap.id, ...snap.data() } });
   });
 
   app.post('/api/lead-agent/businesses/:businessId/leads/import', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId } = req.params;
     const items = Array.isArray(req.body?.leads) ? req.body.leads : [];
@@ -163,7 +245,7 @@ export function registerLeadAgentRoutes(app, db) {
       const phone = normalizePhone(item.phone);
       if (phone.replace(/\D/g, '').length < 10) continue;
       const id = String(item.id || randomUUID());
-      await leadsRef(db, user.uid, businessId).doc(id).set(
+      await leadsRef(db, wsUid(user), businessId).doc(id).set(
         {
           name: String(item.name || '').slice(0, 200),
           phone,
@@ -183,23 +265,23 @@ export function registerLeadAgentRoutes(app, db) {
   });
 
   app.get('/api/lead-agent/businesses/:businessId/leads/:leadId/messages', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res);
     if (!user) return;
     const { businessId, leadId } = req.params;
-    const snap = await messagesRef(db, user.uid, businessId, leadId).orderBy('at', 'asc').limit(200).get();
+    const snap = await messagesRef(db, wsUid(user), businessId, leadId).orderBy('at', 'asc').limit(200).get();
     return res.json({ messages: snap.docs.map((d) => ({ id: d.id, ...d.data() })) });
   });
 
   app.post('/api/lead-agent/businesses/:businessId/leads/:leadId/send', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId, leadId } = req.params;
-    const business = await getBusinessDoc(db, user.uid, businessId);
+    const business = await getBusinessDoc(db, wsUid(user), businessId);
     const quota = await canSendSms(business);
     if (!quota.allowed) {
       return res.status(429).json({ error: 'Daily SMS limit reached', ...quota });
     }
-    const leadSnap = await leadsRef(db, user.uid, businessId).doc(leadId).get();
+    const leadSnap = await leadsRef(db, wsUid(user), businessId).doc(leadId).get();
     if (!leadSnap.exists) return res.status(404).json({ error: 'Lead not found' });
     const lead = leadSnap.data();
     if (lead.agentPaused || lead.optedOut) {
@@ -207,29 +289,29 @@ export function registerLeadAgentRoutes(app, db) {
     }
     const body = req.body?.body || (await generateFirstOutbound({ business, lead }));
     const result = await sendLeadSms({ business, to: lead.phone, body });
-    await messagesRef(db, user.uid, businessId, leadId).add({
+    await messagesRef(db, wsUid(user), businessId, leadId).add({
       direction: 'outbound',
       body,
       provider: result.provider || business.smsProvider,
       at: FieldValue.serverTimestamp(),
       automated: Boolean(req.body?.automated),
     });
-    await leadsRef(db, user.uid, businessId).doc(leadId).set(
+    await leadsRef(db, wsUid(user), businessId).doc(leadId).set(
       { status: 'texted', lastContactAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() },
       { merge: true },
     );
-    if (result.sent) await incrementDailySms(db, user.uid, businessId);
+    if (result.sent) await incrementDailySms(db, wsUid(user), businessId);
     return res.json({ ...result, body, quota: { ...quota, sentToday: quota.sentToday + (result.sent ? 1 : 0) } });
   });
 
   app.post('/api/lead-agent/businesses/:businessId/inbound', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId } = req.params;
-    const business = await getBusinessDoc(db, user.uid, businessId);
+    const business = await getBusinessDoc(db, wsUid(user), businessId);
     try {
-      const result = await processInboundSms(db, user.uid, businessId, business, req.body || {});
-      if (result.reply) await incrementDailySms(db, user.uid, businessId);
+      const result = await processInboundSms(db, wsUid(user), businessId, business, req.body || {});
+      if (result.reply) await incrementDailySms(db, wsUid(user), businessId);
       return res.json(result);
     } catch (e) {
       return res.status(400).json({ error: e.message || 'inbound failed' });
@@ -238,17 +320,17 @@ export function registerLeadAgentRoutes(app, db) {
 
   /** Phone app: plan next outbound (server-side lead list) */
   app.post('/api/lead-agent/businesses/:businessId/outbound-next', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId } = req.params;
-    const business = await getBusinessDoc(db, user.uid, businessId);
+    const business = await getBusinessDoc(db, wsUid(user), businessId);
     const quota = canSendOutbound(business);
     if (!quota.ok) return res.status(429).json({ error: quota.reason, ...quota });
 
     const localLeads = Array.isArray(req.body?.leads) ? req.body.leads : null;
     let lead = localLeads ? pickNextLead(localLeads, business) : null;
     if (!lead) {
-      const snap = await leadsRef(db, user.uid, businessId).where('status', '==', 'new').limit(50).get();
+      const snap = await leadsRef(db, wsUid(user), businessId).where('status', '==', 'new').limit(50).get();
       const fromDb = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       lead = pickNextLead(fromDb, business);
     }
@@ -266,7 +348,7 @@ export function registerLeadAgentRoutes(app, db) {
   });
 
   app.post('/api/lead-agent/device/refresh-rag/:businessId', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'owner' });
     if (!user) return;
     clearRagCache(req.params.businessId);
     const text = await getWebsiteRagContext(req.params.businessId);
@@ -275,25 +357,25 @@ export function registerLeadAgentRoutes(app, db) {
 
   /** Device reports outbound SMS sent via cell (increments quota) */
   app.post('/api/lead-agent/businesses/:businessId/device-sent', async (req, res) => {
-    const user = await requireAuth(req, res);
+    const user = await auth(req, res, { minRole: 'editor' });
     if (!user) return;
     const { businessId } = req.params;
     const { leadId, body, to } = req.body || {};
-    await incrementDailySms(db, user.uid, businessId);
+    await incrementDailySms(db, wsUid(user), businessId);
     if (leadId) {
-      await messagesRef(db, user.uid, businessId, leadId).add({
+      await messagesRef(db, wsUid(user), businessId, leadId).add({
         direction: 'outbound',
         body,
         provider: 'phone',
         at: FieldValue.serverTimestamp(),
         automated: Boolean(req.body?.automated),
       });
-      await leadsRef(db, user.uid, businessId).doc(leadId).set(
+      await leadsRef(db, wsUid(user), businessId).doc(leadId).set(
         { status: 'texted', lastContactAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() },
         { merge: true },
       );
     }
-    const business = await getBusinessDoc(db, user.uid, businessId);
+    const business = await getBusinessDoc(db, wsUid(user), businessId);
     const quota = await canSendSms(business);
     return res.json({ ok: true, to: normalizePhone(to), quota });
   });

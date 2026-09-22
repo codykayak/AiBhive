@@ -2,7 +2,7 @@
   "expo": {
     "name": "AiBhive Lead Agent",
     "slug": "lead-agent",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "scheme": "leadagent",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
         "backgroundColor": "#1e4d2b"
       },
       "package": "com.aibhive.leadagent",
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "SEND_SMS",
         "RECEIVE_SMS",

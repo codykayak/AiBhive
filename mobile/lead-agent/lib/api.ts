@@ -97,6 +97,30 @@ export async function importLeadsBulk(businessId: string, leads: Lead[]) {
   });
 }
 
+export type WorkspaceMe = {
+  workspaceUid: string;
+  role: 'viewer' | 'editor' | 'owner';
+  email?: string;
+  joinUrl: string;
+  inviteMessage: string;
+  members: { email: string; role: string }[];
+};
+
+export async function fetchWorkspaceMe(): Promise<WorkspaceMe> {
+  return apiFetch('/api/lead-agent/workspace/me');
+}
+
+export async function inviteWorkspaceMember(email: string, role: 'viewer' | 'editor' = 'viewer') {
+  return apiFetch('/api/lead-agent/workspace/invite', {
+    method: 'POST',
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export async function fetchLeadsFromServer(businessId: string): Promise<{ leads: Lead[] }> {
+  return apiFetch(`/api/lead-agent/businesses/${businessId}/leads`);
+}
+
 export async function refreshBusinessRag(businessId: string) {
   return apiFetch(`/api/lead-agent/device/refresh-rag/${businessId}`, { method: 'POST' });
 }
