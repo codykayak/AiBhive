@@ -27,6 +27,8 @@ export type EmployeePortalMe = {
   links: {
     leadAgentApk: string;
     leadAgentHealth: string;
+    leadAgentIosTestFlight?: string;
+    leadAgentIosInstall?: string;
     macrorei: string;
     manydoors: string;
     aibhive: string;

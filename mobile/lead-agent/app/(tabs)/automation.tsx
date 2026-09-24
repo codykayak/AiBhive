@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useApp } from '../../lib/context';
 import {
   automationIsActive,
@@ -161,7 +161,11 @@ export default function AutomationScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.warn}>Keep this app open in the foreground while automation runs (Android).</Text>
+      <Text style={styles.warn}>
+        {Platform.OS === 'ios'
+          ? 'On iPhone, SMS opens Messages — tap Send each time, or use Twilio in Settings. Paced all-day automation needs Android or Twilio.'
+          : 'Keep this app open in the foreground while automation runs (Android).'}
+      </Text>
 
       <Text style={styles.section}>Activity</Text>
       {log.length === 0 ? <Text style={styles.muted}>No activity yet.</Text> : null}

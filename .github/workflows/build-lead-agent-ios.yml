@@ -1,0 +1,36 @@
+# iOS builds require macOS or Expo EAS (cannot run on Windows).
+name: Build Lead Agent iOS (EAS)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: build-lead-agent-ios
+  cancel-in-progress: true
+
+jobs:
+  eas-ios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install dependencies
+        working-directory: mobile/lead-agent
+        run: npm ci
+
+      - name: EAS Build (iOS preview)
+        working-directory: mobile/lead-agent
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx eas-cli@latest build --platform ios --profile preview --non-interactive
+
+      - name: Next steps
+        if: always()
+        run: |
+          echo "Download the build from expo.dev → upload to App Store Connect → TestFlight."
+          echo "Set LEAD_AGENT_IOS_TESTFLIGHT_URL on Cloud Run for the employee portal button."

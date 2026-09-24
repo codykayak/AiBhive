@@ -12,6 +12,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#1e4d2b"
     },
+    "ios": {
+      "bundleIdentifier": "com.aibhive.leadagent",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSContactsUsageDescription": "Optional — dialer can open the phone app for owner callbacks.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "associatedDomains": ["applinks:aibhive.com"]
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

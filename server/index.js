@@ -3189,6 +3189,20 @@ app.get('/api/download/lead-agent', (req, res) => {
   return res.sendFile(apkPath);
 });
 
+/** Lead Agent iPhone — redirects to TestFlight when LEAD_AGENT_IOS_TESTFLIGHT_URL is set. */
+app.get('/api/download/lead-agent-ios', (req, res) => {
+  const testFlight = String(process.env.LEAD_AGENT_IOS_TESTFLIGHT_URL || '').trim();
+  if (testFlight) {
+    return res.redirect(302, testFlight);
+  }
+  return res.status(404).json({
+    error: 'Lead Agent iPhone (TestFlight) link is not published yet.',
+    hint: 'Open https://aibhive.com/employee → Dialer & tools for install steps. Ops: set LEAD_AGENT_IOS_TESTFLIGHT_URL on Cloud Run after TestFlight is live.',
+    androidApk: '/api/download/lead-agent',
+    employeePortal: '/employee',
+  });
+});
+
 app.get('/api/download/apk', async (req, res) => {
   const manifest = await getMobileReleaseManifest();
   if (req.query.compressed === '1' && manifest?.firebaseGzUrl) {

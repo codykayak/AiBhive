@@ -11,6 +11,8 @@ import {
   Phone,
   Smartphone,
   Sparkles,
+  Apple,
+  Monitor,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { auth, googleProvider } from '../firebase';
@@ -19,7 +21,7 @@ import EmployeePortalChat from '../components/employee-portal/EmployeePortalChat
 import {
   BRAND_PLAYBOOKS,
   DAILY_CHECKLIST,
-  LEAD_AGENT_DOWNLOAD,
+  LEAD_AGENT_INSTALL,
   type BrandId,
 } from '../content/employeePortalBrands';
 import {
@@ -133,8 +135,9 @@ export default function EmployeePortalPage() {
               Employee portal — outbound & inbound command center
             </h1>
             <p className="text-slate-400 mt-4 max-w-2xl text-lg leading-relaxed">
-              Playbooks for AiBhive, MacroREI, and ManyDoors AI, daily checklists, Lead Agent dialer install, and a
-              Grok assistant for anything you need on shift.
+              Playbooks for AiBhive, MacroREI, and ManyDoors AI, daily checklists, Lead Agent for{' '}
+              <strong className="text-white">Android (APK)</strong> and <strong className="text-white">iPhone (TestFlight)</strong>,
+              and a Grok assistant for anything you need on shift.
             </p>
           </motion.div>
         </div>
@@ -268,32 +271,120 @@ export default function EmployeePortalPage() {
               {tab === 'tools' ? (
                 <section className="space-y-8">
                   <div className="rounded-3xl border-2 border-bee-amber/40 bg-gradient-to-br from-bee-amber/15 to-transparent p-6 md:p-10">
-                    <div className="flex flex-col md:flex-row md:items-center gap-6">
-                      <div className="flex-1">
-                        <p className="text-bee-amber text-xs font-bold uppercase tracking-widest">Android · required for SMS</p>
-                        <h2 className="text-2xl md:text-3xl font-black mt-2">{LEAD_AGENT_DOWNLOAD.title}</h2>
-                        <p className="text-slate-300 mt-3 leading-relaxed">
-                          Dial and text from <strong>your cell number</strong> — import owner lists, run MacroREI
-                          automation, and sync with the team workspace. Twilio can be enabled later in Settings without
-                          changing the app.
+                    <div className="flex flex-col lg:flex-row gap-8">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-bee-amber text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                          <Smartphone className="w-4 h-4" /> Android · paced SMS automation
                         </p>
+                        <h2 className="text-2xl md:text-3xl font-black mt-2">{LEAD_AGENT_INSTALL.android.title}</h2>
+                        <p className="text-slate-300 mt-3 leading-relaxed">{LEAD_AGENT_INSTALL.android.subtitle}</p>
                         <a
-                          href={LEAD_AGENT_DOWNLOAD.url}
+                          href={LEAD_AGENT_INSTALL.android.downloadPath}
                           className="inline-flex items-center gap-3 mt-6 rounded-2xl bg-bee-amber text-bee-black font-extrabold text-lg px-8 py-4 hover:bg-bee-yellow transition-colors shadow-lg shadow-bee-amber/25"
                         >
                           <Download className="w-6 h-6" />
-                          Download Lead Agent APK
+                          Download APK ({LEAD_AGENT_INSTALL.android.fileName})
                         </a>
+                        <p className="text-xs text-slate-500 mt-3">
+                          Direct link on phone:{' '}
+                          <a href={LEAD_AGENT_INSTALL.android.publicUrl} className="text-bee-amber hover:underline break-all">
+                            {LEAD_AGENT_INSTALL.android.publicUrl}
+                          </a>
+                        </p>
                       </div>
-                      <div className="md:w-72 rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-slate-300">
-                        <p className="font-bold text-white mb-2">Install steps</p>
-                        <ol className="list-decimal pl-4 space-y-2">
-                          {LEAD_AGENT_DOWNLOAD.steps.map((s, i) => (
+                      <div className="lg:w-[22rem] shrink-0 space-y-4">
+                        <div className="rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-slate-300">
+                          <p className="font-bold text-white mb-2">Android install steps</p>
+                          <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
+                            {LEAD_AGENT_INSTALL.android.steps.map((s, i) => (
+                              <li key={i}>{s}</li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div className="rounded-2xl border border-amber-500/25 bg-amber-950/20 p-4 text-sm">
+                          <p className="font-bold text-amber-200 mb-2">Troubleshooting</p>
+                          <ul className="list-disc pl-4 space-y-2 text-slate-300">
+                            {LEAD_AGENT_INSTALL.android.troubleshooting.map((t) => (
+                              <li key={t}>{t}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="iphone-install" className="rounded-3xl border border-white/15 bg-white/[0.03] p-6 md:p-10 scroll-mt-28">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                      <Apple className="w-4 h-4" /> iPhone · TestFlight
+                    </p>
+                    <h2 className="text-2xl font-black mt-2">{LEAD_AGENT_INSTALL.ios.title}</h2>
+                    <p className="text-slate-400 mt-2 leading-relaxed">{LEAD_AGENT_INSTALL.ios.subtitle}</p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <a
+                        href={
+                          portal.links.leadAgentIosTestFlight ||
+                          portal.links.leadAgentIosInstall ||
+                          LEAD_AGENT_INSTALL.ios.publicInstallPath
+                        }
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-3 rounded-2xl bg-white text-bee-black font-extrabold text-lg px-8 py-4 hover:bg-slate-100 transition-colors"
+                      >
+                        <Apple className="w-6 h-6" />
+                        {portal.links.leadAgentIosTestFlight
+                          ? 'Open TestFlight invite'
+                          : 'iPhone install link (TestFlight)'}
+                      </a>
+                      <a
+                        href="https://apps.apple.com/app/testflight/id899247664"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-6 py-4 text-sm font-bold text-slate-200 hover:bg-white/5"
+                      >
+                        Get TestFlight app <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                    {!portal.links.leadAgentIosTestFlight ? (
+                      <p className="mt-4 text-sm text-slate-500">
+                        Live invite redirects when ops sets{' '}
+                        <code className="text-bee-amber">LEAD_AGENT_IOS_TESTFLIGHT_URL</code> on Cloud Run. Until then,
+                        use the steps below and ask your manager for the invite email.
+                      </p>
+                    ) : null}
+                    <ul className="mt-4 space-y-2 text-sm text-amber-100/90 list-disc pl-5">
+                      {LEAD_AGENT_INSTALL.ios.limitations.map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                    <div className="mt-6 grid md:grid-cols-2 gap-4">
+                      <div className="rounded-2xl border border-white/10 p-4 text-sm text-slate-300">
+                        <p className="font-bold text-white mb-2">iPhone install steps</p>
+                        <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
+                          {LEAD_AGENT_INSTALL.ios.testFlightSteps.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ol>
+                      </div>
+                      <div className="rounded-2xl border border-white/10 p-4 text-sm text-slate-400">
+                        <p className="font-bold text-slate-200 mb-2">For managers — ship iOS build</p>
+                        <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
+                          {LEAD_AGENT_INSTALL.ios.managerBuildSteps.map((s, i) => (
                             <li key={i}>{s}</li>
                           ))}
                         </ol>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-sky-500/30 bg-sky-950/15 p-6">
+                    <p className="font-bold text-sky-200 flex items-center gap-2">
+                      <Monitor className="w-5 h-5" /> {LEAD_AGENT_INSTALL.pc.title}
+                    </p>
+                    <ol className="mt-3 list-decimal pl-5 space-y-2 text-sm text-slate-300 leading-relaxed">
+                      {LEAD_AGENT_INSTALL.pc.steps.map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ol>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">

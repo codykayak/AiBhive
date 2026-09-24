@@ -94,6 +94,8 @@ export function registerEmployeePortalRoutes(app, db) {
       links: {
         leadAgentApk: '/api/download/lead-agent',
         leadAgentHealth: '/api/lead-agent/health',
+        leadAgentIosTestFlight: String(process.env.LEAD_AGENT_IOS_TESTFLIGHT_URL || '').trim(),
+        leadAgentIosInstall: '/api/download/lead-agent-ios',
         macrorei: 'https://macrorei.com',
         manydoors: 'https://manydoorsai.com',
         aibhive: 'https://aibhive.com',

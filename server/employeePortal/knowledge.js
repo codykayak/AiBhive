@@ -27,8 +27,9 @@ If unsure, say so and point them to their team lead or hello@aibhive.com. Never 
 - Compliance: honor opt-outs immediately; daily SMS caps; keep app foreground during automation on Android.
 
 ## Tools employees use
-- Lead Agent APK: https://aibhive.com/api/download/lead-agent — Android only; sign in with Google after owner invite.
-- Employee portal: https://aibhive.com/employee — scripts, brand cards, checklist.
+- Lead Agent APK (Android): https://aibhive.com/api/download/lead-agent — paced SMS from employee cell; sign in with Google after owner invite.
+- Lead Agent iPhone: TestFlight link when LEAD_AGENT_IOS_TESTFLIGHT_URL is set — lists/dialer/Twilio; manual Messages send unless Twilio enabled (no Android-style background SMS from personal number).
+- Employee portal: https://aibhive.com/employee — full Android + iPhone install steps, scripts, checklist.
 - Twilio (coming online): Lead Agent Settings → SMS provider → Twilio when credentials are provisioned.
 `;
 

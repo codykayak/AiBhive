@@ -145,16 +145,71 @@ export const BRAND_PLAYBOOKS: BrandPlaybook[] = [
   },
 ];
 
+export const LEAD_AGENT_INSTALL = {
+  android: {
+    title: 'AiBhive Lead Agent (Android)',
+    subtitle: 'Required for paced SMS automation from your cell number',
+    downloadPath: '/api/download/lead-agent',
+    publicUrl: 'https://aibhive.com/api/download/lead-agent',
+    fileName: 'aibhive-lead-agent.apk',
+    steps: [
+      'On your Android phone, open Chrome (not in-app browsers from Facebook/email — use Chrome).',
+      'Go to https://aibhive.com/employee → Dialer & tools → Download Lead Agent APK, or open https://aibhive.com/api/download/lead-agent directly.',
+      'When the download finishes, open the notification or Files → Downloads → tap aibhive-lead-agent.apk.',
+      'If Android asks to allow installs: Settings → Apps → Chrome → Install unknown apps → Allow.',
+      'Tap Install → Open AiBhive Lead Agent.',
+      'Allow SMS, Phone, and notifications when prompted — needed for outbound/inbound MacroREI texts.',
+      'Sign in with Google using the same email your manager invited on the Leads tab.',
+      'Leads: import CSV/Excel → Dial/SMS: tap a row to call or text → Automation: send yourself 1 test SMS first.',
+      'Keep the app in the foreground while automation runs; do not force-stop or battery-optimize it off.',
+    ],
+    troubleshooting: [
+      'Download says “not available” — wait for GitHub Actions “Build Lead Agent APK” on main-fixed, or ask ops to run npm run lead-agent:phone on a PC.',
+      'Install blocked — enable “Install unknown apps” for Chrome (or Files if you sideloaded from USB).',
+      'SMS not sending — check Settings → Apps → Lead Agent → Permissions → SMS allowed; retry Automation test.',
+      'Sign-in fails — confirm your Gmail is on the MacroREI workspace invite list.',
+    ],
+  },
+  pc: {
+    title: 'Install from a Windows PC (USB or copy file)',
+    steps: [
+      'Install JDK 17 once: winget install EclipseAdoptium.Temurin.17.JDK',
+      'Connect Android phone with USB debugging enabled (Developer options).',
+      'From repo root run: npm run lead-agent:phone',
+      'Script builds the APK, copies AiBhive-Lead-Agent.apk to your Desktop, and runs adb install if a device is detected.',
+      'No USB? Email/Drive the Desktop APK to the phone and tap to install (same unknown-apps step as above).',
+    ],
+  },
+  ios: {
+    title: 'AiBhive Lead Agent (iPhone)',
+    subtitle: 'Lists, dialer, Google sign-in, Twilio — paced auto-SMS is Android-first today',
+    limitations: [
+      'Apple does not allow background SMS sending from your personal number like Android — Automation “run all day” requires Android or Twilio in Settings.',
+      'On iPhone, “Send SMS” opens the Messages app with the text filled in — you tap Send for each lead (or switch to Twilio when ops enables it).',
+      'Inbound Grok replies on macrorei.com still work when the app is open and the server is connected.',
+    ],
+    testFlightSteps: [
+      'Install Apple TestFlight from the App Store (free).',
+      'On this page, tap **Open TestFlight invite** (or open the link your manager sent).',
+      'Tap Accept → Install **AiBhive Lead Agent**.',
+      'Open the app → Sign in with Google (invited workspace email).',
+      'Import leads on Leads tab; use Dial/SMS to open Phone or Messages per row.',
+      'When Twilio is enabled: Settings → SMS provider → Twilio for team-number sends without opening Messages.',
+    ],
+    publicInstallPath: '/api/download/lead-agent-ios',
+    managerBuildSteps: [
+      'Apple Developer account + Expo (expo.dev) project for com.aibhive.leadagent.',
+      'Add EXPO_TOKEN to GitHub repo secrets; configure Apple credentials in Expo.',
+      'Run GitHub Actions “Build Lead Agent iOS (EAS)” or locally on a Mac: cd mobile/lead-agent && npx eas-cli build --platform ios --profile preview',
+      'Upload the build to App Store Connect → TestFlight → add internal testers.',
+      'Set Cloud Run env LEAD_AGENT_IOS_TESTFLIGHT_URL to the public TestFlight link — employee portal shows the button automatically.',
+    ],
+  },
+} as const;
+
+/** @deprecated use LEAD_AGENT_INSTALL.android */
 export const LEAD_AGENT_DOWNLOAD = {
-  url: '/api/download/lead-agent',
-  title: 'AiBhive Lead Agent (Android)',
-  steps: [
-    'On your Android phone, open Chrome.',
-    'Tap the download button below (APK).',
-    'Allow “Install unknown apps” for Chrome if prompted.',
-    'Open Lead Agent → allow SMS permissions.',
-    'Sign in with Google (same email your manager invited).',
-    'Leads tab: import CSV/Excel → Dial/SMS tab: tap a row to call/text from your number.',
-    'Twilio (later): Settings → SMS provider → Twilio when admin enables credentials.',
-  ],
+  url: LEAD_AGENT_INSTALL.android.downloadPath,
+  title: LEAD_AGENT_INSTALL.android.title,
+  steps: LEAD_AGENT_INSTALL.android.steps,
 };
