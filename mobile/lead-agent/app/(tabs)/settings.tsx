@@ -15,7 +15,7 @@ import {
 import type { Business } from '../../lib/types';
 
 export default function SettingsScreen() {
-  const { active, updateBusiness, addBusiness } = useApp();
+  const { active, updateBusiness, addBusiness, workspace, signInWithGoogle, signOutGoogle, refresh } = useApp();
   const [greeting, setGreeting] = useState('');
   const [knowledge, setKnowledge] = useState('');
   const [escalation, setEscalation] = useState('');
@@ -163,6 +163,26 @@ export default function SettingsScreen() {
           <TextInput style={styles.input} placeholder="Twilio Auth Token" secureTextEntry value={twilioToken} onChangeText={setTwilioToken} />
         </>
       ) : null}
+      <Text style={styles.section}>Team & Google sign-in</Text>
+      <Text style={styles.hint}>
+        Partners sign in with Google after you invite them from the Leads tab. Your device secret still works for
+        outbound SMS on this phone.
+      </Text>
+      {workspace?.email ? (
+        <Text style={styles.hint}>
+          Signed in: {workspace.email} · role {workspace.role} · workspace {workspace.workspaceUid.slice(0, 12)}…
+        </Text>
+      ) : (
+        <Text style={styles.hint}>Not signed in with Google (device mode only).</Text>
+      )}
+      <View style={styles.row}>
+        <Pressable style={styles.chip} onPress={() => void signInWithGoogle().then(() => refresh())}>
+          <Text>Sign in with Google</Text>
+        </Pressable>
+        <Pressable style={styles.chip} onPress={() => void signOutGoogle().then(() => refresh())}>
+          <Text>Sign out Google</Text>
+        </Pressable>
+      </View>
       <Text style={styles.section}>Server (required for Grok + website RAG)</Text>
       <Text style={styles.hint}>
         Set the same device secret on aibhive.com as LEAD_AGENT_DEVICE_SECRET. Owner UID is your Firebase user id
