@@ -41,6 +41,7 @@ const PhoneSystemsIntegration = lazy(() => import('./pages/solutions/PhoneSystem
 const FieldServiceAi = lazy(() => import('./pages/solutions/FieldServiceAi'));
 const BookConsultation = lazy(() => import('./pages/BookConsultation'));
 const JobsPage = lazy(() => import('./pages/JobsPage'));
+const EmployeePortalPage = lazy(() => import('./pages/EmployeePortalPage'));
 const JobListingPage = lazy(() => import('./pages/JobListingPage'));
 const ResearchPage = lazy(() => import('./pages/app/ResearchPage'));
 const AppHub = lazy(() => import('./pages/app/AppHub'));
@@ -148,6 +149,7 @@ function AnimatedRoutes() {
             <Route path="/book-consultation" element={<BookConsultation />} />
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:slug" element={<JobListingPage />} />
+            <Route path="/employee" element={<EmployeePortalPage />} />
             <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
             <Route path="/research" element={<AppRedirect to="/app/research" />} />
             <Route path="/app/build" element={<AppRedirect to="/hive-apps/build" />} />

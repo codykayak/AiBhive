@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useApp } from '../../lib/context';
 import {
@@ -9,11 +10,11 @@ import {
   startAutomation,
   stopAutomation,
 } from '../../lib/automationRunner';
-import { personalizeOutbound, pickNextLead } from '../../lib/localAutomation';
+import { automationLeadPool, personalizeOutbound, pickNextLead } from '../../lib/localAutomation';
 import { ensureSmsPermissions } from '../../lib/permissions';
 
 export default function AutomationScreen() {
-  const { active, businesses, setActive, leads, upsertLead, updateBusiness } = useApp();
+  const { active, businesses, setActive, leads, upsertLead, updateBusiness, reloadLeads } = useApp();
   const [on, setOn] = useState(false);
   const [sentToday, setSentToday] = useState(0);
   const [log, setLog] = useState<string[]>([]);
@@ -23,6 +24,12 @@ export default function AutomationScreen() {
     getLeads: () => leads,
     upsertLead,
   });
+
+  useFocusEffect(
+    useCallback(() => {
+      void reloadLeads();
+    }, [reloadLeads]),
+  );
 
   useEffect(() => {
     handlersRef.current = {
@@ -64,6 +71,7 @@ export default function AutomationScreen() {
     }
   };
 
+  const readyCount = automationLeadPool(leads).length;
   const nextLead = pickNextLead(leads);
   const previewBody = active && nextLead ? personalizeOutbound(active, nextLead) : '';
 
@@ -106,8 +114,8 @@ export default function AutomationScreen() {
         ))}
       </ScrollView>
       <Text style={styles.sub}>
-        Paced auto-SMS to new MacroREI leads from your uploaded list. Grok replies to inbound texts using macrorei.com
-        RAG (Settings → Test server / Refresh RAG).
+        Paced auto-SMS to new MacroREI leads from your uploaded list ({readyCount} ready with phone + address). Grok
+        replies to inbound texts using macrorei.com RAG (Settings → Test server / Refresh RAG).
       </Text>
 
       {previewBody ? (
@@ -121,7 +129,10 @@ export default function AutomationScreen() {
           ) : null}
         </View>
       ) : (
-        <Text style={styles.warn}>Upload leads on the Leads tab (name, address, phone) before starting.</Text>
+        <Text style={styles.warn}>
+          Upload leads on the Leads tab ({leads.length} saved, {readyCount} ready). Each row needs phone + property
+          address — check import message if count is 0.
+        </Text>
       )}
 
       <Pressable style={[styles.chip, { backgroundColor: active.brandColor || '#1e4d2b' }]} onPress={() => void sendOneNow()}>

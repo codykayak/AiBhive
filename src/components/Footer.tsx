@@ -73,6 +73,11 @@ export default function Footer() {
               <li><Link to="/tools" className="text-slate-400 hover:text-bee-amber transition-colors">AI tools guides</Link></li>
               <li><Link to="/about" className="text-slate-400 hover:text-bee-amber transition-colors">About</Link></li>
               <li><Link to="/jobs" className="text-slate-400 hover:text-bee-amber transition-colors">Jobs</Link></li>
+              <li>
+                <Link to="/employee" className="text-slate-400 hover:text-bee-amber transition-colors font-medium">
+                  Employee portal
+                </Link>
+              </li>
               <li><Link to="/faq" className="text-slate-400 hover:text-bee-amber transition-colors">FAQ</Link></li>
               <li>
                 <a href="mailto:hello@aibhive.com" className="text-slate-400 hover:text-bee-amber transition-colors flex items-center">
@@ -89,6 +94,7 @@ export default function Footer() {
           </p>
           <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 md:mt-0">
             <Link to="/jobs" className="text-slate-500 hover:text-slate-300 text-sm">Jobs</Link>
+            <Link to="/employee" className="text-slate-500 hover:text-slate-300 text-sm">Employee portal</Link>
             <a href="/privacy-policy.html" className="text-slate-500 hover:text-slate-300 text-sm">Privacy Policy</a>
             <a href="/terms-of-service.html" className="text-slate-500 hover:text-slate-300 text-sm">Terms of Service</a>
             <a href="/llms.txt" className="text-slate-500 hover:text-slate-300 text-sm">LLM index</a>

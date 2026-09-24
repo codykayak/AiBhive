@@ -35,9 +35,8 @@ type Ctx = {
   signInWithGoogle: () => Promise<void>;
   signOutGoogle: () => Promise<void>;
   inviteTeammate: (email: string) => Promise<{ message?: string; joinUrl?: string }>;
+  reloadLeads: () => Promise<void>;
 };
-
-const AppCtx = createContext<Ctx | null>(null);
 
 async function mergeServerLeads(businessId: string, local: Lead[]): Promise<Lead[]> {
   try {
@@ -119,6 +118,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await saveLocalLeads(activeId, next);
   };
 
+  const reloadLeads = async () => {
+    const local = await getLocalLeads(activeId);
+    setLeads(await mergeServerLeads(activeId, local));
+  };
+
   const importLeads = async (incoming: Lead[]) => {
     if (!canEditLeads) {
       return { added: 0, total: leads.length };
@@ -187,6 +191,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signInWithGoogle,
       signOutGoogle,
       inviteTeammate,
+      reloadLeads,
     }),
     [businesses, active, leads, workspace, canEditLeads],
   );

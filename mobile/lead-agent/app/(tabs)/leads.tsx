@@ -62,11 +62,21 @@ export default function LeadsScreen() {
     }
     const batch = parsedRowsToLeads(parsed.rows);
     const { added, total } = await importLeads(batch);
-    setImportStatus(`Added ${added} leads (${total} on device). Skipped ${parsed.skipped} bad rows.`);
+    const msg = `Added ${added} leads (${total} on device). Skipped ${parsed.skipped} bad rows.`;
+    setImportStatus(msg);
+    if (added === 0 && parsed.rows.length > 0) {
+      Alert.alert('Nothing new added', msg);
+    } else if (added === 0 && parsed.errors.length) {
+      Alert.alert('Import issue', [...parsed.errors, msg].join('\n'));
+    }
     setPasteOpen(false);
   };
 
   const pickSpreadsheet = async () => {
+    if (!canEditLeads) {
+      Alert.alert('View only', 'You cannot import leads with viewer access.');
+      return;
+    }
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: PICK_TYPES,
@@ -76,7 +86,7 @@ export default function LeadsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
       setImportStatus('Reading file…');
-      const parsed = await importLeadsFromFileUri(asset.uri, asset.name || 'leads.csv');
+      const parsed = await importLeadsFromFileUri(asset.uri, asset.name || 'leads.csv', asset.mimeType);
       await finishImport(parsed);
     } catch (e) {
       Alert.alert('Could not read file', String(e));

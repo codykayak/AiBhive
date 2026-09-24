@@ -20,7 +20,7 @@ import backgroundLogo from '../aibhive_background.png';
 import { SEO } from '../components/SEO';
 import { BOOK_CONSULTATION_PATH } from '../constants/navigation';
 import DigitalEmployeesInfographics from '../components/DigitalEmployeesInfographics';
-import HomeHivePlatform from '../components/HomeHivePlatform';
+import HomePropertySolutions from '../components/HomePropertySolutions';
 import HeroLogoMarquee from '../components/HeroLogoMarquee';
 
 const CATEGORIES = [
@@ -329,7 +329,7 @@ export default function Home() {
 
       <SectionDivider />
 
-      <HomeHivePlatform />
+      <HomePropertySolutions />
 
       {/* ——— CTA BAR ——— */}
       <TechParallaxSection
