@@ -95,6 +95,10 @@ import { registerTartarRoutes } from './tartarRoutes.js';
 import { registerResearchLabRoutes } from './researchLabRoutes.js';
 import { registerProsRoutes } from './prosRoutes.js';
 import { registerLeadAgentRoutes } from './leadAgent/routes.js';
+import {
+  leadAgentIosInstallHtml,
+  resolveLeadAgentIosInstallUrl,
+} from './leadAgent/iosInstall.js';
 import { registerEmployeePortalRoutes } from './employeePortal/routes.js';
 import { registerMacroreiVoiceRoutes } from './macroreiVoiceSession.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
@@ -3189,18 +3193,24 @@ app.get('/api/download/lead-agent', (req, res) => {
   return res.sendFile(apkPath);
 });
 
-/** Lead Agent iPhone — redirects to TestFlight when LEAD_AGENT_IOS_TESTFLIGHT_URL is set. */
+/** Lead Agent iPhone — TestFlight / install manifest (Apple has no APK). */
 app.get('/api/download/lead-agent-ios', (req, res) => {
-  const testFlight = String(process.env.LEAD_AGENT_IOS_TESTFLIGHT_URL || '').trim();
-  if (testFlight) {
-    return res.redirect(302, testFlight);
+  const installUrl = resolveLeadAgentIosInstallUrl();
+  if (installUrl) {
+    return res.redirect(302, installUrl);
   }
-  return res.status(404).json({
-    error: 'Lead Agent iPhone (TestFlight) link is not published yet.',
-    hint: 'Open https://aibhive.com/employee → Dialer & tools for install steps. Ops: set LEAD_AGENT_IOS_TESTFLIGHT_URL on Cloud Run after TestFlight is live.',
-    androidApk: '/api/download/lead-agent',
-    employeePortal: '/employee',
-  });
+  const wantsJson =
+    req.accepts(['html', 'json']) === 'json' ||
+    String(req.headers.accept || '').includes('application/json');
+  if (wantsJson) {
+    return res.status(404).json({
+      error: 'Lead Agent iPhone install is not published yet.',
+      hint: 'Install TestFlight from the App Store, then retry after GitHub Actions “Build Lead Agent iOS” completes.',
+      androidApk: '/api/download/lead-agent',
+      employeePortal: '/employee',
+    });
+  }
+  return res.type('html').send(leadAgentIosInstallHtml());
 });
 
 app.get('/api/download/apk', async (req, res) => {

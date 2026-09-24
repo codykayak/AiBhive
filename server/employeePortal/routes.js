@@ -3,6 +3,10 @@ import { verifyHiveAuth } from '../hiveAuth.js';
 import { isAdminEmail } from '../hiveAdmin.js';
 import { grokChatMessages } from '../socialPosts/grokProvider.js';
 import { buildEmployeeChatSystem } from './knowledge.js';
+import {
+  isLeadAgentIosInstallReady,
+  resolveLeadAgentIosInstallUrl,
+} from '../leadAgent/iosInstall.js';
 
 const PROFILE_COL = 'employee_portal_profiles';
 
@@ -94,8 +98,9 @@ export function registerEmployeePortalRoutes(app, db) {
       links: {
         leadAgentApk: '/api/download/lead-agent',
         leadAgentHealth: '/api/lead-agent/health',
-        leadAgentIosTestFlight: String(process.env.LEAD_AGENT_IOS_TESTFLIGHT_URL || '').trim(),
         leadAgentIosInstall: '/api/download/lead-agent-ios',
+        leadAgentIosTestFlight: resolveLeadAgentIosInstallUrl(),
+        leadAgentIosReady: isLeadAgentIosInstallReady(),
         macrorei: 'https://macrorei.com',
         manydoors: 'https://manydoorsai.com',
         aibhive: 'https://aibhive.com',

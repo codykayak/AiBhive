@@ -1,0 +1,8 @@
+{
+  "status": "pending",
+  "note": "Updated by GitHub Actions “Build Lead Agent iOS” when TestFlight or EAS install URL is available.",
+  "testFlightUrl": "",
+  "installUrl": "",
+  "easInstallUrl": "",
+  "builtAt": null
+}

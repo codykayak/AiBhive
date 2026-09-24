@@ -1,8 +1,19 @@
-# iOS builds require macOS or Expo EAS (cannot run on Windows).
-name: Build Lead Agent iOS (EAS)
+# MacroREI Lead Agent — iOS TestFlight / internal install (mirrors Android APK workflow).
+# iPhone cannot sideload an APK; this job builds via EAS and commits public/lead-agent-ios.json.
+# After merge: iPhone Safari → https://aibhive.com/api/download/lead-agent-ios
+name: Build Lead Agent iOS
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main-fixed]
+    paths:
+      - 'mobile/lead-agent/**'
+      - '.github/workflows/build-lead-agent-ios.yml'
+      - 'public/lead-agent-ios.json'
+
+permissions:
+  contents: write
 
 concurrency:
   group: build-lead-agent-ios
@@ -14,6 +25,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HIVE_DEPLOY_TOKEN || secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
@@ -24,13 +37,57 @@ jobs:
         run: npm ci
 
       - name: EAS Build (iOS preview)
+        id: eas
         working-directory: mobile/lead-agent
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx eas-cli@latest build --platform ios --profile preview --non-interactive
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN not set — skipping native iOS build."
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          npx eas-cli@latest init --non-interactive --force || true
+          npx eas-cli@latest build --platform ios --profile preview --non-interactive --wait
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
 
-      - name: Next steps
+      - name: Write install manifest from TestFlight secret
+        if: always()
+        env:
+          TF_URL: ${{ secrets.LEAD_AGENT_IOS_TESTFLIGHT_URL }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const tf = (process.env.TF_URL || '').trim();
+          const path = 'public/lead-agent-ios.json';
+          let prev = {};
+          try { prev = JSON.parse(fs.readFileSync(path, 'utf8')); } catch {}
+          const next = {
+            ...prev,
+            status: tf ? 'ready' : (prev.status || 'pending'),
+            testFlightUrl: tf || prev.testFlightUrl || '',
+            installUrl: tf || prev.installUrl || '',
+            builtAt: tf ? new Date().toISOString() : prev.builtAt || null,
+          };
+          fs.writeFileSync(path, JSON.stringify(next, null, 2) + '\n');
+          console.log('manifest:', next);
+          NODE
+
+      - name: Commit iOS install manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/lead-agent-ios.json
+          if git diff --staged --quiet; then
+            echo "iOS manifest unchanged"
+            exit 0
+          fi
+          git commit -m "chore(lead-agent): update iPhone install manifest [skip-deploy]"
+          git pull --rebase origin main-fixed
+          git push origin HEAD:main-fixed
+
+      - name: Install link
         if: always()
         run: |
-          echo "Download the build from expo.dev → upload to App Store Connect → TestFlight."
-          echo "Set LEAD_AGENT_IOS_TESTFLIGHT_URL on Cloud Run for the employee portal button."
+          echo "iPhone install: https://aibhive.com/api/download/lead-agent-ios"
+          echo "Set LEAD_AGENT_IOS_TESTFLIGHT_URL repo secret to your https://testflight.apple.com/join/… link."

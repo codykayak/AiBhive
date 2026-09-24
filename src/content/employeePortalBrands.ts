@@ -182,7 +182,11 @@ export const LEAD_AGENT_INSTALL = {
   },
   ios: {
     title: 'AiBhive Lead Agent (iPhone)',
-    subtitle: 'Lists, dialer, Google sign-in, Twilio — paced auto-SMS is Android-first today',
+    subtitle: 'Same app as Android — installed via TestFlight (Apple’s install path; there is no iPhone APK file).',
+    downloadPath: '/api/download/lead-agent-ios',
+    publicUrl: 'https://aibhive.com/api/download/lead-agent-ios',
+    buttonReady: 'Download for iPhone (TestFlight)',
+    buttonPending: 'Open iPhone install page',
     limitations: [
       'Apple does not allow background SMS sending from your personal number like Android — Automation “run all day” requires Android or Twilio in Settings.',
       'On iPhone, “Send SMS” opens the Messages app with the text filled in — you tap Send for each lead (or switch to Twilio when ops enables it).',

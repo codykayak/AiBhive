@@ -29,6 +29,7 @@ export type EmployeePortalMe = {
     leadAgentHealth: string;
     leadAgentIosTestFlight?: string;
     leadAgentIosInstall?: string;
+    leadAgentIosReady?: boolean;
     macrorei: string;
     manydoors: string;
     aibhive: string;

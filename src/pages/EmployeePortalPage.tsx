@@ -270,110 +270,104 @@ export default function EmployeePortalPage() {
 
               {tab === 'tools' ? (
                 <section className="space-y-8">
-                  <div className="rounded-3xl border-2 border-bee-amber/40 bg-gradient-to-br from-bee-amber/15 to-transparent p-6 md:p-10">
-                    <div className="flex flex-col lg:flex-row gap-8">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-bee-amber text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                          <Smartphone className="w-4 h-4" /> Android · paced SMS automation
-                        </p>
-                        <h2 className="text-2xl md:text-3xl font-black mt-2">{LEAD_AGENT_INSTALL.android.title}</h2>
-                        <p className="text-slate-300 mt-3 leading-relaxed">{LEAD_AGENT_INSTALL.android.subtitle}</p>
-                        <a
-                          href={LEAD_AGENT_INSTALL.android.downloadPath}
-                          className="inline-flex items-center gap-3 mt-6 rounded-2xl bg-bee-amber text-bee-black font-extrabold text-lg px-8 py-4 hover:bg-bee-yellow transition-colors shadow-lg shadow-bee-amber/25"
-                        >
-                          <Download className="w-6 h-6" />
-                          Download APK ({LEAD_AGENT_INSTALL.android.fileName})
-                        </a>
-                        <p className="text-xs text-slate-500 mt-3">
-                          Direct link on phone:{' '}
-                          <a href={LEAD_AGENT_INSTALL.android.publicUrl} className="text-bee-amber hover:underline break-all">
-                            {LEAD_AGENT_INSTALL.android.publicUrl}
-                          </a>
-                        </p>
-                      </div>
-                      <div className="lg:w-[22rem] shrink-0 space-y-4">
-                        <div className="rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-slate-300">
-                          <p className="font-bold text-white mb-2">Android install steps</p>
-                          <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
-                            {LEAD_AGENT_INSTALL.android.steps.map((s, i) => (
-                              <li key={i}>{s}</li>
-                            ))}
-                          </ol>
-                        </div>
-                        <div className="rounded-2xl border border-amber-500/25 bg-amber-950/20 p-4 text-sm">
-                          <p className="font-bold text-amber-200 mb-2">Troubleshooting</p>
-                          <ul className="list-disc pl-4 space-y-2 text-slate-300">
-                            {LEAD_AGENT_INSTALL.android.troubleshooting.map((t) => (
-                              <li key={t}>{t}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="rounded-3xl border-2 border-bee-amber/40 bg-gradient-to-br from-bee-amber/15 to-transparent p-6 md:p-8 flex flex-col">
+                      <p className="text-bee-amber text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Smartphone className="w-4 h-4" /> Android
+                      </p>
+                      <h2 className="text-xl md:text-2xl font-black mt-2">{LEAD_AGENT_INSTALL.android.title}</h2>
+                      <p className="text-slate-300 mt-2 text-sm leading-relaxed flex-1">
+                        {LEAD_AGENT_INSTALL.android.subtitle}
+                      </p>
+                      <a
+                        href={LEAD_AGENT_INSTALL.android.downloadPath}
+                        className="inline-flex items-center justify-center gap-3 mt-6 rounded-2xl bg-bee-amber text-bee-black font-extrabold text-lg px-6 py-4 hover:bg-bee-yellow transition-colors shadow-lg shadow-bee-amber/25"
+                      >
+                        <Download className="w-6 h-6" />
+                        Download APK
+                      </a>
+                      <p className="text-xs text-slate-500 mt-3 break-all">{LEAD_AGENT_INSTALL.android.publicUrl}</p>
+                    </div>
+
+                    <div
+                      id="iphone-install"
+                      className="rounded-3xl border-2 border-white/25 bg-gradient-to-br from-white/10 to-transparent p-6 md:p-8 flex flex-col scroll-mt-28"
+                    >
+                      <p className="text-slate-300 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Apple className="w-4 h-4" /> iPhone
+                        {portal.links.leadAgentIosReady ? (
+                          <span className="ml-auto text-emerald-400 normal-case tracking-normal text-xs font-bold">
+                            Install ready
+                          </span>
+                        ) : (
+                          <span className="ml-auto text-amber-400/90 normal-case tracking-normal text-xs font-bold">
+                            TestFlight setup
+                          </span>
+                        )}
+                      </p>
+                      <h2 className="text-xl md:text-2xl font-black mt-2">{LEAD_AGENT_INSTALL.ios.title}</h2>
+                      <p className="text-slate-300 mt-2 text-sm leading-relaxed flex-1">
+                        {LEAD_AGENT_INSTALL.ios.subtitle}
+                      </p>
+                      <a
+                        href={LEAD_AGENT_INSTALL.ios.downloadPath}
+                        className="inline-flex items-center justify-center gap-3 mt-6 rounded-2xl bg-white text-bee-black font-extrabold text-lg px-6 py-4 hover:bg-slate-100 transition-colors"
+                      >
+                        <Apple className="w-6 h-6" />
+                        {portal.links.leadAgentIosReady
+                          ? LEAD_AGENT_INSTALL.ios.buttonReady
+                          : LEAD_AGENT_INSTALL.ios.buttonPending}
+                      </a>
+                      <p className="text-xs text-slate-500 mt-3 break-all">{LEAD_AGENT_INSTALL.ios.publicUrl}</p>
                     </div>
                   </div>
 
-                  <div id="iphone-install" className="rounded-3xl border border-white/15 bg-white/[0.03] p-6 md:p-10 scroll-mt-28">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                      <Apple className="w-4 h-4" /> iPhone · TestFlight
-                    </p>
-                    <h2 className="text-2xl font-black mt-2">{LEAD_AGENT_INSTALL.ios.title}</h2>
-                    <p className="text-slate-400 mt-2 leading-relaxed">{LEAD_AGENT_INSTALL.ios.subtitle}</p>
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <a
-                        href={
-                          portal.links.leadAgentIosTestFlight ||
-                          portal.links.leadAgentIosInstall ||
-                          LEAD_AGENT_INSTALL.ios.publicInstallPath
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-3 rounded-2xl bg-white text-bee-black font-extrabold text-lg px-8 py-4 hover:bg-slate-100 transition-colors"
-                      >
-                        <Apple className="w-6 h-6" />
-                        {portal.links.leadAgentIosTestFlight
-                          ? 'Open TestFlight invite'
-                          : 'iPhone install link (TestFlight)'}
-                      </a>
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    <div className="rounded-2xl bg-black/40 border border-white/10 p-4 text-sm text-slate-300">
+                      <p className="font-bold text-white mb-2">Android install steps</p>
+                      <ol className="list-decimal pl-4 space-y-2 leading-relaxed max-h-64 overflow-y-auto">
+                        {LEAD_AGENT_INSTALL.android.steps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                      <p className="font-bold text-amber-200 mt-4 mb-2">Troubleshooting</p>
+                      <ul className="list-disc pl-4 space-y-2 text-slate-300">
+                        {LEAD_AGENT_INSTALL.android.troubleshooting.map((t) => (
+                          <li key={t}>{t}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 p-4 text-sm text-slate-300">
+                      <p className="font-bold text-white mb-2">iPhone install steps</p>
+                      <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
+                        {LEAD_AGENT_INSTALL.ios.testFlightSteps.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ol>
+                      <ul className="mt-4 space-y-2 text-sm text-amber-100/90 list-disc pl-5">
+                        {LEAD_AGENT_INSTALL.ios.limitations.map((line) => (
+                          <li key={line}>{line}</li>
+                        ))}
+                      </ul>
                       <a
                         href="https://apps.apple.com/app/testflight/id899247664"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-white/20 px-6 py-4 text-sm font-bold text-slate-200 hover:bg-white/5"
+                        className="inline-flex items-center gap-1 text-bee-amber text-sm font-bold mt-4"
                       >
-                        Get TestFlight app <ExternalLink className="w-4 h-4" />
+                        Get TestFlight from App Store <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
-                    {!portal.links.leadAgentIosTestFlight ? (
-                      <p className="mt-4 text-sm text-slate-500">
-                        Live invite redirects when ops sets{' '}
-                        <code className="text-bee-amber">LEAD_AGENT_IOS_TESTFLIGHT_URL</code> on Cloud Run. Until then,
-                        use the steps below and ask your manager for the invite email.
-                      </p>
-                    ) : null}
-                    <ul className="mt-4 space-y-2 text-sm text-amber-100/90 list-disc pl-5">
-                      {LEAD_AGENT_INSTALL.ios.limitations.map((line) => (
-                        <li key={line}>{line}</li>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 p-5 text-sm text-slate-400">
+                    <p className="font-bold text-slate-200 mb-2">For managers — ship the iPhone build</p>
+                    <ol className="list-decimal pl-5 space-y-2 leading-relaxed">
+                      {LEAD_AGENT_INSTALL.ios.managerBuildSteps.map((s, i) => (
+                        <li key={i}>{s}</li>
                       ))}
-                    </ul>
-                    <div className="mt-6 grid md:grid-cols-2 gap-4">
-                      <div className="rounded-2xl border border-white/10 p-4 text-sm text-slate-300">
-                        <p className="font-bold text-white mb-2">iPhone install steps</p>
-                        <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
-                          {LEAD_AGENT_INSTALL.ios.testFlightSteps.map((s, i) => (
-                            <li key={i}>{s}</li>
-                          ))}
-                        </ol>
-                      </div>
-                      <div className="rounded-2xl border border-white/10 p-4 text-sm text-slate-400">
-                        <p className="font-bold text-slate-200 mb-2">For managers — ship iOS build</p>
-                        <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
-                          {LEAD_AGENT_INSTALL.ios.managerBuildSteps.map((s, i) => (
-                            <li key={i}>{s}</li>
-                          ))}
-                        </ol>
-                      </div>
-                    </div>
+                    </ol>
                   </div>
 
                   <div className="rounded-2xl border border-sky-500/30 bg-sky-950/15 p-6">
