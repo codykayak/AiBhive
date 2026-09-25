@@ -3179,13 +3179,94 @@ function resolveLeadAgentApkPath() {
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
 
+function loadLeadAgentReleaseManifestFromDisk() {
+  const candidates = [
+    path.join(__dirname, '../public/lead-agent-releases.json'),
+    path.join(__dirname, '../dist/lead-agent-releases.json'),
+  ];
+  for (const manifestPath of candidates) {
+    if (!fs.existsSync(manifestPath)) continue;
+    try {
+      return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+function loadLeadAgentVersionFromAppJson() {
+  const appJsonPath = path.join(__dirname, '../mobile/lead-agent/app.json');
+  if (!fs.existsSync(appJsonPath)) return null;
+  try {
+    const expo = JSON.parse(fs.readFileSync(appJsonPath, 'utf8')).expo ?? {};
+    if (!expo.version) return null;
+    return {
+      shippedNativeVersion: expo.version,
+      versionCode: expo.android?.versionCode,
+      sourceVersion: expo.version,
+      appName: 'AiBhive Lead Agent',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchLeadAgentReleaseFromRemote() {
+  const bucket = firebaseConfig.storageBucket;
+  if (!bucket) return null;
+  const url = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/mobile%2Flead-agent-releases.json?alt=media`;
+  try {
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('[lead-agent/releases] remote manifest fetch failed:', err.message);
+    return null;
+  }
+}
+
+function mergeLeadAgentManifestWithAppJson(manifest) {
+  const fromApp = loadLeadAgentVersionFromAppJson();
+  if (!fromApp) return manifest;
+  const base = manifest ?? {};
+  if (!isManifestNewer(fromApp, base)) return base;
+  return {
+    ...base,
+    ...fromApp,
+    downloadUrl: base.downloadUrl || 'https://aibhive.com/api/download/lead-agent',
+    fullApkUrl: base.fullApkUrl || 'https://aibhive.com/api/download/lead-agent',
+    publishedAt: base.publishedAt || new Date().toISOString(),
+  };
+}
+
+async function getLeadAgentReleaseManifest() {
+  const [remote, disk] = await Promise.all([
+    fetchLeadAgentReleaseFromRemote(),
+    Promise.resolve(loadLeadAgentReleaseManifestFromDisk()),
+  ]);
+  const picked = isManifestNewer(remote, disk) ? remote : isManifestNewer(disk, remote) ? disk : remote || disk;
+  const merged = mergeLeadAgentManifestWithAppJson(picked) || {};
+  merged.downloadUrl = merged.downloadUrl || 'https://aibhive.com/api/download/lead-agent';
+  merged.fullApkUrl = merged.fullApkUrl || 'https://aibhive.com/api/download/lead-agent';
+  return Object.keys(merged).length ? merged : null;
+}
+
 /** MacroREI Lead Agent — install on Android phone from Chrome (no PC). */
-app.get('/api/download/lead-agent', (req, res) => {
+app.get('/api/download/lead-agent', async (req, res) => {
+  const manifest = await getLeadAgentReleaseManifest();
+  if (manifest?.firebaseApkUrl && req.query.local !== '1') {
+    return res.redirect(302, manifest.firebaseApkUrl);
+  }
+  if (manifest?.firebaseGzUrl && req.query.compressed === '1') {
+    return res.redirect(302, manifest.firebaseGzUrl);
+  }
   const apkPath = resolveLeadAgentApkPath();
   if (!apkPath) {
     return res.status(404).json({
       error: 'Lead Agent APK not built yet.',
-      hint: 'Push mobile/lead-agent changes to main-fixed, wait for GitHub Actions “Build Lead Agent APK”, or run npm run lead-agent:phone on a PC.',
+      hint: 'Wait for GitHub Actions “Build Lead Agent APK”, or ask ops to run: npm run lead-agent:publish-apk',
+      employeePortal: '/employee',
     });
   }
   res.setHeader('Content-Type', 'application/vnd.android.package-archive');

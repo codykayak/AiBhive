@@ -45,9 +45,10 @@ aibhive-diagnose/assets/**/*.webm
 aibhive-plants
 services
 
-# Mobile APKs — served from Firebase Storage (see public/diagnose-mobile-releases.json)
-public/*.apk
-public/**/*.apk
+# Mobile APKs — Diagnose/Plants on Firebase Storage; Lead Agent uses Firebase mirror or Cloud Run copy
+public/aibhive-diagnose.apk
+public/taylored-mobile.apk
+public/plants*.apk
 
 # Archives & ebooks
 **/*.epub

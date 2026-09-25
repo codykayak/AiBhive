@@ -1,5 +1,5 @@
 # MacroREI Lead Agent — debug APK for physical phone install (no Metro).
-# After merge: open on Android Chrome → https://aibhive.com/api/download/lead-agent
+# APK is uploaded to Firebase (too large for GitHub); /api/download/lead-agent redirects there.
 name: Build Lead Agent APK
 
 on:
@@ -8,6 +8,9 @@ on:
     branches: [main-fixed]
     paths:
       - 'mobile/lead-agent/**'
+      - 'public/lead-agent-releases.json'
+      - 'scripts/publish-lead-agent-apk-firebase.mjs'
+      - 'scripts/write-lead-agent-release.mjs'
       - '.github/workflows/build-lead-agent-apk.yml'
 
 permissions:
@@ -53,21 +56,25 @@ jobs:
           name: lead-agent-apk
           path: mobile/lead-agent/android/app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Publish to public/ for aibhive.com download
-        run: |
-          cp mobile/lead-agent/android/app/build/outputs/apk/debug/app-debug.apk public/lead-agent.apk
-          ls -lh public/lead-agent.apk
+      - name: Stage APK for Firebase publish
+        run: cp mobile/lead-agent/android/app/build/outputs/apk/debug/app-debug.apk public/lead-agent.apk
 
-      - name: Commit APK
+      - name: Install root deps (Firebase publish)
+        run: npm ci
+
+      - name: Publish Firebase download mirror
+        run: node scripts/publish-lead-agent-apk-firebase.mjs
+
+      - name: Commit release manifest only
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f public/lead-agent.apk
+          git add public/lead-agent-releases.json
           if git diff --staged --quiet; then
-            echo "APK unchanged"
+            echo "Lead Agent manifest unchanged"
             exit 0
           fi
-          git commit -m "chore(lead-agent): ship debug APK for phone install [skip-apk]"
+          git commit -m "chore(lead-agent): publish APK manifest (Firebase) [skip-apk]"
           git pull --rebase origin main-fixed
           git push origin HEAD:main-fixed
 
