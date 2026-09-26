@@ -65,6 +65,15 @@ jobs:
 
               core.notice(`Created PR #${pr.number}: ${pr.html_url}`);
             } catch (e) {
-              core.setFailed(`Open cursor PR failed for ${branch}: ${e.message}`);
+              const msg = e.message || String(e);
+              if (msg.includes('not permitted to create or approve pull requests')) {
+                core.setFailed(
+                  `Open cursor PR failed: enable repo Settings → Actions → General → ` +
+                    `"Allow GitHub Actions to create and approve pull requests", or open a PR manually: ` +
+                    `https://github.com/${owner}/${repo}/compare/main-fixed...${branch}?expand=1`,
+                );
+              } else {
+                core.setFailed(`Open cursor PR failed for ${branch}: ${msg}`);
+              }
               throw e;
             }
