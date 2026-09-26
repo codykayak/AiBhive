@@ -35,13 +35,6 @@ export default function OnlyFansPage() {
         description="Programmable fan chat for OnlyFans creators: answer 90% of DMs, send PPV at the perfect moment, and turn your photo vault into revenue. You take the pictures — we handle the inbox."
         keywords="OnlyFans AI chatbot, creator automation, PPV automation, fan chat AI, OnlyFans agency tools, programmable creator bot, Fanvue AI chat"
         type="SoftwareApplication"
-        applicationCategory="BusinessApplication"
-        featureList={[
-          'Programmable creator persona',
-          'Timed PPV and media sends',
-          'Fan segmentation and memory',
-          'Human-in-the-loop approval',
-        ]}
         faqs={ONLYFANS_FAQS}
         image={HERO_IMAGE}
       />

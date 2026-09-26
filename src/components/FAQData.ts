@@ -2,11 +2,12 @@ export const faqs = [
   {
     question: 'What is AiBhive?',
     answer:
-      'AiBhive is an AI app factory and agentic automation platform: build mobile apps, web apps, and business dashboards in plain English with Bhive Builder, browse free community apps on Hive Apps, run AI research on companies and people, and deploy custom multi-agent workflows for real estate, operations, and enterprise teams. Public guides live at aibhive.com/tools.',
+      'AiBhive deploys autonomous AI agents for property, real estate, and operations—multifamily automation, investor speed-to-lead, phone and SMS intelligence, field service, Research Lab, and custom multi-agent workflows. Public guides live at aibhive.com/tools.',
   },
   {
     question: 'What is Bhive Builder?',
-    answer: 'Bhive Builder is AiBhive\'s app factory on web and mobile — describe mobile apps, web apps, sites, or dashboards in plain English, approve a quote, and we ship it. Try it at /hive-apps/build or /app.'
+    answer:
+      'Bhive Builder is an optional AiBhive product for teams that still want custom mobile or web tools—describe what you need in plain English and we ship it. Most customers hire AiBhive for autonomous agents (property, leads, phone, field service) rather than app projects. Try it at /hive-apps/build or /app if you need a bespoke tool.',
   },
   {
     question: 'How does BYOK pricing work?',

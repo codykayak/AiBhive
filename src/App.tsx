@@ -43,6 +43,9 @@ const BookConsultation = lazy(() => import('./pages/BookConsultation'));
 const JobsPage = lazy(() => import('./pages/JobsPage'));
 const EmployeePortalPage = lazy(() => import('./pages/EmployeePortalPage'));
 const JobListingPage = lazy(() => import('./pages/JobListingPage'));
+const RvLandingPage = lazy(() => import('./pages/rv/RvLandingPage'));
+const RvDemoPage = lazy(() => import('./pages/rv/RvDemoPage'));
+const RvEmbedPage = lazy(() => import('./pages/rv/RvEmbedPage'));
 const ResearchPage = lazy(() => import('./pages/app/ResearchPage'));
 const AppHub = lazy(() => import('./pages/app/AppHub'));
 const AppTopicPage = lazy(() => import('./pages/app/AppTopicPage'));
@@ -96,8 +99,17 @@ const DiagnoseWebFiberChart = lazy(() => import('./pages/diagnose-web/charts/Dia
 
 function PageLoader() {
   return (
-    <div className="min-h-[40vh] flex items-center justify-center text-slate-400 text-sm">
-      Loading…
+    <div
+      className="min-h-[50vh] flex flex-col items-center justify-center gap-4 px-4"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div
+        className="h-10 w-10 rounded-full border-2 border-bee-amber/30 border-t-bee-amber animate-spin"
+        aria-hidden
+      />
+      <p className="text-slate-200 text-sm font-medium">Loading page…</p>
     </div>
   );
 }
@@ -108,10 +120,10 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 16 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       >
         <Suspense fallback={<PageLoader />}>
           <Routes location={location}>
@@ -149,6 +161,9 @@ function AnimatedRoutes() {
             <Route path="/book-consultation" element={<BookConsultation />} />
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:slug" element={<JobListingPage />} />
+            <Route path="/rv" element={<RvLandingPage />} />
+            <Route path="/rv/demo" element={<RvDemoPage />} />
+            <Route path="/rv/embed" element={<RvEmbedPage />} />
             <Route path="/employee" element={<EmployeePortalPage />} />
             <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
             <Route path="/research" element={<AppRedirect to="/app/research" />} />
@@ -199,6 +214,7 @@ function AnimatedRoutes() {
             <Route path="/plants/holistic-remedies-and-protocols" element={<HolisticRemediesPage />} />
             <Route path="/plants/hypnosis-and-energy" element={<HypnosisEnergyPage />} />
             <Route path="/plants/animal-health" element={<AnimalHealthPage />} />
+            <Route path="/plant" element={<AppRedirect to="/plants" />} />
             <Route path="/plants/herbs" element={<HerbsPage />} />
             <Route path="/plants/supplements" element={<SupplementsPage />} />
             <Route path="/plants/iridology" element={<IridologyPage />} />
@@ -234,7 +250,7 @@ function AppShell() {
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
-  const isEmbedRoute = pathname.startsWith('/hive-apps/embed');
+  const isEmbedRoute = pathname.startsWith('/hive-apps/embed') || pathname.startsWith('/rv/embed');
   const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
   const hideSiteAssistant =
     pathname.startsWith('/plants') || isOnlyFansRoute || isProsPublicRoute;

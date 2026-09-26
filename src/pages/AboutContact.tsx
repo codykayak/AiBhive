@@ -16,9 +16,9 @@ export default function AboutContact() {
   return (
     <main className="py-24">
       <SEO
-        title="About AiBhive - AI App Factory & Multi-Agent Automation | Contact Us"
-        description="About AiBhive: the team behind Bhive Builder, Hive Apps, Research Lab, and multi-agent Hive architecture for transcription, real estate AI, and enterprise automation. Contact us."
-        keywords="about AiBhive, Bhive Builder, AI app factory, multi-agent AI, AiBhive contact, Research Lab"
+        title="About AiBhive — AI Agents for Property & Operations | Contact"
+        description="About AiBhive: multi-agent AI for property, real estate, and enterprise automation—plus Research Lab, voice, and transcription. Contact our team."
+        keywords="about AiBhive, real estate AI, property automation, multi-agent AI, AiBhive contact, Research Lab"
         faqs={faqs.map((f) => ({ question: f.q, answer: f.a }))}
       />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,14 +39,13 @@ export default function AboutContact() {
             <div className="space-y-8 text-slate-400 text-xl leading-relaxed">
               <DirectAnswer>{SITE_TAGLINE}</DirectAnswer>
               <p>
-                AiBhive is a multi-agent AI hub for creators, professionals, and teams who need precision —
-                plus <strong className="text-white">Bhive Builder</strong>, our app factory for mobile apps, web apps,
-                sites, and admin dashboards without code.
+                AiBhive is a multi-agent AI hub for property, real estate, and operations teams who need precision
+                automation—not another DIY app builder.
               </p>
               <p>
                 Our "Hive" architecture mimics a biological beehive, where specialized agents work in 
                 unison to solve complex transcription, translation, and automation tasks. Whether it's high-stakes 
-                legal jargon or a custom property-management dashboard, the Hive ensures nothing is lost in translation.
+                legal jargon or multifamily leasing after hours, the Hive keeps revenue and residents moving.
               </p>
               <div className="flex items-center p-6 glass-card rounded-[2rem] border-bee-amber/20 bg-bee-amber/5">
                 <div className="bg-bee-amber/20 p-4 rounded-2xl mr-6">

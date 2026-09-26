@@ -3,18 +3,22 @@ export const SITE_URL = 'https://aibhive.com';
 
 export const SITE_NAME = 'AiBhive';
 
+/** Homepage hero + default meta description — property, real estate, operations (not an app builder). */
 export const SITE_TAGLINE =
-  'AiBhive is an AI app factory and agentic automation platform: build mobile apps, web apps, and business dashboards in plain English (Bhive Builder), browse community tools (Hive Apps), research with archive scraping and OCR (Research Lab), and deploy custom AI workflows for real estate, operations, and enterprise teams.';
+  'AiBhive deploys autonomous AI agents for property, real estate, and operations—multifamily resident and leasing automation, investor speed-to-lead, missed-call SMS, field service intelligence, and enterprise workflows that keep revenue moving after hours.';
 
 /** Default Open Graph / Twitter share image (absolute URL). */
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export const DEFAULT_SEO = {
-  title: 'AiBhive — AI App Factory, Community Apps & Enterprise Agentic AI',
+  title: 'AiBhive — AI Agents for Property, Real Estate & Operations',
   description: SITE_TAGLINE,
   keywords:
-    'AiBhive, Bhive Builder, AI app builder, Hive Apps, Research Lab, AiBhivePlants, Fable Scrape, OCR Lab, real estate AI automation, agentic AI, no-code apps, AiBhive Pros, AiBhive Diagnose, field service AI, transcription, voice cloning, enterprise AI workflows',
+    'AiBhive, real estate AI automation, property management AI, multifamily AI, ManyDoors AI, lead generation agents, phone SMS automation, MacroREI, field service AI, AiBhive Pros, enterprise agentic AI, digital employees, workflow automation',
 } as const;
+
+/** Legacy share titles — used to detect stale prerender / duplicate shell meta. */
+export const LEGACY_APP_FACTORY_OG_MARKERS = ['AI App Factory', 'Community Apps & Enterprise Agentic AI'] as const;
 
 export const ORGANIZATION_SCHEMA = {
   '@type': 'Organization',

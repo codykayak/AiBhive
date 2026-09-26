@@ -104,6 +104,7 @@ import { registerMacroreiVoiceRoutes } from './macroreiVoiceSession.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
 import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
 import { registerJobApplicationRoutes } from './jobApplicationRoutes.js';
+import { registerRvMatcherRoutes } from './rvMatcherRoutes.js';
 import { jobsNotifyTo, smtpConfigured } from './jobEmailDelivery.js';
 import { runIntelCloudTool, INTEL_CLOUD_TOOL_IDS, intelToolCostUsd } from './intelOsint.js';
 import { intelCloudKeyStatus } from './intelCloudKeys.js';
@@ -1625,6 +1626,7 @@ registerMacroreiVoiceRoutes(app);
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });
 registerJobApplicationRoutes(app, { db, gcsBucket, transporter, verifyAdmin });
+registerRvMatcherRoutes(app);
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
@@ -3620,6 +3622,17 @@ app.get('/terms-of-service.html', (_req, res) => {
 
 app.get('/terms', (_req, res) => res.redirect(301, '/terms-of-service.html'));
 
+app.get('/plant', (_req, res) => res.redirect(301, '/plants'));
+
+function resolveSpaIndexHtml(requestPath) {
+  const dist = path.join(__dirname, '../dist');
+  const clean = (requestPath || '/').split('?')[0].split('#')[0].replace(/\/$/, '') || '/';
+  if (clean === '/') return path.join(dist, 'index.html');
+  const nested = path.join(dist, ...clean.slice(1).split('/'), 'index.html');
+  if (fs.existsSync(nested)) return nested;
+  return path.join(dist, 'index.html');
+}
+
 app.use('/cody', express.static(path.join(__dirname, '../dist/cody')));
 app.get(['/cody', '/cody/*'], (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/cody/index.html'));
@@ -3632,9 +3645,9 @@ app.get(['/autoposter', '/autoposter/*'], (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Catch-all route to serve the React index.html for client-side routing
+// Catch-all: prefer prerendered route HTML (correct og tags) over root index.html
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  res.sendFile(resolveSpaIndexHtml(req.path));
 });
 
 app.listen(port, () => {

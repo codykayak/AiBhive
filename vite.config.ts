@@ -39,6 +39,8 @@ export default defineConfig(({mode}) => {
               if (id.includes('react-router')) return 'router';
               if (id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
             }
+            // Shared with lazy routes — keep out of the main entry to avoid circular chunk imports.
+            if (id.includes('/src/lib/hiveWebUser')) return 'hive-web-user';
           },
         },
       },

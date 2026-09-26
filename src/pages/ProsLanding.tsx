@@ -114,6 +114,7 @@ export default function ProsLanding() {
       <SEO
         title="AiBhive Pros — Living field knowledge for trade companies"
         description="Dispatch jobs, grow a living knowledge base from every tech in the field, and run your shop from one HQ. Built for pool, HVAC, electrical, and property teams."
+        image="/og-image.png"
       />
 
       <ProsPageHeader variant="dark" transparent />

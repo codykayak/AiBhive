@@ -14,6 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
 import { getPrerenderRoutes } from './public-routes.mjs';
+import { normalizePrerenderSocialMeta } from './social-meta-html.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -142,13 +143,19 @@ async function renderRoute(browser, route) {
 
     const metrics = await page.evaluate(() => {
       const root = document.getElementById('root');
+      const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
       return {
         textLen: (root?.innerText || '').trim().length,
         title: document.title,
+        ogTitle,
         hasCanonical: Boolean(document.querySelector('link[rel="canonical"]')),
         hasJsonLd: Boolean(document.querySelector('script[type="application/ld+json"]')),
       };
     });
+
+    if (metrics.ogTitle.includes('AI App Factory') && route !== '/') {
+      throw new Error(`og:title still homepage default for ${route}`);
+    }
 
     if (metrics.textLen < MIN_ROOT_TEXT) {
       throw new Error(`insufficient root text (${metrics.textLen} chars)`);
@@ -158,6 +165,7 @@ async function renderRoute(browser, route) {
 
     // Ensure nested routes keep absolute asset URLs from Vite build.
     html = html.replace(/<script type="module" src="\/src\/main\.tsx"><\/script>/g, '');
+    html = normalizePrerenderSocialMeta(html);
 
     const outFile = routeOutputFile(route);
     fs.mkdirSync(path.dirname(outFile), { recursive: true });

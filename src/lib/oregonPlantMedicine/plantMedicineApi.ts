@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth';
 import { adminFetch, adminJson } from '../adminApi';
 import { HIVE_RESEARCH_LABEL } from './branding';
 import { compressPlantImageFile, PLANT_IMAGE_MAX_COUNT, type CompressedPlantImage } from './compressPlantImage';
+import { readVideoFile } from './plantMediaUpload';
 
 export type PlantMedicineProfile = {
   uid: string;
@@ -69,7 +70,6 @@ export async function uploadPlantImage(
   let uploadKind: 'avatar' | 'photo' | 'video' = kind;
 
   if (kind === 'video' || file.type.startsWith('video/')) {
-    const { readVideoFile } = await import('./plantMediaUpload');
     const video = await readVideoFile(file);
     base64 = video.base64;
     mimeType = video.mimeType;

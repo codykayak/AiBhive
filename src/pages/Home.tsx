@@ -108,9 +108,9 @@ export default function Home() {
   return (
     <main className="relative">
       <SEO
-        title="AiBhive — AI App Factory, Community Apps & Enterprise Agentic AI"
+        title="AiBhive — AI Agents for Property, Real Estate & Operations"
         description={SITE_TAGLINE}
-        keywords="AiBhive, Bhive Builder, AI app builder, real estate AI, agentic AI, Hive Apps, no-code apps, enterprise automation"
+        keywords="AiBhive, real estate AI, property management AI, multifamily automation, lead generation agents, phone SMS automation, field service AI, enterprise agentic AI"
         type="WebSite"
       />
 
@@ -134,7 +134,7 @@ export default function Home() {
           >
             <img
               src={backgroundLogo}
-              alt="AiBhive honeycombe brand atmosphere for the AI app factory home page"
+              alt="AiBhive brand atmosphere — property and real estate AI agents"
               className="w-full h-full object-cover"
             />
           </motion.div>

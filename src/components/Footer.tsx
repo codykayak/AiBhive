@@ -19,7 +19,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-slate-400 max-w-xs">
-              AI app factory and agentic automation: Bhive Builder, Hive Apps, Research Lab, transcription, voice cloning, and enterprise multi-agent workflows.
+              Autonomous AI agents for property, real estate, and operations—multifamily, investors, phone and SMS
+              intelligence, field service, and enterprise workflows.
             </p>
           </div>
 
