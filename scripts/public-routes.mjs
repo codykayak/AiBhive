@@ -140,6 +140,8 @@ export function getSitemapEntries() {
     { loc: '/jobs/macrorei', priority: '0.88', changefreq: 'weekly' },
     { loc: '/rv', priority: '0.9', changefreq: 'weekly' },
     { loc: '/rv/demo', priority: '0.88', changefreq: 'weekly' },
+    { loc: '/rv/enterprise', priority: '0.86', changefreq: 'weekly' },
+    { loc: '/rv/inventory', priority: '0.84', changefreq: 'weekly' },
     { loc: '/about', priority: '0.75', changefreq: 'monthly' },
     { loc: '/faq', priority: '0.85', changefreq: 'monthly' },
     { loc: '/tools/for-ai-agents', priority: '0.92', changefreq: 'weekly' },

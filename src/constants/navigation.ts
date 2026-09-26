@@ -38,6 +38,10 @@ export const SOLUTION_CATEGORIES = [
     path: '/solutions/field-service-ai',
   },
   {
+    name: 'RV Dealer AI',
+    path: '/rv',
+  },
+  {
     name: 'Auto Social',
     path: '/admin?tab=auto-social',
   },

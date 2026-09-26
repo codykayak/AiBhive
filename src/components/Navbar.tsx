@@ -25,7 +25,7 @@ function isPathInList(pathname: string, links: readonly { path: string }[]) {
 }
 
 function isSolutionPath(pathname: string) {
-  return pathname.startsWith('/solutions/') || pathname.startsWith('/app');
+  return pathname.startsWith('/solutions/') || pathname.startsWith('/app') || pathname.startsWith('/rv');
 }
 
 function isTranscriptionPath(pathname: string) {

@@ -46,6 +46,8 @@ const JobListingPage = lazy(() => import('./pages/JobListingPage'));
 const RvLandingPage = lazy(() => import('./pages/rv/RvLandingPage'));
 const RvDemoPage = lazy(() => import('./pages/rv/RvDemoPage'));
 const RvEmbedPage = lazy(() => import('./pages/rv/RvEmbedPage'));
+const RvEnterprisePage = lazy(() => import('./pages/rv/RvEnterprisePage'));
+const RvInventoryPage = lazy(() => import('./pages/rv/RvInventoryPage'));
 const ResearchPage = lazy(() => import('./pages/app/ResearchPage'));
 const AppHub = lazy(() => import('./pages/app/AppHub'));
 const AppTopicPage = lazy(() => import('./pages/app/AppTopicPage'));
@@ -164,6 +166,8 @@ function AnimatedRoutes() {
             <Route path="/rv" element={<RvLandingPage />} />
             <Route path="/rv/demo" element={<RvDemoPage />} />
             <Route path="/rv/embed" element={<RvEmbedPage />} />
+            <Route path="/rv/enterprise" element={<RvEnterprisePage />} />
+            <Route path="/rv/inventory" element={<RvInventoryPage />} />
             <Route path="/employee" element={<EmployeePortalPage />} />
             <Route path="/intel-gathering" element={<AppRedirect to="/app/research" />} />
             <Route path="/research" element={<AppRedirect to="/app/research" />} />

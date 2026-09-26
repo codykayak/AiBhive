@@ -1626,7 +1626,7 @@ registerMacroreiVoiceRoutes(app);
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });
 registerJobApplicationRoutes(app, { db, gcsBucket, transporter, verifyAdmin });
-registerRvMatcherRoutes(app);
+registerRvMatcherRoutes(app, db);
 
 // --- AutoPoster API (Google admin auth, runs on Cloud Run with GEMINI_API_KEY) ---
 app.all('/api/autoposter', verifyAdmin, async (req, res) => {
