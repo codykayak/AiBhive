@@ -1,4 +1,4 @@
-import { createHmac, randomBytes } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getDefaultBusiness, DEFAULT_BUSINESSES } from '../leadAgent/businessDefaults.js';
 import { defaultWorkspaceUid } from '../leadAgent/workspaceAccess.js';
@@ -47,11 +47,20 @@ function serializeLead(id, data) {
     propertyAddress: String(data.propertyAddress || data.notes || ''),
     status: data.status || 'new',
     optedOut: Boolean(data.optedOut),
+    textCount: data.textCount == null ? null : Number(data.textCount),
+    lastTextBody: data.lastTextBody ? String(data.lastTextBody) : '',
   };
 }
 
+function stamp(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  return null;
+}
+
 async function listLeads(db, businessId) {
-  const snap = await leadsRef(db, businessId).limit(400).get();
+  const snap = await leadsRef(db, businessId).limit(800).get();
   return snap.docs
     .map((d) => serializeLead(d.id, d.data() || {}))
     .sort((a, b) => leadScore(a) - leadScore(b) || a.name.localeCompare(b.name));
@@ -132,6 +141,43 @@ async function bumpDay(db, uid, patch) {
   return { date: day, ...next };
 }
 
+async function recordOutbound(db, user, businessId, lead, body, result) {
+  await leadsRef(db, businessId)
+    .doc(lead.id)
+    .collection('messages')
+    .add({
+      direction: 'outbound',
+      body,
+      provider: result.provider || 'twilio',
+      at: FieldValue.serverTimestamp(),
+      automated: true,
+      via: 'employee-desk',
+      employeeEmail: user.email || '',
+    });
+  await leadsRef(db, businessId).doc(lead.id).set(
+    {
+      status: 'texted',
+      textCount: FieldValue.increment(1),
+      lastTextBody: String(body || '').slice(0, 180),
+      lastContactAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+  if (result.sent) await incrementDailySms(db, defaultWorkspaceUid(), businessId);
+}
+
+function assertSmsReady(business) {
+  const line = voiceConfig();
+  if (!line.smsReady && business.smsProvider !== 'twilio') {
+    const err = new Error(
+      'Laptop texting needs the company Twilio number (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER).',
+    );
+    err.status = 503;
+    throw err;
+  }
+}
+
 export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
   app.get('/api/employee-portal/desk', async (req, res) => {
     const user = await requireEmployee(req, res, db);
@@ -153,7 +199,7 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
         greeting: business.greeting || '',
       },
       businesses: DEFAULT_BUSINESSES.map((b) => ({ id: b.id, name: b.name })),
-      leads: leads.slice(0, 80),
+      leads: leads.slice(0, 500),
       queue: {
         total: leads.length,
         remaining: open.length,
@@ -179,11 +225,10 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const business = await loadBusiness(db, businessId);
     const quota = canSendOutbound(business);
     if (!quota.ok) return res.status(429).json({ error: quota.reason || 'Cannot text right now', quota });
-    const line = voiceConfig();
-    if (!line.smsReady && business.smsProvider !== 'twilio') {
-      return res.status(503).json({
-        error: 'Laptop texting needs the company Twilio number (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER).',
-      });
+    try {
+      assertSmsReady(business);
+    } catch (e) {
+      return res.status(e.status || 503).json({ error: e.message });
     }
     const leads = await listLeads(db, businessId);
     const lead = nextOpenLead(leads);
@@ -201,26 +246,154 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
         pendingDeviceSend: true,
       });
     }
-    const uid = defaultWorkspaceUid();
-    await leadsRef(db, businessId)
-      .doc(lead.id)
-      .collection('messages')
-      .add({
-        direction: 'outbound',
-        body,
-        provider: result.provider || 'twilio',
-        at: FieldValue.serverTimestamp(),
-        automated: true,
-        via: 'employee-desk',
-        employeeEmail: user.email || '',
-      });
-    await leadsRef(db, businessId).doc(lead.id).set(
-      { status: 'texted', lastContactAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() },
-      { merge: true },
-    );
-    if (result.sent) await incrementDailySms(db, uid, businessId);
+    await recordOutbound(db, user, businessId, lead, body, result);
     const today = await bumpDay(db, user.uid, { texts: 1, lastLeadId: lead.id, lastDisposition: 'texted' });
     return res.json({ done: false, lead, body, result, today });
+  });
+
+  app.post('/api/employee-portal/desk/import', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const incoming = Array.isArray(req.body?.leads) ? req.body.leads.slice(0, 2000) : [];
+    const existing = await listLeads(db, businessId);
+    const seen = new Set(existing.map((l) => String(l.phone || '')));
+    let imported = 0;
+    let duplicates = 0;
+    let skipped = 0;
+    let batch = db.batch();
+    let pending = 0;
+    const flush = async () => {
+      if (!pending) return;
+      await batch.commit();
+      batch = db.batch();
+      pending = 0;
+    };
+    for (const item of incoming) {
+      const phone = normalizePhone(item?.phone);
+      const propertyAddress = String(item?.propertyAddress || '').trim().slice(0, 500);
+      if (phone.replace(/\D/g, '').length < 10 || !propertyAddress) {
+        skipped += 1;
+        continue;
+      }
+      if (seen.has(phone)) {
+        duplicates += 1;
+        continue;
+      }
+      seen.add(phone);
+      const id = randomUUID();
+      batch.set(leadsRef(db, businessId).doc(id), {
+        name: String(item?.name || '').slice(0, 200),
+        phone,
+        propertyAddress,
+        notes: propertyAddress,
+        status: 'new',
+        textCount: 0,
+        talkedTo: false,
+        agentPaused: false,
+        optedOut: false,
+        importedBy: user.email || '',
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      imported += 1;
+      pending += 1;
+      if (pending >= 400) await flush();
+    }
+    await flush();
+    return res.json({ imported, duplicates, skipped, total: incoming.length });
+  });
+
+  app.get('/api/employee-portal/desk/leads/:leadId', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.query.businessId || 'macrorei');
+    const ref = leadsRef(db, businessId).doc(req.params.leadId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
+    let messagesSnap;
+    try {
+      messagesSnap = await ref.collection('messages').orderBy('at', 'asc').limit(200).get();
+    } catch {
+      messagesSnap = await ref.collection('messages').limit(200).get();
+    }
+    const messages = messagesSnap.docs.map((d) => {
+      const data = d.data() || {};
+      return {
+        id: d.id,
+        direction: data.direction || 'outbound',
+        body: String(data.body || ''),
+        at: stamp(data.at),
+        employeeEmail: data.employeeEmail || '',
+        provider: data.provider || '',
+      };
+    });
+    const textCount = messages.filter((m) => m.direction === 'outbound').length;
+    if (Number(snap.data()?.textCount || 0) !== textCount) {
+      await ref.set({ textCount, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    }
+    return res.json({
+      lead: serializeLead(snap.id, { ...snap.data(), textCount }),
+      messages,
+      textCount,
+      inboundCount: messages.filter((m) => m.direction === 'inbound').length,
+    });
+  });
+
+  app.post('/api/employee-portal/desk/text-selected', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const ids = Array.isArray(req.body?.leadIds) ? req.body.leadIds.map(String).slice(0, 25) : [];
+    if (!ids.length) return res.status(400).json({ error: 'Select at least one lead' });
+    const business = await loadBusiness(db, businessId);
+    const quota = canSendOutbound(business);
+    if (!quota.ok) return res.status(429).json({ error: quota.reason || 'Cannot text right now', quota });
+    try {
+      assertSmsReady(business);
+    } catch (e) {
+      return res.status(e.status || 503).json({ error: e.message });
+    }
+    const sent = [];
+    const failed = [];
+    for (const leadId of ids) {
+      const snap = await leadsRef(db, businessId).doc(leadId).get();
+      if (!snap.exists) {
+        failed.push({ leadId, error: 'missing' });
+        continue;
+      }
+      const lead = serializeLead(snap.id, snap.data() || {});
+      if (lead.optedOut) {
+        failed.push({ leadId, error: 'opted out' });
+        continue;
+      }
+      const fresh = await loadBusiness(db, businessId);
+      const nextQuota = canSendOutbound(fresh);
+      if (!nextQuota.ok) {
+        failed.push({ leadId, error: nextQuota.reason || 'daily cap' });
+        break;
+      }
+      const body = personalizeOutbound(fresh, lead).slice(0, 480);
+      try {
+        const result = await sendLeadSms({ business: fresh, to: lead.phone, body, preferServerTwilio: true });
+        if (!result.sent && result.pendingDeviceSend) {
+          failed.push({ leadId, error: 'twilio not configured' });
+          break;
+        }
+        await recordOutbound(db, user, businessId, lead, body, result);
+        sent.push({ leadId, name: lead.name, phone: lead.phone });
+      } catch (e) {
+        failed.push({ leadId, error: e.message || 'send failed' });
+      }
+    }
+    const today = await bumpDay(db, user.uid, {
+      texts: sent.length,
+      lastLeadId: sent.at(-1)?.leadId || null,
+      lastDisposition: 'texted',
+    });
+    return res.json({ sent, failed, today });
   });
 
   app.post('/api/employee-portal/desk/call-log', async (req, res) => {

@@ -57,6 +57,8 @@ export type DeskLead = {
   propertyAddress: string;
   status: string;
   optedOut: boolean;
+  textCount: number | null;
+  lastTextBody?: string;
 };
 
 export type EmployeeDeskSnapshot = {
@@ -88,6 +90,42 @@ export async function logEmployeeCall(
     method: 'POST',
     body: JSON.stringify(payload),
   }) as Promise<{ ok: boolean; today: EmployeeDeskSnapshot['today'] }>;
+}
+
+export async function importEmployeeLeads(
+  user: User,
+  businessId: string,
+  leads: { name: string; phone: string; propertyAddress: string }[],
+) {
+  return portalFetch('/api/employee-portal/desk/import', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId, leads }),
+  }) as Promise<{ imported: number; duplicates: number; skipped: number; total: number }>;
+}
+
+export type LeadThread = {
+  lead: DeskLead;
+  messages: { id: string; direction: string; body: string; at: string | null; employeeEmail: string }[];
+  textCount: number;
+  inboundCount: number;
+};
+
+export async function fetchLeadThread(user: User, businessId: string, leadId: string) {
+  return portalFetch(
+    `/api/employee-portal/desk/leads/${encodeURIComponent(leadId)}?businessId=${encodeURIComponent(businessId)}`,
+    user,
+  ) as Promise<LeadThread>;
+}
+
+export async function textSelectedLeads(user: User, businessId: string, leadIds: string[]) {
+  return portalFetch('/api/employee-portal/desk/text-selected', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId, leadIds }),
+  }) as Promise<{
+    sent: { leadId: string; name: string; phone: string }[];
+    failed: { leadId: string; error: string }[];
+    today?: EmployeeDeskSnapshot['today'];
+  }>;
 }
 
 export async function fetchEmployeeVoiceToken(user: User) {
