@@ -18,6 +18,7 @@ import { motion } from 'motion/react';
 import { auth, googleProvider } from '../firebase';
 import { SEO } from '../components/SEO';
 import EmployeePortalChat from '../components/employee-portal/EmployeePortalChat';
+import EmployeeDesk from '../components/employee-portal/EmployeeDesk';
 import {
   BRAND_PLAYBOOKS,
   DAILY_CHECKLIST,
@@ -30,7 +31,7 @@ import {
   type EmployeePortalMe,
 } from '../lib/employeePortalApi';
 
-type Tab = 'operations' | BrandId | 'tools';
+type Tab = 'floor' | 'operations' | BrandId | 'tools';
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
@@ -39,7 +40,7 @@ export default function EmployeePortalPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [portal, setPortal] = useState<EmployeePortalMe | null>(null);
   const [portalError, setPortalError] = useState('');
-  const [tab, setTab] = useState<Tab>('operations');
+  const [tab, setTab] = useState<Tab>('floor');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -135,9 +136,8 @@ export default function EmployeePortalPage() {
               Employee portal — outbound & inbound command center
             </h1>
             <p className="text-slate-400 mt-4 max-w-2xl text-lg leading-relaxed">
-              Playbooks for AiBhive, MacroREI, and ManyDoors AI, daily checklists, Lead Agent for{' '}
-              <strong className="text-white">Android (APK)</strong> and <strong className="text-white">iPhone (TestFlight)</strong>,
-              and a Grok assistant for anything you need on shift.
+              Work the shared list from a laptop — call, text a batch, and track today’s progress — plus playbooks and
+              the phone apps when you have a device again.
             </p>
           </motion.div>
         </div>
@@ -149,19 +149,27 @@ export default function EmployeePortalPage() {
             <Loader2 className="w-5 h-5 animate-spin" /> Loading…
           </div>
         ) : !user ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 md:p-12 text-center max-w-lg mx-auto">
-            <Sparkles className="w-10 h-10 text-bee-amber mx-auto mb-4" />
-            <h2 className="text-xl font-bold">Sign in with Google</h2>
-            <p className="text-slate-400 mt-2 text-sm leading-relaxed">
-              Use the Google account your manager invited. Your checklist and shift notes save to your profile.
-            </p>
-            <button
-              type="button"
-              onClick={() => void signIn()}
-              className="mt-6 w-full rounded-xl bg-bee-amber text-bee-black font-extrabold py-3 hover:bg-bee-yellow transition-colors"
-            >
-              Continue with Google
-            </button>
+          <div className="grid lg:grid-cols-2 gap-0 overflow-hidden rounded-3xl border border-white/10 bg-black/40 max-w-5xl mx-auto">
+            <img
+              src="/employee/login-hero.jpg"
+              alt="Laptop workstation with a headset"
+              className="h-56 lg:h-full w-full object-cover"
+            />
+            <div className="p-8 md:p-12">
+              <p className="text-bee-amber text-xs font-bold uppercase tracking-[0.2em]">Employee access</p>
+              <h2 className="text-3xl font-black mt-3">Sign in and work the list</h2>
+              <p className="text-slate-400 mt-3 text-sm leading-relaxed">
+                Use the Google account your manager invited. From a laptop you can call, text a batch, and see where you
+                left off — no phone app required.
+              </p>
+              <button
+                type="button"
+                onClick={() => void signIn()}
+                className="mt-8 w-full rounded-xl bg-bee-amber text-bee-black font-extrabold py-3 hover:bg-bee-yellow transition-colors"
+              >
+                Continue with Google
+              </button>
+            </div>
           </div>
         ) : portalError ? (
           <div className="rounded-2xl border border-red-500/30 bg-red-950/30 p-6 max-w-xl">
@@ -181,6 +189,7 @@ export default function EmployeePortalPage() {
               <p className="text-xs text-slate-500 px-2 mb-2">{portal.email}</p>
               {(
                 [
+                  ['floor', 'Laptop floor', Monitor],
                   ['operations', 'Daily ops', Headphones],
                   ['aibhive', 'AiBhive', BookOpen],
                   ['macrorei', 'MacroREI', Phone],
@@ -210,6 +219,7 @@ export default function EmployeePortalPage() {
             </aside>
 
             <div className="min-w-0">
+              {tab === 'floor' ? <EmployeeDesk user={user} /> : null}
               {tab === 'operations' ? (
                 <section className="space-y-8">
                   <div>

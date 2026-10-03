@@ -44,7 +44,13 @@ export function buildPhoneSendPayload({ to, body }) {
   };
 }
 
-export async function sendLeadSms({ business, to, body }) {
+export async function sendLeadSms({ business, to, body, preferServerTwilio = false }) {
+  const serverTwilioReady = Boolean(
+    process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER,
+  );
+  if (preferServerTwilio && serverTwilioReady) {
+    return sendSmsViaTwilio({ to, body });
+  }
   const provider = business?.smsProvider || 'phone';
   if (provider === 'twilio') {
     return sendSmsViaTwilio({

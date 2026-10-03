@@ -50,6 +50,56 @@ export async function saveEmployeePortalProfile(
   });
 }
 
+export type DeskLead = {
+  id: string;
+  name: string;
+  phone: string;
+  propertyAddress: string;
+  status: string;
+  optedOut: boolean;
+};
+
+export type EmployeeDeskSnapshot = {
+  business: { id: string; name: string; tagline: string; phoneDisplay: string; greeting: string };
+  businesses: { id: string; name: string }[];
+  leads: DeskLead[];
+  queue: { total: number; remaining: number; position: number; current: DeskLead | null };
+  quota: { ok: boolean; reason: string | null; sent: number; limit: number };
+  today: { date: string; calls: number; texts: number; lastLeadId: string | null; lastDisposition: string | null };
+  line: { smsReady: boolean; voiceReady: boolean; from: string };
+};
+
+export async function fetchEmployeeDesk(user: User, businessId = 'macrorei') {
+  return portalFetch(`/api/employee-portal/desk?businessId=${encodeURIComponent(businessId)}`, user) as Promise<EmployeeDeskSnapshot>;
+}
+
+export async function textNextLead(user: User, businessId: string) {
+  return portalFetch('/api/employee-portal/desk/text-next', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ done: boolean; reason?: string; lead?: DeskLead; body?: string; today?: EmployeeDeskSnapshot['today'] }>;
+}
+
+export async function logEmployeeCall(
+  user: User,
+  payload: { businessId: string; leadId: string; disposition: string },
+) {
+  return portalFetch('/api/employee-portal/desk/call-log', user, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<{ ok: boolean; today: EmployeeDeskSnapshot['today'] }>;
+}
+
+export async function fetchEmployeeVoiceToken(user: User) {
+  return portalFetch('/api/employee-portal/desk/voice-token', user) as Promise<{
+    ready: boolean;
+    token?: string;
+    hint?: string;
+    smsReady?: boolean;
+    from?: string;
+  }>;
+}
+
 export async function employeePortalChat(
   user: User,
   message: string,

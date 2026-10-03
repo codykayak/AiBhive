@@ -801,6 +801,9 @@ app.use((req, res, next) => {
   if (req.method === 'POST' && req.path === '/api/plant-medicine/upload') {
     return plantMedicineUploadJson(req, res, next);
   }
+  if (req.method === 'POST' && req.path === '/api/employee-portal/voice/twiml') {
+    return express.urlencoded({ extended: false })(req, res, next);
+  }
   return defaultJsonParser(req, res, next);
 });
 

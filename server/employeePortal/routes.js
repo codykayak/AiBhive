@@ -7,6 +7,7 @@ import {
   isLeadAgentIosInstallReady,
   resolveLeadAgentIosInstallUrl,
 } from '../leadAgent/iosInstall.js';
+import { registerEmployeeDeskRoutes } from './desk.js';
 
 const PROFILE_COL = 'employee_portal_profiles';
 
@@ -68,6 +69,7 @@ function grokKey() {
 }
 
 export function registerEmployeePortalRoutes(app, db) {
+  registerEmployeeDeskRoutes(app, db, requireEmployee);
   app.get('/api/employee-portal/me', async (req, res) => {
     const user = await requireEmployee(req, res, db);
     if (!user) return;

@@ -254,6 +254,7 @@ function AppShell() {
   const isHomeworkRoute = pathname.startsWith('/homework');
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
+  const isEmployeeRoute = pathname.startsWith('/employee');
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed') || pathname.startsWith('/rv/embed');
   const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
   const hideSiteAssistant =
@@ -266,6 +267,7 @@ function AppShell() {
     pathname.startsWith('/hive-apps/embed') ||
     pathname.startsWith('/hive-apps/build') ||
     pathname.startsWith('/diagnose/app') ||
+    isEmployeeRoute ||
     isProsShell;
 
   return (
@@ -275,16 +277,16 @@ function AppShell() {
           isProsShell ? 'bg-[#fafbfc] text-slate-900' : 'honeycomb-pattern'
         }`}
       >
-        {!isPrivateRoute && !isEmbedRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && (
+        {!isPrivateRoute && !isEmbedRoute && !isEmployeeRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
         )}
-        {!isPrivateRoute && !isEmbedRoute && !hideSiteAssistant && !isPlantsMobileShell && <HomeAssistantWeb />}
+        {!isPrivateRoute && !isEmbedRoute && !isEmployeeRoute && !hideSiteAssistant && !isPlantsMobileShell && <HomeAssistantWeb />}
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main
-          className={`flex-grow ${isEmbedRoute || isProsPublicRoute || isDiagnosePublicRoute || isOnlyFansRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
+          className={`flex-grow ${isEmbedRoute || isEmployeeRoute || isProsPublicRoute || isDiagnosePublicRoute || isOnlyFansRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
         >
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>
