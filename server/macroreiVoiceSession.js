@@ -3,6 +3,9 @@
  * Configure MACROREI_GROK_AGENT_ID and attach that agent to your inbound number in xAI.
  */
 
+import { FieldValue } from 'firebase-admin/firestore';
+import { normalizePhone } from './leadAgent/smsProvider.js';
+import { defaultWorkspaceUid } from './leadAgent/workspaceAccess.js';
 import {
   MACROREI_DEFAULT_GREETING,
   MACROREI_VOICE_SESSION_DEFAULTS,
@@ -65,7 +68,7 @@ function realtimeUrl(agentId, model) {
   return `wss://api.x.ai/v1/realtime?model=${encodeURIComponent(model)}`;
 }
 
-export function registerMacroreiVoiceRoutes(app) {
+export function registerMacroreiVoiceRoutes(app, db) {
   app.get('/api/macrorei/voice/contact', (_req, res) => {
     const marketing = resolveMacroreiMarketingPhone();
     const grok = resolveMacroreiGrokVoicePhone();
@@ -121,11 +124,69 @@ export function registerMacroreiVoiceRoutes(app) {
     }
   });
 
-  /** Tool handler stub — wire to Firestore lead alerts in a follow-up */
+  /** Tool handler — log seller interest to Lead Agent workspace */
   app.post('/api/macrorei/voice/log-interest', async (req, res) => {
     const body = req.body || {};
     console.info('[macrorei/voice/log-interest]', body);
-    res.json({ ok: true, logged: true, message: 'Seller interest recorded — notify owner in production.' });
+    let leadId = null;
+    if (db) {
+      try {
+        const uid = defaultWorkspaceUid();
+        const businessId = 'macrorei';
+        const phone = normalizePhone(body.phone || body.callbackPhone || '');
+        const leadsCol = db
+          .collection('lead_agent_workspaces')
+          .doc(uid)
+          .collection('businesses')
+          .doc(businessId)
+          .collection('leads');
+        if (phone) {
+          const q = await leadsCol.where('phone', '==', phone).limit(1).get();
+          if (!q.empty) leadId = q.docs[0].id;
+        }
+        if (!leadId) {
+          leadId = db.collection('_').doc().id;
+          await leadsCol.doc(leadId).set({
+            phone: phone || '',
+            name: String(body.name || '').slice(0, 200),
+            propertyAddress: String(body.address || '').slice(0, 500),
+            status: 'callback',
+            needsHuman: true,
+            grokVoiceInterest: true,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+        } else {
+          await leadsCol.doc(leadId).set(
+            {
+              status: 'callback',
+              needsHuman: true,
+              grokVoiceInterest: true,
+              updatedAt: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        }
+        await leadsCol
+          .doc(leadId)
+          .collection('messages')
+          .add({
+            direction: 'inbound',
+            channel: 'voice',
+            body: String(body.summary || 'Grok voice — seller interest').slice(0, 500),
+            at: FieldValue.serverTimestamp(),
+            via: 'grok-voice-log-interest',
+          });
+      } catch (e) {
+        console.error('[macrorei/voice/log-interest] firestore', e);
+      }
+    }
+    res.json({
+      ok: true,
+      logged: true,
+      leadId,
+      message: 'Seller interest recorded — team will follow up.',
+    });
   });
 }
 

@@ -8,6 +8,8 @@ type WorkMode = {
   title?: string;
   marketingLine?: { display: string; e164: string };
   grokVoiceLine?: { display: string; e164: string };
+  twilioVoiceWebhook?: string;
+  twilioVoiceWebhookNote?: string;
   steps?: string[];
   carrierCodes?: { forwardAll: string; forwardAllNote: string; cancelForward: string; cancelNote: string };
   tips?: string[];
@@ -128,6 +130,14 @@ export default function WorkModeScreen() {
       {(guide?.tips || []).map((tip, i) => (
         <Text key={`t-${i}`} style={styles.tip}>• {tip}</Text>
       ))}
+
+      {guide?.twilioVoiceWebhook ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Return calls (Twilio → Grok)</Text>
+          <Text style={styles.meta}>{guide.twilioVoiceWebhookNote}</Text>
+          <Text style={styles.chipCode}>{guide.twilioVoiceWebhook}</Text>
+        </View>
+      ) : null}
 
       {error ? <Text style={styles.err}>Offline defaults ({error})</Text> : null}
     </ScrollView>

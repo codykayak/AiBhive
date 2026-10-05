@@ -167,6 +167,7 @@ export function buildWorkModeGuide() {
       'Disable or shorten carrier voicemail so Grok wins the race — voicemail that picks up first blocks the AI.',
       'Start with forward-if-no-answer (15–20 sec) before forward-all if you want to catch calls yourself when free.',
       'Grok uses the same MacroREI training as SMS in Lead Agent.',
+      'Return calls to your Twilio Lead Agent number: set Voice webhook to /api/lead-agent/twilio/voice/inbound — AiBhive bridges to this Grok line.',
     ],
   };
 }

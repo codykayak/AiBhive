@@ -23,6 +23,13 @@ import {
   randomDelayMs,
 } from './automation.js';
 import { processInboundSms, incrementDailySms as incrementDailySmsShared } from './inboundHandler.js';
+import {
+  assertLeadAgentTwilioWebhook,
+  buildInboundReturnCallTwiml,
+  leadAgentVoiceWebhookPath,
+  recordInboundReturnCall,
+  resolveGrokVoiceLine,
+} from './inboundVoice.js';
 
 const COL = 'lead_agent_workspaces';
 
@@ -162,11 +169,37 @@ export function registerLeadAgentRoutes(app, db) {
   app.get('/api/lead-agent/work-mode/:businessId', (req, res) => {
     const { businessId } = req.params;
     if (businessId === 'macrorei') {
-      return res.json(buildWorkModeGuide());
+      const guide = buildWorkModeGuide();
+      const uid = defaultWorkspaceUid();
+      return res.json({
+        ...guide,
+        twilioVoiceWebhook: leadAgentVoiceWebhookPath('macrorei', uid),
+        twilioVoiceWebhookNote:
+          'In Twilio Console → your Lead Agent number → Voice → A call comes in → Webhook POST to this URL (return calls hit Grok voice).',
+      });
     }
     return res.status(404).json({
       error: 'Work mode guide not configured for this business yet.',
       businessId,
+    });
+  });
+
+  app.get('/api/lead-agent/twilio/voice/setup', (req, res) => {
+    const businessId = String(req.query.businessId || 'macrorei');
+    const uid = String(req.query.uid || defaultWorkspaceUid());
+    const grok = resolveGrokVoiceLine(businessId);
+    res.json({
+      businessId,
+      uid,
+      grokVoiceLine: grok,
+      voiceWebhookPath: leadAgentVoiceWebhookPath(businessId, uid),
+      smsWebhookPath: `/api/lead-agent/twilio/inbound?businessId=${encodeURIComponent(businessId)}&uid=${encodeURIComponent(uid)}`,
+      steps: [
+        'Twilio Console → Phone Numbers → your outbound/SMS number.',
+        'Voice → A call comes in → Webhook → POST → paste voiceWebhookPath on your public base URL (e.g. https://aibhive.com).',
+        'Save. When a lead calls back that number, AiBhive bridges the call to your xAI Grok voice line.',
+        'Set MACROREI_GROK_VOICE_PHONE_E164 to the number attached in xAI Voice Agent Builder (must differ from TWILIO_FROM_NUMBER).',
+      ],
     });
   });
 
@@ -380,10 +413,9 @@ export function registerLeadAgentRoutes(app, db) {
     return res.json({ ok: true, to: normalizePhone(to), quota });
   });
 
-  /** Twilio inbound webhook (optional) */
+  /** Twilio inbound SMS webhook (optional) */
   app.post('/api/lead-agent/twilio/inbound', async (req, res) => {
-    const secret = process.env.LEAD_AGENT_TWILIO_WEBHOOK_SECRET;
-    if (secret && req.headers['x-lead-agent-secret'] !== secret) {
+    if (!assertLeadAgentTwilioWebhook(req)) {
       return res.status(403).send('Forbidden');
     }
     const from = normalizePhone(req.body?.From);
@@ -418,6 +450,38 @@ export function registerLeadAgentRoutes(app, db) {
     }
     res.set('Content-Type', 'text/xml');
     return res.send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>');
+  });
+
+  /** Twilio inbound VOICE — return calls bridged to Grok voice (xAI PSTN line) */
+  app.post('/api/lead-agent/twilio/voice/inbound', async (req, res) => {
+    if (!assertLeadAgentTwilioWebhook(req)) {
+      return res.status(403).type('text/plain').send('Forbidden');
+    }
+    const from = normalizePhone(req.body?.From);
+    const callSid = String(req.body?.CallSid || '');
+    const businessId = String(req.query.businessId || 'macrorei');
+    const uid = String(req.query.uid || defaultWorkspaceUid());
+    const grok = resolveGrokVoiceLine(businessId);
+    const twilioFrom = process.env.TWILIO_FROM_NUMBER || '';
+
+    let leadName = '';
+    try {
+      const recorded = await recordInboundReturnCall(db, uid, businessId, from, {
+        callSid,
+        summary: `Return call from ${from} → Grok ${grok.display}`,
+      });
+      leadName = recorded.lead?.name || '';
+    } catch (e) {
+      console.error('[lead-agent/twilio/voice/inbound] record', e);
+    }
+
+    const xml = buildInboundReturnCallTwiml({
+      grokE164: grok.e164,
+      leadName,
+      twilioFromE164: twilioFrom,
+    });
+    res.type('text/xml');
+    return res.send(xml);
   });
 }
 

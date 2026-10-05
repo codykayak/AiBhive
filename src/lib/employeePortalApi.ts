@@ -84,7 +84,7 @@ export async function textNextLead(user: User, businessId: string) {
 
 export async function logEmployeeCall(
   user: User,
-  payload: { businessId: string; leadId: string; disposition: string },
+  payload: { businessId: string; leadId: string; disposition: string; notes?: string },
 ) {
   return portalFetch('/api/employee-portal/desk/call-log', user, {
     method: 'POST',

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
+import { useSearchParams } from 'react-router-dom';
 import {
   BookOpen,
   CheckSquare,
@@ -30,25 +31,56 @@ import {
   saveEmployeePortalProfile,
   type EmployeePortalMe,
 } from '../lib/employeePortalApi';
+import {
+  clearLocalEmployeeDevSession,
+  createLocalDevEmployeeUser,
+  employeePortalDevEnabled,
+  enterLocalEmployeeDevSession,
+  hasLocalEmployeeDevSession,
+  isLocalDevEmployeeUser,
+} from '../lib/employeePortalDev';
 
 type Tab = 'floor' | 'operations' | BrandId | 'tools';
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 export default function EmployeePortalPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [portal, setPortal] = useState<EmployeePortalMe | null>(null);
   const [portalError, setPortalError] = useState('');
   const [tab, setTab] = useState<Tab>('floor');
   const [saving, setSaving] = useState(false);
+  const devBypass = employeePortalDevEnabled();
+
+  const enterDevPortal = useCallback(() => {
+    enterLocalEmployeeDevSession();
+    const devUser = createLocalDevEmployeeUser();
+    setUser(devUser);
+    setAuthLoading(false);
+    setPortalError('');
+  }, []);
 
   useEffect(() => {
+    if (devBypass && (searchParams.get('dev') === '1' || searchParams.get('employeeDev') === '1')) {
+      enterDevPortal();
+      setSearchParams({}, { replace: true });
+    }
+  }, [devBypass, enterDevPortal, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (devBypass && hasLocalEmployeeDevSession()) {
+      setUser(createLocalDevEmployeeUser());
+      setAuthLoading(false);
+      return () => {};
+    }
     return onAuthStateChanged(auth, (u) => {
+      if (hasLocalEmployeeDevSession() && devBypass) return;
       setUser(u);
       setAuthLoading(false);
     });
-  }, []);
+  }, [devBypass]);
 
   const loadPortal = useCallback(async (u: User) => {
     setPortalError('');
@@ -117,6 +149,16 @@ export default function EmployeePortalPage() {
     await signInWithPopup(auth, googleProvider);
   };
 
+  const signOutPortal = () => {
+    if (isLocalDevEmployeeUser(user)) {
+      clearLocalEmployeeDevSession();
+      setUser(null);
+      setPortal(null);
+      return;
+    }
+    void signOut(auth);
+  };
+
   const activeBrand = BRAND_PLAYBOOKS.find((b) => b.id === tab);
 
   return (
@@ -169,6 +211,21 @@ export default function EmployeePortalPage() {
               >
                 Continue with Google
               </button>
+              {devBypass ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={enterDevPortal}
+                    className="mt-3 w-full rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-emerald-100 font-bold py-3 hover:bg-emerald-950/50 transition-colors"
+                  >
+                    Enter portal (local dev — no Google)
+                  </button>
+                  <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+                    Dev-only until production ship. Bookmark{' '}
+                    <span className="text-slate-400 font-mono">/employee?dev=1</span> to skip this screen.
+                  </p>
+                </>
+              ) : null}
             </div>
           </div>
         ) : portalError ? (
@@ -177,7 +234,7 @@ export default function EmployeePortalPage() {
             <p className="text-red-100/80 mt-2 text-sm">{portalError}</p>
             <button
               type="button"
-              onClick={() => void signOut(auth)}
+              onClick={signOutPortal}
               className="mt-4 text-sm text-bee-amber hover:underline"
             >
               Sign out
@@ -211,7 +268,7 @@ export default function EmployeePortalPage() {
               ))}
               <button
                 type="button"
-                onClick={() => void signOut(auth)}
+                onClick={signOutPortal}
                 className="w-full flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:text-white mt-4"
               >
                 <LogOut className="w-4 h-4" /> Sign out

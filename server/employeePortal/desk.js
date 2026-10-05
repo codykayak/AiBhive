@@ -402,6 +402,7 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const businessId = String(req.body?.businessId || 'macrorei');
     const leadId = String(req.body?.leadId || '');
     const disposition = String(req.body?.disposition || 'talked').slice(0, 40);
+    const notes = String(req.body?.notes || '').trim().slice(0, 500);
     if (!leadId) return res.status(400).json({ error: 'leadId required' });
     const allowed = new Set(['talked', 'voicemail', 'no_answer', 'callback', 'skipped']);
     if (!allowed.has(disposition)) return res.status(400).json({ error: 'Unknown disposition' });
@@ -409,16 +410,15 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
     const status = disposition === 'callback' ? 'callback' : disposition;
-    await ref.set(
-      {
-        status,
-        lastCallDisposition: disposition,
-        lastContactAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-        lastEmployeeEmail: user.email || '',
-      },
-      { merge: true },
-    );
+    const leadPatch = {
+      status,
+      lastCallDisposition: disposition,
+      lastContactAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      lastEmployeeEmail: user.email || '',
+    };
+    if (notes) leadPatch.lastCallNotes = notes;
+    await ref.set(leadPatch, { merge: true });
     const today = await bumpDay(db, user.uid, {
       calls: disposition === 'skipped' ? 0 : 1,
       lastLeadId: leadId,

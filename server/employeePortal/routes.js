@@ -8,6 +8,7 @@ import {
   resolveLeadAgentIosInstallUrl,
 } from '../leadAgent/iosInstall.js';
 import { registerEmployeeDeskRoutes } from './desk.js';
+import { isLocalDevEmployeeUser, resolveLocalDevEmployee } from './devAuth.js';
 
 const PROFILE_COL = 'employee_portal_profiles';
 
@@ -34,8 +35,9 @@ async function isLeadAgentMember(db, email) {
   return false;
 }
 
-export async function isEmployeePortalAllowed(db, { email, uid }) {
+export async function isEmployeePortalAllowed(db, { email, uid, localDev }) {
   if (!email) return false;
+  if (localDev && uid === 'local-dev-employee') return true;
   if (isAdminEmail(email)) return true;
   if (employeeEmailsFromEnv().includes(String(email).toLowerCase())) return true;
   if (process.env.EMPLOYEE_PORTAL_OPEN === '1') return true;
@@ -48,7 +50,7 @@ export async function isEmployeePortalAllowed(db, { email, uid }) {
 }
 
 async function requireEmployee(req, res, db) {
-  const user = await verifyHiveAuth(req);
+  const user = (await verifyHiveAuth(req)) || resolveLocalDevEmployee(req);
   if (!user) {
     res.status(401).json({ error: 'Sign in with Google to access the employee portal.' });
     return null;
@@ -73,6 +75,30 @@ export function registerEmployeePortalRoutes(app, db) {
   app.get('/api/employee-portal/me', async (req, res) => {
     const user = await requireEmployee(req, res, db);
     if (!user) return;
+    if (isLocalDevEmployeeUser(user)) {
+      return res.json({
+        ok: true,
+        email: user.email,
+        uid: user.uid,
+        profile: {
+          displayName: 'Local dev',
+          dailyChecklist: {},
+          shiftNotes: '',
+          lastChecklistDate: null,
+        },
+        links: {
+          leadAgentApk: '/api/download/lead-agent',
+          leadAgentHealth: '/api/lead-agent/health',
+          leadAgentIosInstall: '/api/download/lead-agent-ios',
+          leadAgentIosTestFlight: resolveLeadAgentIosInstallUrl(),
+          leadAgentIosReady: isLeadAgentIosInstallReady(),
+          macrorei: 'https://macrorei.com',
+          manydoors: 'https://manydoorsai.com',
+          aibhive: 'https://aibhive.com',
+        },
+        localDev: true,
+      });
+    }
     const ref = db.collection(PROFILE_COL).doc(user.uid);
     const snap = await ref.get();
     let profile = snap.exists ? snap.data() : {};
@@ -113,6 +139,17 @@ export function registerEmployeePortalRoutes(app, db) {
   app.put('/api/employee-portal/profile', async (req, res) => {
     const user = await requireEmployee(req, res, db);
     if (!user) return;
+    if (isLocalDevEmployeeUser(user)) {
+      return res.json({
+        ok: true,
+        profile: {
+          displayName: 'Local dev',
+          shiftNotes: String(req.body?.shiftNotes || ''),
+          dailyChecklist: req.body?.dailyChecklist || {},
+          lastChecklistDate: req.body?.lastChecklistDate || null,
+        },
+      });
+    }
     const body = req.body || {};
     const patch = {
       updatedAt: FieldValue.serverTimestamp(),

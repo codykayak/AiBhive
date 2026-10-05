@@ -804,6 +804,9 @@ app.use((req, res, next) => {
   if (req.method === 'POST' && req.path === '/api/employee-portal/voice/twiml') {
     return express.urlencoded({ extended: false })(req, res, next);
   }
+  if (req.method === 'POST' && req.path.startsWith('/api/lead-agent/twilio/')) {
+    return express.urlencoded({ extended: false })(req, res, next);
+  }
   return defaultJsonParser(req, res, next);
 });
 
@@ -1625,7 +1628,7 @@ registerResearchLabRoutes(app, db);
 registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerLeadAgentRoutes(app, db);
 registerEmployeePortalRoutes(app, db);
-registerMacroreiVoiceRoutes(app);
+registerMacroreiVoiceRoutes(app, db);
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });
 registerJobApplicationRoutes(app, { db, gcsBucket, transporter, verifyAdmin });
