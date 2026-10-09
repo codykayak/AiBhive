@@ -6,6 +6,8 @@ import { normalizePhone, sendLeadSms } from '../leadAgent/smsProvider.js';
 import { personalizeOutbound } from '../leadAgent/outboundMessage.js';
 import { canSendOutbound } from '../leadAgent/automation.js';
 import { incrementDailySms } from '../leadAgent/inboundHandler.js';
+import { leadAgentVoiceWebhookPath } from '../leadAgent/inboundVoice.js';
+import { resolveMacroreiGrokVoicePhone } from '../macroreiVoiceInstructions.js';
 
 const COL = 'lead_agent_workspaces';
 const PROFILE_COL = 'employee_portal_profiles';
@@ -49,6 +51,70 @@ function serializeLead(id, data) {
     optedOut: Boolean(data.optedOut),
     textCount: data.textCount == null ? null : Number(data.textCount),
     lastTextBody: data.lastTextBody ? String(data.lastTextBody) : '',
+    lastContactAt: stamp(data.lastContactAt),
+    lastCallDisposition: data.lastCallDisposition ? String(data.lastCallDisposition) : '',
+    lastCallNotes: data.lastCallNotes ? String(data.lastCallNotes).slice(0, 200) : '',
+    needsHuman: Boolean(data.needsHuman),
+    grokVoiceInterest: Boolean(data.grokVoiceInterest),
+    lastEmployeeEmail: data.lastEmployeeEmail ? String(data.lastEmployeeEmail) : '',
+  };
+}
+
+function isOpenLeadRow(lead) {
+  return !lead.optedOut && (lead.status === 'new' || lead.status === 'callback');
+}
+
+function computeDeskAnalytics(leads) {
+  const byStatus = {};
+  for (const l of leads) {
+    const s = l.status || 'new';
+    byStatus[s] = (byStatus[s] || 0) + 1;
+  }
+  const open = leads.filter(isOpenLeadRow);
+  const texted = leads.filter((l) => (l.textCount || 0) > 0 || l.status === 'texted');
+  return {
+    total: leads.length,
+    open: open.length,
+    optedOut: leads.filter((l) => l.optedOut).length,
+    texted: texted.length,
+    notTexted: leads.length - texted.length,
+    needsHuman: leads.filter((l) => l.needsHuman).length,
+    replied: leads.filter((l) => l.status === 'replied').length,
+    callbacks: leads.filter((l) => l.status === 'callback').length,
+    byStatus,
+  };
+}
+
+function buildTuningSnapshot(business) {
+  return {
+    agentEnabled: business.agentEnabled !== false,
+    automationEnabled: business.automationEnabled !== false,
+    smsProvider: business.smsProvider || 'phone',
+    dailySmsLimit: Number(business.dailySmsLimit || 40),
+    dailySmsSuggested: Number(business.dailySmsSuggested || 25),
+    sendWindowStart: Number(business.sendWindowStart ?? 9),
+    sendWindowEnd: Number(business.sendWindowEnd ?? 18),
+    sendTimezone: business.sendTimezone || 'America/Los_Angeles',
+    minDelayMinutes: Number(business.minDelayMinutes ?? 6),
+    maxDelayMinutes: Number(business.maxDelayMinutes ?? 15),
+    escalationKeywords: Array.isArray(business.escalationKeywords) ? business.escalationKeywords : [],
+    escalationMessage: String(business.escalationMessage || '').slice(0, 280),
+    outboundTemplate: String(business.outboundTemplate || business.greeting || '').slice(0, 320),
+  };
+}
+
+function buildInfraSnapshot(businessId, line) {
+  const uid = defaultWorkspaceUid();
+  const grok = businessId === 'macrorei' ? resolveMacroreiGrokVoicePhone() : null;
+  return {
+    twilioSmsReady: line.smsReady,
+    twilioVoiceReady: line.voiceReady,
+    twilioFrom: line.from || '',
+    grokVoiceLine: grok,
+    returnCallWebhookPath: leadAgentVoiceWebhookPath(businessId, uid),
+    smsWebhookPath: `/api/lead-agent/twilio/inbound?businessId=${encodeURIComponent(businessId)}&uid=${encodeURIComponent(uid)}`,
+    employeeVoiceTwimlPath: '/api/employee-portal/voice/twiml',
+    workspaceUid: uid,
   };
 }
 
@@ -186,31 +252,61 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
     const business = await loadBusiness(db, businessId);
     const leads = await listLeads(db, businessId);
-    const open = leads.filter((l) => !l.optedOut && (l.status === 'new' || l.status === 'callback'));
+    const open = leads.filter(isOpenLeadRow);
     const profileSnap = await db.collection(PROFILE_COL).doc(user.uid).get();
     const quota = canSendOutbound(business);
     const line = voiceConfig();
+    const analytics = computeDeskAnalytics(leads);
+    const recentActivity = [...leads]
+      .filter((l) => l.lastContactAt)
+      .sort((a, b) => String(b.lastContactAt).localeCompare(String(a.lastContactAt)))
+      .slice(0, 20)
+      .map((l) => ({
+        id: l.id,
+        name: l.name,
+        phone: l.phone,
+        status: l.status,
+        lastContactAt: l.lastContactAt,
+        lastCallDisposition: l.lastCallDisposition,
+        textCount: l.textCount,
+      }));
     return res.json({
+      syncedAt: new Date().toISOString(),
       business: {
         id: business.id,
         name: business.name,
         tagline: business.tagline,
         phoneDisplay: business.phoneDisplay || '',
         greeting: business.greeting || '',
+        website: business.website || '',
+        brandColor: business.brandColor || '',
       },
       businesses: DEFAULT_BUSINESSES.map((b) => ({ id: b.id, name: b.name })),
       leads: leads.slice(0, 500),
+      analytics,
+      tuning: buildTuningSnapshot(business),
+      infrastructure: buildInfraSnapshot(businessId, line),
+      recentActivity,
       queue: {
         total: leads.length,
         remaining: open.length,
         position: open.length ? 1 : 0,
         current: nextOpenLead(leads),
+        openPreview: open.slice(0, 80).map((l) => ({
+          id: l.id,
+          name: l.name,
+          phone: l.phone,
+          propertyAddress: l.propertyAddress,
+          status: l.status,
+          textCount: l.textCount,
+        })),
       },
       quota: {
         ok: quota.ok !== false,
         reason: quota.reason || null,
         sent: Number(quota.sent || 0),
         limit: Number(quota.limit || business.dailySmsLimit || 40),
+        suggested: Number(business.dailySmsSuggested || 25),
       },
       today: dayStats(profileSnap.exists ? profileSnap.data() : {}),
       line,

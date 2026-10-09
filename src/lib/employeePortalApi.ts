@@ -59,14 +59,87 @@ export type DeskLead = {
   optedOut: boolean;
   textCount: number | null;
   lastTextBody?: string;
+  lastContactAt?: string | null;
+  lastCallDisposition?: string;
+  lastCallNotes?: string;
+  needsHuman?: boolean;
+  grokVoiceInterest?: boolean;
+  lastEmployeeEmail?: string;
 };
 
 export type EmployeeDeskSnapshot = {
-  business: { id: string; name: string; tagline: string; phoneDisplay: string; greeting: string };
+  syncedAt?: string;
+  business: {
+    id: string;
+    name: string;
+    tagline: string;
+    phoneDisplay: string;
+    greeting: string;
+    website?: string;
+    brandColor?: string;
+  };
   businesses: { id: string; name: string }[];
   leads: DeskLead[];
-  queue: { total: number; remaining: number; position: number; current: DeskLead | null };
-  quota: { ok: boolean; reason: string | null; sent: number; limit: number };
+  analytics?: {
+    total: number;
+    open: number;
+    optedOut: number;
+    texted: number;
+    notTexted: number;
+    needsHuman: number;
+    replied: number;
+    callbacks: number;
+    byStatus: Record<string, number>;
+  };
+  tuning?: {
+    agentEnabled: boolean;
+    automationEnabled: boolean;
+    smsProvider: string;
+    dailySmsLimit: number;
+    dailySmsSuggested: number;
+    sendWindowStart: number;
+    sendWindowEnd: number;
+    sendTimezone: string;
+    minDelayMinutes: number;
+    maxDelayMinutes: number;
+    escalationKeywords: string[];
+    escalationMessage: string;
+    outboundTemplate: string;
+  };
+  infrastructure?: {
+    twilioSmsReady: boolean;
+    twilioVoiceReady: boolean;
+    twilioFrom: string;
+    grokVoiceLine: { display: string; e164: string } | null;
+    returnCallWebhookPath: string;
+    smsWebhookPath: string;
+    employeeVoiceTwimlPath: string;
+    workspaceUid: string;
+  };
+  recentActivity?: {
+    id: string;
+    name: string;
+    phone: string;
+    status: string;
+    lastContactAt: string | null;
+    lastCallDisposition?: string;
+    textCount: number | null;
+  }[];
+  queue: {
+    total: number;
+    remaining: number;
+    position: number;
+    current: DeskLead | null;
+    openPreview?: {
+      id: string;
+      name: string;
+      phone: string;
+      propertyAddress: string;
+      status: string;
+      textCount: number | null;
+    }[];
+  };
+  quota: { ok: boolean; reason: string | null; sent: number; limit: number; suggested?: number };
   today: { date: string; calls: number; texts: number; lastLeadId: string | null; lastDisposition: string | null };
   line: { smsReady: boolean; voiceReady: boolean; from: string };
 };

@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
 import {
+  Activity,
   ClipboardPaste,
+  LayoutDashboard,
+  List,
   Loader2,
   Phone,
   PhoneOff,
   Play,
+  Radio,
+  RefreshCw,
   Send,
+  Settings2,
   SkipForward,
   Upload,
   X,
@@ -34,9 +40,38 @@ const DISPOSITIONS = [
   { id: 'skipped', label: 'Skip' },
 ] as const;
 
-type Filter = 'all' | 'open' | 'not_texted' | 'texted';
+type Filter = 'all' | 'open' | 'not_texted' | 'texted' | 'callback' | 'needs_human';
+
+type OpsPanel = 'overview' | 'dialer' | 'leads' | 'import' | 'tuning' | 'lines';
 
 type Props = { user: User };
+
+const OPS_NAV: { id: OpsPanel; label: string; icon: typeof LayoutDashboard }[] = [
+  { id: 'overview', label: 'Command center', icon: LayoutDashboard },
+  { id: 'dialer', label: 'Live dialer', icon: Phone },
+  { id: 'leads', label: 'Lead board', icon: List },
+  { id: 'import', label: 'List import', icon: Upload },
+  { id: 'tuning', label: 'Automation & SMS', icon: Settings2 },
+  { id: 'lines', label: 'Lines & Grok voice', icon: Radio },
+];
+
+function formatSyncedAt(iso?: string) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' });
+  } catch {
+    return iso;
+  }
+}
+
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function textLabel(lead: DeskLead) {
   if (lead.textCount == null) return lead.status === 'texted' ? 'yes' : '0';
@@ -114,6 +149,10 @@ export default function EmployeeDesk({ user }: Props) {
   const [powerMode, setPowerMode] = useState(false);
   const [callNotes, setCallNotes] = useState('');
   const [smsDraft, setSmsDraft] = useState('');
+  const [panel, setPanel] = useState<OpsPanel>('overview');
+  const [lastSyncedAt, setLastSyncedAt] = useState('');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [statusSort, setStatusSort] = useState<'queue' | 'recent' | 'name'>('queue');
 
   const handleParse = useMemo(
     () => applyParse({ setError, setNotice, setPreview, setPreviewSkipped, setPreviewErrors }),
@@ -123,8 +162,17 @@ export default function EmployeeDesk({ user }: Props) {
   const reload = useCallback(async () => {
     const snap = await fetchEmployeeDesk(user, businessId);
     setDesk(snap);
+    setLastSyncedAt(snap.syncedAt || new Date().toISOString());
     return snap;
   }, [user, businessId]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = window.setInterval(() => {
+      void reload().catch(() => {});
+    }, 45_000);
+    return () => window.clearInterval(id);
+  }, [autoRefresh, reload]);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,6 +230,8 @@ export default function EmployeeDesk({ user }: Props) {
       if (filter === 'open' && !isOpenLead(lead)) return false;
       if (filter === 'texted' && !(lead.status === 'texted' || (lead.textCount || 0) > 0)) return false;
       if (filter === 'not_texted' && (lead.status === 'texted' || (lead.textCount || 0) > 0)) return false;
+      if (filter === 'callback' && lead.status !== 'callback') return false;
+      if (filter === 'needs_human' && !lead.needsHuman) return false;
       if (!q) return true;
       return `${lead.name} ${lead.phone} ${lead.propertyAddress}`.toLowerCase().includes(q);
     });
@@ -342,6 +392,15 @@ export default function EmployeeDesk({ user }: Props) {
     else setError('Import a list first — need phone and property address on each row.');
   };
 
+  const sortedLeads = useMemo(() => {
+    const list = [...filtered];
+    if (statusSort === 'name') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (statusSort === 'recent') {
+      list.sort((a, b) => String(b.lastContactAt || '').localeCompare(String(a.lastContactAt || '')));
+    }
+    return list;
+  }, [filtered, statusSort]);
+
   if (!desk && !error) {
     return (
       <div className="flex items-center gap-3 text-slate-400 py-16">
@@ -354,55 +413,241 @@ export default function EmployeeDesk({ user }: Props) {
   const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected[l.id]);
   const quotaPct = desk ? Math.min(100, Math.round((desk.quota.sent / Math.max(desk.quota.limit, 1)) * 100)) : 0;
   const queuePct = desk?.queue.total ? Math.round(((desk.queue.total - desk.queue.remaining) / desk.queue.total) * 100) : 0;
+  const analytics = desk?.analytics;
+  const infra = desk?.infrastructure;
+  const tuning = desk?.tuning;
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://aibhive.com';
+
+  const StatusPill = ({ ok, label }: { ok: boolean; label: string }) => (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+        ok ? 'bg-emerald-500/20 text-emerald-200' : 'bg-amber-500/15 text-amber-200'
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${ok ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+      {label}
+    </span>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 min-h-[160px]">
-        <img src="/employee/desk-banner.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#05080f] via-[#05080f]/85 to-transparent" />
-        <div className="relative p-6 md:p-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="rounded-3xl border border-white/10 bg-[#060a12] overflow-hidden min-h-[calc(100vh-12rem)] flex flex-col">
+      <header className="border-b border-white/10 bg-black/50 px-4 py-4 md:px-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-bee-amber text-xs font-bold uppercase tracking-[0.22em]">Call center floor</p>
-            <h2 className="text-3xl font-black mt-1">Power dialer & outreach</h2>
-            <p className="text-slate-300 mt-2 max-w-xl text-sm leading-relaxed">
-              Same lists as the Lead Agent app — import CSV/Excel, work the queue, call from the browser, text in batches, and
-              see full message history per lead.
+            <p className="text-bee-amber text-[10px] font-bold uppercase tracking-[0.28em]">Call center operations</p>
+            <h2 className="text-2xl md:text-3xl font-black mt-1">{desk?.business.name || 'Command center'}</h2>
+            <p className="text-slate-400 text-sm mt-1 max-w-2xl">
+              {desk?.business.tagline} · {desk?.queue.remaining ?? 0} open · {desk?.queue.total ?? 0} on list
             </p>
           </div>
-          <label className="text-xs text-slate-400">
-            Brand list
-            <select
-              value={businessId}
-              onChange={(e) => setBusinessId(e.target.value)}
-              className="mt-1 block rounded-xl bg-black/60 border border-white/15 px-3 py-2 text-sm text-white"
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="text-xs text-slate-500">
+              Active list
+              <select
+                value={businessId}
+                onChange={(e) => setBusinessId(e.target.value)}
+                className="mt-1 block rounded-xl bg-black/70 border border-white/15 px-3 py-2 text-sm text-white min-w-[160px]"
+              >
+                {(desk?.businesses || []).map((b) => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              disabled={Boolean(busy)}
+              onClick={() => void reload()}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-bold hover:bg-white/5"
             >
-              {(desk?.businesses || [{ id: 'macrorei', name: 'MacroREI' }]).map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <RefreshCw className={`w-4 h-4 ${busy ? 'animate-spin' : ''}`} /> Sync
+            </button>
+            <label className="flex items-center gap-2 text-xs text-slate-400 pb-2">
+              <input type="checkbox" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
+              Auto-sync 45s
+            </label>
+          </div>
         </div>
-      </div>
+        <div className="mt-4 flex flex-wrap gap-2 items-center">
+          <StatusPill ok={Boolean(desk?.line.smsReady)} label="Twilio SMS" />
+          <StatusPill ok={Boolean(desk?.line.voiceReady)} label="Browser dialer" />
+          <StatusPill ok={Boolean(desk?.quota.ok)} label={desk?.quota.ok ? 'SMS quota OK' : 'SMS cap'} />
+          <StatusPill ok={(analytics?.open ?? 0) > 0} label={`${analytics?.open ?? 0} open leads`} />
+          <span className="text-[11px] text-slate-500 ml-auto">Last sync: {formatSyncedAt(lastSyncedAt)}</span>
+        </div>
+      </header>
 
+      <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
+        <nav className="lg:w-52 border-b lg:border-b-0 lg:border-r border-white/10 bg-black/30 p-2 flex lg:flex-col gap-1 overflow-x-auto">
+          {OPS_NAV.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setPanel(id)}
+              className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold whitespace-nowrap ${
+                panel === id ? 'bg-bee-amber text-bee-black' : 'text-slate-300 hover:bg-white/5'
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        <main className="flex-1 overflow-auto p-4 md:p-6 space-y-5">
       {error ? <p className="rounded-xl border border-amber-500/40 bg-amber-950/40 px-4 py-3 text-sm text-amber-100">{error}</p> : null}
       {notice ? <p className="rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">{notice}</p> : null}
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          ['Calls today', String(desk?.today.calls ?? 0)],
-          ['Texts today', String(desk?.today.texts ?? 0)],
-          ['Open in queue', String(desk?.queue.remaining ?? 0)],
-          ['SMS quota', `${desk?.quota.sent ?? 0}/${desk?.quota.limit ?? 0}`],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500">{label}</p>
-            <p className="text-2xl font-black mt-1">{value}</p>
+      {panel === 'overview' ? (
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+            {[
+              ['List total', analytics?.total ?? desk?.queue.total ?? 0],
+              ['Open queue', analytics?.open ?? desk?.queue.remaining ?? 0],
+              ['Texted', analytics?.texted ?? 0],
+              ['Not texted', analytics?.notTexted ?? 0],
+              ['Callbacks', analytics?.callbacks ?? 0],
+              ['Replied', analytics?.replied ?? 0],
+              ['Needs human', analytics?.needsHuman ?? 0],
+              ['Opted out', analytics?.optedOut ?? 0],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="text-[10px] uppercase tracking-widest text-slate-500">{label}</p>
+                <p className="text-xl font-black mt-1">{value}</p>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+          <div className="grid lg:grid-cols-2 gap-4">
+            <section className="rounded-2xl border border-white/10 p-4">
+              <h3 className="font-bold flex items-center gap-2"><Activity className="w-4 h-4 text-bee-amber" /> Your shift today</h3>
+              <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                <p>Calls: <strong>{desk?.today.calls ?? 0}</strong></p>
+                <p>Texts: <strong>{desk?.today.texts ?? 0}</strong></p>
+                <p>Last disposition: <strong>{desk?.today.lastDisposition || '—'}</strong></p>
+                <p>SMS sent: <strong>{desk?.quota.sent}/{desk?.quota.limit}</strong> (suggested {desk?.quota.suggested ?? tuning?.dailySmsSuggested ?? '—'})</p>
+              </div>
+              <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">List worked</p>
+                  <div className="h-2 rounded-full bg-white/10 mt-1"><div className="h-full bg-emerald-400 rounded-full" style={{ width: `${queuePct}%` }} /></div>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase text-slate-500">Daily SMS cap</p>
+                  <div className="h-2 rounded-full bg-white/10 mt-1"><div className="h-full bg-bee-amber rounded-full" style={{ width: `${quotaPct}%` }} /></div>
+                </div>
+              </div>
+            </section>
+            <section className="rounded-2xl border border-white/10 p-4">
+              <h3 className="font-bold">Status breakdown</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {Object.entries(analytics?.byStatus || {}).map(([status, count]) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => { setPanel('leads'); setFilter(status === 'new' || status === 'callback' ? 'open' : 'all'); }}
+                    className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold hover:border-bee-amber/40"
+                  >
+                    {status} <span className="text-bee-amber">{count}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+          <section className="rounded-2xl border border-bee-amber/20 overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 bg-bee-amber/10 flex justify-between items-center">
+              <h3 className="font-bold">Open dialer queue ({desk?.queue.openPreview?.length ?? openQueue.length})</h3>
+              <button type="button" className="text-sm font-bold text-bee-amber" onClick={() => setPanel('dialer')}>Go to dialer →</button>
+            </div>
+            <div className="max-h-64 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="text-[10px] uppercase text-slate-500 bg-black/40 sticky top-0">
+                  <tr><th className="p-2 text-left">#</th><th className="p-2 text-left">Lead</th><th className="p-2 text-left">Property</th><th className="p-2">Texts</th></tr>
+                </thead>
+                <tbody>
+                  {(desk?.queue.openPreview || openQueue).slice(0, 50).map((lead, i) => (
+                    <tr key={lead.id} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer" onClick={() => { setPanel('dialer'); void openLead(lead.id); }}>
+                      <td className="p-2 text-slate-500">{i + 1}</td>
+                      <td className="p-2 font-semibold">{lead.name || 'Owner'}<br /><span className="font-mono text-xs text-slate-400">{lead.phone}</span></td>
+                      <td className="p-2 text-slate-400 max-w-xs truncate">{lead.propertyAddress}</td>
+                      <td className="p-2 text-center">{lead.textCount ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          {desk?.recentActivity?.length ? (
+            <section className="rounded-2xl border border-white/10 p-4">
+              <h3 className="font-bold">Recent list activity</h3>
+              <ul className="mt-3 space-y-2 text-sm">
+                {desk.recentActivity.map((row) => (
+                  <li key={row.id} className="flex flex-wrap gap-2 justify-between border-b border-white/5 pb-2">
+                    <button type="button" className="font-semibold text-left hover:text-bee-amber" onClick={() => { setPanel('dialer'); void openLead(row.id); }}>
+                      {row.name || row.phone}
+                    </button>
+                    <span className="text-slate-500">{row.status} · {row.lastCallDisposition || 'contact'} · {formatSyncedAt(row.lastContactAt || undefined)}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
+      ) : null}
 
+      {panel === 'tuning' && tuning ? (
+        <div className="grid lg:grid-cols-2 gap-4 text-sm">
+          <section className="rounded-2xl border border-white/10 p-5 space-y-3">
+            <h3 className="font-black text-lg">Automation</h3>
+            <p>Grok SMS agent: <strong>{tuning.agentEnabled ? 'ON' : 'OFF'}</strong></p>
+            <p>Batch automation: <strong>{tuning.automationEnabled ? 'ON' : 'OFF'}</strong></p>
+            <p>Provider: <strong>{tuning.smsProvider}</strong></p>
+            <p>Send window: <strong>{tuning.sendWindowStart}:00 – {tuning.sendWindowEnd}:00</strong> ({tuning.sendTimezone})</p>
+            <p>Pace between texts: <strong>{tuning.minDelayMinutes}–{tuning.maxDelayMinutes} min</strong></p>
+            <p>Daily cap: <strong>{tuning.dailySmsLimit}</strong> (suggested <strong>{tuning.dailySmsSuggested}</strong>)</p>
+          </section>
+          <section className="rounded-2xl border border-white/10 p-5 space-y-3">
+            <h3 className="font-black text-lg">Escalation & templates</h3>
+            <p className="text-slate-400 text-xs">Keywords: {tuning.escalationKeywords.join(', ') || '—'}</p>
+            <p className="text-slate-300">{tuning.escalationMessage}</p>
+            <h4 className="font-bold mt-4">Outbound template</h4>
+            <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap">{tuning.outboundTemplate}</pre>
+            <h4 className="font-bold">Greeting (live)</h4>
+            <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap">{desk?.business.greeting}</pre>
+          </section>
+        </div>
+      ) : null}
+
+      {panel === 'lines' && infra ? (
+        <div className="space-y-4 text-sm">
+          <section className="rounded-2xl border border-white/10 p-5 grid md:grid-cols-3 gap-4">
+            <div><p className="text-slate-500 text-xs uppercase">Twilio SMS</p><p className="font-bold mt-1">{infra.twilioSmsReady ? 'Ready' : 'Not configured'}</p></div>
+            <div><p className="text-slate-500 text-xs uppercase">Browser voice</p><p className="font-bold mt-1">{infra.twilioVoiceReady ? 'Ready' : 'Missing API keys / TwiML app'}</p></div>
+            <div><p className="text-slate-500 text-xs uppercase">From number</p><p className="font-mono mt-1">{infra.twilioFrom || '—'}</p></div>
+          </section>
+          {infra.grokVoiceLine ? (
+            <section className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-5">
+              <h3 className="font-bold text-emerald-100">Grok voice line (return calls)</h3>
+              <p className="text-2xl font-black mt-2">{infra.grokVoiceLine.display}</p>
+              <p className="font-mono text-xs text-slate-400 mt-1">{infra.grokVoiceLine.e164}</p>
+            </section>
+          ) : null}
+          {[
+            ['Return-call voice webhook (Twilio)', `${origin}${infra.returnCallWebhookPath}`],
+            ['Inbound SMS webhook', `${origin}${infra.smsWebhookPath}`],
+            ['Employee browser dial TwiML', `${origin}${infra.employeeVoiceTwimlPath}`],
+            ['Workspace UID', infra.workspaceUid],
+          ].map(([title, url]) => (
+            <div key={title} className="rounded-xl border border-white/10 p-4 flex flex-wrap gap-3 justify-between items-start">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{title}</p>
+                <p className="font-mono text-xs text-slate-400 mt-1 break-all">{url}</p>
+              </div>
+              <button type="button" className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold" onClick={() => void copyText(url).then((ok) => ok && setNotice(`Copied ${title}`))}>Copy</button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {panel === 'dialer' ? (
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-3xl border border-bee-amber/25 bg-gradient-to-br from-bee-amber/10 to-transparent p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -566,7 +811,9 @@ export default function EmployeeDesk({ user }: Props) {
           </div>
         </div>
       </div>
+      ) : null}
 
+      {panel === 'import' ? (
       <section
         className={`rounded-3xl border p-5 transition-colors ${dragOver ? 'border-bee-amber bg-bee-amber/10' : 'border-white/10 bg-white/[0.03]'}`}
         onDragOver={(e) => {
@@ -674,7 +921,9 @@ export default function EmployeeDesk({ user }: Props) {
           </div>
         ) : null}
       </section>
+      ) : null}
 
+      {panel === 'leads' ? (
       <section className="rounded-3xl border border-white/10 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 p-4 border-b border-white/10 bg-black/30">
           <input
@@ -683,14 +932,29 @@ export default function EmployeeDesk({ user }: Props) {
             placeholder="Search name, phone, address"
             className="flex-1 min-w-[180px] rounded-xl bg-black/50 border border-white/10 px-3 py-2 text-sm"
           />
-          {(['all', 'open', 'not_texted', 'texted'] as const).map((id) => (
+          <select value={statusSort} onChange={(e) => setStatusSort(e.target.value as typeof statusSort)} className="rounded-xl bg-black/50 border border-white/10 px-2 py-2 text-xs">
+            <option value="queue">Queue order</option>
+            <option value="recent">Recent contact</option>
+            <option value="name">Name</option>
+          </select>
+          {(['all', 'open', 'not_texted', 'texted', 'callback', 'needs_human'] as const).map((id) => (
             <button
               key={id}
               type="button"
               onClick={() => setFilter(id)}
               className={`rounded-full px-3 py-1.5 text-xs font-bold ${filter === id ? 'bg-bee-amber text-bee-black' : 'border border-white/15 text-slate-300'}`}
             >
-              {id === 'all' ? 'All' : id === 'open' ? 'Not worked' : id === 'not_texted' ? 'Not texted' : 'Texted'}
+              {id === 'all'
+                ? 'All'
+                : id === 'open'
+                  ? 'Not worked'
+                  : id === 'not_texted'
+                    ? 'Not texted'
+                    : id === 'texted'
+                      ? 'Texted'
+                      : id === 'callback'
+                        ? 'Callback'
+                        : 'Needs human'}
             </button>
           ))}
           <button
@@ -703,7 +967,7 @@ export default function EmployeeDesk({ user }: Props) {
             Text selected ({selectedIds.length})
           </button>
         </div>
-        <div className="max-h-[480px] overflow-auto">
+        <div className="max-h-[min(70vh,720px)] overflow-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-[11px] uppercase tracking-wider text-slate-500 sticky top-0 bg-[#0b1018]">
               <tr>
@@ -722,17 +986,20 @@ export default function EmployeeDesk({ user }: Props) {
                 </th>
                 <th className="p-3">Lead</th>
                 <th className="p-3">Phone</th>
-                <th className="p-3 hidden md:table-cell">Property</th>
+                <th className="p-3 hidden lg:table-cell">Property</th>
                 <th className="p-3">Status</th>
+                <th className="p-3 hidden md:table-cell">Last contact</th>
+                <th className="p-3 hidden md:table-cell">Disposition</th>
                 <th className="p-3">Texts</th>
+                <th className="p-3">Flags</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((lead) => (
+              {sortedLeads.map((lead) => (
                 <tr
                   key={lead.id}
                   className={`border-t border-white/5 cursor-pointer hover:bg-white/[0.04] ${openId === lead.id ? 'bg-bee-amber/10' : ''}`}
-                  onClick={() => void openLead(lead.id)}
+                  onClick={() => { setPanel('dialer'); void openLead(lead.id); }}
                 >
                   <td className="p-3" onClick={(e) => e.stopPropagation()}>
                     <input
@@ -743,14 +1010,21 @@ export default function EmployeeDesk({ user }: Props) {
                   </td>
                   <td className="p-3 font-semibold">{lead.name || 'Unnamed'}</td>
                   <td className="p-3 font-mono text-xs">{lead.phone}</td>
-                  <td className="p-3 hidden md:table-cell text-slate-400 max-w-[240px] truncate">{lead.propertyAddress}</td>
+                  <td className="p-3 hidden lg:table-cell text-slate-400 max-w-[240px] truncate">{lead.propertyAddress}</td>
                   <td className="p-3 uppercase text-[10px] tracking-wider text-slate-400">{lead.status}</td>
+                  <td className="p-3 hidden md:table-cell text-xs text-slate-500">{lead.lastContactAt ? formatSyncedAt(lead.lastContactAt) : '—'}</td>
+                  <td className="p-3 hidden md:table-cell text-xs">{lead.lastCallDisposition || '—'}</td>
                   <td className="p-3 font-bold">{textLabel(lead)}</td>
+                  <td className="p-3 text-[10px]">
+                    {lead.needsHuman ? <span className="text-amber-300">human</span> : null}
+                    {lead.optedOut ? <span className="text-red-300"> opt-out</span> : null}
+                    {lead.grokVoiceInterest ? <span className="text-emerald-300"> grok</span> : null}
+                  </td>
                 </tr>
               ))}
-              {!filtered.length ? (
+              {!sortedLeads.length ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-slate-500">
+                  <td colSpan={9} className="p-6 text-slate-500">
                     No leads in this view. Drop a CSV/Excel file in the import box above.
                   </td>
                 </tr>
@@ -759,8 +1033,9 @@ export default function EmployeeDesk({ user }: Props) {
           </table>
         </div>
       </section>
+      ) : null}
 
-      {openId && active && thread ? (
+      {openId && active && thread && (panel === 'dialer' || panel === 'leads') ? (
         <section className="rounded-3xl border border-white/10 bg-black/40 p-6">
           <div className="flex justify-between gap-3">
             <div>
@@ -792,8 +1067,9 @@ export default function EmployeeDesk({ user }: Props) {
         </section>
       ) : null}
 
+      {panel === 'dialer' ? (
       <p className="text-xs text-slate-500">
-        One-click outreach without selecting rows:
+        One-click outreach:
         <button
           type="button"
           className="ml-2 text-bee-amber font-bold"
@@ -812,6 +1088,9 @@ export default function EmployeeDesk({ user }: Props) {
           <span className="block mt-2 text-amber-200/80">Laptop SMS needs company Twilio env vars on the server.</span>
         ) : null}
       </p>
+      ) : null}
+        </main>
+      </div>
     </div>
   );
 }
