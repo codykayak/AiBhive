@@ -148,6 +148,10 @@ export default function SettingsScreen() {
       <Text style={styles.label}>Suggested daily sends</Text>
       <TextInput style={styles.input} keyboardType="number-pad" value={suggested} onChangeText={setSuggested} />
       <Text style={styles.label}>SMS provider</Text>
+      <Text style={styles.hint}>
+        Default: My cell phone — sends from this Android (same as Employee Portal “Text from phone” on a laptop). Use Twilio
+        only when your company number is approved for messaging.
+      </Text>
       <View style={styles.row}>
         <Pressable style={[styles.chip, provider === 'phone' && styles.chipOn]} onPress={() => setProvider('phone')}>
           <Text>My cell phone</Text>
