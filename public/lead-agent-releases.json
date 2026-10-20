@@ -1,10 +1,10 @@
 {
-  "shippedNativeVersion": "1.1.0",
-  "versionCode": 3,
-  "sourceVersion": "1.1.0",
+  "shippedNativeVersion": "1.2.0",
+  "versionCode": 4,
+  "sourceVersion": "1.2.0",
   "appName": "AiBhive Lead Agent",
   "downloadUrl": "https://aibhive.com/api/download/lead-agent",
   "fullApkUrl": "https://aibhive.com/api/download/lead-agent",
-  "releaseNotes": "MacroREI Lead Agent — owner lists, paced SMS, Grok on macrorei.com, team sharing.",
+  "releaseNotes": "1.2.0 — Cell-phone SMS default (Twilio optional); aligns with Employee Portal phone/Twilio provider; MacroREI lists + Grok inbound.",
   "publishedAt": null
 }
