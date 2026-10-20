@@ -100,6 +100,7 @@ import {
   resolveLeadAgentIosInstallUrl,
 } from './leadAgent/iosInstall.js';
 import { registerEmployeePortalRoutes } from './employeePortal/routes.js';
+import { registerTwilioStatusRoutes } from './twilioStatus.js';
 import { registerMacroreiVoiceRoutes } from './macroreiVoiceSession.js';
 import { registerPlantMedicineRoutes } from './plantMedicineRoutes.js';
 import { registerDiagnoseWebRoutes } from './diagnoseWebRoutes.js';
@@ -1628,6 +1629,7 @@ registerResearchLabRoutes(app, db);
 registerProsRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerLeadAgentRoutes(app, db);
 registerEmployeePortalRoutes(app, db);
+registerTwilioStatusRoutes(app);
 registerMacroreiVoiceRoutes(app, db);
 registerPlantMedicineRoutes(app, db, { isPlatformAdmin: isAdminEmail, gcsBucket });
 registerDiagnoseWebRoutes(app, db, { stripe });

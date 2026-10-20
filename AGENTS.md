@@ -1,5 +1,7 @@
 # AiBhive — Agent Instructions
 
+**New Cursor session / new account?** Read **[docs/CURSOR-AGENT-HANDOFF.md](./docs/CURSOR-AGENT-HANDOFF.md)** first (employee call center, Twilio, deploy state, uncommitted work).
+
 ## Local development first
 
 Before pushing or opening a PR:

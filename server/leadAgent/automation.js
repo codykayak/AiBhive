@@ -65,6 +65,8 @@ export function pickNextLead(leads, business) {
       l.phone &&
       !l.optedOut &&
       !l.agentPaused &&
+      (l.leadRole || 'owner') === 'owner' &&
+      !l.ownerReplied &&
       l.status !== 'dead' &&
       (l.status === 'new' || l.status === undefined),
   );

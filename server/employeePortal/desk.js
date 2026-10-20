@@ -6,8 +6,18 @@ import { normalizePhone, sendLeadSms } from '../leadAgent/smsProvider.js';
 import { personalizeOutbound } from '../leadAgent/outboundMessage.js';
 import { canSendOutbound } from '../leadAgent/automation.js';
 import { incrementDailySms } from '../leadAgent/inboundHandler.js';
+import { registerOwnerOutboundTouch } from '../leadAgent/outreachSequence.js';
+import {
+  DEFAULT_ESCALATION_OPS,
+  buildImFreeNowOverride,
+  mergeEscalationOps,
+  resolveCallbackOffer,
+} from '../leadAgent/escalationOps.js';
+import { calendarPublicStatus } from './googleCalendar.js';
+import { clearRagCache } from '../leadAgent/ragKnowledge.js';
 import { leadAgentVoiceWebhookPath } from '../leadAgent/inboundVoice.js';
 import { resolveMacroreiGrokVoicePhone } from '../macroreiVoiceInstructions.js';
+import { twilioApiKeySid, twilioApiSecret } from '../twilioEnv.js';
 
 const COL = 'lead_agent_workspaces';
 const PROFILE_COL = 'employee_portal_profiles';
@@ -57,6 +67,7 @@ function serializeLead(id, data) {
     needsHuman: Boolean(data.needsHuman),
     grokVoiceInterest: Boolean(data.grokVoiceInterest),
     lastEmployeeEmail: data.lastEmployeeEmail ? String(data.lastEmployeeEmail) : '',
+    callCount: data.callCount == null ? null : Number(data.callCount),
   };
 }
 
@@ -100,6 +111,12 @@ function buildTuningSnapshot(business) {
     escalationKeywords: Array.isArray(business.escalationKeywords) ? business.escalationKeywords : [],
     escalationMessage: String(business.escalationMessage || '').slice(0, 280),
     outboundTemplate: String(business.outboundTemplate || business.greeting || '').slice(0, 320),
+    outreachMaxOwnerTouches: Number(business.outreachMaxOwnerTouches ?? 2),
+    outreachMinHoursBetweenTouches: Number(business.outreachMinHoursBetweenTouches ?? 48),
+    outreachRelativeCooldownHours: Number(business.outreachRelativeCooldownHours ?? 72),
+    outreachRelativeSearchEnabled: business.outreachRelativeSearchEnabled !== false,
+    followUpOutboundTemplate: String(business.followUpOutboundTemplate || '').slice(0, 320),
+    relativeOutboundTemplate: String(business.relativeOutboundTemplate || '').slice(0, 320),
   };
 }
 
@@ -123,6 +140,145 @@ function stamp(value) {
   if (typeof value.toDate === 'function') return value.toDate().toISOString();
   if (value instanceof Date) return value.toISOString();
   return null;
+}
+
+function deskCallLogsRef(db, businessId) {
+  return businessRef(db, businessId).collection('desk_call_logs');
+}
+
+function serializeCallLog(id, data) {
+  return {
+    id,
+    leadId: String(data.leadId || ''),
+    leadName: String(data.leadName || ''),
+    leadPhone: String(data.leadPhone || ''),
+    propertyAddress: String(data.propertyAddress || '').slice(0, 280),
+    disposition: String(data.disposition || ''),
+    notes: data.notes ? String(data.notes).slice(0, 500) : '',
+    channel: String(data.channel || 'manual'),
+    durationSec: data.durationSec == null ? null : Number(data.durationSec),
+    employeeEmail: String(data.employeeEmail || ''),
+    employeeUid: String(data.employeeUid || ''),
+    at: stamp(data.at),
+  };
+}
+
+async function listDeskCallLogs(db, businessId, limit = 120) {
+  const ref = deskCallLogsRef(db, businessId);
+  try {
+    const snap = await ref.orderBy('at', 'desc').limit(limit).get();
+    return snap.docs.map((d) => serializeCallLog(d.id, d.data() || {}));
+  } catch {
+    const snap = await ref.limit(Math.min(limit, 300)).get();
+    return snap.docs
+      .map((d) => serializeCallLog(d.id, d.data() || {}))
+      .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
+      .slice(0, limit);
+  }
+}
+
+function hourInTimezone(iso, timeZone) {
+  if (!iso) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timeZone || 'America/Los_Angeles',
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(new Date(iso));
+    const h = parts.find((p) => p.type === 'hour');
+    return h ? Number(h.value) : null;
+  } catch {
+    return new Date(iso).getHours();
+  }
+}
+
+function dayInTimezone(iso, timeZone) {
+  if (!iso) return '';
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: timeZone || 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date(iso));
+  } catch {
+    return String(iso).slice(0, 10);
+  }
+}
+
+function computeCallTracking(logs, timeZone) {
+  const tz = timeZone || 'America/Los_Angeles';
+  const today = dayInTimezone(new Date().toISOString(), tz);
+  const byDisposition = {};
+  const byAgent = {};
+  const hourlyToday = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0 }));
+  let durationTotal = 0;
+  let durationCount = 0;
+  let todayCalls = 0;
+  let todayTalked = 0;
+
+  for (const log of logs) {
+    const disp = log.disposition || 'unknown';
+    byDisposition[disp] = (byDisposition[disp] || 0) + 1;
+
+    const logDay = dayInTimezone(log.at, tz);
+    if (logDay === today) {
+      todayCalls += 1;
+      if (disp === 'talked') todayTalked += 1;
+      const h = hourInTimezone(log.at, tz);
+      if (h != null && h >= 0 && h < 24) hourlyToday[h].count += 1;
+    }
+
+    const email = log.employeeEmail || 'floor';
+    if (!byAgent[email]) byAgent[email] = { calls: 0, talked: 0, callbacks: 0 };
+    byAgent[email].calls += 1;
+    if (disp === 'talked') byAgent[email].talked += 1;
+    if (disp === 'callback') byAgent[email].callbacks += 1;
+
+    if (log.durationSec != null && log.durationSec > 0) {
+      durationTotal += log.durationSec;
+      durationCount += 1;
+    }
+  }
+
+  const attempts = Object.entries(byDisposition).reduce(
+    (sum, [k, v]) => sum + (k === 'skipped' ? 0 : Number(v)),
+    0,
+  );
+  const connected = (byDisposition.talked || 0) + (byDisposition.callback || 0);
+
+  return {
+    timezone: tz,
+    today,
+    todayCalls,
+    todayTalked,
+    totalLogged: logs.length,
+    byDisposition,
+    byAgent: Object.entries(byAgent)
+      .map(([email, stats]) => ({ email, ...stats }))
+      .sort((a, b) => b.calls - a.calls),
+    hourlyToday,
+    avgDurationSec: durationCount ? Math.round(durationTotal / durationCount) : null,
+    connectRatePct: attempts ? Math.round((connected / attempts) * 100) : null,
+  };
+}
+
+async function appendDeskCallLog(db, user, businessId, lead, payload) {
+  const doc = {
+    leadId: lead.id,
+    leadName: lead.name || '',
+    leadPhone: lead.phone || '',
+    propertyAddress: lead.propertyAddress || '',
+    disposition: payload.disposition,
+    notes: payload.notes || '',
+    channel: payload.channel || 'manual',
+    durationSec: payload.durationSec == null ? null : Number(payload.durationSec),
+    employeeEmail: user.email || '',
+    employeeUid: user.uid || '',
+    at: FieldValue.serverTimestamp(),
+  };
+  const ref = await deskCallLogsRef(db, businessId).add(doc);
+  return { id: ref.id, ...serializeCallLog(ref.id, { ...doc, at: new Date() }) };
 }
 
 async function listLeads(db, businessId) {
@@ -150,8 +306,8 @@ function dayStats(profile) {
 
 function voiceConfig() {
   const accountSid = process.env.TWILIO_ACCOUNT_SID || '';
-  const apiKey = process.env.TWILIO_API_KEY || '';
-  const apiSecret = process.env.TWILIO_API_SECRET || '';
+  const apiKey = twilioApiKeySid();
+  const apiSecret = twilioApiSecret();
   const appSid = process.env.TWILIO_TWIML_APP_SID || '';
   const from = process.env.TWILIO_FROM_NUMBER || '';
   const smsReady = Boolean(accountSid && process.env.TWILIO_AUTH_TOKEN && from);
@@ -161,8 +317,8 @@ function voiceConfig() {
 
 function mintVoiceToken(identity) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const apiKey = process.env.TWILIO_API_KEY;
-  const apiSecret = process.env.TWILIO_API_SECRET;
+  const apiKey = twilioApiKeySid();
+  const apiSecret = twilioApiSecret();
   const appSid = process.env.TWILIO_TWIML_APP_SID;
   if (!accountSid || !apiKey || !apiSecret || !appSid) return null;
   const now = Math.floor(Date.now() / 1000);
@@ -231,17 +387,58 @@ async function recordOutbound(db, user, businessId, lead, body, result) {
     { merge: true },
   );
   if (result.sent) await incrementDailySms(db, defaultWorkspaceUid(), businessId);
+  if (result.sent && (lead.leadRole || 'owner') === 'owner') {
+    const biz = await loadBusiness(db, businessId);
+    await registerOwnerOutboundTouch(db, defaultWorkspaceUid(), businessId, lead.id, { via: 'employee-desk' }, biz);
+  }
 }
 
-function assertSmsReady(business) {
+function smsDeepLink(to, body) {
+  const phone = normalizePhone(to);
+  const q = encodeURIComponent(String(body || '').slice(0, 480));
+  return `sms:${phone}?body=${q}`;
+}
+
+/** @returns {'twilio'|'phone'} */
+function resolveOutboundSmsChannel(business, requested) {
   const line = voiceConfig();
-  if (!line.smsReady && business.smsProvider !== 'twilio') {
+  const provider = business?.smsProvider || 'phone';
+  if (requested === 'phone') return 'phone';
+  if (requested === 'twilio') return 'twilio';
+  if (provider === 'twilio' && line.smsReady) return 'twilio';
+  return 'phone';
+}
+
+function assertTwilioSmsReady(business, requestedChannel) {
+  const channel = resolveOutboundSmsChannel(business, requestedChannel === 'twilio' ? 'twilio' : 'auto');
+  if (channel !== 'twilio') return;
+  const line = voiceConfig();
+  if (!line.smsReady) {
     const err = new Error(
-      'Laptop texting needs the company Twilio number (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER).',
+      'Twilio SMS is not available on the server (A2P denied or env missing). Use “Text from phone” or set smsProvider to phone in the Lead Agent app.',
     );
     err.status = 503;
     throw err;
   }
+}
+
+async function sendDeskOutboundSms({ business, lead, body, channel }) {
+  const mode = resolveOutboundSmsChannel(business, channel);
+  if (mode === 'twilio') {
+    assertTwilioSmsReady(business, 'twilio');
+    const result = await sendLeadSms({ business, to: lead.phone, body, preferServerTwilio: true });
+    if (!result.sent) {
+      throw new Error('Twilio could not send this message.');
+    }
+    return { mode: 'twilio', result };
+  }
+  return {
+    mode: 'phone',
+    result: { sent: false, provider: 'phone', pendingDeviceSend: true },
+    smsUrl: smsDeepLink(lead.phone, body),
+    body,
+    phone: lead.phone,
+  };
 }
 
 export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
@@ -257,6 +454,8 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const quota = canSendOutbound(business);
     const line = voiceConfig();
     const analytics = computeDeskAnalytics(leads);
+    const callFeed = await listDeskCallLogs(db, businessId, 100);
+    const callTracking = computeCallTracking(callFeed, business.sendTimezone || 'America/Los_Angeles');
     const recentActivity = [...leads]
       .filter((l) => l.lastContactAt)
       .sort((a, b) => String(b.lastContactAt).localeCompare(String(a.lastContactAt)))
@@ -287,6 +486,8 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       tuning: buildTuningSnapshot(business),
       infrastructure: buildInfraSnapshot(businessId, line),
       recentActivity,
+      callFeed,
+      callTracking,
       queue: {
         total: leads.length,
         remaining: open.length,
@@ -310,7 +511,101 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       },
       today: dayStats(profileSnap.exists ? profileSnap.data() : {}),
       line,
+      grokSmsAgent: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
     });
+  });
+
+  app.get('/api/employee-portal/escalation-settings', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.query.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const business = await loadBusiness(db, businessId);
+    const ops = mergeEscalationOps(business);
+    const preview = resolveCallbackOffer(business);
+    return res.json({
+      businessId,
+      escalationOps: ops,
+      previewReply: preview.reply,
+      previewMode: preview.mode,
+      grokSmsAgent: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
+      savedBy: business.escalationOpsUpdatedBy || null,
+      savedAt: stamp(business.escalationOpsUpdatedAt),
+      googleCalendar: calendarPublicStatus(business),
+    });
+  });
+
+  app.post('/api/employee-portal/escalation-settings/im-free-now', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const business = await loadBusiness(db, businessId);
+    const ops = mergeEscalationOps(business);
+    const tz = ops.schedulingTimezone || 'America/Los_Angeles';
+    const dateKey = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
+    const todayOverride = buildImFreeNowOverride(dateKey, ops);
+    const nextOps = { ...ops, todayOverride, allowImmediateCallback: true };
+    await businessRef(db, businessId).set(
+      {
+        escalationOps: nextOps,
+        escalationOpsUpdatedBy: user.email || '',
+        escalationOpsUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    const fresh = await loadBusiness(db, businessId);
+    const preview = resolveCallbackOffer(fresh);
+    return res.json({
+      ok: true,
+      escalationOps: mergeEscalationOps(fresh),
+      previewReply: preview.reply,
+      previewMode: preview.mode,
+    });
+  });
+
+  app.put('/api/employee-portal/escalation-settings', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const incoming = req.body?.escalationOps;
+    if (!incoming || typeof incoming !== 'object') {
+      return res.status(400).json({ error: 'escalationOps object required' });
+    }
+    const patch = {
+      escalationOps: {
+        ...DEFAULT_ESCALATION_OPS,
+        ...incoming,
+        weeklyAvailability: {
+          ...DEFAULT_ESCALATION_OPS.weeklyAvailability,
+          ...(incoming.weeklyAvailability || {}),
+        },
+        schedulingPhrases: {
+          ...DEFAULT_ESCALATION_OPS.schedulingPhrases,
+          ...(incoming.schedulingPhrases || {}),
+        },
+        notifyPhones: Array.isArray(incoming.notifyPhones) ? incoming.notifyPhones.slice(0, 12) : [],
+        activeNotifyPhoneId: String(incoming.activeNotifyPhoneId || ''),
+      },
+      escalationOpsUpdatedBy: user.email || '',
+      escalationOpsUpdatedAt: FieldValue.serverTimestamp(),
+    };
+    await businessRef(db, businessId).set(patch, { merge: true });
+    const business = await loadBusiness(db, businessId);
+    return res.json({
+      ok: true,
+      escalationOps: mergeEscalationOps(business),
+      previewReply: resolveCallbackOffer(business).reply,
+    });
+  });
+
+  app.post('/api/employee-portal/rag-refresh', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    clearRagCache(businessId);
+    return res.json({ ok: true, businessId, refreshedAt: new Date().toISOString() });
   });
 
   app.post('/api/employee-portal/desk/text-next', async (req, res) => {
@@ -321,30 +616,30 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const business = await loadBusiness(db, businessId);
     const quota = canSendOutbound(business);
     if (!quota.ok) return res.status(429).json({ error: quota.reason || 'Cannot text right now', quota });
-    try {
-      assertSmsReady(business);
-    } catch (e) {
-      return res.status(e.status || 503).json({ error: e.message });
-    }
+    const channel = String(req.body?.channel || 'auto');
     const leads = await listLeads(db, businessId);
     const lead = nextOpenLead(leads);
     if (!lead) return res.json({ done: true, reason: 'no_leads' });
     const body = String(req.body?.body || personalizeOutbound(business, lead)).slice(0, 480);
-    const result = await sendLeadSms({
-      business,
-      to: lead.phone,
-      body,
-      preferServerTwilio: true,
-    });
-    if (!result.sent && result.pendingDeviceSend) {
-      return res.status(503).json({
-        error: 'This list is still set to send from a phone. Turn on the company Twilio line to text from a laptop.',
-        pendingDeviceSend: true,
-      });
+    try {
+      const dispatch = await sendDeskOutboundSms({ business, lead, body, channel });
+      if (dispatch.mode === 'phone') {
+        return res.json({
+          done: false,
+          lead,
+          body,
+          pendingDevice: true,
+          smsUrl: dispatch.smsUrl,
+          phone: dispatch.phone,
+          mode: 'phone',
+        });
+      }
+      await recordOutbound(db, user, businessId, lead, body, dispatch.result);
+      const today = await bumpDay(db, user.uid, { texts: 1, lastLeadId: lead.id, lastDisposition: 'texted' });
+      return res.json({ done: false, lead, body, result: dispatch.result, mode: 'twilio', today });
+    } catch (e) {
+      return res.status(e.status || 503).json({ error: e.message || 'Send failed' });
     }
-    await recordOutbound(db, user, businessId, lead, body, result);
-    const today = await bumpDay(db, user.uid, { texts: 1, lastLeadId: lead.id, lastDisposition: 'texted' });
-    return res.json({ done: false, lead, body, result, today });
   });
 
   app.post('/api/employee-portal/desk/import', async (req, res) => {
@@ -429,11 +724,13 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     if (Number(snap.data()?.textCount || 0) !== textCount) {
       await ref.set({ textCount, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     }
+    const callLogs = (await listDeskCallLogs(db, businessId, 80)).filter((c) => c.leadId === snap.id).slice(0, 30);
     return res.json({
       lead: serializeLead(snap.id, { ...snap.data(), textCount }),
       messages,
       textCount,
       inboundCount: messages.filter((m) => m.direction === 'inbound').length,
+      callLogs,
     });
   });
 
@@ -447,12 +744,9 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const business = await loadBusiness(db, businessId);
     const quota = canSendOutbound(business);
     if (!quota.ok) return res.status(429).json({ error: quota.reason || 'Cannot text right now', quota });
-    try {
-      assertSmsReady(business);
-    } catch (e) {
-      return res.status(e.status || 503).json({ error: e.message });
-    }
+    const channel = String(req.body?.channel || 'auto');
     const sent = [];
+    const phoneDrafts = [];
     const failed = [];
     for (const leadId of ids) {
       const snap = await leadsRef(db, businessId).doc(leadId).get();
@@ -473,23 +767,70 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       }
       const body = personalizeOutbound(fresh, lead).slice(0, 480);
       try {
-        const result = await sendLeadSms({ business: fresh, to: lead.phone, body, preferServerTwilio: true });
-        if (!result.sent && result.pendingDeviceSend) {
-          failed.push({ leadId, error: 'twilio not configured' });
-          break;
+        const dispatch = await sendDeskOutboundSms({ business: fresh, lead, body, channel });
+        if (dispatch.mode === 'phone') {
+          phoneDrafts.push({
+            leadId,
+            name: lead.name,
+            phone: lead.phone,
+            body,
+            smsUrl: dispatch.smsUrl,
+            pendingDevice: true,
+          });
+          continue;
         }
-        await recordOutbound(db, user, businessId, lead, body, result);
-        sent.push({ leadId, name: lead.name, phone: lead.phone });
+        await recordOutbound(db, user, businessId, lead, body, dispatch.result);
+        sent.push({ leadId, name: lead.name, phone: lead.phone, mode: 'twilio' });
       } catch (e) {
         failed.push({ leadId, error: e.message || 'send failed' });
       }
     }
     const today = await bumpDay(db, user.uid, {
       texts: sent.length,
-      lastLeadId: sent.at(-1)?.leadId || null,
-      lastDisposition: 'texted',
+      lastLeadId: sent.at(-1)?.leadId || phoneDrafts.at(-1)?.leadId || null,
+      lastDisposition: sent.length ? 'texted' : null,
     });
-    return res.json({ sent, failed, today });
+    return res.json({ sent, phoneDrafts, failed, today });
+  });
+
+  app.post('/api/employee-portal/desk/device-sent', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    const leadId = String(req.body?.leadId || '');
+    const body = String(req.body?.body || '').slice(0, 480);
+    if (!leadId) return res.status(400).json({ error: 'leadId required' });
+    const snap = await leadsRef(db, businessId).doc(leadId).get();
+    if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
+    const business = await loadBusiness(db, businessId);
+    const quota = canSendOutbound(business);
+    if (!quota.ok) return res.status(429).json({ error: quota.reason || 'Daily SMS cap', quota });
+    const lead = serializeLead(snap.id, snap.data() || {});
+    const msgBody = body || personalizeOutbound(business, lead).slice(0, 480);
+    await recordOutbound(db, user, businessId, lead, msgBody, { sent: true, provider: 'phone' });
+    const today = await bumpDay(db, user.uid, { texts: 1, lastLeadId: leadId, lastDisposition: 'texted' });
+    return res.json({ ok: true, leadId, today, provider: 'phone' });
+  });
+
+  app.put('/api/employee-portal/desk/sms-provider', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    const smsProvider = String(req.body?.smsProvider || 'phone');
+    if (!['phone', 'twilio'].includes(smsProvider)) {
+      return res.status(400).json({ error: 'smsProvider must be phone or twilio' });
+    }
+    await businessRef(db, businessId).set(
+      { smsProvider, smsProviderUpdatedBy: user.email || '', smsProviderUpdatedAt: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+    const business = await loadBusiness(db, businessId);
+    const line = voiceConfig();
+    return res.json({
+      ok: true,
+      smsProvider: business.smsProvider || smsProvider,
+      twilioSmsReady: line.smsReady,
+    });
   });
 
   app.post('/api/employee-portal/desk/call-log', async (req, res) => {
@@ -499,12 +840,17 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const leadId = String(req.body?.leadId || '');
     const disposition = String(req.body?.disposition || 'talked').slice(0, 40);
     const notes = String(req.body?.notes || '').trim().slice(0, 500);
+    const channel = String(req.body?.channel || 'manual').slice(0, 32);
+    const durationRaw = req.body?.durationSec;
+    const durationSec =
+      durationRaw == null || durationRaw === '' ? null : Math.min(7200, Math.max(0, Number(durationRaw)));
     if (!leadId) return res.status(400).json({ error: 'leadId required' });
     const allowed = new Set(['talked', 'voicemail', 'no_answer', 'callback', 'skipped']);
     if (!allowed.has(disposition)) return res.status(400).json({ error: 'Unknown disposition' });
     const ref = leadsRef(db, businessId).doc(leadId);
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
+    const lead = serializeLead(snap.id, snap.data() || {});
     const status = disposition === 'callback' ? 'callback' : disposition;
     const leadPatch = {
       status,
@@ -514,13 +860,66 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       lastEmployeeEmail: user.email || '',
     };
     if (notes) leadPatch.lastCallNotes = notes;
+    if (disposition !== 'skipped') leadPatch.callCount = FieldValue.increment(1);
     await ref.set(leadPatch, { merge: true });
+    const callLog =
+      disposition === 'skipped'
+        ? null
+        : await appendDeskCallLog(db, user, businessId, lead, {
+            disposition,
+            notes,
+            channel,
+            durationSec,
+          });
     const today = await bumpDay(db, user.uid, {
       calls: disposition === 'skipped' ? 0 : 1,
       lastLeadId: leadId,
       lastDisposition: disposition,
     });
-    return res.json({ ok: true, today, status });
+    return res.json({ ok: true, today, status, callLog });
+  });
+
+  app.get('/api/employee-portal/desk/calls', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.query.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const business = await loadBusiness(db, businessId);
+    const limit = Math.min(200, Math.max(20, Number(req.query.limit) || 100));
+    const callFeed = await listDeskCallLogs(db, businessId, limit);
+    const callTracking = computeCallTracking(callFeed, business.sendTimezone || 'America/Los_Angeles');
+    return res.json({ callFeed, callTracking, syncedAt: new Date().toISOString() });
+  });
+
+  app.post('/api/employee-portal/desk/link-twilio', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    if (!getDefaultBusiness(businessId)) return res.status(404).json({ error: 'Unknown list' });
+    const line = voiceConfig();
+    if (!line.smsReady) {
+      return res.status(503).json({
+        error:
+          'Server Twilio is not configured yet. Add TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER to .env.local (local) or Cloud Run (production), then restart.',
+        line,
+      });
+    }
+    await businessRef(db, businessId).set(
+      {
+        smsProvider: 'twilio',
+        twilioFrom: line.from,
+        updatedAt: FieldValue.serverTimestamp(),
+        linkedBy: user.email || '',
+      },
+      { merge: true },
+    );
+    return res.json({
+      ok: true,
+      businessId,
+      smsProvider: 'twilio',
+      from: line.from,
+      linkedAt: new Date().toISOString(),
+    });
   });
 
   app.get('/api/employee-portal/desk/voice-token', async (req, res) => {
@@ -531,7 +930,7 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       return res.json({
         ready: false,
         smsReady: line.smsReady,
-        hint: 'Set TWILIO_API_KEY, TWILIO_API_SECRET, and TWILIO_TWIML_APP_SID (voice URL → /api/employee-portal/voice/twiml) to call from the laptop.',
+        hint: 'Set TWILIO_sk_key, TWILIO_API_SECRET, and TWILIO_TWIML_APP_SID (voice URL → /api/employee-portal/voice/twiml) to call from the laptop.',
       });
     }
     const identity = String(user.email || user.uid).replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 60);

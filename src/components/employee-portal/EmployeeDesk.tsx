@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from 'firebase/auth';
+import EmployeeEscalationSettings from './EmployeeEscalationSettings';
 import {
   Activity,
+  Bell,
   ClipboardPaste,
+  History,
   LayoutDashboard,
   List,
   Loader2,
@@ -19,13 +22,27 @@ import {
   Zap,
 } from 'lucide-react';
 import {
+  CallLogTable,
+  CallTrackingSummary,
+  dispositionBadge,
+  exportCallLogCsv,
+  formatDuration,
+  formatCallWhen,
+} from './EmployeeCallTrackingPanels';
+import {
   fetchEmployeeDesk,
   fetchEmployeeVoiceToken,
   fetchLeadThread,
   importEmployeeLeads,
+  linkEmployeeDeskTwilio,
+  fetchTwilioStatus,
   logEmployeeCall,
+  reportEmployeeDeviceSent,
+  setEmployeeSmsProvider,
+  setImFreeNow,
   textNextLead,
   textSelectedLeads,
+  type SmsSendChannel,
   type DeskLead,
   type EmployeeDeskSnapshot,
   type LeadThread,
@@ -42,16 +59,18 @@ const DISPOSITIONS = [
 
 type Filter = 'all' | 'open' | 'not_texted' | 'texted' | 'callback' | 'needs_human';
 
-type OpsPanel = 'overview' | 'dialer' | 'leads' | 'import' | 'tuning' | 'lines';
+type OpsPanel = 'overview' | 'dialer' | 'calls' | 'leads' | 'import' | 'tuning' | 'callbacks' | 'lines';
 
 type Props = { user: User };
 
 const OPS_NAV: { id: OpsPanel; label: string; icon: typeof LayoutDashboard }[] = [
   { id: 'overview', label: 'Command center', icon: LayoutDashboard },
   { id: 'dialer', label: 'Live dialer', icon: Phone },
+  { id: 'calls', label: 'Call tracking', icon: History },
   { id: 'leads', label: 'Lead board', icon: List },
   { id: 'import', label: 'List import', icon: Upload },
   { id: 'tuning', label: 'Automation & SMS', icon: Settings2 },
+  { id: 'callbacks', label: 'Escalation & callbacks', icon: Bell },
   { id: 'lines', label: 'Lines & Grok voice', icon: Radio },
 ];
 
@@ -71,6 +90,15 @@ async function copyText(text: string) {
   } catch {
     return false;
   }
+}
+
+function openPhoneSms(smsUrl: string) {
+  window.location.href = smsUrl;
+}
+
+async function confirmPhoneSent(message: string) {
+  if (typeof window === 'undefined') return true;
+  return window.confirm(message);
 }
 
 function textLabel(lead: DeskLead) {
@@ -128,6 +156,7 @@ function applyParse(setters: {
 
 export default function EmployeeDesk({ user }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const callStartedAtRef = useRef<number | null>(null);
   const [businessId, setBusinessId] = useState('macrorei');
   const [desk, setDesk] = useState<EmployeeDeskSnapshot | null>(null);
   const [error, setError] = useState('');
@@ -153,6 +182,9 @@ export default function EmployeeDesk({ user }: Props) {
   const [lastSyncedAt, setLastSyncedAt] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [statusSort, setStatusSort] = useState<'queue' | 'recent' | 'name'>('queue');
+  const [twilioGuide, setTwilioGuide] = useState<Awaited<ReturnType<typeof fetchTwilioStatus>> | null>(null);
+  const [callLogFilter, setCallLogFilter] = useState<string>('all');
+  const [liveCallSec, setLiveCallSec] = useState(0);
 
   const handleParse = useMemo(
     () => applyParse({ setError, setNotice, setPreview, setPreviewSkipped, setPreviewErrors }),
@@ -160,7 +192,20 @@ export default function EmployeeDesk({ user }: Props) {
   );
 
   const reload = useCallback(async () => {
-    const snap = await fetchEmployeeDesk(user, businessId);
+    const snap = await Promise.race([
+      fetchEmployeeDesk(user, businessId),
+      new Promise<never>((_, reject) => {
+        window.setTimeout(
+          () =>
+            reject(
+              new Error(
+                'Desk sync timed out. Is the API running on port 3001? In this repo run: npx vite --port 3000 and PORT=3001 node server/index.js',
+              ),
+            ),
+          45_000,
+        );
+      }),
+    ]);
     setDesk(snap);
     setLastSyncedAt(snap.syncedAt || new Date().toISOString());
     return snap;
@@ -173,6 +218,24 @@ export default function EmployeeDesk({ user }: Props) {
     }, 45_000);
     return () => window.clearInterval(id);
   }, [autoRefresh, reload]);
+
+  useEffect(() => {
+    if (panel !== 'lines') return;
+    void fetchTwilioStatus(businessId).then(setTwilioGuide).catch(() => setTwilioGuide(null));
+  }, [panel, businessId, lastSyncedAt]);
+
+  useEffect(() => {
+    if (callState !== 'live' || !callStartedAtRef.current) {
+      setLiveCallSec(0);
+      return;
+    }
+    const tick = () => {
+      if (callStartedAtRef.current) setLiveCallSec(Math.floor((Date.now() - callStartedAtRef.current) / 1000));
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [callState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,23 +350,43 @@ export default function EmployeeDesk({ user }: Props) {
     }
   };
 
-  const textChosen = async (ids = selectedIds) => {
+  const processPhoneDrafts = async (
+    drafts: { leadId: string; body: string; smsUrl: string; name?: string }[],
+  ) => {
+    for (const draft of drafts) {
+      openPhoneSms(draft.smsUrl);
+      const ok = await confirmPhoneSent(
+        `Send the message to ${draft.name || 'this lead'} in your phone’s SMS app, then click OK to log it in AiBhive.`,
+      );
+      if (!ok) break;
+      await reportEmployeeDeviceSent(user, businessId, draft.leadId, draft.body);
+    }
+  };
+
+  const textChosen = async (ids = selectedIds, channel: SmsSendChannel = 'auto') => {
     if (!ids.length) return;
     setBusy('batch');
     setError('');
     try {
       let sent = 0;
+      const phoneQueue: { leadId: string; body: string; smsUrl: string; name?: string }[] = [];
       for (let i = 0; i < ids.length; i += 15) {
         const chunk = ids.slice(i, i + 15);
         setNotice(`Texting ${Math.min(i + chunk.length, ids.length)} of ${ids.length}…`);
-        const result = await textSelectedLeads(user, businessId, chunk);
+        const result = await textSelectedLeads(user, businessId, chunk, channel);
         sent += result.sent.length;
+        if (result.phoneDrafts?.length) phoneQueue.push(...result.phoneDrafts);
         if (result.failed.length) {
           setError(result.failed[0]?.error || 'Some texts did not send');
           break;
         }
       }
-      setNotice(`Sent ${sent} text${sent === 1 ? '' : 's'}.`);
+      if (phoneQueue.length) {
+        await processPhoneDrafts(phoneQueue);
+        setNotice(`Opened ${phoneQueue.length} text${phoneQueue.length === 1 ? '' : 's'} on your phone (logged after you confirm).`);
+      } else {
+        setNotice(`Sent ${sent} text${sent === 1 ? '' : 's'} via Twilio.`);
+      }
       setSelected({});
       await reload();
       if (openId) await openLead(openId);
@@ -328,7 +411,20 @@ export default function EmployeeDesk({ user }: Props) {
     setBusy('log');
     setError('');
     try {
-      await logEmployeeCall(user, { businessId, leadId: lead.id, disposition, notes: callNotes.trim() || undefined });
+      const durationSec =
+        callStartedAtRef.current != null
+          ? Math.max(0, Math.round((Date.now() - callStartedAtRef.current) / 1000))
+          : undefined;
+      const channel = callState === 'live' || durationSec != null ? 'twilio_browser' : 'manual';
+      await logEmployeeCall(user, {
+        businessId,
+        leadId: lead.id,
+        disposition,
+        notes: callNotes.trim() || undefined,
+        channel,
+        durationSec,
+      });
+      callStartedAtRef.current = null;
       setCallNotes('');
       const snap = await reload();
       if (powerMode) advancePowerDial(snap);
@@ -347,11 +443,13 @@ export default function EmployeeDesk({ user }: Props) {
       const token = await fetchEmployeeVoiceToken(user);
       if (!token.ready || !token.token) {
         setCallState('idle');
+        callStartedAtRef.current = null;
         setError(token.hint || 'Laptop calling is not connected yet. Log the outcome and the list still moves.');
         return;
       }
       const { Device } = await import('@twilio/voice-sdk');
       const device = new Device(token.token, { logLevel: 'error' });
+      callStartedAtRef.current = Date.now();
       const call = await device.connect({ params: { To: lead.phone } });
       setCallState('live');
       setHangup(() => () => {
@@ -365,17 +463,30 @@ export default function EmployeeDesk({ user }: Props) {
       });
     } catch (e) {
       setCallState('idle');
+      callStartedAtRef.current = null;
       setError(e instanceof Error ? e.message : 'Call failed');
     }
   };
 
-  const textOne = async (lead: DeskLead) => {
+  const textOne = async (lead: DeskLead, channel: SmsSendChannel = 'auto') => {
     setBusy('text');
     setError('');
     try {
-      const result = await textSelectedLeads(user, businessId, [lead.id]);
-      if (!result.sent.length) throw new Error(result.failed[0]?.error || 'Text did not send');
-      setNotice(`Texted ${lead.name || lead.phone}.`);
+      const body = smsDraft.trim() || draftSms(desk?.business, lead);
+      const result = await textSelectedLeads(user, businessId, [lead.id], channel);
+      const draft = result.phoneDrafts?.[0];
+      if (draft) {
+        openPhoneSms(draft.smsUrl);
+        const ok = await confirmPhoneSent('Tap Send in your SMS app, then OK to log this text on the lead.');
+        if (ok) {
+          await reportEmployeeDeviceSent(user, businessId, lead.id, draft.body || body);
+          setNotice(`Logged text to ${lead.name || lead.phone} (sent from your phone).`);
+        }
+      } else if (result.sent.length) {
+        setNotice(`Twilio text sent to ${lead.name || lead.phone}.`);
+      } else {
+        throw new Error(result.failed[0]?.error || 'Text did not send');
+      }
       await reload();
       await openLead(lead.id);
     } catch (e) {
@@ -403,8 +514,12 @@ export default function EmployeeDesk({ user }: Props) {
 
   if (!desk && !error) {
     return (
-      <div className="flex items-center gap-3 text-slate-400 py-16">
-        <Loader2 className="w-5 h-5 animate-spin" /> Opening the floor…
+      <div className="rounded-3xl border border-white/10 bg-[#060a12] p-10 flex flex-col items-center gap-4 text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-bee-amber" />
+        <p className="text-lg font-bold text-slate-200">Loading call center data…</p>
+        <p className="text-sm text-slate-500 max-w-md">
+          Pulling your lead list and call log from Firestore. On a slow connection this can take 10–20 seconds — not a blank screen.
+        </p>
       </div>
     );
   }
@@ -434,10 +549,11 @@ export default function EmployeeDesk({ user }: Props) {
       <header className="border-b border-white/10 bg-black/50 px-4 py-4 md:px-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-bee-amber text-[10px] font-bold uppercase tracking-[0.28em]">Call center operations</p>
-            <h2 className="text-2xl md:text-3xl font-black mt-1">{desk?.business.name || 'Command center'}</h2>
+            <p className="text-bee-amber text-[10px] font-bold uppercase tracking-[0.28em]">Call center admin</p>
+            <h2 className="text-2xl md:text-3xl font-black mt-1">{desk?.business.name || 'Operations desk'}</h2>
             <p className="text-slate-400 text-sm mt-1 max-w-2xl">
-              {desk?.business.tagline} · {desk?.queue.remaining ?? 0} open · {desk?.queue.total ?? 0} on list
+              {desk?.business.tagline} · {desk?.queue.remaining ?? 0} open · {desk?.callTracking?.todayCalls ?? desk?.today.calls ?? 0} calls today ·{' '}
+              {desk?.callTracking?.connectRatePct != null ? `${desk.callTracking.connectRatePct}% connect` : 'log dispositions to track'}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-3">
@@ -456,6 +572,24 @@ export default function EmployeeDesk({ user }: Props) {
             <button
               type="button"
               disabled={Boolean(busy)}
+              onClick={() => {
+                setBusy('free');
+                void setImFreeNow(user, businessId)
+                  .then(() => {
+                    setNotice('Marked free now — Grok can offer a call in ~15 min today.');
+                    setPanel('callbacks');
+                  })
+                  .catch((e) => setError(e instanceof Error ? e.message : 'Could not set availability'))
+                  .finally(() => setBusy(''));
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 text-black px-3 py-2 text-sm font-extrabold hover:bg-emerald-400 disabled:opacity-50"
+              title="Employee only — sets today to immediate callbacks"
+            >
+              <Zap className="w-4 h-4" /> I&apos;m free now
+            </button>
+            <button
+              type="button"
+              disabled={Boolean(busy)}
               onClick={() => void reload()}
               className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2 text-sm font-bold hover:bg-white/5"
             >
@@ -468,9 +602,10 @@ export default function EmployeeDesk({ user }: Props) {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 items-center">
-          <StatusPill ok={Boolean(desk?.line.smsReady)} label="Twilio SMS" />
+          <StatusPill ok={Boolean(desk?.line.smsReady)} label={desk?.line.smsReady ? 'Twilio SMS' : 'Phone SMS'} />
           <StatusPill ok={Boolean(desk?.line.voiceReady)} label="Browser dialer" />
           <StatusPill ok={Boolean(desk?.quota.ok)} label={desk?.quota.ok ? 'SMS quota OK' : 'SMS cap'} />
+          <StatusPill ok={Boolean(desk?.grokSmsAgent)} label={desk?.grokSmsAgent ? 'Grok SMS' : 'Grok off'} />
           <StatusPill ok={(analytics?.open ?? 0) > 0} label={`${analytics?.open ?? 0} open leads`} />
           <span className="text-[11px] text-slate-500 ml-auto">Last sync: {formatSyncedAt(lastSyncedAt)}</span>
         </div>
@@ -499,6 +634,12 @@ export default function EmployeeDesk({ user }: Props) {
 
       {panel === 'overview' ? (
         <div className="space-y-5">
+          <CallTrackingSummary
+            tracking={desk?.callTracking}
+            shiftCalls={desk?.today.calls ?? 0}
+            shiftTexts={desk?.today.texts ?? 0}
+            onOpenLog={() => setPanel('calls')}
+          />
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
             {[
               ['List total', analytics?.total ?? desk?.queue.total ?? 0],
@@ -575,23 +716,52 @@ export default function EmployeeDesk({ user }: Props) {
               </table>
             </div>
           </section>
-          {desk?.recentActivity?.length ? (
-            <section className="rounded-2xl border border-white/10 p-4">
-              <h3 className="font-bold">Recent list activity</h3>
-              <ul className="mt-3 space-y-2 text-sm">
-                {desk.recentActivity.map((row) => (
-                  <li key={row.id} className="flex flex-wrap gap-2 justify-between border-b border-white/5 pb-2">
-                    <button type="button" className="font-semibold text-left hover:text-bee-amber" onClick={() => { setPanel('dialer'); void openLead(row.id); }}>
-                      {row.name || row.phone}
-                    </button>
-                    <span className="text-slate-500">{row.status} · {row.lastCallDisposition || 'contact'} · {formatSyncedAt(row.lastContactAt || undefined)}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+          {(desk?.callFeed?.length || desk?.recentActivity?.length) ? (
+            <CallLogTable
+              feed={(desk?.callFeed || []).slice(0, 12)}
+              onSelectLead={(id) => {
+                setPanel('dialer');
+                void openLead(id);
+              }}
+            />
           ) : null}
         </div>
       ) : null}
+
+      {panel === 'calls' ? (
+        <div className="space-y-4">
+          <CallTrackingSummary
+            tracking={desk?.callTracking}
+            shiftCalls={desk?.today.calls ?? 0}
+            shiftTexts={desk?.today.texts ?? 0}
+          />
+          <div className="flex flex-wrap gap-2">
+            {['all', 'talked', 'voicemail', 'no_answer', 'callback'].map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setCallLogFilter(id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                  callLogFilter === id ? 'bg-bee-amber text-bee-black' : 'border border-white/15 text-slate-300'
+                }`}
+              >
+                {id === 'all' ? 'All' : id.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+          <CallLogTable
+            feed={desk?.callFeed || []}
+            filterDisposition={callLogFilter}
+            onSelectLead={(id) => {
+              setPanel('dialer');
+              void openLead(id);
+            }}
+            onExport={() => exportCallLogCsv(desk?.callFeed || [], desk?.business.name || 'list')}
+          />
+        </div>
+      ) : null}
+
+      {panel === 'callbacks' ? <EmployeeEscalationSettings user={user} businessId={businessId} /> : null}
 
       {panel === 'tuning' && tuning ? (
         <div className="grid lg:grid-cols-2 gap-4 text-sm">
@@ -599,7 +769,23 @@ export default function EmployeeDesk({ user }: Props) {
             <h3 className="font-black text-lg">Automation</h3>
             <p>Grok SMS agent: <strong>{tuning.agentEnabled ? 'ON' : 'OFF'}</strong></p>
             <p>Batch automation: <strong>{tuning.automationEnabled ? 'ON' : 'OFF'}</strong></p>
-            <p>Provider: <strong>{tuning.smsProvider}</strong></p>
+            <label className="block text-xs text-slate-500">
+              Default SMS provider (web + Lead Agent APK share this setting)
+              <select
+                value={tuning.smsProvider === 'twilio' ? 'twilio' : 'phone'}
+                onChange={(e) => {
+                  const v = e.target.value as 'phone' | 'twilio';
+                  void setEmployeeSmsProvider(user, businessId, v)
+                    .then(() => reload())
+                    .then(() => setNotice(v === 'twilio' ? 'Default: Twilio when server allows; else phone.' : 'Default: text from your cell (APK or laptop sms: link).'))
+                    .catch((err) => setError(err instanceof Error ? err.message : 'Could not save provider'));
+                }}
+                className="mt-1 block rounded-xl bg-black/50 border border-white/10 px-3 py-2 text-sm"
+              >
+                <option value="phone">My cell phone (APK native SMS or laptop Messages link)</option>
+                <option value="twilio">Company Twilio number (when A2P approved)</option>
+              </select>
+            </label>
             <p>Send window: <strong>{tuning.sendWindowStart}:00 – {tuning.sendWindowEnd}:00</strong> ({tuning.sendTimezone})</p>
             <p>Pace between texts: <strong>{tuning.minDelayMinutes}–{tuning.maxDelayMinutes} min</strong></p>
             <p>Daily cap: <strong>{tuning.dailySmsLimit}</strong> (suggested <strong>{tuning.dailySmsSuggested}</strong>)</p>
@@ -610,6 +796,23 @@ export default function EmployeeDesk({ user }: Props) {
             <p className="text-slate-300">{tuning.escalationMessage}</p>
             <h4 className="font-bold mt-4">Outbound template</h4>
             <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap">{tuning.outboundTemplate}</pre>
+            <h4 className="font-bold mt-4">Outreach sequence (MacroREI list)</h4>
+            <ul className="text-sm text-slate-300 mt-2 space-y-1 list-disc pl-4">
+              <li>
+                <strong>{tuning.outreachMaxOwnerTouches ?? 2}</strong> owner texts, min{' '}
+                <strong>{tuning.outreachMinHoursBetweenTouches ?? 48}h</strong> apart
+              </li>
+              <li>If no reply → relative search after <strong>{tuning.outreachRelativeCooldownHours ?? 72}h</strong></li>
+              <li>Relative search: <strong>{tuning.outreachRelativeSearchEnabled !== false ? 'ON' : 'OFF'}</strong> (needs SERPAPI_KEY on server)</li>
+            </ul>
+            <p className="text-[11px] text-slate-500 mt-2">Touch 1 = first template · Touch 2 = follow-up below · Relatives get the associate message.</p>
+            <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap mt-2">{tuning.followUpOutboundTemplate || '—'}</pre>
+            <p className="text-[10px] uppercase text-slate-500 mt-3">Relative / associate text</p>
+            <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap">{tuning.relativeOutboundTemplate || '—'}</pre>
+            <p className="text-[11px] text-slate-500 mt-2">
+              Automated sends: Cloud Scheduler → POST <span className="font-mono">/api/lead-agent/outreach/tick</span> with header{' '}
+              <span className="font-mono">X-Cron-Secret</span>. See <span className="font-mono">docs/LEAD-OUTREACH-SEQUENCE.md</span>.
+            </p>
             <h4 className="font-bold">Greeting (live)</h4>
             <pre className="text-xs bg-black/50 border border-white/10 rounded-xl p-3 whitespace-pre-wrap">{desk?.business.greeting}</pre>
           </section>
@@ -618,6 +821,45 @@ export default function EmployeeDesk({ user }: Props) {
 
       {panel === 'lines' && infra ? (
         <div className="space-y-4 text-sm">
+          <section className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-5">
+            <h3 className="font-bold text-amber-100">Link Twilio to this list</h3>
+            <p className="text-slate-300 mt-2 text-sm leading-relaxed">
+              <strong>Voice + phone SMS</strong> work without Twilio A2P: laptop dialer uses API keys; texts use{' '}
+              <strong>Text from phone</strong> or the Lead Agent APK. Link Twilio below only when messaging is approved for server sends.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={Boolean(busy) || !desk?.line.smsReady}
+                onClick={() => {
+                  setBusy('twilio');
+                  void linkEmployeeDeskTwilio(user, businessId)
+                    .then(() => reload())
+                    .then(() => setNotice('Twilio linked to this list — you can text from the dialer.'))
+                    .catch((e) => setError(e instanceof Error ? e.message : 'Could not link Twilio'))
+                    .finally(() => setBusy(''));
+                }}
+                className="rounded-xl bg-bee-amber text-bee-black font-extrabold px-4 py-2 disabled:opacity-40"
+              >
+                {desk?.line.smsReady ? 'Link Twilio to list' : 'SMS env vars missing on server'}
+              </button>
+              <a
+                href="/api/twilio/status?businessId=macrorei"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-xl border border-white/15 px-4 py-2 font-bold"
+              >
+                Open setup JSON
+              </a>
+            </div>
+            {twilioGuide && !twilioGuide.smsReady ? (
+              <ol className="mt-4 list-decimal pl-5 space-y-1 text-xs text-slate-300">
+                {(twilioGuide.guide?.envVars || []).slice(0, 3).map((v: { key: string; where: string }) => (
+                  <li key={v.key}><code className="text-bee-amber">{v.key}</code> — {v.where}</li>
+                ))}
+              </ol>
+            ) : null}
+          </section>
           <section className="rounded-2xl border border-white/10 p-5 grid md:grid-cols-3 gap-4">
             <div><p className="text-slate-500 text-xs uppercase">Twilio SMS</p><p className="font-bold mt-1">{infra.twilioSmsReady ? 'Ready' : 'Not configured'}</p></div>
             <div><p className="text-slate-500 text-xs uppercase">Browser voice</p><p className="font-bold mt-1">{infra.twilioVoiceReady ? 'Ready' : 'Missing API keys / TwiML app'}</p></div>
@@ -656,10 +898,20 @@ export default function EmployeeDesk({ user }: Props) {
                 <Zap className="w-5 h-5 text-bee-amber" /> Active workstation
               </h3>
               <p className="text-sm text-slate-400 mt-1">
-                {powerMode ? 'Power mode — disposition moves you to the next open lead.' : 'Pick a lead from the table or start power dial.'}
+                {powerMode ? 'Power mode — disposition logs the call and advances the queue.' : 'Every disposition is tracked in Call tracking with agent, time, and notes.'}
+              </p>
+              <p className="text-xs text-slate-500 mt-2">
+                Shift: <strong className="text-white">{desk?.today.calls ?? 0}</strong> calls · <strong className="text-white">{desk?.today.texts ?? 0}</strong> texts · Floor today:{' '}
+                <strong className="text-white">{desk?.callTracking?.todayCalls ?? 0}</strong>
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 items-center">
+              {callState === 'live' ? (
+                <span className="inline-flex items-center gap-2 rounded-xl bg-red-500/20 border border-red-500/40 px-3 py-2 text-sm font-black text-red-100 tabular-nums">
+                  <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                  LIVE {formatDuration(liveCallSec)}
+                </span>
+              ) : null}
               <button
                 type="button"
                 onClick={startPowerDial}
@@ -686,8 +938,21 @@ export default function EmployeeDesk({ user }: Props) {
                 <p className="text-slate-300 text-sm mt-2 leading-relaxed">{active.propertyAddress}</p>
                 <p className="mt-3 text-xs text-slate-500 uppercase tracking-wider">
                   Status {active.status} · Texts {textLabel(active)}
+                  {active.callCount != null ? ` · Calls ${active.callCount}` : ''}
                   {active.lastTextBody ? ` · Last: “${active.lastTextBody.slice(0, 60)}…”` : ''}
                 </p>
+                <div className="mt-2 flex flex-wrap gap-2 items-center">
+                  {active.lastCallDisposition ? dispositionBadge(active.lastCallDisposition) : null}
+                  {active.lastContactAt ? (
+                    <span className="text-[11px] text-slate-500">Last touch {formatCallWhen(active.lastContactAt)}</span>
+                  ) : null}
+                  {active.lastEmployeeEmail ? (
+                    <span className="text-[11px] text-slate-500">by {active.lastEmployeeEmail}</span>
+                  ) : null}
+                </div>
+                {active.lastCallNotes ? (
+                  <p className="mt-2 text-xs text-slate-400 border-l-2 border-white/10 pl-2">{active.lastCallNotes}</p>
+                ) : null}
               </div>
               <div className="space-y-3">
                 <label className="block text-xs text-slate-500">
@@ -728,11 +993,22 @@ export default function EmployeeDesk({ user }: Props) {
                   <button
                     type="button"
                     disabled={Boolean(busy)}
-                    onClick={() => void textOne(active)}
+                    onClick={() => void textOne(active, 'phone')}
                     className="inline-flex items-center gap-2 rounded-xl bg-white text-bee-black font-extrabold px-4 py-2 text-sm disabled:opacity-50"
+                    title="Opens your phone or linked device SMS app — same as Lead Agent APK"
                   >
-                    <Send className="w-4 h-4" /> Send text
+                    <Send className="w-4 h-4" /> Text from phone
                   </button>
+                  {desk?.line.smsReady && tuning?.smsProvider === 'twilio' ? (
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => void textOne(active, 'twilio')}
+                      className="inline-flex items-center gap-2 rounded-xl border border-bee-amber/40 text-bee-amber font-extrabold px-4 py-2 text-sm disabled:opacity-50"
+                    >
+                      <Send className="w-4 h-4" /> Twilio text
+                    </button>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {DISPOSITIONS.map((d) => (
@@ -960,12 +1236,22 @@ export default function EmployeeDesk({ user }: Props) {
           <button
             type="button"
             disabled={!selectedIds.length || Boolean(busy)}
-            onClick={() => void textChosen()}
+            onClick={() => void textChosen(selectedIds, 'phone')}
             className="rounded-xl bg-bee-amber text-bee-black font-extrabold px-4 py-2 text-sm disabled:opacity-40"
           >
             <Send className="w-4 h-4 inline mr-1" />
-            Text selected ({selectedIds.length})
+            Text from phone ({selectedIds.length})
           </button>
+          {desk?.line.smsReady && tuning?.smsProvider === 'twilio' ? (
+            <button
+              type="button"
+              disabled={!selectedIds.length || Boolean(busy)}
+              onClick={() => void textChosen(selectedIds, 'twilio')}
+              className="rounded-xl border border-bee-amber/40 text-bee-amber font-extrabold px-4 py-2 text-sm disabled:opacity-40"
+            >
+              Twilio ({selectedIds.length})
+            </button>
+          ) : null}
         </div>
         <div className="max-h-[min(70vh,720px)] overflow-auto">
           <table className="w-full text-sm">
@@ -1043,12 +1329,28 @@ export default function EmployeeDesk({ user }: Props) {
               <h3 className="text-xl font-black mt-1">{active.name || 'Lead'}</h3>
               <p className="text-sm text-slate-400 mt-1">
                 {thread.textCount} outbound · {thread.inboundCount} inbound repl{thread.inboundCount === 1 ? 'y' : 'ies'}
+                {thread.callLogs?.length ? ` · ${thread.callLogs.length} logged call${thread.callLogs.length === 1 ? '' : 's'}` : ''}
               </p>
             </div>
             <button type="button" onClick={() => { setOpenId(null); setThread(null); }} className="text-slate-400">
               <X className="w-5 h-5" />
             </button>
           </div>
+          {thread.callLogs?.length ? (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Call history (this lead)</p>
+              <ul className="mt-2 space-y-2 max-h-40 overflow-auto">
+                {thread.callLogs.map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-white/5 pb-2">
+                    <span className="text-slate-400">{formatCallWhen(c.at)}</span>
+                    {dispositionBadge(c.disposition)}
+                    <span className="text-slate-500">{formatDuration(c.durationSec)} · {c.employeeEmail || 'floor'}</span>
+                    {c.notes ? <span className="w-full text-slate-400">{c.notes}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <div className="mt-4 max-h-72 overflow-auto space-y-2">
             {(thread.messages || []).map((msg) => (
               <div

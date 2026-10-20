@@ -11,7 +11,8 @@ const SITE_BY_BUSINESS = {
 };
 
 const cache = new Map();
-const TTL_MS = 6 * 60 * 60 * 1000;
+/** Refreshed on deploy, manual refresh from portal, or after this TTL (default 7 days). */
+const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_CHARS = 12000;
 
 function stripHtml(html) {
@@ -35,8 +36,9 @@ async function fetchText(url) {
   return raw.trim();
 }
 
-export async function getWebsiteRagContext(businessId) {
+export async function getWebsiteRagContext(businessId, opts = {}) {
   const key = String(businessId || 'macrorei');
+  if (opts.forceRefresh) clearRagCache(key);
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.text;
 

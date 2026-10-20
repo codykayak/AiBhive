@@ -52,7 +52,19 @@ export default function EmployeePortalPage() {
   const [portalError, setPortalError] = useState('');
   const [tab, setTab] = useState<Tab>('floor');
   const [saving, setSaving] = useState(false);
+  const [portalNotice, setPortalNotice] = useState('');
   const devBypass = employeePortalDevEnabled();
+
+  useEffect(() => {
+    if (searchParams.get('calendar') !== 'connected') return;
+    setTab('floor');
+    setPortalNotice(
+      'Google Calendar is connected. In Call center ops → Escalation & callbacks, choose which calendar gets callback events.',
+    );
+    const next = new URLSearchParams(searchParams);
+    next.delete('calendar');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const enterDevPortal = useCallback(() => {
     enterLocalEmployeeDevSession();
@@ -63,11 +75,11 @@ export default function EmployeePortalPage() {
   }, []);
 
   useEffect(() => {
-    if (devBypass && (searchParams.get('dev') === '1' || searchParams.get('employeeDev') === '1')) {
+    if (!devBypass) return;
+    if (searchParams.get('dev') === '1' || searchParams.get('employeeDev') === '1' || hasLocalEmployeeDevSession()) {
       enterDevPortal();
-      setSearchParams({}, { replace: true });
     }
-  }, [devBypass, enterDevPortal, searchParams, setSearchParams]);
+  }, [devBypass, enterDevPortal, searchParams]);
 
   useEffect(() => {
     if (devBypass && hasLocalEmployeeDevSession()) {
@@ -240,10 +252,13 @@ export default function EmployeePortalPage() {
               Sign out
             </button>
           </div>
-        ) : portal ? (
+        ) : portal || (user && isLocalDevEmployeeUser(user)) ? (
           <div className="grid lg:grid-cols-[220px_1fr] gap-6">
             <aside className="space-y-2 lg:sticky lg:top-24 h-fit">
-              <p className="text-xs text-slate-500 px-2 mb-2">{portal.email}</p>
+              <p className="text-xs text-slate-500 px-2 mb-2">{portal?.email || user?.email}</p>
+              {!portal && isLocalDevEmployeeUser(user) ? (
+                <p className="text-[10px] text-amber-200/80 px-2 mb-2">Syncing profile… floor is ready below.</p>
+              ) : null}
               {(
                 [
                   ['floor', 'Call center ops', Monitor],
@@ -276,8 +291,13 @@ export default function EmployeePortalPage() {
             </aside>
 
             <div className="min-w-0">
+              {portalNotice ? (
+                <p className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-100">
+                  {portalNotice}
+                </p>
+              ) : null}
               {tab === 'floor' ? <EmployeeDesk user={user} /> : null}
-              {tab === 'operations' ? (
+              {tab === 'operations' && portal ? (
                 <section className="space-y-8">
                   <div>
                     <h2 className="text-2xl font-black flex items-center gap-2">
@@ -335,7 +355,14 @@ export default function EmployeePortalPage() {
                 </section>
               ) : null}
 
-              {tab === 'tools' ? (
+              {tab === 'operations' && !portal ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
+                  <p>Loading daily ops…</p>
+                </div>
+              ) : null}
+
+              {tab === 'tools' && portal ? (
                 <section className="space-y-8">
                   <div className="grid lg:grid-cols-2 gap-6">
                     <div className="rounded-3xl border-2 border-bee-amber/40 bg-gradient-to-br from-bee-amber/15 to-transparent p-6 md:p-8 flex flex-col">
@@ -486,7 +513,14 @@ export default function EmployeePortalPage() {
                 </section>
               ) : null}
 
-              {activeBrand && tab !== 'operations' && tab !== 'tools' ? (
+              {tab === 'tools' && !portal ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
+                  <p>Loading dialer links…</p>
+                </div>
+              ) : null}
+
+              {activeBrand && tab !== 'operations' && tab !== 'tools' && tab !== 'floor' && portal ? (
                 <section className="space-y-8">
                   <div>
                     <a
@@ -551,10 +585,23 @@ export default function EmployeePortalPage() {
                   </div>
                 </section>
               ) : null}
+
+              {activeBrand && tab !== 'operations' && tab !== 'tools' && tab !== 'floor' && !portal ? (
+                <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
+                  <p>Loading playbook…</p>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (
-          <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+          <div className="flex flex-col items-center gap-4 py-20 text-slate-400">
+            <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
+            <p className="text-sm">Loading your employee profile…</p>
+            <p className="text-xs text-slate-600 max-w-md text-center">
+              First sync can take 10–20 seconds on a cold start. If this never finishes, confirm the API is running on port 3001.
+            </p>
+          </div>
         )}
       </div>
 

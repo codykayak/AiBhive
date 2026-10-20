@@ -65,6 +65,35 @@ export type DeskLead = {
   needsHuman?: boolean;
   grokVoiceInterest?: boolean;
   lastEmployeeEmail?: string;
+  callCount?: number | null;
+};
+
+export type DeskCallLog = {
+  id: string;
+  leadId: string;
+  leadName: string;
+  leadPhone: string;
+  propertyAddress: string;
+  disposition: string;
+  notes: string;
+  channel: string;
+  durationSec: number | null;
+  employeeEmail: string;
+  employeeUid: string;
+  at: string | null;
+};
+
+export type DeskCallTracking = {
+  timezone: string;
+  today: string;
+  todayCalls: number;
+  todayTalked: number;
+  totalLogged: number;
+  byDisposition: Record<string, number>;
+  byAgent: { email: string; calls: number; talked: number; callbacks: number }[];
+  hourlyToday: { hour: number; count: number }[];
+  avgDurationSec: number | null;
+  connectRatePct: number | null;
 };
 
 export type EmployeeDeskSnapshot = {
@@ -105,6 +134,12 @@ export type EmployeeDeskSnapshot = {
     escalationKeywords: string[];
     escalationMessage: string;
     outboundTemplate: string;
+    outreachMaxOwnerTouches?: number;
+    outreachMinHoursBetweenTouches?: number;
+    outreachRelativeCooldownHours?: number;
+    outreachRelativeSearchEnabled?: boolean;
+    followUpOutboundTemplate?: string;
+    relativeOutboundTemplate?: string;
   };
   infrastructure?: {
     twilioSmsReady: boolean;
@@ -125,6 +160,8 @@ export type EmployeeDeskSnapshot = {
     lastCallDisposition?: string;
     textCount: number | null;
   }[];
+  callFeed?: DeskCallLog[];
+  callTracking?: DeskCallTracking;
   queue: {
     total: number;
     remaining: number;
@@ -142,27 +179,146 @@ export type EmployeeDeskSnapshot = {
   quota: { ok: boolean; reason: string | null; sent: number; limit: number; suggested?: number };
   today: { date: string; calls: number; texts: number; lastLeadId: string | null; lastDisposition: string | null };
   line: { smsReady: boolean; voiceReady: boolean; from: string };
+  grokSmsAgent?: boolean;
 };
+
+export type NotifyPhoneEntry = { id: string; label: string; e164: string };
+
+export type EscalationOpsSettings = {
+  escalationNotifyPhone: string;
+  escalationNotifyLabel: string;
+  notifyPhones: NotifyPhoneEntry[];
+  activeNotifyPhoneId: string;
+  schedulingTimezone: string;
+  allowImmediateCallback: boolean;
+  immediateCallbackMinutes: number;
+  weeklyAvailability: Record<string, { dayOff?: boolean; afterHour?: number; untilHour?: number }>;
+  schedulingPhrases: { immediate?: string; laterToday?: string; nextWindow?: string };
+  todayOverride?: {
+    date?: string;
+    dayOff?: boolean;
+    afterHour?: number;
+    untilHour?: number;
+    immediate?: boolean;
+  } | null;
+};
+
+export type GoogleCalendarStatus = {
+  configured: boolean;
+  connected: boolean;
+  calendarId: string;
+  connectedEmail: string;
+  connectedAt: string | null;
+  oauthReady?: boolean;
+  calendars?: { id: string; summary: string; primary?: boolean }[];
+};
+
+export async function fetchEscalationSettings(user: User, businessId = 'macrorei') {
+  return portalFetch(
+    `/api/employee-portal/escalation-settings?businessId=${encodeURIComponent(businessId)}`,
+    user,
+  ) as Promise<{
+    escalationOps: EscalationOpsSettings;
+    previewReply: string;
+    grokSmsAgent: boolean;
+    googleCalendar?: GoogleCalendarStatus;
+  }>;
+}
+
+export async function setImFreeNow(user: User, businessId = 'macrorei') {
+  return portalFetch('/api/employee-portal/escalation-settings/im-free-now', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ ok: boolean; escalationOps: EscalationOpsSettings; previewReply: string }>;
+}
+
+export async function fetchGoogleCalendarStatus(user: User, businessId = 'macrorei') {
+  return portalFetch(
+    `/api/employee-portal/google-calendar/status?businessId=${encodeURIComponent(businessId)}`,
+    user,
+  ) as Promise<GoogleCalendarStatus>;
+}
+
+export async function startGoogleCalendarConnect(user: User, businessId = 'macrorei') {
+  return portalFetch('/api/employee-portal/google-calendar/connect', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ url: string }>;
+}
+
+export async function setGoogleCalendarId(user: User, businessId: string, calendarId: string) {
+  return portalFetch('/api/employee-portal/google-calendar/calendar-id', user, {
+    method: 'PUT',
+    body: JSON.stringify({ businessId, calendarId }),
+  }) as Promise<{ ok: boolean; calendarId: string }>;
+}
+
+export async function disconnectGoogleCalendar(user: User, businessId = 'macrorei') {
+  return portalFetch('/api/employee-portal/google-calendar/disconnect', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ ok: boolean }>;
+}
+
+export async function saveEscalationSettings(user: User, businessId: string, escalationOps: EscalationOpsSettings) {
+  return portalFetch('/api/employee-portal/escalation-settings', user, {
+    method: 'PUT',
+    body: JSON.stringify({ businessId, escalationOps }),
+  }) as Promise<{ ok: boolean; escalationOps: EscalationOpsSettings; previewReply: string }>;
+}
+
+export async function refreshEmployeeRag(user: User, businessId = 'macrorei') {
+  return portalFetch('/api/employee-portal/rag-refresh', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ ok: boolean; refreshedAt: string }>;
+}
 
 export async function fetchEmployeeDesk(user: User, businessId = 'macrorei') {
   return portalFetch(`/api/employee-portal/desk?businessId=${encodeURIComponent(businessId)}`, user) as Promise<EmployeeDeskSnapshot>;
 }
 
-export async function textNextLead(user: User, businessId: string) {
+export type SmsSendChannel = 'auto' | 'phone' | 'twilio';
+
+export async function textNextLead(user: User, businessId: string, channel: SmsSendChannel = 'auto') {
   return portalFetch('/api/employee-portal/desk/text-next', user, {
     method: 'POST',
-    body: JSON.stringify({ businessId }),
-  }) as Promise<{ done: boolean; reason?: string; lead?: DeskLead; body?: string; today?: EmployeeDeskSnapshot['today'] }>;
+    body: JSON.stringify({ businessId, channel }),
+  }) as Promise<{
+    done: boolean;
+    reason?: string;
+    lead?: DeskLead;
+    body?: string;
+    mode?: 'phone' | 'twilio';
+    pendingDevice?: boolean;
+    smsUrl?: string;
+    phone?: string;
+    today?: EmployeeDeskSnapshot['today'];
+  }>;
 }
 
 export async function logEmployeeCall(
   user: User,
-  payload: { businessId: string; leadId: string; disposition: string; notes?: string },
+  payload: {
+    businessId: string;
+    leadId: string;
+    disposition: string;
+    notes?: string;
+    channel?: string;
+    durationSec?: number;
+  },
 ) {
   return portalFetch('/api/employee-portal/desk/call-log', user, {
     method: 'POST',
     body: JSON.stringify(payload),
-  }) as Promise<{ ok: boolean; today: EmployeeDeskSnapshot['today'] }>;
+  }) as Promise<{ ok: boolean; today: EmployeeDeskSnapshot['today']; callLog?: DeskCallLog }>;
+}
+
+export async function fetchEmployeeCallFeed(user: User, businessId = 'macrorei', limit = 100) {
+  return portalFetch(
+    `/api/employee-portal/desk/calls?businessId=${encodeURIComponent(businessId)}&limit=${limit}`,
+    user,
+  ) as Promise<{ callFeed: DeskCallLog[]; callTracking: DeskCallTracking; syncedAt: string }>;
 }
 
 export async function importEmployeeLeads(
@@ -181,6 +337,7 @@ export type LeadThread = {
   messages: { id: string; direction: string; body: string; at: string | null; employeeEmail: string }[];
   textCount: number;
   inboundCount: number;
+  callLogs?: DeskCallLog[];
 };
 
 export async function fetchLeadThread(user: User, businessId: string, leadId: string) {
@@ -190,15 +347,60 @@ export async function fetchLeadThread(user: User, businessId: string, leadId: st
   ) as Promise<LeadThread>;
 }
 
-export async function textSelectedLeads(user: User, businessId: string, leadIds: string[]) {
+export async function textSelectedLeads(
+  user: User,
+  businessId: string,
+  leadIds: string[],
+  channel: SmsSendChannel = 'auto',
+) {
   return portalFetch('/api/employee-portal/desk/text-selected', user, {
     method: 'POST',
-    body: JSON.stringify({ businessId, leadIds }),
+    body: JSON.stringify({ businessId, leadIds, channel }),
   }) as Promise<{
-    sent: { leadId: string; name: string; phone: string }[];
+    sent: { leadId: string; name: string; phone: string; mode?: string }[];
+    phoneDrafts?: {
+      leadId: string;
+      name: string;
+      phone: string;
+      body: string;
+      smsUrl: string;
+      pendingDevice: boolean;
+    }[];
     failed: { leadId: string; error: string }[];
     today?: EmployeeDeskSnapshot['today'];
   }>;
+}
+
+export async function reportEmployeeDeviceSent(
+  user: User,
+  businessId: string,
+  leadId: string,
+  body: string,
+) {
+  return portalFetch('/api/employee-portal/desk/device-sent', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId, leadId, body }),
+  }) as Promise<{ ok: boolean; today?: EmployeeDeskSnapshot['today'] }>;
+}
+
+export async function setEmployeeSmsProvider(user: User, businessId: string, smsProvider: 'phone' | 'twilio') {
+  return portalFetch('/api/employee-portal/desk/sms-provider', user, {
+    method: 'PUT',
+    body: JSON.stringify({ businessId, smsProvider }),
+  }) as Promise<{ ok: boolean; smsProvider: string; twilioSmsReady: boolean }>;
+}
+
+export async function linkEmployeeDeskTwilio(user: User, businessId: string) {
+  return portalFetch('/api/employee-portal/desk/link-twilio', user, {
+    method: 'POST',
+    body: JSON.stringify({ businessId }),
+  }) as Promise<{ ok: boolean; from: string; linkedAt: string }>;
+}
+
+export async function fetchTwilioStatus(businessId = 'macrorei') {
+  const apiBase = import.meta.env.VITE_API_URL ?? '';
+  const res = await fetch(`${apiBase}/api/twilio/status?businessId=${encodeURIComponent(businessId)}`);
+  return res.json();
 }
 
 export async function fetchEmployeeVoiceToken(user: User) {

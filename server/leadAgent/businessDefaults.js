@@ -18,6 +18,14 @@ export const DEFAULT_BUSINESSES = [
     sendWindowStart: 9,
     sendWindowEnd: 18,
     sendTimezone: 'America/Los_Angeles',
+    outreachMaxOwnerTouches: 2,
+    outreachMinHoursBetweenTouches: 48,
+    outreachRelativeCooldownHours: 72,
+    outreachRelativeSearchEnabled: false,
+    followUpOutboundTemplate:
+      "just circling back about {address} — still open to a quick chat if you might sell or know who owns it?",
+    relativeOutboundTemplate:
+      "Sorry to bother you — I saw your name associated with {address}. I was trying to reach the owner. I'm a local investor in Eugene and interested in the property. If you can point me to the right person, I'd appreciate it.",
     outboundTemplate:
       "my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?",
     greeting:

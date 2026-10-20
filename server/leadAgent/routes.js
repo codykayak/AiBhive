@@ -23,6 +23,7 @@ import {
   randomDelayMs,
 } from './automation.js';
 import { processInboundSms, incrementDailySms as incrementDailySmsShared } from './inboundHandler.js';
+import { registerOwnerOutboundTouch, runOutreachTick } from './outreachSequence.js';
 import {
   assertLeadAgentTwilioWebhook,
   buildInboundReturnCallTwiml,
@@ -154,9 +155,13 @@ export function registerLeadAgentRoutes(app, db) {
 
   /** Public health for mobile app connectivity check */
   app.get('/api/lead-agent/health', (_req, res) => {
+    const grok = Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY);
     res.json({
       ok: true,
-      grok: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
+      grok,
+      grokHint: grok
+        ? null
+        : 'Set XAI_API_KEY or GROK_API_KEY on Cloud Run service aibhive (us-west1), then deploy a new revision.',
       defaults: DEFAULT_BUSINESSES.map((b) => ({ id: b.id, name: b.name })),
     });
   });
@@ -334,6 +339,9 @@ export function registerLeadAgentRoutes(app, db) {
       { merge: true },
     );
     if (result.sent) await incrementDailySms(db, wsUid(user), businessId);
+    if (result.sent && (lead.leadRole || 'owner') === 'owner') {
+      await registerOwnerOutboundTouch(db, wsUid(user), businessId, leadId, { via: 'lead-agent-send' }, business);
+    }
     return res.json({ ...result, body, quota: { ...quota, sentToday: quota.sentToday + (result.sent ? 1 : 0) } });
   });
 
@@ -482,6 +490,28 @@ export function registerLeadAgentRoutes(app, db) {
     });
     res.type('text/xml');
     return res.send(xml);
+  });
+
+  /** Paced owner + relative outreach (Cloud Scheduler / manual). */
+  app.post('/api/lead-agent/outreach/tick', async (req, res) => {
+    const secret = process.env.CRON_SECRET || process.env.LEAD_AGENT_CRON_SECRET;
+    if (secret) {
+      const provided = req.get('X-Cron-Secret') || req.get('x-cron-secret') || '';
+      if (provided !== secret) return res.status(401).json({ error: 'Unauthorized cron request' });
+    }
+    const businessId = String(req.body?.businessId || req.query?.businessId || 'macrorei');
+    const uid = defaultWorkspaceUid();
+    try {
+      const business = await getBusinessDoc(db, uid, businessId);
+      const result = await runOutreachTick(db, uid, businessId, business, {
+        limit: Number(req.body?.limit || 8),
+        reloadBusiness: async () => getBusinessDoc(db, uid, businessId),
+      });
+      return res.json({ businessId, uid, ...result });
+    } catch (e) {
+      console.error('[lead-agent/outreach/tick]', e);
+      return res.status(500).json({ error: e.message || 'outreach tick failed' });
+    }
   });
 }
 

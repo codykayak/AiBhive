@@ -2,6 +2,8 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { generateSmsReply } from './grokAgent.js';
 import { sendLeadSms, normalizePhone } from './smsProvider.js';
 import { canSendReplySms, getSentTodayLocal, todayKey } from './automation.js';
+import { applyEscalationToLead, notifyEscalationContacts } from './escalationOps.js';
+import { createEscalationCalendarEvent } from '../employeePortal/googleCalendar.js';
 
 export async function processInboundSms(db, uid, businessId, business, { from, body: inbound, leadId: explicitLeadId }) {
   const phone = normalizePhone(from);
@@ -56,12 +58,44 @@ export async function processInboundSms(db, uid, businessId, business, { from, b
   const ai = await generateSmsReply({ business, lead, history, inbound });
   const updates = {
     status: 'replied',
+    ownerReplied: true,
+    outreachStage: 'replied',
     lastContactAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
   if (ai.optedOut) updates.optedOut = true;
-  if (ai.escalated) updates.needsHuman = true;
+  if (ai.escalated) {
+    updates.needsHuman = true;
+    if (ai.scheduling?.scheduledCallbackAt) updates.scheduledCallbackAt = ai.scheduling.scheduledCallbackAt;
+    if (ai.scheduling?.mode) updates.escalationState = ai.scheduling.mode;
+  }
   await leadsRef(businessId, leadId).set(updates, { merge: true });
+
+  if (ai.escalated) {
+    await applyEscalationToLead(db, uid, businessId, leadId, {
+      mode: ai.scheduling?.mode,
+      scheduledCallbackAt: ai.scheduling?.scheduledCallbackAt,
+      inbound,
+    });
+    try {
+      await notifyEscalationContacts(db, uid, businessId, business, { ...lead, id: leadId }, {
+        inbound,
+        scheduledCallbackAt: ai.scheduling?.scheduledCallbackAt,
+        leadId,
+      });
+    } catch (e) {
+      console.warn('[inbound] escalation notify failed', e?.message || e);
+    }
+    try {
+      await createEscalationCalendarEvent(db, businessId, business, { ...lead, id: leadId }, {
+        inbound,
+        scheduledCallbackAt: ai.scheduling?.scheduledCallbackAt,
+        leadId,
+      });
+    } catch (e) {
+      console.warn('[inbound] calendar event failed', e?.message || e);
+    }
+  }
 
   let outbound = null;
   if (ai.reply && !ai.paused) {

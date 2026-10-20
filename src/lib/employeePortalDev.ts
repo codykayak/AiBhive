@@ -22,13 +22,30 @@ export function createLocalDevEmployeeUser(): User {
 }
 
 export function enterLocalEmployeeDevSession() {
-  sessionStorage.setItem(LOCAL_EMPLOYEE_DEV_SESSION, '1');
+  try {
+    sessionStorage.setItem(LOCAL_EMPLOYEE_DEV_SESSION, '1');
+    localStorage.setItem(LOCAL_EMPLOYEE_DEV_SESSION, '1');
+  } catch {
+    /* private mode */
+  }
 }
 
 export function clearLocalEmployeeDevSession() {
-  sessionStorage.removeItem(LOCAL_EMPLOYEE_DEV_SESSION);
+  try {
+    sessionStorage.removeItem(LOCAL_EMPLOYEE_DEV_SESSION);
+    localStorage.removeItem(LOCAL_EMPLOYEE_DEV_SESSION);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function hasLocalEmployeeDevSession() {
-  return sessionStorage.getItem(LOCAL_EMPLOYEE_DEV_SESSION) === '1';
+  try {
+    return (
+      sessionStorage.getItem(LOCAL_EMPLOYEE_DEV_SESSION) === '1' ||
+      localStorage.getItem(LOCAL_EMPLOYEE_DEV_SESSION) === '1'
+    );
+  } catch {
+    return false;
+  }
 }

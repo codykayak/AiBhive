@@ -148,7 +148,7 @@ export const BRAND_PLAYBOOKS: BrandPlaybook[] = [
 export const LEAD_AGENT_INSTALL = {
   android: {
     title: 'AiBhive Lead Agent (Android)',
-    subtitle: 'Required for paced SMS automation from your cell number',
+    subtitle: 'Paced SMS from your cell (default) — or Twilio when approved',
     downloadPath: '/api/download/lead-agent',
     publicUrl: 'https://aibhive.com/api/download/lead-agent',
     fileName: 'aibhive-lead-agent.apk',
@@ -160,7 +160,8 @@ export const LEAD_AGENT_INSTALL = {
       'Tap Install → Open AiBhive Lead Agent.',
       'Allow SMS, Phone, and notifications when prompted — needed for outbound/inbound MacroREI texts.',
       'Sign in with Google using the same email your manager invited on the Leads tab.',
-      'Leads: import CSV/Excel → Dial/SMS: tap a row to call or text → Automation: send yourself 1 test SMS first.',
+      'Leads: import CSV/Excel → Dial/SMS: call or text from your cell → Settings: keep SMS provider on “My cell phone” unless Twilio A2P is approved.',
+      'Laptop: same list at aibhive.com/employee — browser dialer (Twilio voice) + “Text from phone” when not using Twilio SMS.',
       'Keep the app in the foreground while automation runs; do not force-stop or battery-optimize it off.',
     ],
     troubleshooting: [

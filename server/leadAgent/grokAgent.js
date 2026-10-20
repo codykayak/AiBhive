@@ -2,13 +2,18 @@ import { grokChatMessages } from '../socialPosts/grokProvider.js';
 import { isOptOutMessage } from './smsProvider.js';
 import { getWebsiteRagContext } from './ragKnowledge.js';
 import { personalizeOutbound } from './outboundMessage.js';
+import {
+  buildEscalationSmsReply,
+  resolveCallbackOffer,
+  schedulingPromptBlock,
+} from './escalationOps.js';
 
 function getXaiKey() {
   return process.env.XAI_API_KEY || process.env.GROK_API_KEY || '';
 }
 
-async function buildSystemPrompt(business, lead) {
-  const rag = await getWebsiteRagContext(business.id).catch(() => '');
+async function buildSystemPrompt(business, lead, ragOpts = {}) {
+  const rag = await getWebsiteRagContext(business.id, ragOpts).catch(() => '');
   return [
     `You are the SMS agent for ${business.name}.`,
     business.tagline || '',
@@ -17,12 +22,13 @@ async function buildSystemPrompt(business, lead) {
     '- Reply in ONE short SMS (under 320 characters). Plain text only.',
     '- Sound human, not robotic. One question max per message.',
     '- Never argue. If they say STOP/UNSUBSCRIBE, reply once: "Understood — removed. Reply START to opt back in."',
-    '- If they want an appointment or to talk to a human, use the escalation message.',
+    '- If they want an appointment or to talk to a human, use CALLBACK SCHEDULING lines below (not a generic "we will call you").',
     '- Use WEBSITE RAG below for facts; do not invent offers or prices not in RAG.',
     '',
     `GREETING (first outbound): ${business.greeting || ''}`,
-    `ESCALATION MESSAGE: ${business.escalationMessage || 'Someone from our team will call you shortly.'}`,
-    `ESCALATION TRIGGERS: ${(business.escalationKeywords || []).join(', ')}`,
+    `ESCALATION TRIGGERS (also schedule callback): ${(business.escalationKeywords || []).join(', ')}`,
+    '',
+    schedulingPromptBlock(business),
     '',
     'COMPANY KNOWLEDGE (static):',
     business.knowledge || '',
@@ -52,10 +58,12 @@ export async function generateSmsReply({ business, lead, history, inbound }) {
   }
 
   if (shouldEscalate(inbound, business)) {
+    const offer = resolveCallbackOffer(business);
     return {
-      reply: business.escalationMessage || 'Thanks — our team will reach out shortly.',
+      reply: buildEscalationSmsReply(business, offer),
       escalated: true,
       optedOut: false,
+      scheduling: offer,
     };
   }
 
