@@ -735,19 +735,10 @@ export default function EmployeeDesk({ user }: Props) {
     return list;
   }, [filtered, statusSort]);
 
-  if (!desk && !error) {
-    return (
-      <div className="rounded-3xl border border-white/10 bg-[#060a12] p-10 flex flex-col items-center gap-4 text-center">
-        <Loader2 className="w-10 h-10 animate-spin text-bee-amber" />
-        <p className="text-lg font-bold text-slate-200">Loading call center data…</p>
-        <p className="text-sm text-slate-500 max-w-md">
-          Pulling your lead list and call log from Firestore. On a slow connection this can take 10–20 seconds — not a blank screen.
-        </p>
-      </div>
-    );
-  }
-
-  const active = thread?.lead || desk?.leads.find((l) => l.id === openId) || desk?.queue.current || null;
+  const active = useMemo(
+    () => thread?.lead || desk?.leads.find((l) => l.id === openId) || desk?.queue.current || null,
+    [thread, desk, openId],
+  );
 
   const activeDialGuard = useMemo(() => {
     if (!active) return null;
@@ -796,6 +787,19 @@ export default function EmployeeDesk({ user }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [panel, active, busy, callState, hangup, businessTz]);
+
+  if (!desk && !error) {
+    return (
+      <div className="rounded-3xl border border-white/10 bg-[#060a12] p-10 flex flex-col items-center gap-4 text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-bee-amber" />
+        <p className="text-lg font-bold text-slate-200">Loading call center data…</p>
+        <p className="text-sm text-slate-500 max-w-md">
+          Pulling your lead list and call log from Firestore. On a slow connection this can take 10–20 seconds — not a blank screen.
+        </p>
+      </div>
+    );
+  }
+
   const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected[l.id]);
   const quotaPct = desk ? Math.min(100, Math.round((desk.quota.sent / Math.max(desk.quota.limit, 1)) * 100)) : 0;
   const queuePct = desk?.queue.total ? Math.round(((desk.queue.total - desk.queue.remaining) / desk.queue.total) * 100) : 0;
