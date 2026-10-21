@@ -14,6 +14,7 @@ import {
   resolveCallbackOffer,
 } from '../leadAgent/escalationOps.js';
 import { calendarPublicStatus } from './googleCalendar.js';
+import { outlookPublicStatus, sendOutlookMail } from './outlookMail.js';
 import { clearRagCache } from '../leadAgent/ragKnowledge.js';
 import { leadAgentVoiceWebhookPath } from '../leadAgent/inboundVoice.js';
 import { resolveMacroreiGrokVoicePhone } from '../macroreiVoiceInstructions.js';
@@ -45,22 +46,64 @@ async function loadBusiness(db, businessId) {
   return { ...defaults, ...(snap.exists ? snap.data() : {}), id: businessId };
 }
 
-function leadScore(data) {
-  const status = data.status || 'new';
-  const open = status === 'new' || status === 'callback' ? 0 : 1;
-  return open;
+function normalizePropertyAddressKey(address) {
+  return String(address || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim()
+    .slice(0, 160);
+}
+
+function queuePriority(lead) {
+  const status = lead.status || 'new';
+  if (status === 'callback' && lead.callbackAt) {
+    const t = new Date(lead.callbackAt).getTime();
+    if (!Number.isNaN(t) && t <= Date.now()) return 0;
+    if (!Number.isNaN(t) && t > Date.now()) return 300;
+    return 100;
+  }
+  if (status === 'callback') return 50;
+  if (status === 'new') return 200;
+  return 500;
+}
+
+function compareQueueLeads(a, b) {
+  const pa = queuePriority(a);
+  const pb = queuePriority(b);
+  if (pa !== pb) return pa - pb;
+  if (a.status === 'callback' && b.status === 'callback' && a.callbackAt && b.callbackAt) {
+    const ta = new Date(a.callbackAt).getTime();
+    const tb = new Date(b.callbackAt).getTime();
+    if (!Number.isNaN(ta) && !Number.isNaN(tb) && ta !== tb) return ta - tb;
+  }
+  return (a.name || '').localeCompare(b.name || '');
 }
 
 function serializeLead(id, data) {
+  const phones = Array.isArray(data.phones)
+    ? data.phones.map((p) => normalizePhone(p)).filter((p) => p.replace(/\D/g, '').length >= 10)
+    : [];
+  const primary = String(data.phone || phones[0] || '');
+  const mergedPhones = phones.length ? phones : primary ? [normalizePhone(primary)] : [];
+  const dialPhoneIndex = Math.min(
+    Math.max(0, Number(data.dialPhoneIndex || 0)),
+    Math.max(0, mergedPhones.length - 1),
+  );
   return {
     id,
     name: String(data.name || ''),
-    phone: String(data.phone || ''),
+    phone: mergedPhones[dialPhoneIndex] || primary,
+    phones: mergedPhones,
+    dialPhoneIndex,
     propertyAddress: String(data.propertyAddress || data.notes || ''),
+    email: String(data.email || data.ownerEmail || '').trim().toLowerCase(),
     status: data.status || 'new',
     optedOut: Boolean(data.optedOut),
     textCount: data.textCount == null ? null : Number(data.textCount),
     lastTextBody: data.lastTextBody ? String(data.lastTextBody) : '',
+    emailCount: data.emailCount == null ? null : Number(data.emailCount),
+    lastEmailBody: data.lastEmailBody ? String(data.lastEmailBody).slice(0, 200) : '',
     lastContactAt: stamp(data.lastContactAt),
     lastCallDisposition: data.lastCallDisposition ? String(data.lastCallDisposition) : '',
     lastCallNotes: data.lastCallNotes ? String(data.lastCallNotes).slice(0, 200) : '',
@@ -68,6 +111,7 @@ function serializeLead(id, data) {
     grokVoiceInterest: Boolean(data.grokVoiceInterest),
     lastEmployeeEmail: data.lastEmployeeEmail ? String(data.lastEmployeeEmail) : '',
     callCount: data.callCount == null ? null : Number(data.callCount),
+    callbackAt: stamp(data.callbackAt),
   };
 }
 
@@ -285,7 +329,7 @@ async function listLeads(db, businessId) {
   const snap = await leadsRef(db, businessId).limit(800).get();
   return snap.docs
     .map((d) => serializeLead(d.id, d.data() || {}))
-    .sort((a, b) => leadScore(a) - leadScore(b) || a.name.localeCompare(b.name));
+    .sort(compareQueueLeads);
 }
 
 function nextOpenLead(leads) {
@@ -391,6 +435,17 @@ async function recordOutbound(db, user, businessId, lead, body, result) {
     const biz = await loadBusiness(db, businessId);
     await registerOwnerOutboundTouch(db, defaultWorkspaceUid(), businessId, lead.id, { via: 'employee-desk' }, biz);
   }
+}
+
+function buildOwnerEmailBody(business, lead) {
+  const address = String(lead.propertyAddress || 'your property').trim();
+  const name = String(lead.name || '').trim();
+  const hi = name ? `Hi ${name.split(/\s+/)[0]},` : 'Hi,';
+  const tpl =
+    business?.greeting ||
+    "I'm Cody, a real estate investor in Eugene. I'm reaching out about the property at {address} — would you consider selling, or is there a best time to talk?";
+  const body = `${hi}\n\n${tpl.replace(/\{address\}/gi, address)}\n\nThank you,\nCody`;
+  return body.slice(0, 8000);
 }
 
 function smsDeepLink(to, body) {
@@ -512,6 +567,7 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       today: dayStats(profileSnap.exists ? profileSnap.data() : {}),
       line,
       grokSmsAgent: Boolean(process.env.XAI_API_KEY || process.env.GROK_API_KEY),
+      outlook: outlookPublicStatus(profileSnap.exists ? profileSnap.data() : {}),
     });
   });
 
@@ -650,8 +706,10 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const incoming = Array.isArray(req.body?.leads) ? req.body.leads.slice(0, 2000) : [];
     const existing = await listLeads(db, businessId);
     const seen = new Set(existing.map((l) => String(l.phone || '')));
+    const seenAddresses = new Set(existing.map((l) => normalizePropertyAddressKey(l.propertyAddress)));
     let imported = 0;
     let duplicates = 0;
+    let duplicateAddresses = 0;
     let skipped = 0;
     let batch = db.batch();
     let pending = 0;
@@ -662,22 +720,37 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       pending = 0;
     };
     for (const item of incoming) {
-      const phone = normalizePhone(item?.phone);
+      const rawPhones = Array.isArray(item?.phones) ? item.phones : [item?.phone];
+      const phones = rawPhones
+        .map((p) => normalizePhone(p))
+        .filter((p) => p.replace(/\D/g, '').length >= 10)
+        .slice(0, 8);
+      const phone = phones[0] || normalizePhone(item?.phone);
       const propertyAddress = String(item?.propertyAddress || '').trim().slice(0, 500);
+      const email = String(item?.email || '').trim().toLowerCase().slice(0, 200);
       if (phone.replace(/\D/g, '').length < 10 || !propertyAddress) {
         skipped += 1;
         continue;
       }
+      const addressKey = normalizePropertyAddressKey(propertyAddress);
       if (seen.has(phone)) {
         duplicates += 1;
         continue;
       }
+      if (addressKey && seenAddresses.has(addressKey)) {
+        duplicateAddresses += 1;
+        continue;
+      }
       seen.add(phone);
+      if (addressKey) seenAddresses.add(addressKey);
       const id = randomUUID();
       batch.set(leadsRef(db, businessId).doc(id), {
         name: String(item?.name || '').slice(0, 200),
         phone,
+        phones,
+        dialPhoneIndex: 0,
         propertyAddress,
+        email,
         notes: propertyAddress,
         status: 'new',
         textCount: 0,
@@ -693,7 +766,7 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       if (pending >= 400) await flush();
     }
     await flush();
-    return res.json({ imported, duplicates, skipped, total: incoming.length });
+    return res.json({ imported, duplicates, duplicateAddresses, skipped, total: incoming.length });
   });
 
   app.get('/api/employee-portal/desk/leads/:leadId', async (req, res) => {
@@ -833,6 +906,60 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     });
   });
 
+  app.post('/api/employee-portal/desk/send-email', async (req, res) => {
+    const user = await requireEmployee(req, res, db);
+    if (!user) return;
+    const businessId = String(req.body?.businessId || 'macrorei');
+    const leadId = String(req.body?.leadId || '');
+    const subject = String(req.body?.subject || '').trim().slice(0, 200);
+    const body = String(req.body?.body || '').trim().slice(0, 8000);
+    if (!leadId) return res.status(400).json({ error: 'leadId required' });
+    if (!body) return res.status(400).json({ error: 'Email body required' });
+    const ref = leadsRef(db, businessId).doc(leadId);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
+    const lead = serializeLead(snap.id, snap.data() || {});
+    const to = String(req.body?.to || lead.email || '').trim().toLowerCase();
+    if (!to) {
+      return res.status(400).json({
+        error: 'This lead has no email on file. Add an email column to your import or enter an address on the dialer.',
+      });
+    }
+    const subj =
+      subject ||
+      `Regarding ${lead.propertyAddress || 'your property'}`.slice(0, 200);
+    try {
+      await sendOutlookMail(db, user.uid, { to, subject: subj, body });
+    } catch (e) {
+      return res.status(e.status || 502).json({ error: e.message || 'Could not send email' });
+    }
+    await ref.collection('messages').add({
+      direction: 'outbound',
+      body,
+      channel: 'email',
+      subject: subj,
+      provider: 'outlook',
+      at: FieldValue.serverTimestamp(),
+      via: 'employee-desk',
+      employeeEmail: user.email || '',
+    });
+    await ref.set(
+      {
+        emailCount: FieldValue.increment(1),
+        lastEmailBody: body.slice(0, 200),
+        lastContactAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        lastEmployeeEmail: user.email || '',
+      },
+      { merge: true },
+    );
+    const today = await bumpDay(db, user.uid, { lastLeadId: leadId });
+    if (to !== lead.email) {
+      await ref.set({ email: to, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    }
+    return res.json({ ok: true, to, subject: subj, today });
+  });
+
   app.post('/api/employee-portal/desk/call-log', async (req, res) => {
     const user = await requireEmployee(req, res, db);
     if (!user) return;
@@ -850,22 +977,51 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     const ref = leadsRef(db, businessId).doc(leadId);
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: 'Lead not found' });
-    const lead = serializeLead(snap.id, snap.data() || {});
-    const status = disposition === 'callback' ? 'callback' : disposition;
+    const data = snap.data() || {};
+    const lead = serializeLead(snap.id, data);
+    const phoneList = lead.phones?.length ? lead.phones : lead.phone ? [lead.phone] : [];
+    const phoneUsedIndex = Math.min(
+      Math.max(0, Number(data.dialPhoneIndex || 0)),
+      Math.max(0, phoneList.length - 1),
+    );
+    const phoneUsed = phoneList[phoneUsedIndex] || lead.phone;
+    let dialPhoneIndex = phoneUsedIndex;
+    let tryAlternatePhone = false;
+    const cycleDispositions = new Set(['no_answer', 'voicemail']);
+    if (cycleDispositions.has(disposition) && dialPhoneIndex + 1 < phoneList.length) {
+      dialPhoneIndex += 1;
+      tryAlternatePhone = true;
+    }
+    const prevStatus = data.status || 'new';
+    let status = disposition === 'callback' ? 'callback' : disposition;
+    if (tryAlternatePhone) {
+      status = prevStatus === 'callback' ? 'callback' : 'new';
+    }
     const leadPatch = {
       status,
       lastCallDisposition: disposition,
       lastContactAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       lastEmployeeEmail: user.email || '',
+      dialPhoneIndex,
+      phone: phoneList[dialPhoneIndex] || lead.phone,
     };
     if (notes) leadPatch.lastCallNotes = notes;
+    const callbackAtRaw = req.body?.callbackAt;
+    if (disposition === 'callback' && callbackAtRaw) {
+      const cb = new Date(callbackAtRaw);
+      if (!Number.isNaN(cb.getTime())) leadPatch.callbackAt = cb.toISOString();
+    } else if (disposition === 'callback' && !data.callbackAt) {
+      const defaultCb = new Date(Date.now() + 60 * 60_000);
+      leadPatch.callbackAt = defaultCb.toISOString();
+    }
+    if (disposition === 'talked') leadPatch.callbackAt = FieldValue.delete();
     if (disposition !== 'skipped') leadPatch.callCount = FieldValue.increment(1);
     await ref.set(leadPatch, { merge: true });
     const callLog =
       disposition === 'skipped'
         ? null
-        : await appendDeskCallLog(db, user, businessId, lead, {
+        : await appendDeskCallLog(db, user, businessId, { ...lead, phone: phoneUsed }, {
             disposition,
             notes,
             channel,
@@ -876,7 +1032,51 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
       lastLeadId: leadId,
       lastDisposition: disposition,
     });
-    return res.json({ ok: true, today, status, callLog });
+    let autoEmailSent = false;
+    if (req.body?.autoEmailOnVoicemail && disposition === 'voicemail' && data.email) {
+      const business = await loadBusiness(db, businessId);
+      const emailBody = buildOwnerEmailBody(business, lead);
+      const subj = `Regarding ${lead.propertyAddress || 'your property'}`.slice(0, 200);
+      try {
+        await sendOutlookMail(db, user.uid, { to: data.email, subject: subj, body: emailBody });
+        await ref.collection('messages').add({
+          direction: 'outbound',
+          body: emailBody,
+          channel: 'email',
+          subject: subj,
+          provider: 'outlook',
+          automated: true,
+          at: FieldValue.serverTimestamp(),
+          via: 'employee-desk-voicemail',
+          employeeEmail: user.email || '',
+        });
+        await ref.set(
+          {
+            emailCount: FieldValue.increment(1),
+            lastEmailBody: emailBody.slice(0, 200),
+          },
+          { merge: true },
+        );
+        autoEmailSent = true;
+      } catch (e) {
+        console.warn('[desk] auto email on voicemail', e.message);
+      }
+    }
+    const updatedLead = serializeLead(snap.id, {
+      ...data,
+      ...leadPatch,
+      phones: phoneList.length ? phoneList : data.phones,
+    });
+    return res.json({
+      ok: true,
+      today,
+      status,
+      callLog,
+      tryAlternatePhone,
+      dialPhoneIndex,
+      lead: updatedLead,
+      autoEmailSent,
+    });
   });
 
   app.get('/api/employee-portal/desk/calls', async (req, res) => {
@@ -952,3 +1152,5 @@ export function registerEmployeeDeskRoutes(app, db, requireEmployee) {
     res.type('text/xml').send(xml);
   });
 }
+
+export { listDeskCallLogs, loadBusiness, leadsRef };

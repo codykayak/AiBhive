@@ -54,6 +54,12 @@ export type DeskLead = {
   id: string;
   name: string;
   phone: string;
+  phones?: string[];
+  dialPhoneIndex?: number;
+  callbackAt?: string | null;
+  email?: string;
+  emailCount?: number | null;
+  lastEmailBody?: string;
   propertyAddress: string;
   status: string;
   optedOut: boolean;
@@ -180,6 +186,13 @@ export type EmployeeDeskSnapshot = {
   today: { date: string; calls: number; texts: number; lastLeadId: string | null; lastDisposition: string | null };
   line: { smsReady: boolean; voiceReady: boolean; from: string };
   grokSmsAgent?: boolean;
+  outlook?: {
+    configured: boolean;
+    connected: boolean;
+    connectedEmail: string;
+    connectedAt: string | null;
+    oauthReady?: boolean;
+  };
 };
 
 export type NotifyPhoneEntry = { id: string; label: string; e164: string };
@@ -306,12 +319,58 @@ export async function logEmployeeCall(
     notes?: string;
     channel?: string;
     durationSec?: number;
+    callbackAt?: string;
+    autoEmailOnVoicemail?: boolean;
   },
 ) {
   return portalFetch('/api/employee-portal/desk/call-log', user, {
     method: 'POST',
     body: JSON.stringify(payload),
-  }) as Promise<{ ok: boolean; today: EmployeeDeskSnapshot['today']; callLog?: DeskCallLog }>;
+  }) as Promise<{
+    ok: boolean;
+    today: EmployeeDeskSnapshot['today'];
+    callLog?: DeskCallLog;
+    tryAlternatePhone?: boolean;
+    dialPhoneIndex?: number;
+    lead?: DeskLead;
+    autoEmailSent?: boolean;
+  }>;
+}
+
+export type OutlookMailStatus = {
+  configured: boolean;
+  connected: boolean;
+  connectedEmail: string;
+  connectedAt: string | null;
+  oauthReady?: boolean;
+};
+
+export async function fetchOutlookMailStatus(user: User) {
+  return portalFetch('/api/employee-portal/outlook/status', user) as Promise<OutlookMailStatus>;
+}
+
+export async function startOutlookMailConnect(user: User) {
+  return portalFetch('/api/employee-portal/outlook/connect', user, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }) as Promise<{ url: string }>;
+}
+
+export async function disconnectOutlookMail(user: User) {
+  return portalFetch('/api/employee-portal/outlook/disconnect', user, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }) as Promise<{ ok: boolean }>;
+}
+
+export async function sendEmployeeLeadEmail(
+  user: User,
+  payload: { businessId: string; leadId: string; subject?: string; body: string; to?: string },
+) {
+  return portalFetch('/api/employee-portal/desk/send-email', user, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }) as Promise<{ ok: boolean; to: string; subject: string }>;
 }
 
 export async function fetchEmployeeCallFeed(user: User, businessId = 'macrorei', limit = 100) {
@@ -324,12 +383,12 @@ export async function fetchEmployeeCallFeed(user: User, businessId = 'macrorei',
 export async function importEmployeeLeads(
   user: User,
   businessId: string,
-  leads: { name: string; phone: string; propertyAddress: string }[],
+  leads: { name: string; phone: string; phones?: string[]; email?: string; propertyAddress: string }[],
 ) {
   return portalFetch('/api/employee-portal/desk/import', user, {
     method: 'POST',
     body: JSON.stringify({ businessId, leads }),
-  }) as Promise<{ imported: number; duplicates: number; skipped: number; total: number }>;
+  }) as Promise<{ imported: number; duplicates: number; duplicateAddresses?: number; skipped: number; total: number }>;
 }
 
 export type LeadThread = {

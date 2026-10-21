@@ -9,6 +9,7 @@ import {
 } from '../leadAgent/iosInstall.js';
 import { registerEmployeeDeskRoutes } from './desk.js';
 import { registerGoogleCalendarRoutes } from './googleCalendar.js';
+import { registerOutlookMailRoutes } from './outlookMail.js';
 import { isLocalDevEmployeeUser, resolveLocalDevEmployee } from './devAuth.js';
 
 const PROFILE_COL = 'employee_portal_profiles';
@@ -74,6 +75,7 @@ function grokKey() {
 export function registerEmployeePortalRoutes(app, db) {
   registerEmployeeDeskRoutes(app, db, requireEmployee);
   registerGoogleCalendarRoutes(app, db, requireEmployee);
+  registerOutlookMailRoutes(app, db, requireEmployee);
   app.get('/api/employee-portal/me', async (req, res) => {
     const user = await requireEmployee(req, res, db);
     if (!user) return;

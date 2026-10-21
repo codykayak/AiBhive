@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   BookOpen,
   CheckSquare,
@@ -284,7 +284,7 @@ export default function EmployeePortalPage() {
               <button
                 type="button"
                 onClick={signOutPortal}
-                className="w-full flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:text-white mt-4"
+                className="w-full flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:text-white mt-2"
               >
                 <LogOut className="w-4 h-4" /> Sign out
               </button>

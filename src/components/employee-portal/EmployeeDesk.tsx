@@ -4,11 +4,14 @@ import EmployeeEscalationSettings from './EmployeeEscalationSettings';
 import {
   Activity,
   Bell,
+  Clipboard,
   ClipboardPaste,
+  MapPin,
   History,
   LayoutDashboard,
   List,
   Loader2,
+  Mail,
   Phone,
   PhoneOff,
   Play,
@@ -37,6 +40,9 @@ import {
   linkEmployeeDeskTwilio,
   fetchTwilioStatus,
   logEmployeeCall,
+  sendEmployeeLeadEmail,
+  startOutlookMailConnect,
+  disconnectOutlookMail,
   reportEmployeeDeviceSent,
   setEmployeeSmsProvider,
   setImFreeNow,
@@ -48,6 +54,15 @@ import {
   type LeadThread,
 } from '../../lib/employeePortalApi';
 import { LEAD_IMPORT_SAMPLE, parseLeadCsv, parseLeadFile, type LeadImportParse, type ParsedLeadRow } from '../../lib/leadListImport';
+import {
+  dialPhoneForLead,
+  formatPhoneDisplay,
+  googleMapsSearchUrl,
+  leadPhoneList,
+} from '../../lib/leadPhones';
+import { callbackPresetIso, normalizePropertyAddressKey, sortDialQueue } from '../../lib/dialQueue';
+import { assessDialWindow } from '../../lib/dialTimeGuard';
+import { propertyIntelLinks } from '../../lib/propertyIntel';
 
 const DISPOSITIONS = [
   { id: 'talked', label: 'Talked' },
@@ -101,6 +116,84 @@ async function confirmPhoneSent(message: string) {
   return window.confirm(message);
 }
 
+function LeadPhoneRow({
+  lead,
+  onCopied,
+}: {
+  lead: DeskLead;
+  onCopied: (msg: string) => void;
+}) {
+  const dial = dialPhoneForLead(lead);
+  const list = leadPhoneList(lead);
+  const idx = lead.dialPhoneIndex ?? 0;
+  if (!dial) return <span className="text-slate-500 text-sm">No phone</span>;
+  return (
+    <div className="mt-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-sm text-slate-100">{formatPhoneDisplay(dial)}</span>
+        <span className="font-mono text-[11px] text-slate-500">{dial}</span>
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-lg border border-white/15 px-2 py-0.5 text-[11px] font-bold text-slate-200 hover:border-bee-amber/40"
+          onClick={(e) => {
+            e.stopPropagation();
+            void copyText(dial).then((ok) => ok && onCopied('Phone copied'));
+          }}
+        >
+          <Clipboard className="w-3 h-3" /> Copy
+        </button>
+      </div>
+      {list.length > 1 ? (
+        <p className="text-[11px] text-slate-500 mt-1">
+          Dialing line {Math.min(idx + 1, list.length)} of {list.length}. No answer / voicemail moves to the next number on this lead.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function LeadAddressBlock({
+  address,
+  className = 'text-sm',
+}: {
+  address: string;
+  className?: string;
+}) {
+  const maps = googleMapsSearchUrl(address);
+  const intel = propertyIntelLinks(address);
+  if (!address.trim()) return <span className="text-slate-500 text-sm">No address</span>;
+  return (
+    <div className={`mt-2 leading-relaxed text-slate-300 ${className}`}>
+      <p className="whitespace-pre-wrap break-words">{address}</p>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
+        {maps ? (
+          <a
+            href={maps}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-bee-amber hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MapPin className="w-3.5 h-3.5" /> Maps
+          </a>
+        ) : null}
+        {intel.map((link) => (
+          <a
+            key={link.id}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-bold text-slate-300 hover:text-bee-amber hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function textLabel(lead: DeskLead) {
   if (lead.textCount == null) return lead.status === 'texted' ? 'yes' : '0';
   return String(lead.textCount);
@@ -108,6 +201,15 @@ function textLabel(lead: DeskLead) {
 
 function isOpenLead(lead: DeskLead) {
   return !lead.optedOut && (lead.status === 'new' || lead.status === 'callback');
+}
+
+function isDialableNow(lead: DeskLead) {
+  if (!isOpenLead(lead)) return false;
+  if (lead.status === 'callback' && lead.callbackAt) {
+    const t = new Date(lead.callbackAt).getTime();
+    if (!Number.isNaN(t) && t > Date.now()) return false;
+  }
+  return true;
 }
 
 function ownerFirstPrefix(name: string) {
@@ -119,6 +221,16 @@ function ownerFirstPrefix(name: string) {
   if (firsts.length === 1) return ` ${firsts[0]},`;
   if (firsts.length === 2) return ` ${firsts[0]} and ${firsts[1]},`;
   return ` ${firsts.slice(0, -1).join(', ')} and ${firsts[firsts.length - 1]},`;
+}
+
+function draftEmail(business: EmployeeDeskSnapshot['business'] | undefined, lead: DeskLead) {
+  const address = lead.propertyAddress.trim() || 'your property';
+  const name = lead.name.trim();
+  const hi = name ? `Hi ${name.split(/\s+/)[0]},` : 'Hi,';
+  const tpl =
+    business?.greeting ||
+    "I'm Cody, a real estate investor in Eugene. I'm reaching out about the property at {address} — would you consider selling, or is there a best time to talk?";
+  return `${hi}\n\n${tpl.replace(/\{address\}/gi, address)}\n\nThank you,\nCody`.slice(0, 8000);
 }
 
 function draftSms(business: EmployeeDeskSnapshot['business'] | undefined, lead: DeskLead) {
@@ -145,11 +257,19 @@ function applyParse(setters: {
       setters.setError(parsed.errors.join(' ') || 'No valid leads found in that file.');
       return;
     }
+    const seenAddr = new Set<string>();
+    const deduped = parsed.rows.filter((row) => {
+      const key = normalizePropertyAddressKey(row.propertyAddress);
+      if (key && seenAddr.has(key)) return false;
+      if (key) seenAddr.add(key);
+      return true;
+    });
+    const addrDupes = parsed.rows.length - deduped.length;
     setters.setError(parsed.errors.length ? parsed.errors.join(' ') : '');
-    setters.setPreview(parsed.rows);
-    setters.setPreviewSkipped(parsed.skipped);
+    setters.setPreview(deduped);
+    setters.setPreviewSkipped(parsed.skipped + addrDupes);
     setters.setNotice(
-      `${parsed.rows.length} lead${parsed.rows.length === 1 ? '' : 's'} ready to import${parsed.skipped ? ` · ${parsed.skipped} row${parsed.skipped === 1 ? '' : 's'} skipped` : ''}.`,
+      `${deduped.length} lead${deduped.length === 1 ? '' : 's'} ready to import${parsed.skipped || addrDupes ? ` · ${parsed.skipped + addrDupes} row${parsed.skipped + addrDupes === 1 ? '' : 's'} skipped` : ''}${addrDupes ? ` (${addrDupes} duplicate addresses)` : ''}.`,
     );
   };
 }
@@ -178,6 +298,16 @@ export default function EmployeeDesk({ user }: Props) {
   const [powerMode, setPowerMode] = useState(false);
   const [callNotes, setCallNotes] = useState('');
   const [smsDraft, setSmsDraft] = useState('');
+  const [emailDraft, setEmailDraft] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [leadEmailInput, setLeadEmailInput] = useState('');
+  const [autoEmailOnVoicemail, setAutoEmailOnVoicemail] = useState(() => {
+    try {
+      return localStorage.getItem('aibhive-auto-email-voicemail') === '1';
+    } catch {
+      return false;
+    }
+  });
   const [panel, setPanel] = useState<OpsPanel>('overview');
   const [lastSyncedAt, setLastSyncedAt] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -185,6 +315,16 @@ export default function EmployeeDesk({ user }: Props) {
   const [twilioGuide, setTwilioGuide] = useState<Awaited<ReturnType<typeof fetchTwilioStatus>> | null>(null);
   const [callLogFilter, setCallLogFilter] = useState<string>('all');
   const [liveCallSec, setLiveCallSec] = useState(0);
+  const [autoDialEnabled, setAutoDialEnabled] = useState(true);
+  const [hangupAwaitingDisposition, setHangupAwaitingDisposition] = useState(false);
+  const autoDialLeadIdRef = useRef<string | null>(null);
+
+  const businessTz = desk?.business?.sendTimezone || 'America/Los_Angeles';
+
+  const scheduleAutoDial = (leadId: string) => {
+    if (!powerMode || !autoDialEnabled) return;
+    autoDialLeadIdRef.current = leadId;
+  };
 
   const handleParse = useMemo(
     () => applyParse({ setError, setNotice, setPreview, setPreviewSkipped, setPreviewErrors }),
@@ -252,17 +392,26 @@ export default function EmployeeDesk({ user }: Props) {
     };
   }, [reload]);
 
-  const openQueue = useMemo(() => (desk?.leads || []).filter(isOpenLead), [desk]);
+  const openQueue = useMemo(() => sortDialQueue((desk?.leads || []).filter(isOpenLead)), [desk]);
+  const powerDialQueue = useMemo(() => openQueue.filter(isDialableNow), [openQueue]);
 
-  const openLead = async (leadId: string) => {
+  const openLead = async (leadId: string, options?: { autoDial?: boolean }) => {
     setOpenId(leadId);
     setThread(null);
     const lead = desk?.leads.find((l) => l.id === leadId);
-    if (lead) setSmsDraft(draftSms(desk?.business, lead));
+    if (lead) {
+      setSmsDraft(draftSms(desk?.business, lead));
+      setEmailDraft(draftEmail(desk?.business, lead));
+      setEmailSubject(`Regarding ${lead.propertyAddress || 'your property'}`.slice(0, 120));
+      setLeadEmailInput(lead.email || '');
+    }
     try {
       const detail = await fetchLeadThread(user, businessId, leadId);
       setThread(detail);
       setSmsDraft(draftSms(desk?.business, detail.lead));
+      setEmailDraft(draftEmail(desk?.business, detail.lead));
+      setEmailSubject(`Regarding ${detail.lead.propertyAddress || 'your property'}`.slice(0, 120));
+      setLeadEmailInput(detail.lead.email || '');
       setDesk((prev) =>
         prev
           ? {
@@ -271,6 +420,7 @@ export default function EmployeeDesk({ user }: Props) {
             }
           : prev,
       );
+      if (options?.autoDial) scheduleAutoDial(leadId);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open lead');
     }
@@ -278,8 +428,8 @@ export default function EmployeeDesk({ user }: Props) {
 
   const advancePowerDial = (snap: EmployeeDeskSnapshot | null) => {
     if (!powerMode || !snap) return;
-    const next = snap.leads.filter(isOpenLead)[0];
-    if (next) void openLead(next.id);
+    const next = sortDialQueue(snap.leads.filter(isDialableNow))[0];
+    if (next) void openLead(next.id, { autoDial: true });
     else {
       setOpenId(null);
       setThread(null);
@@ -338,7 +488,10 @@ export default function EmployeeDesk({ user }: Props) {
     setError('');
     try {
       const result = await importEmployeeLeads(user, businessId, preview);
-      setNotice(`Imported ${result.imported}. ${result.duplicates} already on the list. ${result.skipped} skipped.`);
+      const dupAddr = result.duplicateAddresses ? ` ${result.duplicateAddresses} duplicate addresses.` : '';
+      setNotice(
+        `Imported ${result.imported}. ${result.duplicates} duplicate phones.${dupAddr} ${result.skipped} skipped.`,
+      );
       setPreview(null);
       setPreviewErrors([]);
       const snap = await reload();
@@ -398,7 +551,7 @@ export default function EmployeeDesk({ user }: Props) {
   };
 
   const textHead = async (count: number) => {
-    const ids = openQueue.slice(0, count).map((l) => l.id);
+    const ids = powerDialQueue.slice(0, count).map((l) => l.id);
     if (!ids.length) {
       setError('No open leads in the queue.');
       return;
@@ -407,26 +560,43 @@ export default function EmployeeDesk({ user }: Props) {
     await textChosen(ids);
   };
 
-  const markCall = async (lead: DeskLead, disposition: string) => {
+  const markCall = async (lead: DeskLead, disposition: string, callbackAt?: string) => {
     setBusy('log');
     setError('');
+    setHangupAwaitingDisposition(false);
     try {
       const durationSec =
         callStartedAtRef.current != null
           ? Math.max(0, Math.round((Date.now() - callStartedAtRef.current) / 1000))
           : undefined;
       const channel = callState === 'live' || durationSec != null ? 'twilio_browser' : 'manual';
-      await logEmployeeCall(user, {
+      const result = await logEmployeeCall(user, {
         businessId,
         leadId: lead.id,
         disposition,
         notes: callNotes.trim() || undefined,
         channel,
         durationSec,
+        callbackAt,
+        autoEmailOnVoicemail: autoEmailOnVoicemail && disposition === 'voicemail',
       });
       callStartedAtRef.current = null;
       setCallNotes('');
       const snap = await reload();
+      if (result.tryAlternatePhone) {
+        const n = (result.dialPhoneIndex ?? 0) + 1;
+        const total = result.lead ? leadPhoneList(result.lead).length : leadPhoneList(lead).length;
+        setNotice(`No answer — trying phone ${n} of ${total} on this lead.`);
+        await openLead(lead.id, { autoDial: true });
+        return;
+      }
+      if (disposition === 'callback' && (callbackAt || result.lead?.callbackAt)) {
+        const when = result.lead?.callbackAt || callbackAt;
+        setNotice(`Callback scheduled${when ? ` for ${formatCallWhen(when)}` : ''}.`);
+      }
+      if (result.autoEmailSent) {
+        setNotice('Voicemail logged — follow-up email sent from your Outlook.');
+      }
       if (powerMode) advancePowerDial(snap);
       else await openLead(lead.id);
     } catch (e) {
@@ -436,9 +606,17 @@ export default function EmployeeDesk({ user }: Props) {
     }
   };
 
-  const startCall = async (lead: DeskLead) => {
+  const startCall = async (lead: DeskLead, opts?: { force?: boolean }) => {
     setError('');
+    const to = dialPhoneForLead(lead) || lead.phone;
+    const guard = assessDialWindow(to, businessTz);
+    if (!guard.ok && !opts?.force) {
+      setError(guard.reason);
+      return;
+    }
+    if (!guard.ok && opts?.force && !window.confirm(`${guard.reason}\n\nDial anyway?`)) return;
     setCallState('connecting');
+    setHangupAwaitingDisposition(false);
     try {
       const token = await fetchEmployeeVoiceToken(user);
       if (!token.ready || !token.token) {
@@ -450,7 +628,7 @@ export default function EmployeeDesk({ user }: Props) {
       const { Device } = await import('@twilio/voice-sdk');
       const device = new Device(token.token, { logLevel: 'error' });
       callStartedAtRef.current = Date.now();
-      const call = await device.connect({ params: { To: lead.phone } });
+      const call = await device.connect({ params: { To: to } });
       setCallState('live');
       setHangup(() => () => {
         call.disconnect();
@@ -460,11 +638,50 @@ export default function EmployeeDesk({ user }: Props) {
         setCallState('idle');
         setHangup(null);
         device.destroy();
+        setHangupAwaitingDisposition(true);
       });
     } catch (e) {
       setCallState('idle');
       callStartedAtRef.current = null;
       setError(e instanceof Error ? e.message : 'Call failed');
+    }
+  };
+
+  const sendEmailOne = async (lead: DeskLead) => {
+    const to = leadEmailInput.trim().toLowerCase();
+    const body = emailDraft.trim();
+    if (!to) {
+      setError('Enter the owner email address first (or add an Email column to your import).');
+      return;
+    }
+    if (!body) {
+      setError('Email body is empty.');
+      return;
+    }
+    if (!desk?.outlook?.connected) {
+      const subject = encodeURIComponent(emailSubject.trim() || `Regarding ${lead.propertyAddress}`);
+      const mailBody = encodeURIComponent(body);
+      window.location.href = `mailto:${to}?subject=${subject}&body=${mailBody}`;
+      setNotice('Opened your default mail app — connect Outlook in Lines & Grok for one-click send from AiBhive.');
+      return;
+    }
+    setBusy('email');
+    setError('');
+    try {
+      await sendEmployeeLeadEmail(user, {
+        businessId,
+        leadId: lead.id,
+        to,
+        subject: emailSubject.trim() || undefined,
+        body,
+      });
+      setNotice(`Email sent to ${to} from your Outlook.`);
+      await reload();
+      await openLead(lead.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Email did not send');
+    } finally {
+      setBusy('');
     }
   };
 
@@ -498,8 +715,9 @@ export default function EmployeeDesk({ user }: Props) {
 
   const startPowerDial = () => {
     setPowerMode(true);
-    const first = openQueue[0] || desk?.queue.current;
-    if (first) void openLead(first.id);
+    setPanel('dialer');
+    const first = powerDialQueue[0] || desk?.queue.current;
+    if (first) void openLead(first.id, { autoDial: true });
     else setError('Import a list first — need phone and property address on each row.');
   };
 
@@ -508,6 +726,11 @@ export default function EmployeeDesk({ user }: Props) {
     if (statusSort === 'name') list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     if (statusSort === 'recent') {
       list.sort((a, b) => String(b.lastContactAt || '').localeCompare(String(a.lastContactAt || '')));
+    }
+    if (statusSort === 'queue') {
+      const open = sortDialQueue(list.filter(isOpenLead));
+      const rest = list.filter((l) => !isOpenLead(l));
+      return [...open, ...rest];
     }
     return list;
   }, [filtered, statusSort]);
@@ -525,6 +748,54 @@ export default function EmployeeDesk({ user }: Props) {
   }
 
   const active = thread?.lead || desk?.leads.find((l) => l.id === openId) || desk?.queue.current || null;
+
+  const activeDialGuard = useMemo(() => {
+    if (!active) return null;
+    const phone = dialPhoneForLead(active) || active.phone;
+    return assessDialWindow(phone, businessTz);
+  }, [active, businessTz]);
+
+  useEffect(() => {
+    const targetId = autoDialLeadIdRef.current;
+    if (!targetId || openId !== targetId || panel !== 'dialer') return;
+    if (callState !== 'idle' || busy || hangupAwaitingDisposition) return;
+    const lead = desk?.leads.find((l) => l.id === targetId);
+    if (!lead) return;
+    autoDialLeadIdRef.current = null;
+    void startCall(lead);
+  }, [openId, callState, busy, hangupAwaitingDisposition, panel, desk, powerMode, autoDialEnabled]);
+
+  useEffect(() => {
+    if (panel !== 'dialer') return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (!active || busy) return;
+      const key = e.key.toLowerCase();
+      if (key === 'c' && callState !== 'live' && callState !== 'connecting') {
+        e.preventDefault();
+        void startCall(active);
+        return;
+      }
+      if (key === 'h' && callState === 'live' && hangup) {
+        e.preventDefault();
+        hangup();
+        return;
+      }
+      const num = Number(key);
+      if (num >= 1 && num <= DISPOSITIONS.length) {
+        e.preventDefault();
+        const d = DISPOSITIONS[num - 1];
+        if (d.id === 'callback') {
+          void markCall(active, 'callback', callbackPresetIso('1h', businessTz));
+        } else {
+          void markCall(active, d.id);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [panel, active, busy, callState, hangup, businessTz]);
   const allFilteredSelected = filtered.length > 0 && filtered.every((l) => selected[l.id]);
   const quotaPct = desk ? Math.min(100, Math.round((desk.quota.sent / Math.max(desk.quota.limit, 1)) * 100)) : 0;
   const queuePct = desk?.queue.total ? Math.round(((desk.queue.total - desk.queue.remaining) / desk.queue.total) * 100) : 0;
@@ -707,8 +978,25 @@ export default function EmployeeDesk({ user }: Props) {
                   {(desk?.queue.openPreview || openQueue).slice(0, 50).map((lead, i) => (
                     <tr key={lead.id} className="border-t border-white/5 hover:bg-white/[0.03] cursor-pointer" onClick={() => { setPanel('dialer'); void openLead(lead.id); }}>
                       <td className="p-2 text-slate-500">{i + 1}</td>
-                      <td className="p-2 font-semibold">{lead.name || 'Owner'}<br /><span className="font-mono text-xs text-slate-400">{lead.phone}</span></td>
-                      <td className="p-2 text-slate-400 max-w-xs truncate">{lead.propertyAddress}</td>
+                      <td className="p-2 font-semibold">
+                        {lead.name || 'Owner'}
+                        <br />
+                        <span className="font-mono text-xs text-slate-400">{formatPhoneDisplay(dialPhoneForLead(lead) || lead.phone)}</span>
+                      </td>
+                      <td className="p-2 text-slate-400 max-w-md align-top">
+                        <p className="whitespace-normal break-words text-xs leading-snug">{lead.propertyAddress}</p>
+                        {googleMapsSearchUrl(lead.propertyAddress) ? (
+                          <a
+                            href={googleMapsSearchUrl(lead.propertyAddress)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-bold text-bee-amber hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Maps
+                          </a>
+                        ) : null}
+                      </td>
                       <td className="p-2 text-center">{lead.textCount ?? 0}</td>
                     </tr>
                   ))}
@@ -860,6 +1148,59 @@ export default function EmployeeDesk({ user }: Props) {
               </ol>
             ) : null}
           </section>
+          <section className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-5">
+            <h3 className="font-bold text-sky-100 flex items-center gap-2">
+              <Mail className="w-4 h-4" /> Your Outlook (send email from dialer)
+            </h3>
+            <p className="text-slate-300 mt-2 text-sm leading-relaxed">
+              One-time connect lets AiBhive send mail as you via Microsoft Graph — same account you use in Outlook. Tokens stay on your employee profile, not shared with other agents.
+            </p>
+            {desk?.outlook?.connected ? (
+              <p className="mt-2 text-sm text-emerald-300">
+                Connected as <strong>{desk.outlook.connectedEmail}</strong>
+              </p>
+            ) : null}
+            {!desk?.outlook?.oauthReady ? (
+              <p className="mt-2 text-xs text-amber-200">
+                Server needs MICROSOFT_GRAPH_CLIENT_ID and MICROSOFT_GRAPH_CLIENT_SECRET (Azure app with Mail.Send).
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {desk?.outlook?.connected ? (
+                <button
+                  type="button"
+                  className="rounded-xl border border-white/20 px-4 py-2 font-bold text-sm"
+                  onClick={() =>
+                    void disconnectOutlookMail(user)
+                      .then(() => reload())
+                      .then(() => setNotice('Outlook disconnected.'))
+                      .catch((e) => setError(e instanceof Error ? e.message : 'Disconnect failed'))
+                  }
+                >
+                  Disconnect Outlook
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!desk?.outlook?.oauthReady}
+                  className="rounded-xl bg-sky-500 text-white font-extrabold px-4 py-2 text-sm disabled:opacity-40"
+                  onClick={() =>
+                    void startOutlookMailConnect(user)
+                      .then((r) => {
+                        window.location.href = r.url;
+                      })
+                      .catch((e) => setError(e instanceof Error ? e.message : 'Could not start Outlook connect'))
+                  }
+                >
+                  Connect Outlook
+                </button>
+              )}
+            </div>
+            <p className="mt-3 text-[11px] text-slate-500">
+              Redirect URI for Azure:{' '}
+              <code className="text-slate-400">{origin}/api/employee-portal/outlook/callback</code>
+            </p>
+          </section>
           <section className="rounded-2xl border border-white/10 p-5 grid md:grid-cols-3 gap-4">
             <div><p className="text-slate-500 text-xs uppercase">Twilio SMS</p><p className="font-bold mt-1">{infra.twilioSmsReady ? 'Ready' : 'Not configured'}</p></div>
             <div><p className="text-slate-500 text-xs uppercase">Browser voice</p><p className="font-bold mt-1">{infra.twilioVoiceReady ? 'Ready' : 'Missing API keys / TwiML app'}</p></div>
@@ -898,7 +1239,9 @@ export default function EmployeeDesk({ user }: Props) {
                 <Zap className="w-5 h-5 text-bee-amber" /> Active workstation
               </h3>
               <p className="text-sm text-slate-400 mt-1">
-                {powerMode ? 'Power mode — disposition logs the call and advances the queue.' : 'Every disposition is tracked in Call tracking with agent, time, and notes.'}
+                {powerMode
+                  ? 'Power mode — auto-dial when enabled; log disposition to advance (keys 1–5, C = call, H = hang up).'
+                  : 'Every disposition is tracked in Call tracking with agent, time, and notes.'}
               </p>
               <p className="text-xs text-slate-500 mt-2">
                 Shift: <strong className="text-white">{desk?.today.calls ?? 0}</strong> calls · <strong className="text-white">{desk?.today.texts ?? 0}</strong> texts · Floor today:{' '}
@@ -926,16 +1269,44 @@ export default function EmployeeDesk({ user }: Props) {
               >
                 Power mode {powerMode ? 'ON' : 'OFF'}
               </button>
+              {powerMode ? (
+                <button
+                  type="button"
+                  onClick={() => setAutoDialEnabled((v) => !v)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-bold ${autoDialEnabled ? 'border-emerald-400/50 text-emerald-300' : 'border-white/15 text-slate-400'}`}
+                >
+                  Auto-dial {autoDialEnabled ? 'ON' : 'OFF'}
+                </button>
+              ) : null}
             </div>
           </div>
+
+          {hangupAwaitingDisposition ? (
+            <div className="mt-4 rounded-xl border border-bee-amber/50 bg-bee-amber/15 px-4 py-3 text-sm font-semibold text-bee-amber">
+              Call ended — pick a disposition (1–5) so power dial can continue.
+            </div>
+          ) : null}
 
           {active ? (
             <div className="mt-5 grid md:grid-cols-2 gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Now working</p>
                 <h4 className="text-2xl font-black mt-1">{active.name || 'Unnamed owner'}</h4>
-                <p className="font-mono text-sm mt-1">{active.phone}</p>
-                <p className="text-slate-300 text-sm mt-2 leading-relaxed">{active.propertyAddress}</p>
+                <LeadPhoneRow lead={active} onCopied={(msg) => setNotice(msg)} />
+                <LeadAddressBlock address={active.propertyAddress} />
+                {active.callbackAt ? (
+                  <p className="mt-2 text-xs text-amber-200/90">
+                    Callback {new Date(active.callbackAt).getTime() <= Date.now() ? 'due now' : 'scheduled'}:{' '}
+                    {formatCallWhen(active.callbackAt)}
+                  </p>
+                ) : null}
+                {activeDialGuard && !activeDialGuard.ok ? (
+                  <p className="mt-2 text-xs text-amber-300/90 border border-amber-500/30 rounded-lg px-2 py-1.5">
+                    {activeDialGuard.reason} Auto-dial is paused; use Call (may confirm override).
+                  </p>
+                ) : activeDialGuard ? (
+                  <p className="mt-2 text-[11px] text-slate-500">Lead local time: {activeDialGuard.localTimeLabel}</p>
+                ) : null}
                 <p className="mt-3 text-xs text-slate-500 uppercase tracking-wider">
                   Status {active.status} · Texts {textLabel(active)}
                   {active.callCount != null ? ` · Calls ${active.callCount}` : ''}
@@ -975,6 +1346,69 @@ export default function EmployeeDesk({ user }: Props) {
                     readOnly={false}
                   />
                 </label>
+                <div className="rounded-xl border border-white/10 p-3 space-y-2">
+                  <p className="text-xs font-bold text-slate-400 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Email
+                    {desk?.outlook?.connected ? (
+                      <span className="text-emerald-400 font-normal">Outlook · {desk.outlook.connectedEmail}</span>
+                    ) : (
+                      <span className="text-slate-500 font-normal">Connect Outlook under Lines & Grok</span>
+                    )}
+                  </p>
+                  <label className="block text-[11px] text-slate-500">
+                    Owner email
+                    <input
+                      type="email"
+                      value={leadEmailInput}
+                      onChange={(e) => setLeadEmailInput(e.target.value)}
+                      className="mt-1 w-full rounded-lg bg-black/50 border border-white/10 px-3 py-1.5 text-sm font-mono"
+                      placeholder="owner@example.com"
+                    />
+                  </label>
+                  <label className="block text-[11px] text-slate-500">
+                    Subject
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      className="mt-1 w-full rounded-lg bg-black/50 border border-white/10 px-3 py-1.5 text-sm"
+                    />
+                  </label>
+                  <label className="block text-[11px] text-slate-500">
+                    Message
+                    <textarea
+                      value={emailDraft}
+                      onChange={(e) => setEmailDraft(e.target.value)}
+                      rows={4}
+                      className="mt-1 w-full rounded-lg bg-black/50 border border-white/10 px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                      type="button"
+                      disabled={Boolean(busy)}
+                      onClick={() => void sendEmailOne(active)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-sky-500/90 text-white font-extrabold px-4 py-2 text-sm disabled:opacity-50"
+                    >
+                      <Mail className="w-4 h-4" /> {desk?.outlook?.connected ? 'Send via Outlook' : 'Open in mail app'}
+                    </button>
+                    <label className="inline-flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoEmailOnVoicemail}
+                        onChange={(e) => {
+                          setAutoEmailOnVoicemail(e.target.checked);
+                          try {
+                            localStorage.setItem('aibhive-auto-email-voicemail', e.target.checked ? '1' : '0');
+                          } catch {
+                            /* ignore */
+                          }
+                        }}
+                      />
+                      Auto-email on voicemail (Outlook)
+                    </label>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {callState === 'live' && hangup ? (
                     <button type="button" onClick={hangup} className="inline-flex items-center gap-2 rounded-xl bg-red-500 text-white font-extrabold px-4 py-2 text-sm">
@@ -984,10 +1418,10 @@ export default function EmployeeDesk({ user }: Props) {
                     <button
                       type="button"
                       disabled={Boolean(busy) || callState === 'connecting'}
-                      onClick={() => void startCall(active)}
+                      onClick={() => void startCall(active, activeDialGuard && !activeDialGuard.ok ? { force: true } : undefined)}
                       className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 text-bee-black font-extrabold px-4 py-2 text-sm disabled:opacity-50"
                     >
-                      <Phone className="w-4 h-4" /> {callState === 'connecting' ? 'Connecting…' : 'Call'}
+                      <Phone className="w-4 h-4" /> {callState === 'connecting' ? 'Connecting…' : 'Call (C)'}
                     </button>
                   )}
                   <button
@@ -1010,18 +1444,49 @@ export default function EmployeeDesk({ user }: Props) {
                     </button>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {DISPOSITIONS.map((d) => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      disabled={Boolean(busy)}
-                      onClick={() => void markCall(active, d.id)}
-                      className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold hover:border-bee-amber/50"
-                    >
-                      {d.label}
-                    </button>
-                  ))}
+                <div
+                  className={`rounded-2xl p-2 transition-colors ${hangupAwaitingDisposition ? 'ring-2 ring-bee-amber/60 bg-bee-amber/5' : ''}`}
+                >
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500 px-1 mb-1.5">Disposition</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DISPOSITIONS.map((d, i) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        disabled={Boolean(busy)}
+                        onClick={() => {
+                          if (d.id === 'callback') {
+                            void markCall(active, 'callback', callbackPresetIso('1h', businessTz));
+                          } else {
+                            void markCall(active, d.id);
+                          }
+                        }}
+                        className="rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold hover:border-bee-amber/50"
+                      >
+                        {i + 1}. {d.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 px-1">Callback schedule (logs Call back):</p>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {(
+                      [
+                        ['15m', '15 min'],
+                        ['1h', '1 hour'],
+                        ['tomorrow10', 'Tomorrow 10am'],
+                      ] as const
+                    ).map(([preset, label]) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        disabled={Boolean(busy)}
+                        onClick={() => void markCall(active, 'callback', callbackPresetIso(preset, businessTz))}
+                        className="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-bold text-bee-amber hover:border-bee-amber/40"
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1079,8 +1544,12 @@ export default function EmployeeDesk({ user }: Props) {
                 }`}
               >
                 <span className="text-[10px] text-slate-500 font-mono">#{idx + 1}</span>
-                <p className="font-semibold truncate">{lead.name || 'Owner'}</p>
-                <p className="text-xs text-slate-400 truncate">{lead.propertyAddress}</p>
+                <p className="font-semibold">{lead.name || 'Owner'}</p>
+                <p className="text-[11px] font-mono text-slate-500">{formatPhoneDisplay(dialPhoneForLead(lead) || lead.phone)}</p>
+                <p className="text-xs text-slate-400 line-clamp-2">{lead.propertyAddress}</p>
+                {lead.status === 'callback' && lead.callbackAt && new Date(lead.callbackAt).getTime() > Date.now() ? (
+                  <p className="text-[10px] text-amber-400/90">Scheduled {formatCallWhen(lead.callbackAt)}</p>
+                ) : null}
               </button>
             ))}
             {!openQueue.length ? <p className="text-xs text-slate-500">Queue empty — import leads to start.</p> : null}
@@ -1295,8 +1764,36 @@ export default function EmployeeDesk({ user }: Props) {
                     />
                   </td>
                   <td className="p-3 font-semibold">{lead.name || 'Unnamed'}</td>
-                  <td className="p-3 font-mono text-xs">{lead.phone}</td>
-                  <td className="p-3 hidden lg:table-cell text-slate-400 max-w-[240px] truncate">{lead.propertyAddress}</td>
+                  <td className="p-3 font-mono text-xs align-top">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span>{formatPhoneDisplay(dialPhoneForLead(lead) || lead.phone)}</span>
+                      <button
+                        type="button"
+                        className="rounded border border-white/10 p-0.5 hover:border-bee-amber/40"
+                        title="Copy phone"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void copyText(dialPhoneForLead(lead) || lead.phone).then((ok) => ok && setNotice('Phone copied'));
+                        }}
+                      >
+                        <Clipboard className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="p-3 hidden lg:table-cell text-slate-400 max-w-xs align-top">
+                    <p className="whitespace-normal break-words text-xs leading-snug">{lead.propertyAddress}</p>
+                    {googleMapsSearchUrl(lead.propertyAddress) ? (
+                      <a
+                        href={googleMapsSearchUrl(lead.propertyAddress)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-bold text-bee-amber hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Maps
+                      </a>
+                    ) : null}
+                  </td>
                   <td className="p-3 uppercase text-[10px] tracking-wider text-slate-400">{lead.status}</td>
                   <td className="p-3 hidden md:table-cell text-xs text-slate-500">{lead.lastContactAt ? formatSyncedAt(lead.lastContactAt) : '—'}</td>
                   <td className="p-3 hidden md:table-cell text-xs">{lead.lastCallDisposition || '—'}</td>

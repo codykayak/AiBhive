@@ -3,6 +3,8 @@
 export type ParsedLeadRow = {
   name: string;
   phone: string;
+  phones: string[];
+  email: string;
   propertyAddress: string;
 };
 
@@ -102,6 +104,9 @@ function mapHeader(header: string): 'name' | 'phone' | 'address' | 'skip' | null
   ) {
     return 'phone';
   }
+  if (h.includes('email') || /^(e-?mail|owner email|contact email)$/.test(h)) {
+    return 'email';
+  }
   if (
     /^(address|property|street|site address|property address|mailing|location|full address|situs|parcel|situs address|property location|subject property)/.test(h) ||
     h.includes('mailing address') ||
@@ -120,7 +125,7 @@ function mapHeader(header: string): 'name' | 'phone' | 'address' | 'skip' | null
 }
 
 function buildColMap(headerRow: string[]) {
-  const colMap: { index: number; field: 'name' | 'phone' | 'address' }[] = [];
+  const colMap: { index: number; field: 'name' | 'phone' | 'address' | 'email' }[] = [];
   headerRow.forEach((h, index) => {
     const field = mapHeader(h);
     if (field && field !== 'skip') colMap.push({ index, field });
@@ -160,20 +165,23 @@ export function parseLeadGrid(grid: string[][]): LeadImportParse {
   let skipped = 0;
   for (const line of dataRows) {
     if (!line.some((c) => c.trim())) continue;
-    const acc: ParsedLeadRow = { name: '', phone: '', propertyAddress: '' };
+    const acc: ParsedLeadRow = { name: '', phone: '', phones: [], email: '', propertyAddress: '' };
+    const phoneRaw: string[] = [];
     for (const { index, field } of colMap) {
       const val = (line[index] || '').trim();
       if (!val) continue;
       if (field === 'name') acc.name = acc.name ? `${acc.name} & ${val}` : val;
-      else if (field === 'phone') acc.phone = val;
+      else if (field === 'phone') phoneRaw.push(val);
+      else if (field === 'email') acc.email = val;
       else acc.propertyAddress = acc.propertyAddress ? `${acc.propertyAddress}, ${val}` : val;
     }
-    const phone = normalizePhone(acc.phone);
-    if (phone.replace(/\D/g, '').length < 10 || !acc.propertyAddress.trim()) {
+    const phones = phoneRaw.map((p) => normalizePhone(p)).filter((p) => p.replace(/\D/g, '').length >= 10);
+    const phone = phones[0] || '';
+    if (!phone || !acc.propertyAddress.trim()) {
       skipped += 1;
       continue;
     }
-    rows.push({ ...acc, phone });
+    rows.push({ ...acc, phone, phones, email: acc.email.trim().toLowerCase() });
   }
   if (!rows.length && !errors.length) {
     errors.push('No valid rows — each lead needs phone (10+ digits) and a property address.');
