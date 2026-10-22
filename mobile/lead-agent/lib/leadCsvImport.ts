@@ -6,6 +6,8 @@ import type { Lead } from './types';
 export type ParsedLeadRow = {
   name: string;
   phone: string;
+  phones: string[];
+  email: string;
   propertyAddress: string;
   raw: Record<string, string>;
 };
@@ -120,9 +122,12 @@ function normalizeHeader(h: string): string {
   return h.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
-function mapHeader(header: string): 'name' | 'phone' | 'address' | 'skip' | null {
+function mapHeader(header: string): 'name' | 'phone' | 'address' | 'email' | 'skip' | null {
   const h = normalizeHeader(header);
   if (!h) return null;
+  if (h.includes('email') || /^(e-?mail|owner email|contact email)$/.test(h)) {
+    return 'email';
+  }
   if (
     /^(phone|mobile|cell|tel|telephone|sms|contact phone|wireless|day phone|evening phone|primary phone)/.test(h) ||
     h.endsWith(' phone') ||
@@ -148,7 +153,7 @@ function mapHeader(header: string): 'name' | 'phone' | 'address' | 'skip' | null
 }
 
 function buildColMap(headerRow: string[]) {
-  const colMap: { index: number; field: 'name' | 'phone' | 'address' }[] = [];
+  const colMap: { index: number; field: 'name' | 'phone' | 'address' | 'email' }[] = [];
   headerRow.forEach((h, index) => {
     const field = mapHeader(h);
     if (field && field !== 'skip') colMap.push({ index, field });
@@ -195,15 +200,18 @@ export function parseLeadGrid(grid: string[][]): CsvImportResult {
     headerRow.forEach((h, i) => {
       raw[h || `col${i}`] = line[i] || '';
     });
-    const acc: ParsedLeadRow = { name: '', phone: '', propertyAddress: '', raw };
+    const acc: ParsedLeadRow = { name: '', phone: '', phones: [], email: '', propertyAddress: '', raw };
+    const phoneRaw: string[] = [];
     for (const { index, field } of colMap) {
       const val = (line[index] || '').trim();
       if (!val) continue;
       if (field === 'name') acc.name = acc.name ? `${acc.name} & ${val}` : val;
-      else if (field === 'phone') acc.phone = val;
+      else if (field === 'phone') phoneRaw.push(val);
+      else if (field === 'email') acc.email = val;
       else if (field === 'address') acc.propertyAddress = acc.propertyAddress ? `${acc.propertyAddress}, ${val}` : val;
     }
-    const phone = normalizePhone(acc.phone);
+    const phones = phoneRaw.map((p) => normalizePhone(p)).filter((p) => p.replace(/\D/g, '').length >= 10);
+    const phone = phones[0] || normalizePhone(acc.phone);
     if (phone.replace(/\D/g, '').length < 10) {
       skipped++;
       continue;
@@ -212,7 +220,7 @@ export function parseLeadGrid(grid: string[][]): CsvImportResult {
       skipped++;
       continue;
     }
-    rows.push({ ...acc, phone });
+    rows.push({ ...acc, phone, phones, email: acc.email.trim().toLowerCase() });
   }
 
   if (!rows.length && !errors.length) {
@@ -254,6 +262,9 @@ export function parsedRowsToLeads(rows: ParsedLeadRow[]): Lead[] {
     id: `import-${now}-${i}`,
     name: r.name,
     phone: r.phone,
+    phones: r.phones?.length ? r.phones : [r.phone],
+    dialPhoneIndex: 0,
+    email: r.email,
     propertyAddress: r.propertyAddress,
     notes: r.propertyAddress,
     status: 'new' as const,

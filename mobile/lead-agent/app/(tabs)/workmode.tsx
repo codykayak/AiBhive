@@ -82,7 +82,14 @@ export default function WorkModeScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{guide?.title || 'Work Mode'}</Text>
-      <Text style={styles.sub}>Grok answers forwarded calls before your voicemail.</Text>
+      <View style={styles.warnBox}>
+        <Text style={styles.warnTitle}>This app does not forward your phone automatically</Text>
+        <Text style={styles.warnBody}>
+          Grok will not answer your cell until you turn on call forwarding in your carrier settings (or tap the carrier
+          shortcuts below). The Work mode switch here is only a reminder — nothing changes on your phone by itself.
+        </Text>
+      </View>
+      <Text style={styles.sub}>After you forward calls, Grok can answer before your voicemail.</Text>
 
       <View style={styles.row}>
         <Text style={styles.label}>Work mode (reminder)</Text>
@@ -148,6 +155,9 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingTop: 48, paddingBottom: 40, backgroundColor: '#f4f6f8' },
   title: { fontSize: 22, fontWeight: '800', color: '#111' },
   sub: { color: '#555', marginTop: 6, marginBottom: 16 },
+  warnBox: { backgroundColor: '#fef3c7', borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#f59e0b' },
+  warnTitle: { fontWeight: '800', color: '#92400e', marginBottom: 6 },
+  warnBody: { color: '#78350f', lineHeight: 20, fontSize: 13 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   label: { fontWeight: '600' },
   onHint: { color: '#1e4d2b', marginBottom: 16, fontWeight: '600' },

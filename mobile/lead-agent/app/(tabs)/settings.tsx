@@ -129,6 +129,11 @@ export default function SettingsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Settings · {active?.name}</Text>
+      <Text style={styles.hint}>
+        Full power dialer (auto-dial, call tracking, Outlook email) lives on the laptop at aibhive.com/employee — sign in
+        with the same Google account. This app uses your cell for calls/SMS; Grok voice requires Work Mode call
+        forwarding (not automatic).
+      </Text>
       <Text style={styles.label}>Greeting (first SMS)</Text>
       <TextInput style={styles.area} multiline value={greeting} onChangeText={setGreeting} />
       <Text style={styles.label}>AI training / company knowledge</Text>

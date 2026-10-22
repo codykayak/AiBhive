@@ -31,6 +31,9 @@ export type Lead = {
   id: string;
   name?: string;
   phone: string;
+  phones?: string[];
+  dialPhoneIndex?: number;
+  email?: string;
   propertyAddress?: string;
   notes?: string;
   status?: 'new' | 'texted' | 'replied' | 'appointment' | 'dead';

@@ -48,6 +48,8 @@ Requires Expo account, Apple Developer membership, and credentials in [expo.dev]
 2. Check the **Sample SMS** preview.
 3. **Automation** → **Send 1 test SMS now** (try your own number first).
 4. **Settings** → **Test server** / **Refresh RAG** (macrorei.com for inbound Grok).
+5. **Work Mode** — you must enable **carrier call forwarding** to the Grok line; the app does not forward calls for you.
+6. **Laptop power dialer** — https://aibhive.com/employee (same Google sign-in).
 
 ### Share the marketing list with a partner
 

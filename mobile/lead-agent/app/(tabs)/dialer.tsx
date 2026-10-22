@@ -4,12 +4,14 @@ import {
   FlatList,
   Linking,
   Pressable,
+  Share,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { formatPhoneDisplay, normalizePhone, postInbound, reportDeviceSent } from '../../lib/api';
+import { dialPhoneForLead, googleMapsUrl, leadPhoneList, zillowUrl } from '../../lib/leadPhones';
 import { useApp } from '../../lib/context';
 import { automationLeadPool, personalizeOutbound } from '../../lib/localAutomation';
 import { sendSmsNative, subscribeInbound } from '../../lib/sms';
@@ -50,15 +52,31 @@ export default function DialerScreen() {
 
   const queue = active ? automationLeadPool(leads) : [];
 
+  const [selectedLead, setSelectedLead] = useState<(typeof queue)[0] | null>(null);
+
   const selectLead = (lead: (typeof queue)[0]) => {
-    setPhone(formatPhoneDisplay(lead.phone));
+    setSelectedLead(lead);
+    const dial = dialPhoneForLead(lead);
+    setPhone(formatPhoneDisplay(dial));
     if (active) {
       setMessage(personalizeOutbound(active, lead));
     }
-    setStatus(`Loaded ${lead.name || 'owner'} · ${lead.propertyAddress || ''}`);
+    const extra = leadPhoneList(lead).length > 1 ? ` · line ${(lead.dialPhoneIndex ?? 0) + 1}/${leadPhoneList(lead).length}` : '';
+    setStatus(`Loaded ${lead.name || 'owner'}${extra}`);
   };
 
   const dial = () => Linking.openURL(`tel:${normalizePhone(phone)}`);
+
+  const copyPhone = async () => {
+    const raw = normalizePhone(phone);
+    if (!raw) return;
+    await Share.share({ message: raw });
+  };
+
+  const openMaps = (address: string) => {
+    const url = googleMapsUrl(address);
+    if (url) void Linking.openURL(url);
+  };
   const send = async () => {
     if (!active || !phone || !message) return;
     const norm = normalizePhone(phone);
@@ -128,20 +146,48 @@ export default function DialerScreen() {
             <Pressable style={styles.queueRow} onPress={() => selectLead(item)}>
               <Text style={styles.queueName}>{item.name || 'Owner'}</Text>
               <Text style={styles.queueAddr}>{item.propertyAddress}</Text>
-              <Text style={styles.queuePhone}>{formatPhoneDisplay(item.phone)}</Text>
+              <Text style={styles.queuePhone}>{formatPhoneDisplay(dialPhoneForLead(item))}</Text>
+              {item.propertyAddress ? (
+                <View style={styles.linkRow}>
+                  <Pressable onPress={() => openMaps(item.propertyAddress!)}>
+                    <Text style={styles.link}>Maps</Text>
+                  </Pressable>
+                  <Pressable onPress={() => {
+                    const z = zillowUrl(item.propertyAddress!);
+                    if (z) void Linking.openURL(z);
+                  }}>
+                    <Text style={styles.link}>Zillow</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </Pressable>
           )}
         />
       )}
 
       <Text style={styles.section}>Dial / SMS</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Phone number"
-        keyboardType="phone-pad"
-        value={phone}
-        onChangeText={setPhone}
-      />
+      <View style={styles.phoneRow}>
+        <TextInput
+          style={[styles.input, { flex: 1 }]}
+          placeholder="Phone number"
+          keyboardType="phone-pad"
+          value={phone}
+          onChangeText={setPhone}
+        />
+        <Pressable style={styles.copyBtn} onPress={() => void copyPhone()}>
+          <Text style={styles.copyBtnText}>Share #</Text>
+        </Pressable>
+      </View>
+      {selectedLead?.propertyAddress ? (
+        <View style={styles.linkRow}>
+          <Pressable onPress={() => openMaps(selectedLead.propertyAddress!)}>
+            <Text style={styles.link}>Open Maps</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('https://aibhive.com/employee')}>
+            <Text style={styles.link}>Laptop power dialer</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <TextInput
         style={[styles.input, styles.msg]}
         placeholder="Message"
@@ -184,6 +230,11 @@ const styles = StyleSheet.create({
   queueName: { fontWeight: '700' },
   queueAddr: { color: '#475569', fontSize: 12, marginTop: 2 },
   queuePhone: { color: '#64748b', fontSize: 12, marginTop: 2 },
+  linkRow: { flexDirection: 'row', gap: 12, marginTop: 6 },
+  link: { color: '#2563eb', fontWeight: '700', fontSize: 12 },
+  phoneRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  copyBtn: { backgroundColor: '#e2e8f0', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10 },
+  copyBtnText: { fontWeight: '700', fontSize: 12 },
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, fontSize: 16 },
   msg: { marginTop: 12, minHeight: 80, textAlignVertical: 'top' },
   row: { flexDirection: 'row', gap: 12, marginTop: 16 },

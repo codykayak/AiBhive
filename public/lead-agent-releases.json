@@ -1,10 +1,10 @@
 {
-  "shippedNativeVersion": "1.2.0",
-  "versionCode": 4,
-  "sourceVersion": "1.2.0",
+  "shippedNativeVersion": "1.3.0",
+  "versionCode": 5,
+  "sourceVersion": "1.3.0",
   "appName": "AiBhive Lead Agent",
   "downloadUrl": "https://aibhive.com/api/download/lead-agent",
   "fullApkUrl": "https://aibhive.com/api/download/lead-agent",
-  "releaseNotes": "1.2.0 — Cell-phone SMS default (Twilio optional); aligns with Employee Portal phone/Twilio provider; MacroREI lists + Grok inbound.",
+  "releaseNotes": "1.3.0 — Dialer maps/Zillow links, share phone #, multi-phone import; Work Mode clarifies you must set carrier forwarding (app does not auto-forward); links to laptop employee power dialer.",
   "publishedAt": null
 }
