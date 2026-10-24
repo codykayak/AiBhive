@@ -6,7 +6,7 @@
   "main": "server/index.js",
   "scripts": {
     "dev:frontend": "vite --port=3000 --host=0.0.0.0",
-    "dev:backend": "PORT=3001 node server/index.js",
+    "dev:backend": "node scripts/dev-backend-local.mjs",
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "dev:start": "bash scripts/dev-local.sh",
     "dev:stop": "bash scripts/dev-stop.sh",
@@ -26,6 +26,8 @@
     "ship": "node scripts/ship-cursor-pr.mjs",
     "lead-agent:phone": "powershell -ExecutionPolicy Bypass -File scripts/install-lead-agent-phone.ps1",
     "lead-agent:publish-apk": "node scripts/publish-lead-agent-apk-firebase.mjs",
+    "lead-agent:verify-apk": "node scripts/verify-lead-agent-apk.mjs",
+    "lead-agent:ship-local": "powershell -ExecutionPolicy Bypass -File scripts/ship-lead-agent-apk-local.ps1",
     "prerender": "node scripts/prerender.mjs",
     "guides:oregon-plants": "node scripts/generate-oregon-plant-guide-pdfs.mjs",
     "hiring:pdfs": "node scripts/generate-job-posting-pdfs.mjs",

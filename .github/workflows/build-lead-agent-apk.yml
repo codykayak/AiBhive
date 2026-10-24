@@ -2,16 +2,9 @@
 # APK is uploaded to Firebase (too large for GitHub); /api/download/lead-agent redirects there.
 name: Build Lead Agent APK
 
+# APK builds burn GitHub minutes — routine path is LOCAL: npm run lead-agent:ship-local
 on:
   workflow_dispatch:
-  push:
-    branches: [main-fixed]
-    paths:
-      - 'mobile/lead-agent/**'
-      - 'public/lead-agent-releases.json'
-      - 'scripts/publish-lead-agent-apk-firebase.mjs'
-      - 'scripts/write-lead-agent-release.mjs'
-      - '.github/workflows/build-lead-agent-apk.yml'
 
 permissions:
   contents: write

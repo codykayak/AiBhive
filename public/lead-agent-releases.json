@@ -1,10 +1,12 @@
 {
-  "shippedNativeVersion": "1.3.0",
-  "versionCode": 5,
-  "sourceVersion": "1.3.0",
+  "shippedNativeVersion": "1.3.1",
+  "versionCode": 6,
+  "sourceVersion": "1.3.1",
   "appName": "AiBhive Lead Agent",
-  "downloadUrl": "https://aibhive.com/api/download/lead-agent",
-  "fullApkUrl": "https://aibhive.com/api/download/lead-agent",
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1792847754585%2Faibhive-lead-agent.apk?alt=media&token=ee1ec741-cfc0-4424-9b10-c35c78f56f51",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1792847754585%2Faibhive-lead-agent.apk?alt=media&token=ee1ec741-cfc0-4424-9b10-c35c78f56f51",
   "releaseNotes": "1.3.0 — Dialer maps/Zillow links, share phone #, multi-phone import; Work Mode clarifies you must set carrier forwarding (app does not auto-forward); links to laptop employee power dialer.",
-  "publishedAt": null
+  "publishedAt": "2026-10-24T13:18:50.767Z",
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1792847754585%2Faibhive-lead-agent.apk?alt=media&token=ee1ec741-cfc0-4424-9b10-c35c78f56f51",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1792847754585%2Faibhive-lead-agent.apk.gz?alt=media&token=abc36603-b99a-414e-a1fb-1237ec05a63b"
 }

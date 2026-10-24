@@ -85,6 +85,17 @@ All agent branches: `cursor/<descriptive-name>-c7f3` (lowercase). **New branch f
 
 **Live Research Lab:** https://aibhive.com/research-lab (legacy `/old-world-research` redirects).
 
+## Lead Agent APK (Android)
+
+**User policy:** build and publish **locally** — do **not** trigger GitHub Actions APK builds on push.
+
+1. `npm run lead-agent:ship-local` — Gradle debug APK → Firebase Storage → `verify-lead-agent-apk.mjs` (local file + live URL).
+2. If live verify fails, re-run `npm run lead-agent:verify-apk` after a short wait, or re-run ship-local.
+3. Commit `public/lead-agent-releases.json` (must include `firebaseApkUrl`). Push for web/manifest deploy only.
+4. Emergency manual CI: workflow_dispatch **Build Lead Agent APK** only.
+
+Install link: https://aibhive.com/api/download/lead-agent
+
 ## Cursor Cloud specific instructions
 
 Dependencies are installed automatically by the Cloud Agent update script (`npm install` at the repo root plus `--prefix cody` and `--prefix autoposter/admin`). Standard commands live in `LOCAL_DEV.md` / `package.json` — this section only captures non-obvious caveats.

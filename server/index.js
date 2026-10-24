@@ -3275,7 +3275,7 @@ app.get('/api/download/lead-agent', async (req, res) => {
   if (!apkPath) {
     return res.status(404).json({
       error: 'Lead Agent APK not built yet.',
-      hint: 'Wait for GitHub Actions “Build Lead Agent APK”, or ask ops to run: npm run lead-agent:publish-apk',
+      hint: 'Run locally: npm run lead-agent:ship-local (build + Firebase + verify). GitHub Actions APK job is manual-only.',
       employeePortal: '/employee',
     });
   }

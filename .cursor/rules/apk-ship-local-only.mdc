@@ -1,0 +1,17 @@
+---
+description: Lead Agent APK — always build and publish locally, verify download, never GitHub Actions on push
+alwaysApply: true
+---
+
+# Lead Agent APK (user policy)
+
+When the user asks to **push, publish, or ship the APK**:
+
+1. **Do not** rely on `.github/workflows/build-lead-agent-apk.yml` on push (manual `workflow_dispatch` only).
+2. Run **`npm run lead-agent:ship-local`** from repo root (`C:\Users\AiBhive\aibhiverepo\aibhive-main-fixed`).
+3. That script: local Gradle debug APK → `public/lead-agent.apk` → Firebase via `publish-lead-agent-apk-firebase.mjs` → **`npm run lead-agent:verify-apk`** (local + live).
+4. If live verify fails, wait and re-run **`npm run lead-agent:verify-apk`**; if still broken, re-publish and verify again until pass.
+5. Commit **`public/lead-agent-releases.json`** (and version bumps in `mobile/lead-agent/app.json` if changed). Do **not** commit `public/lead-agent.apk` unless repo already tracks it — Firebase is the binary host.
+6. Push to GitHub for manifest/web deploy only — **no** APK build on Actions.
+
+Success criteria: `https://aibhive.com/api/download/lead-agent` returns a redirect to Firebase and the file is ≥8MB with ZIP `PK` header.
