@@ -1,5 +1,35 @@
 /** First outbound SMS — MacroREI owner outreach with property address. */
 
+function titleCaseWord(word) {
+  const w = String(word || '').trim();
+  if (!w) return '';
+  const lower = w.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+function stripJointOwnerNoise(s) {
+  return String(s || '')
+    .replace(/\s*(?:&|\+|and)\s*\+?\s*1\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** From one owner token, derive a first name: handles "SMITH,JANE", "JANE DOE", assessor noise. */
+function formatSmsFirstName(rawToken) {
+  const t = stripJointOwnerNoise(rawToken);
+  if (!t) return '';
+  const comma = t.indexOf(',');
+  if (comma !== -1) {
+    const afterComma = t.slice(comma + 1).trim();
+    const firstChunk = afterComma.split(/\s+/)[0] || '';
+    const cleaned = firstChunk.replace(/^[^A-Za-z]+/, '');
+    return titleCaseWord(cleaned);
+  }
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  return titleCaseWord(parts[0].replace(/^[^A-Za-z]+/, ''));
+}
+
 export function ownerNamePrefix(name) {
   const raw = String(name || '').trim();
   if (!raw) return '';
@@ -7,7 +37,7 @@ export function ownerNamePrefix(name) {
     .split(/\s*(?:&| and )\s*/i)
     .map((p) => p.trim())
     .filter(Boolean);
-  const firsts = parts.map((p) => p.split(/\s+/)[0]).filter(Boolean);
+  const firsts = parts.map((p) => formatSmsFirstName(p)).filter(Boolean);
   if (!firsts.length) return '';
   if (firsts.length === 1) return ` ${firsts[0]},`;
   if (firsts.length === 2) return ` ${firsts[0]} and ${firsts[1]},`;
@@ -36,7 +66,7 @@ export function personalizeOutbound(business, lead) {
   }
 
   let body = business?.greeting || business?.outboundTemplate || 'Hi — following up.';
-  const first = lead?.name?.trim().split(/\s+/)[0];
+  const first = lead?.name ? formatSmsFirstName(lead.name) : '';
   if (first && !body.toLowerCase().includes(first.toLowerCase())) {
     body = body.replace(/^Hi,?\s*/i, `Hi ${first}, `);
   }
@@ -65,7 +95,7 @@ export function personalizeFollowUpOutbound(business, lead, touchIndex = 2) {
 export function personalizeRelativeOutbound(business, ownerLead, relativeLead) {
   const address = resolvePropertyAddress(ownerLead) || 'a property in Eugene';
   const relName = String(relativeLead?.name || '').trim();
-  const hi = relName ? `Hi ${relName.split(/\s+/)[0]},` : 'Hi,';
+  const hi = relName ? `Hi ${formatSmsFirstName(relName)},` : 'Hi,';
   const custom = String(business?.relativeOutboundTemplate || '').trim();
   if (custom) {
     return `${hi} ${custom.replace(/\{address\}/gi, address).replace(/\{owner\}/gi, ownerLead?.name || 'the owner')}`

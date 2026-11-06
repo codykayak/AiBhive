@@ -106,7 +106,14 @@ export function pickNextLead(leads: Lead[]) {
 
   if (!pool.length) return null;
 
-  return pool[Math.floor(Math.random() * pool.length)];
+  // Stable pick so Automation preview (and tests) don't flicker a new random row every render.
+  const sorted = [...pool].sort((a, b) => {
+    const c = (a.lastContactAt || '').localeCompare(b.lastContactAt || '');
+    if (c !== 0) return c;
+    return String(a.id).localeCompare(String(b.id));
+  });
+
+  return sorted[0];
 
 }
 
