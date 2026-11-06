@@ -1,4 +1,5 @@
 import type { Business, Lead } from './types';
+import { formatSmsFirstName } from './nameFormatting';
 
 const MACROREI_TEMPLATE =
   "my name is Cody, I'm a real estate investor in Eugene. I'm wondering if you still own the property at {address} and if you may be interested in selling it?";
@@ -10,7 +11,7 @@ export function ownerNamePrefix(name?: string): string {
     .split(/\s*(?:&| and )\s*/i)
     .map((p) => p.trim())
     .filter(Boolean);
-  const firsts = parts.map((p) => p.split(/\s+/)[0]).filter(Boolean);
+  const firsts = parts.map((p) => formatSmsFirstName(p)).filter(Boolean);
   if (!firsts.length) return '';
   if (firsts.length === 1) return ` ${firsts[0]},`;
   if (firsts.length === 2) return ` ${firsts[0]} and ${firsts[1]},`;
@@ -35,7 +36,7 @@ export function personalizeOutbound(business: Business, lead: Lead): string {
   }
 
   let body = business.greeting || 'Hi — following up.';
-  const first = lead.name?.trim().split(/\s+/)[0];
+  const first = lead.name ? formatSmsFirstName(lead.name) : '';
   if (first && !body.toLowerCase().includes(first.toLowerCase())) {
     body = body.replace(/^Hi,?\s*/i, `Hi ${first}, `);
   }
