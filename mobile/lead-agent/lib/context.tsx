@@ -38,6 +38,8 @@ type Ctx = {
   reloadLeads: () => Promise<void>;
 };
 
+const AppCtx = createContext<Ctx | null>(null);
+
 async function mergeServerLeads(businessId: string, local: Lead[]): Promise<Lead[]> {
   try {
     const token = await getAuthToken();
