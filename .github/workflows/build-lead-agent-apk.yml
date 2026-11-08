@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-apk]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -75,6 +76,7 @@ jobs:
             exit 0
           fi
           git commit -m "chore(lead-agent): publish APK manifest (Firebase) [skip-apk]"
+          git stash push -u --message "apk-build-artifacts" || true
           git pull --rebase origin main-fixed
           git push origin HEAD:main-fixed
 
