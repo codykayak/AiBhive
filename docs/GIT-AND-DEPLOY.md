@@ -33,9 +33,11 @@ npm run ship
 
 GitHub Actions (automatic):
 
-1. `open-cursor-pr.yml` — opens PR to `main-fixed`
+1. `open-cursor-pr.yml` — opens PR to `main-fixed` (uses repo secret **`HIVE_DEPLOY_TOKEN`**, not the restricted default `GITHUB_TOKEN`)
 2. `auto-merge-cursor-prs.yml` — squash-merges `cursor/*` PRs
 3. `auto-deploy.yml` — builds + deploys Cloud Run **`aibhive`** in **`us-west1`**
+
+If **Open cursor PR** fails with *“Actions is not permitted to create pull requests”*, either set **Settings → Actions → General → Allow GitHub Actions to create and approve pull requests**, or ensure **`HIVE_DEPLOY_TOKEN`** (PAT with `repo` scope) exists in **Settings → Secrets and variables → Actions** — workflows prefer that token.
 
 Watch: https://github.com/codykayak/AiBhive/actions
 

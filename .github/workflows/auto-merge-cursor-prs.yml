@@ -35,7 +35,7 @@ jobs:
       - name: Sync main-fixed into PR branch
         id: sync
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -euo pipefail
@@ -66,7 +66,7 @@ jobs:
       - name: Comment on sync conflict
         if: steps.sync.outputs.conflict == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           gh pr comment "${{ github.event.pull_request.number }}" --body "## Merge conflict with \`main-fixed\`
@@ -102,14 +102,14 @@ jobs:
     steps:
       - name: Update PR branch via GitHub API
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
         run: |
           gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/update-branch" \
             -X PUT -f merge_method=merge 2>/dev/null || true
 
       - name: Wait for mergeable PR (GitHub computes async)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
         run: |
           pr="${{ github.event.pull_request.number }}"
           repo="${{ github.repository }}"
@@ -133,7 +133,7 @@ jobs:
 
       - name: Squash merge and delete branch
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
         run: |
           gh pr merge "${{ github.event.pull_request.number }}" \
             --repo "${{ github.repository }}" \
@@ -142,7 +142,7 @@ jobs:
 
       - name: Trigger main-fixed deploy workflows
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.HIVE_DEPLOY_TOKEN || github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           # Squash merges via API sometimes skip push webhooks; dispatch deploy jobs explicitly.
