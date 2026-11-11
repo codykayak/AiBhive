@@ -18,6 +18,11 @@ const W = {
 
 export const IRIDOLOGY_LIBRARY: IridologyTopic[] = [
   {
+    id: 'integrated-iridology-methodology',
+    title: 'Integrated iridology methodology',
+    category: 'methodology',
+    summary:
+      'How integrated readers layer Jensen zones, European physical signs, and constitutional typing with explicit uncertainty — AiBhive’s default educational stance.',
     imageUrl: W.integrated,
     imageCredit: 'AiBhive Living Knowledge — integrated iridology illustration',
     whenPeopleExplore:
@@ -43,6 +48,11 @@ A lacuna in the lung sector alone does not justify strong language about respira
 AiBhive’s AI analyzer defaults to integrated methodology for this reason. It is the most conservative educational stance available within iridology’s own pedagogical traditions.`,
   },
   {
+    id: 'jensen-zone-chart',
+    title: 'Bernard Jensen zone chart — clock-face iris map',
+    category: 'zone-chart',
+    summary:
+      'Classic radial iris sectors (12 o’clock head, digestive bands, kidney areas) — educational vocabulary, not medical diagnosis.',
     imageUrl: W.chart,
     imageCredit: 'AiBhive Living Knowledge — Jensen zone chart illustration',
     whenPeopleExplore:
@@ -97,6 +107,11 @@ Nerve rings (concentric white arcs) are interpreted as markers of autonomic stre
 AiBhive’s vision model is prompted to describe only what is visible at photo resolution and to recommend retakes when fiber detail is ambiguous.`,
   },
   {
+    id: 'constitutional-iris-types',
+    title: 'Constitutional iris types — lymphatic, biliary, hematogenic',
+    category: 'constitutional',
+    summary:
+      'Global iris color and fiber density patterns used as wellness vocabulary in iridology texts — not lab results or destiny labels.',
     imageUrl: W.constitutional,
     imageCredit: 'AiBhive Living Knowledge — constitutional iris types illustration',
     whenPeopleExplore:
@@ -122,6 +137,11 @@ These types function like Ayurvedic doshas or TCM patterns: heuristic maps for e
 When AI confidence is low, the structured JSON omits a firm type and recommends better photos or professional iridology study — not self-diagnosis.`,
   },
   {
+    id: 'iris-photo-capture-guide',
+    title: 'Iris photography guide for AI analysis',
+    category: 'photo-guide',
+    summary:
+      'Daylight angle, macro distance, one eye per frame, and avoiding glare — so fiber detail survives phone compression.',
     imageUrl: W.photo,
     imageCredit: 'AiBhive Living Knowledge — iris photo capture guide',
     whenPeopleExplore:
@@ -143,6 +163,11 @@ When AI confidence is low, the structured JSON omits a firm type and recommends 
 Contact lenses and recent eye drops create artifacts. Post-LASIK irises may show surgical ring patterns unrelated to iridology “signs.” For bilateral comparison, capture matching angles on left and right eyes separately rather than one wide face photo. If the AI returns photoQuality: poor or populated retakeAdvice, follow it — guessing from bad data contradicts integrated methodology and our safety prompts.`,
   },
   {
+    id: 'iridology-safety-evidence',
+    title: 'Iridology safety, evidence limits & disclaimers',
+    category: 'safety',
+    summary:
+      'Why mainstream medicine rejects iris diagnosis, how AiBhive gates AI output, and when to see ophthalmology instead.',
     imageUrl: W.safety,
     imageCredit: 'AiBhive Living Knowledge — iridology safety illustration',
     whenPeopleExplore:
@@ -169,6 +194,11 @@ Our AI iridology feature uses Grok vision with strict prompting: educational phr
 If you feel frightened by an AI iris report, step back. Note what is explicitly labeled low confidence. Schedule appropriate medical care for symptoms you already have. Iridology is best treated as a lens for curiosity and wellness journaling — not a verdict on your health.`,
   },
   {
+    id: 'rayid-personality-iridology',
+    title: 'Rayid personality iridology (non-medical)',
+    category: 'methodology',
+    summary:
+      'Jewel/flower/stream metaphors for personality reflection — kept separate from physical zone pathology language.',
     imageUrl: W.rayid,
     imageCredit: 'AiBhive Living Knowledge — Rayid personality iridology illustration',
     whenPeopleExplore:
@@ -189,6 +219,11 @@ If you feel frightened by an AI iris report, step back. Note what is explicitly 
 AiBhive includes Rayid in the knowledge corpus only so the AI does not invent unsupported medical claims from personality frameworks. When methodology is "all", Rayid observations may appear clearly tagged as non-medical personality exploration. Default integrated analysis de-emphasizes Rayid unless the user’s notes request it. This protects users from conflating emotional metaphors with organ zone pathology language.`,
   },
   {
+    id: 'bilateral-iris-reading',
+    title: 'Left vs right iris — bilateral comparison',
+    category: 'photo-guide',
+    summary:
+      'Matching lighting and magnification for both eyes, labeling L/R uploads, and lowering confidence when signs conflict.',
     imageUrl: W.bilateral,
     imageCredit: 'AiBhive Living Knowledge — bilateral iris reading illustration',
     whenPeopleExplore:
