@@ -1,12 +1,12 @@
 {
-  "shippedNativeVersion": "1.3.3",
-  "versionCode": 8,
-  "sourceVersion": "1.3.3",
+  "shippedNativeVersion": "1.3.4",
+  "versionCode": 9,
+  "sourceVersion": "1.3.4",
   "appName": "AiBhive Lead Agent",
-  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794172869101%2Faibhive-lead-agent.apk?alt=media&token=14258432-39d6-4ef0-b0b1-a7136e3578c9",
-  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794172869101%2Faibhive-lead-agent.apk?alt=media&token=14258432-39d6-4ef0-b0b1-a7136e3578c9",
-  "releaseNotes": "1.3.3 — Fix launch crash (AppCtx context). Includes 1.3.2 Automation UI and natural first-name SMS.",
-  "publishedAt": "2026-11-08T21:21:18.875Z",
-  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794172869101%2Faibhive-lead-agent.apk?alt=media&token=14258432-39d6-4ef0-b0b1-a7136e3578c9",
-  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794172869101%2Faibhive-lead-agent.apk.gz?alt=media&token=6bd1ae0f-bf0f-4bfd-8b58-36714fa356c2"
+  "downloadUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794366210540%2Faibhive-lead-agent.apk?alt=media&token=ff555ff3-4222-4f07-b56c-0785c7eb423a",
+  "fullApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794366210540%2Faibhive-lead-agent.apk?alt=media&token=ff555ff3-4222-4f07-b56c-0785c7eb423a",
+  "releaseNotes": "1.3.4 — Repackaged build from main-fixed with AppCtx launch fix, Automation UI, and natural first-name SMS.",
+  "publishedAt": "2026-11-11T03:04:03.012Z",
+  "firebaseApkUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794366210540%2Faibhive-lead-agent.apk?alt=media&token=ff555ff3-4222-4f07-b56c-0785c7eb423a",
+  "firebaseGzUrl": "https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0787280773.firebasestorage.app/o/leads%2Flead-agent-apk-1794366210540%2Faibhive-lead-agent.apk.gz?alt=media&token=defc7467-06e0-41c2-b6ce-7a778dd018fe"
 }
