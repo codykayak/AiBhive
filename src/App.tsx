@@ -37,6 +37,7 @@ const DocumentProcessingErp = lazy(() => import('./pages/solutions/DocumentProce
 const WorkflowOrchestration = lazy(() => import('./pages/solutions/WorkflowOrchestration'));
 const MedicalLegalMultiAgent = lazy(() => import('./pages/solutions/MedicalLegalMultiAgent'));
 const RealEstateSolutions = lazy(() => import('./pages/solutions/RealEstateSolutions'));
+const BiddingDashboard = lazy(() => import('./pages/bidding/BiddingDashboard'));
 const PhoneSystemsIntegration = lazy(() => import('./pages/solutions/PhoneSystemsIntegration'));
 const FieldServiceAi = lazy(() => import('./pages/solutions/FieldServiceAi'));
 const BookConsultation = lazy(() => import('./pages/BookConsultation'));
@@ -158,6 +159,7 @@ function AnimatedRoutes() {
             <Route path="/solutions/enterprise-workflow-orchestration" element={<WorkflowOrchestration />} />
             <Route path="/solutions/medical-legal-multi-agent-compliance" element={<MedicalLegalMultiAgent />} />
             <Route path="/solutions/real-estate-ai-automation" element={<RealEstateSolutions />} />
+            <Route path="/bidding" element={<BiddingDashboard />} />
             <Route path="/solutions/phone-systems-ai-integration" element={<PhoneSystemsIntegration />} />
             <Route path="/solutions/field-service-ai" element={<FieldServiceAi />} />
             <Route path="/book-consultation" element={<BookConsultation />} />
@@ -255,10 +257,11 @@ function AppShell() {
   const isDiagnoseAppRoute = pathname.startsWith('/diagnose/app');
   const isPrivateRoute = isAdminRoute || isProsAdminRoute || isHomeworkRoute || isDiagnoseAppRoute;
   const isEmployeeRoute = pathname.startsWith('/employee');
+  const isBiddingRoute = pathname.startsWith('/bidding');
   const isEmbedRoute = pathname.startsWith('/hive-apps/embed') || pathname.startsWith('/rv/embed');
   const isPlantsMobileShell = pathname.startsWith('/plants') && isPlantsMobileApp();
   const hideSiteAssistant =
-    pathname.startsWith('/plants') || isOnlyFansRoute || isProsPublicRoute;
+    pathname.startsWith('/plants') || isOnlyFansRoute || isProsPublicRoute || isBiddingRoute;
   const hideFooter =
     pathname.startsWith('/app/research') ||
     pathname.startsWith('/research-lab/workspace') ||
@@ -268,7 +271,8 @@ function AppShell() {
     pathname.startsWith('/hive-apps/build') ||
     pathname.startsWith('/diagnose/app') ||
     isEmployeeRoute ||
-    isProsShell;
+    isProsShell ||
+    isBiddingRoute;
 
   return (
     <AssistantDockProvider>
@@ -277,7 +281,7 @@ function AppShell() {
           isProsShell ? 'bg-[#fafbfc] text-slate-900' : 'honeycomb-pattern'
         }`}
       >
-        {!isPrivateRoute && !isEmbedRoute && !isEmployeeRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && (
+        {!isPrivateRoute && !isEmbedRoute && !isEmployeeRoute && !isProsPublicRoute && !isDiagnosePublicRoute && !isOnlyFansRoute && !isPlantsMobileShell && !isBiddingRoute && (
           <header className="fixed top-0 left-0 right-0 z-50">
             <Navbar />
           </header>
@@ -286,7 +290,7 @@ function AppShell() {
         {!isPrivateRoute && !isEmbedRoute && <SiteAnalyticsBeacon />}
         {!isPrivateRoute && !isEmbedRoute && pathname.startsWith('/app') && <SiteGuideTour />}
         <main
-          className={`flex-grow ${isEmbedRoute || isEmployeeRoute || isProsPublicRoute || isDiagnosePublicRoute || isOnlyFansRoute || isPlantsMobileShell ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
+          className={`flex-grow ${isEmbedRoute || isEmployeeRoute || isProsPublicRoute || isDiagnosePublicRoute || isOnlyFansRoute || isPlantsMobileShell || isBiddingRoute ? '' : 'pt-20'} ${hideFooter ? 'pb-4' : ''}`}
         >
           {isPrivateRoute ? (
             <Suspense fallback={<PageLoader />}>

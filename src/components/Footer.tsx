@@ -33,6 +33,7 @@ export default function Footer() {
               <li><Link to="/solutions/enterprise-workflow-orchestration" className="text-slate-400 hover:text-bee-amber transition-colors">Workflow Orchestration</Link></li>
               <li><Link to="/solutions/medical-legal-multi-agent-compliance" className="text-slate-400 hover:text-bee-amber transition-colors">Medical & Legal AI</Link></li>
               <li><Link to="/solutions/real-estate-ai-automation" className="text-slate-400 hover:text-bee-amber transition-colors">Real Estate</Link></li>
+              <li><Link to="/bidding" className="text-slate-400 hover:text-bee-amber transition-colors">CRE Bid Desk</Link></li>
               <li><Link to="/solutions/phone-systems-ai-integration" className="text-slate-400 hover:text-bee-amber transition-colors">Phone Systems</Link></li>
               <li><Link to="/solutions/field-service-ai" className="text-slate-400 hover:text-bee-amber transition-colors">Field Service AI</Link></li>
               <li><Link to="/rv" className="text-slate-400 hover:text-bee-amber transition-colors">RV Dealer AI</Link></li>

@@ -26,6 +26,10 @@ export const SOLUTION_CATEGORIES = [
     path: '/solutions/real-estate-ai-automation',
   },
   {
+    name: 'CRE Bid Desk',
+    path: '/bidding',
+  },
+  {
     name: 'AiBhive App Hub',
     path: '/app',
   },

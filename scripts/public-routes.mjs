@@ -109,6 +109,7 @@ export function getSitemapEntries() {
     { loc: '/ocr-lab', priority: '0.85', changefreq: 'weekly' },
     { loc: '/tools', priority: '0.9', changefreq: 'weekly' },
     { loc: '/tools/real-estate-ai', priority: '0.9', changefreq: 'weekly' },
+    { loc: '/bidding', priority: '0.96', changefreq: 'weekly' },
     { loc: '/solutions/ai-lead-generation-automation', priority: '0.95', changefreq: 'monthly' },
     { loc: '/solutions/ai-customer-operations-automation', priority: '0.95', changefreq: 'monthly' },
     { loc: '/solutions/intelligent-document-processing-erp', priority: '0.95', changefreq: 'monthly' },

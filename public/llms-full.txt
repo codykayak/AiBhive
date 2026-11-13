@@ -137,6 +137,10 @@ AI research harvester: tell agents what to find; they crawl with stealth engines
 
 Batch vision OCR: upload up to ~100 photos and export formatted text, Markdown, or PDF. Built for archives, scanned books, handwritten notes, and research images.
 
+## CRE Bid Desk — https://aibhive.com/bidding
+
+Institutional commercial real estate bidding desk. Price a job, build the CSI cost plan, compare subcontractor quotes, and read cash-on-cash, cap rate, DSCR, debt yield, and yield on cost for a multi-asset pipeline.
+
 ## Real estate AI tools — https://aibhive.com/tools/real-estate-ai
 
 Intent-mapped guide for agents, investors, and property managers covering:
