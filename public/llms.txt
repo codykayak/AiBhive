@@ -75,6 +75,7 @@ Optional full corpus: [llms-full.txt](https://aibhive.com/llms-full.txt)
 
 ## Real estate AI
 
+- [CRE Bid Desk](https://aibhive.com/bidding): Institutional bidding desk for cost plans, subcontractor quotes, materials, debt, and cash-on-cash
 - [Real estate AI tools guide](https://aibhive.com/tools/real-estate-ai): Listing copy, video, CRM, missed-call text-back, property dashboards
 - [All tool categories](https://aibhive.com/tools): Public category guides for AiBhive workflows
 - [Listing description writers](https://aibhive.com/tools/real-estate-ai#listing-description-writers): MLS-ready listing copy from notes and photos
